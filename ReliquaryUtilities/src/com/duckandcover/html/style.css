@@ -1,0 +1,161 @@
+body { 
+    background-color: #FFFFFF;
+    font-family: Tahoma, Geneva, sans-serif;
+    font-size: small;
+    color:#000000
+}
+
+a:link { color:#A0A0A0 }
+a:visited { color:#808080 }
+a:hover { color:#FF00FF }
+
+p {
+    background-color: #FFFFFF;
+    margin-top: 0pt;
+    margin-bottom: 0pt;
+}
+
+h1 {
+    font-size: 1.6em;
+    font-weight: 400;
+    font-variant: small-caps;
+    background-color: #F0F0F0;
+    color:#000000
+    margin-top: 0pt;
+    margin: 6pt 0 6pt 0;
+}
+
+h2 {
+    font-size: 1.4em;
+    font-variant: small-caps;
+    font-weight: 400;
+    background-color: #F0F0F0;
+    color:#000000
+    margin: 6pt 0 6pt 0;
+}
+
+h3 {
+    font-size: 1.3em;
+    font-variant: small-caps;
+    font-weight: 400;
+    background-color: #F0F0F0;
+    color:#000000
+    margin: 6pt 0 6pt 0;
+    position: relative;
+}
+
+h4 {
+    font-size: 1.2em;
+    font-variant: small-caps;
+    font-weight: 400;
+    background-color: #F0F0F0;
+    color:#000000
+    margin: 6pt 0 6pt 0;
+    position: relative;
+}
+
+h5 {
+    font-size: 1.1em;
+    font-variant: small-caps;
+    font-weight: 400;
+    background-color: #F0F0F0;
+    color:#000000
+    margin: 6pt 0 6pt 0;
+    position: relative;
+}
+
+table {
+    font-size: 1em;
+    table-layout: auto;
+    border-style: none;
+    background-color: white;
+    position: relative;
+    left: 0em;
+}
+
+table.matrix {
+    font-size: 1em;
+    table-layout: auto;
+    border-width: thin; 
+    border-style: none solid none solid;
+    border-color: black;
+    background-color: white;
+    position: relative;
+    left: 0em;
+}
+
+tr {
+    border-style: none;
+    border-padding: 3px;
+}
+
+
+th {
+    border-width: 0px;
+    padding: 1px;
+    border-style: inset;
+    border-color: gray;
+    background-color: #F0F0F0;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    border-width: 0px;
+    padding: 1px;
+    border-style: inset;
+    border-color: gray;
+    background-color: white;
+    text-align: left;
+}
+
+.command {
+    font-family: "Courier New", monospace;
+    color: blue;
+    background-color: white; 
+}
+
+.cmdindex {
+    font-family: "Courier New", monospace;
+    color: gray;
+    background-color: white; 
+}
+
+.result {
+    font-family: "Courier New", monospace;
+    background-color: #F0F0F0;
+    color: #000000;
+    margin: 0 12pt 0 12pt;
+    padding: 0 12pt 0 12pt;
+}
+
+.error {
+    font-family: "Courier New", monospace;
+    background-color: white;
+    color: red;
+    margin: 0 12pt 0 12pt;
+    padding: 0 12pt 0 12pt;
+}
+
+.warn {
+    font-family: "Courier New", monospace;
+    background-color: white;
+    color: orange;
+    margin: 0 12pt 0 12pt;
+    padding: 0 12pt 0 12pt;
+}
+
+div { 
+    page-break-before: always;
+}
+
+.eos { 
+    display: block;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 3em;
+    margin-right: 3em;
+    border-style: solid;
+    border-width: 1px;
+    color: #D0D0D0;
+}

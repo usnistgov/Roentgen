@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="Reliquary/build/reliquary.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/Reliquary/reliquary.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="false" mainClassHandleIdentifier="=Reliquary/src&lt;com.duckandcover{Reliquary.java[Reliquary" manifestLocation="/Reliquary/src/manifest.mf" manifestVersion="1.0" reuseManifest="false" saveManifest="true" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
+        <folder path="/Reliquary/target"/>
+        <file path="/Reliquary/.project"/>
+        <file path="/Reliquary/pom.xml"/>
+        <folder path="/Reliquary/bin"/>
+        <javaElement handleIdentifier="=Reliquary/src"/>
+        <javaElement handleIdentifier="=Reliquary/resources"/>
+        <file path="/Reliquary/.classpath"/>
+        <file path="/Reliquary/.pydevproject"/>
+    </selectedElements>
+</jardesc>

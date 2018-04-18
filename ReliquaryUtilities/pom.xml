@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>RelinquaryUtilities</groupId>
+  <artifactId>RelinquaryUtilities</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>Relinquary Utilities</name>
+  <description>Utilities and interfaces necessary to work with Relinquary</description>
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+        </excludes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.6.1</version>
+        <configuration>
+          <source/>
+          <target/>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+  	<dependency>
+  		<groupId>org.apache.commons</groupId>
+  		<artifactId>commons-text</artifactId>
+  		<version>1.1</version>
+  	</dependency>
+  	<dependency>
+        <groupId>org.imgscalr</groupId>
+        <artifactId>imgscalr-lib</artifactId>
+        <version>4.2</version>
+    </dependency>
+    <dependency>
+        <groupId>com.jgoodies</groupId>
+        <artifactId>jgoodies-forms</artifactId>
+        <version>1.8.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.thoughtworks.xstream</groupId>
+        <artifactId>xstream</artifactId>
+        <version>1.4.10</version>
+    </dependency>
+  </dependencies>
+</project>

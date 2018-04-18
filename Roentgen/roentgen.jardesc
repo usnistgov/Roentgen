@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="Reliquary/build/roentgen.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/Roentgen/roentgen.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="false" manifestLocation="/Roentgen/src/manifest.mf" manifestVersion="1.0" reuseManifest="false" saveManifest="true" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
+        <file path="/Roentgen/.classpath"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.spectrum"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.physics"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.math"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.janedoe"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.quant"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.physics"/>
+        <folder path="/Roentgen/bin"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.quant"/>
+        <file path="/Roentgen/debug.log"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.swing"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.math.uncertainty"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.physics.composition"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.spectrum"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.microanalysis"/>
+        <file path="/Roentgen/.project"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.DataStore"/>
+        <folder path="/Roentgen/target"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.math"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.utility"/>
+        <file path="/Roentgen/pom.xml"/>
+    </selectedElements>
+</jardesc>

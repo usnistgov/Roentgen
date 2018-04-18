@@ -1,0 +1,2 @@
+Manifest-Version: 1.0
+Class-Path: commons-text-1.1.jar commons-lang3-3.5.jar imgscalr-lib-4.2.jar jgoodies-forms-1.8.0.jar jgoodies-common-1.8.0.jar xstream-1.4.10.jar
