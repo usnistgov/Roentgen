@@ -21,9 +21,12 @@ import com.duckandcover.html.IToHTML.Mode;
 public class Transforms {
 
    final static String MATCHES_SCIENTIFIC_NOTATION = "^[-+]?[0-9]*\\.?[0-9]+[eE][-+]?[0-9]+$";
+   
+   final public static String NON_BREAKING_DASH = "&#8209;";
 
    /**
-    * Replaces the e|E in #.####e### with #.###&middot;10<sup>###</sup>
+    * Replaces the e|E in #.####e### with #.###&middot;10<sup>###</sup> and
+    * replaces the '-' with a non-breaking hypen.
     *
     * @param number String
     * @return Number in HTML formatted string
@@ -31,14 +34,14 @@ public class Transforms {
    public static String numberToHTML(final String number) {
       // #.####e### -> #.###&middot;10<sup>###</sup>
       if(number.matches(MATCHES_SCIENTIFIC_NOTATION)) {
-         final String uc = number.toUpperCase();
+         final String uc = number.toUpperCase().replace("-", NON_BREAKING_DASH);
          final int p = uc.indexOf("E");
          if(uc.substring(p + 1).equals("0"))
             return uc.substring(0, p);
          else
             return uc.replace("E", "&sdot;10<sup>").concat("</sup>");
       } else
-         return number;
+         return number.replace("-", NON_BREAKING_DASH);
    }
 
    private static class HTMLTransform

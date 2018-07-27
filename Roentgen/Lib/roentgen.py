@@ -1,7 +1,8 @@
 import sys
 
 #jarDir = "C:\\Users\\Nicholas\\Documents\\workspace\\Reliquary\\build"
-jarDir = "C:\\Users\\nritchie.NIST\\Desktop\\TmpRoentgen\\workspace\\Reliquary\\build"
+#jarDir = "C:\\Users\\nritchie.NIST\\Desktop\\TmpRoentgen\\workspace\\Reliquary\\build"
+jarDir = "D:\\Users\\Nicholas\\git\\Roentgen\\Reliquary\\build"
 sys.path.append(jarDir)
 sys.packageManager.addJarDir(jarDir,True)
 
@@ -22,6 +23,23 @@ def element(elm):
         return elm
     else:
         return Element.parse(elm)
+    
+def family(fam):
+    """family(fam)
+    Returns the Shell.Principle object associated with the specified family - 'K', 'L', 'M' or 'N' """
+    from gov.nist.microanalysis.roentgen.physics import Shell
+    if isinstance(fam, Shell.Principle):
+        return fam
+    elif fam=="K":
+        return Shell.Principle.K
+    elif fam=="L":
+        return Shell.Principle.L
+    elif fam=="M":
+        return Shell.Principle.M
+    elif fam=="N":
+        return Shell.Principle.N
+    else:
+        return None
 
 def massFraction(name, elms):
     """Ex: massFraction("Other",elms = { "Fe": (0.3,0.01), "Mg":(0.2,0.02), "O": 0.5 })
@@ -45,3 +63,12 @@ def material(chemForm):
     """material(chemForm)
     Create a Composition object representing the chemical formula in chemForm"""    
     return _rpc.Composition.parse(chemForm)
+
+def transitions(elm, fam):
+    """transitions(elm,fam)
+    Returns a ElementXRaySet containing the transitions associated with the specified element and family.
+    Ex: transitions("Fe","K")"""
+    from gov.nist.microanalysis.roentgen.physics import XRaySet
+    elm = element(elm)
+    fam = family(fam)
+    return XRaySet.build(elm, fam)

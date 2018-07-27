@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +31,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.microanalysis.XPPMatrixCorrection;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
@@ -41,7 +41,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 public class XPPMatrixCorrectionTest {
 
    public static boolean DUMP = false;
-   public static boolean PERFORM_MC = false;
+   public static int MC_ITERATIONS = 10000;
 
    @Test
    public void testXPP1()
@@ -86,149 +86,153 @@ public class XPPMatrixCorrectionTest {
       var.setEntry(2, Math.pow(Math.toRadians(0.9), 2.0));
       var.setEntry(3, Math.pow(Math.toRadians(0.7), 2.0));
 
-      final Set<CharacteristicXRay> scxr = new HashSet<>();
+      final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
       scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
       scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
 
       final UncertainValues conditions = new UncertainValues(Arrays.asList(tags), vals, var);
-      final Map<Composition, Set<CharacteristicXRay>> stds = new HashMap<>();
+      final Map<Composition, CharacteristicXRaySet> stds = new HashMap<>();
       stds.put(std, scxr);
       final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unk, stds);
-      {
-         final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
-         final Report r = new Report("XPP Report - test1");
-         r.addHeader("test1()");
-         r.addHTML(xpp.toHTML(Mode.NORMAL));
-         r.addHeader("Inputs");
-         final UncertainValues inputs = xpp.buildInputs(conditions);
-         r.add(inputs);
-         final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
-         final UncertainValues results = UncertainValues.propagate(xppI, inputs);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", unk, cxr.getInner())), 401.654, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", unk, cxr.getInner())), 11255.385, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", unk, cxr.getInner())), -529730.331, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", unk, cxr.getInner())), 12643.340, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, unk, cxr.getInner())), 1.252, 0.001);
+      final Report r = new Report("XPP Report - test1");
+      try {
+         {
+            final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
+            r.addHeader("test1()");
+            r.addHTML(xpp.toHTML(Mode.NORMAL));
+            r.addHeader("Inputs");
+            final UncertainValues inputs = xpp.buildInputs(conditions);
+            r.add(inputs);
+            final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
+            final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", unk, cxr.getInner())), 401.654, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", unk, cxr.getInner())), 11255.385, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", unk, cxr.getInner())), -529730.331, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", unk, cxr.getInner())), 12643.340, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, unk, cxr.getInner())), 1.252, 0.001);
 
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", std, cxr.getInner())), 396.744, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", std, cxr.getInner())), 11382.116, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", std, cxr.getInner())), -532506.458, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", std, cxr.getInner())), 12795.314, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, std, cxr.getInner())), 1.254, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", std, cxr.getInner())), 396.744, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", std, cxr.getInner())), 11382.116, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", std, cxr.getInner())), -532506.458, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", std, cxr.getInner())), 12795.314, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, std, cxr.getInner())), 1.254, 0.001);
 
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, unk, cxr)), 2542.429, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, std, cxr)), 1038.418, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, unk, cxr)), 0.635, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, std, cxr)), 0.822, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.zaTag(unk, std, cxr)), 0.781, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, unk, cxr)), 2542.429, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, std, cxr)), 1038.418, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, unk, cxr)), 0.635, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, std, cxr)), 0.822, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.zaTag(unk, std, cxr)), 0.781, 0.001);
 
-         r.addHeader("Results");
-         r.add(results);
-         r.addHeader("Uncertain Values (relative to inputs)");
-         final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
-         final Table valTable = new Table();
-         valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-         for(final Object outTag : xpp.getOutputTags()) {
-            final UncertainValue uv = outVals.get(outTag);
-            valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+            r.addHeader("Results");
+            r.add(results);
+            r.addHeader("Uncertain Values (relative to inputs)");
+            final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+            final Table valTable = new Table();
+            valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+            for(final Object outTag : xpp.getOutputTags()) {
+               final UncertainValue uv = outVals.get(outTag);
+               valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+            }
+            r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+            r.addHeader("Covariance matrix");
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+
+            final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
+            final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
+            for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+               for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+                  if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8)
+                     assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01
+                           * Math.abs(jac.getEntry(oIdx, iIdx)));
+
+            if(DUMP) {
+               System.out.println("Results");
+               System.out.println(results.toCSV());
+
+               System.out.println("Jacobian");
+               System.out.println(jac.toCSV());
+               System.out.println("Jacobian(estimated)");
+               System.out.println(djac.toCSV());
+            }
+
+            final Object unkCompTag = new XPPMatrixCorrection.CompositionTag("J", unk);
+            assertEquals(jac.getEntry(unkCompTag, Composition.buildMassFractionTag(unk, Element.Oxygen)), -0.027565, 0.00001);
+            assertEquals(jac.getEntry(unkCompTag, XPPMatrixCorrection.meanIonizationTag(Element.Oxygen)), 0.609601, 0.00001);
+
          }
-         r.addHTML(valTable.toHTML(Mode.NORMAL));
+         if(MC_ITERATIONS > 0) {
+            final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1);
+            r.addHeader("Monte Carlo Results");
+            r.add(xpp);
+            r.addHeader("Inputs");
+            final UncertainValues inputs = xpp.buildInputs(conditions);
+            r.add(inputs);
+            final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
 
-         r.addHeader("Covariance matrix");
-         final UncertainValues sorted = results.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", unk, cxr.getInner())), 2366.373, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", unk, cxr.getInner())), 11402.291, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", unk, cxr.getInner())), -1506725.664, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", unk, cxr.getInner())), 12050.502, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, unk, cxr.getInner())), 1.258, 0.001);
+
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", std, cxr.getInner())), 2307.215, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", std, cxr.getInner())), 11531.967, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", std, cxr.getInner())), -1505332.755, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", std, cxr.getInner())), 12196.382, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, std, cxr.getInner())), 1.26, 0.001);
+
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, unk, cxr)), 5836.018, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, std, cxr)), 6414.025, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, unk, cxr)), 0.376, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, std, cxr)), 0.353, 0.001);
+            assertEquals(results.getEntry(XPPMatrixCorrection.zaTag(unk, std, cxr)), 1.078, 0.001);
+
+            r.addHeader("Analyic Results");
+            r.add(results);
+
+            final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
+            final UncertainValues resultsMc = mcp.compute(MC_ITERATIONS).sort();
+
+            if(DUMP) {
+               System.out.println("Monte Carlo Results");
+               System.out.println(resultsMc.toCSV());
+            }
+
+            r.addHeader("MC Results");
+            r.add(resultsMc);
+
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : resultsMc.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(resultsMc.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+
+            r.addSubHeader("Phi0");
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+            for(final Object tag : xpp.getOutputTags()) {
+               r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+               r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
+            }
          }
-         r.addHTML(HTML.p(sb.toString()));
-
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
-
-         r.inBrowser(Mode.VERBOSE);
-
-         final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
-         final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
-         for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-            for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-               if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8)
-                  assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math.abs(jac.getEntry(oIdx, iIdx)));
-
-         if(DUMP) {
-            System.out.println("Results");
-            System.out.println(results.toCSV());
-
-            System.out.println("Jacobian");
-            System.out.println(jac.toCSV());
-            System.out.println("Jacobian(estimated)");
-            System.out.println(djac.toCSV());
-         }
-
-         final Object unkCompTag = new XPPMatrixCorrection.CompositionTag("J", unk);
-         assertEquals(jac.getEntry(unkCompTag, Composition.buildMassFractionTag(unk, Element.Oxygen)), -0.027565, 0.00001);
-         assertEquals(jac.getEntry(unkCompTag, XPPMatrixCorrection.meanIonizationTag(Element.Oxygen)), 0.609601, 0.00001);
-
       }
-      if(PERFORM_MC) {
-         final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1);
-         final Report r = new Report("XPP Report - test1MC");
-         r.addHeader("test1() - MC");
-         r.add(xpp);
-         r.addHeader("Inputs");
-         final UncertainValues inputs = xpp.buildInputs(conditions);
-         r.add(inputs);
-         final UncertainValues results = UncertainValues.propagate(xpp, inputs);
-
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", unk, cxr.getInner())), 2366.373, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", unk, cxr.getInner())), 11402.291, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", unk, cxr.getInner())), -1506725.664, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", unk, cxr.getInner())), 12050.502, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, unk, cxr.getInner())), 1.258, 0.001);
-
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("A", std, cxr.getInner())), 2307.215, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("a", std, cxr.getInner())), 11531.967, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("B", std, cxr.getInner())), -1505332.755, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2("b", std, cxr.getInner())), 12196.382, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.PHI0, std, cxr.getInner())), 1.26, 0.001);
-
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, unk, cxr)), 5836.018, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.CHI, std, cxr)), 6414.025, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, unk, cxr)), 0.376, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, std, cxr)), 0.353, 0.001);
-         assertEquals(results.getEntry(XPPMatrixCorrection.zaTag(unk, std, cxr)), 1.078, 0.001);
-
-         r.addHeader("Results");
-         r.add(results);
-
-         final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
-         final UncertainValues resultsMc = mcp.compute(160000);
-
-         if(DUMP) {
-            System.out.println("MC Results");
-            System.out.println(resultsMc.toCSV());
-         }
-
-         r.addHeader("MC Results");
-         r.add(resultsMc);
-
-         final UncertainValues sorted = resultsMc.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
-
-         r.addSubHeader("Phi0");
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-         for(final Object tag : xpp.getOutputTags()) {
-            r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
-            r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
-         }
+      catch (Exception e){
+         HTML.error(HTML.escape(e.getMessage()));
+         throw e;
+      }
+      finally {
          r.inBrowser(Mode.VERBOSE);
       }
    }
@@ -267,7 +271,7 @@ public class XPPMatrixCorrectionTest {
       var.setEntry(2, Math.pow(Math.toRadians(0.9), 2.0));
       var.setEntry(3, Math.pow(Math.toRadians(0.7), 2.0));
 
-      final Set<CharacteristicXRay> scxr = new HashSet<>();
+      final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
       scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
       scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
       scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
@@ -277,107 +281,112 @@ public class XPPMatrixCorrectionTest {
       scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
 
       final UncertainValues conditions = new UncertainValues(Arrays.asList(tags), vals, var);
-      final Map<Composition, Set<CharacteristicXRay>> stds = new HashMap<>();
+      final Map<Composition, CharacteristicXRaySet> stds = new HashMap<>();
       stds.put(std, scxr);
       final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unk, stds);
-      {
-         final Report r = new Report("XPP Report - test2");
-         r.addHeader("test2()");
-         r.addHTML(xpp.toHTML(Mode.NORMAL));
-         r.addHeader("Inputs");
-         final UncertainValues inputs = xpp.buildInputs(conditions);
-         r.add(inputs);
+      final Report r = new Report("XPP Report - test2");
+      try {
+         {
+            r.addHeader("test2()");
+            r.addHTML(xpp.toHTML(Mode.NORMAL));
+            r.addHeader("Inputs");
+            final UncertainValues inputs = xpp.buildInputs(conditions);
+            r.add(inputs);
 
-         final long start = System.currentTimeMillis();
-         final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
-         final UncertainValues results = UncertainValues.propagate(xppI, inputs);
-         System.out.println("Full Timing = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+            final long start = System.currentTimeMillis();
+            final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
+            final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
+            System.out.println("Full Timing = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-         r.addHeader("Results");
-         r.add(results);
-         r.addHeader("Uncertain Values (relative to inputs)");
-         final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
-         final Table valTable = new Table();
-         valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-         for(final Object outTag : xpp.getOutputTags()) {
-            if(outTag instanceof XPPMatrixCorrection.ResultTag) {
-               final UncertainValue uv = outVals.get(outTag);
-               valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+            r.addHeader("Results");
+            r.add(results);
+            r.addHeader("Uncertain Values (relative to inputs)");
+            final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+            final Table valTable = new Table();
+            valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+            for(final Object outTag : xpp.getOutputTags()) {
+               if(outTag instanceof XPPMatrixCorrection.ResultTag) {
+                  final UncertainValue uv = outVals.get(outTag);
+                  valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+               }
+            }
+            r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+            r.addHeader("Covariance matrix");
+
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+
+            final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
+            final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
+            for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+               for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+                  if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8)
+                     assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01
+                           * Math.abs(jac.getEntry(oIdx, iIdx)));
+
+            if(DUMP) {
+               System.out.println("Results");
+               System.out.println(results.toCSV());
+
+               System.out.println("Jacobian");
+               System.out.println(jac.toCSV());
+               System.out.println("Jacobian(estimated)");
+               System.out.println(djac.toCSV());
             }
          }
-         r.addHTML(valTable.toHTML(Mode.NORMAL));
+         if(MC_ITERATIONS > 0) {
+            r.addHeader("Monte Carlo Results");
+            r.add(xpp);
+            r.addHeader("Inputs");
+            final UncertainValues inputs = xpp.buildInputs(conditions);
+            r.add(inputs);
+            final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
+            r.addHeader("Analytic Results");
+            r.add(results);
 
-         r.addHeader("Covariance matrix");
+            final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
+            final UncertainValues resultsMc = mcp.compute(MC_ITERATIONS).sort();
 
-         final UncertainValues sorted = results.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+            if(DUMP) {
+               System.out.println("MC Results");
+               System.out.println(resultsMc.toCSV());
+            }
 
-         r.inBrowser(Mode.VERBOSE);
+            r.addHeader("MC Results");
+            r.add(resultsMc);
 
-         final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
-         final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
-         for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-            for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-               if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8)
-                  assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math.abs(jac.getEntry(oIdx, iIdx)));
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
 
-         if(DUMP) {
-            System.out.println("Results");
-            System.out.println(results.toCSV());
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
+            for(final Object tag : xpp.getOutputTags()) {
+               if(tag instanceof XPPMatrixCorrection.ResultTag) {
+                  r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+                  r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
+               }
+            }
 
-            System.out.println("Jacobian");
-            System.out.println(jac.toCSV());
-            System.out.println("Jacobian(estimated)");
-            System.out.println(djac.toCSV());
          }
       }
-      if(PERFORM_MC) {
-         final Report r = new Report("XPP Report - test2MC");
-         r.addHeader("test2() - MC");
-         r.add(xpp);
-         r.addHeader("Inputs");
-         final UncertainValues inputs = xpp.buildInputs(conditions);
-         r.add(inputs);
-         final UncertainValues results = UncertainValues.propagate(xpp, inputs);
-         r.addHeader("Results");
-         r.add(results);
-
-         final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
-         final UncertainValues resultsMc = mcp.compute(160000);
-
-         if(DUMP) {
-            System.out.println("MC Results");
-            System.out.println(resultsMc.toCSV());
-         }
-
-         r.addHeader("MC Results");
-         r.add(resultsMc);
-
-         final UncertainValues sorted = resultsMc.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
-
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-         for(final Object tag : xpp.getOutputTags()) {
-            if(tag instanceof XPPMatrixCorrection.ResultTag) {
-               r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
-               r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
-            }
-         }
+      catch (Exception e){
+         HTML.error(HTML.escape(e.getMessage()));
+         throw e;
+      }
+      finally {
          r.inBrowser(Mode.VERBOSE);
       }
    }
@@ -413,7 +422,7 @@ public class XPPMatrixCorrectionTest {
       var.setEntry(2, Math.pow(Math.toRadians(0.9), 2.0));
       var.setEntry(3, Math.pow(Math.toRadians(0.7), 2.0));
 
-      final Set<CharacteristicXRay> scxr = new HashSet<>();
+      final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
       // scxr.add(CharacteristicXRay.create(Element.Silicon,
       // XRayTransition.KA1));
       // scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
@@ -428,14 +437,14 @@ public class XPPMatrixCorrectionTest {
       // XRayTransition.KA1));
 
       final UncertainValues conditions = new UncertainValues(Arrays.asList(tags), vals, var);
-      final Map<Composition, Set<CharacteristicXRay>> stds = new HashMap<>();
+      final Map<Composition, CharacteristicXRaySet> stds = new HashMap<>();
       stds.put(std, scxr);
       final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unk, stds);
 
       final Set<Object> outputs = new HashSet<>();
-      for(final Map.Entry<Composition, Set<CharacteristicXRay>> me : stds.entrySet()) {
+      for(final Map.Entry<Composition, CharacteristicXRaySet> me : stds.entrySet()) {
          final Composition meStd = me.getKey();
-         for(final CharacteristicXRay cxr : me.getValue()) {
+         for(final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
             outputs.add(XPPMatrixCorrection.zaTag(unk, meStd, cxr));
             outputs.add(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, unk, cxr));
             outputs.add(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, meStd, cxr));
@@ -444,108 +453,113 @@ public class XPPMatrixCorrectionTest {
 
       xpp.trimOutputs(outputs);
       assertEquals(xpp.getOutputDimension(), outputs.size());
-      {
-         final Report r = new Report("XPP Report - test3");
-         r.addHeader("test3()");
-         r.addHTML(xpp.toHTML(Mode.NORMAL));
-         r.addHeader("Inputs");
-         final UncertainValues inputs = xpp.buildInputs(conditions);
-         r.add(inputs);
-         final long start = System.currentTimeMillis();
-         final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
-         final UncertainValues results = UncertainValues.propagate(xppI, inputs);
-         System.out.println("Timing = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+      final Report r = new Report("XPP Report - test3");
+      try {
+         {
+            r.addHeader("test3()");
+            r.addHTML(xpp.toHTML(Mode.NORMAL));
+            r.addHeader("Inputs");
+            final UncertainValues inputs = xpp.buildInputs(conditions);
+            r.add(inputs);
+            final long start = System.currentTimeMillis();
+            final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
+            final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
+            System.out.println("Timing = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-         r.addHeader("Results");
-         r.add(results);
-         r.addHeader("Uncertain Values (relative to inputs)");
-         final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
-         final Table valTable = new Table();
-         valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-         for(final Object outTag : xpp.getOutputTags()) {
-            if(outTag instanceof XPPMatrixCorrection.ResultTag) {
-               final UncertainValue uv = outVals.get(outTag);
-               valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+            r.addHeader("Results");
+            r.add(results);
+            r.addHeader("Uncertain Values (relative to inputs)");
+            final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+            final Table valTable = new Table();
+            valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+            for(final Object outTag : xpp.getOutputTags()) {
+               if(outTag instanceof XPPMatrixCorrection.ResultTag) {
+                  final UncertainValue uv = outVals.get(outTag);
+                  valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+               }
+            }
+            r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+            r.addHeader("Covariance matrix");
+
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+
+            final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
+            final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
+            for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+               for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+                  if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+                     if(Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
+                           * Math.abs(jac.getEntry(oIdx, iIdx)))
+                        System.out.print(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx) + "=[ "
+                              + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
+                     // assertEquals(jac.getEntry(oIdx, iIdx),
+                     // djac.getEntry(oIdx,
+                     // iIdx), 0.01 *
+                     // Math.abs(jac.getEntry(oIdx, iIdx)));
+                  }
+
+            if(DUMP) {
+               System.out.println("Results");
+               System.out.println(results.toCSV());
+
+               System.out.println("Jacobian");
+               System.out.println(jac.toCSV());
+               System.out.println("Jacobian(estimated)");
+               System.out.println(djac.toCSV());
             }
          }
-         r.addHTML(valTable.toHTML(Mode.NORMAL));
+         if(MC_ITERATIONS > 0) {
+            r.addHeader("Monte Carlo Results");
+            r.add(xpp);
+            r.addHeader("Inputs");
+            final UncertainValues inputs = xpp.buildInputs(conditions);
+            r.add(inputs);
+            final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
+            r.addHeader("Analytic Results");
+            r.add(results);
 
-         r.addHeader("Covariance matrix");
+            final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
+            final UncertainValues resultsMc = mcp.compute(MC_ITERATIONS).sort();
 
-         final UncertainValues sorted = results.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+            if(DUMP) {
+               System.out.println("MC Results");
+               System.out.println(resultsMc.toCSV());
+            }
 
-         r.inBrowser(Mode.VERBOSE);
+            r.addHeader("MC Results");
+            r.add(resultsMc);
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
 
-         final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
-         final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
-         for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-            for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-               if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
-                  if(Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01 * Math.abs(jac.getEntry(oIdx, iIdx)))
-                     System.out.print(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx) + "=[ "
-                           + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
-                  // assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx,
-                  // iIdx), 0.01 *
-                  // Math.abs(jac.getEntry(oIdx, iIdx)));
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
+            for(final Object tag : xpp.getOutputTags()) {
+               if(tag instanceof XPPMatrixCorrection.ResultTag) {
+                  r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+                  r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
                }
-
-         if(DUMP) {
-            System.out.println("Results");
-            System.out.println(results.toCSV());
-
-            System.out.println("Jacobian");
-            System.out.println(jac.toCSV());
-            System.out.println("Jacobian(estimated)");
-            System.out.println(djac.toCSV());
+            }
          }
       }
-      if(PERFORM_MC) {
-         final Report r = new Report("XPP Report - test3MC");
-         r.addHeader("test3() - MC");
-         r.add(xpp);
-         r.addHeader("Inputs");
-         final UncertainValues inputs = xpp.buildInputs(conditions);
-         r.add(inputs);
-         final UncertainValues results = UncertainValues.propagate(xpp, inputs);
-         r.addHeader("Results");
-         r.add(results);
-
-         final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
-         final UncertainValues resultsMc = mcp.compute(160000);
-
-         if(DUMP) {
-            System.out.println("MC Results");
-            System.out.println(resultsMc.toCSV());
-         }
-
-         r.addHeader("MC Results");
-         r.add(resultsMc);
-         final UncertainValues sorted = resultsMc.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
-
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-         for(final Object tag : xpp.getOutputTags()) {
-            if(tag instanceof XPPMatrixCorrection.ResultTag) {
-               r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
-               r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
-            }
-         }
+      catch (Exception e){
+         HTML.error(HTML.escape(e.getMessage()));
+         throw e;
+      }
+      finally {
          r.inBrowser(Mode.VERBOSE);
       }
    }
@@ -595,9 +609,9 @@ public class XPPMatrixCorrectionTest {
 
       final UncertainValues conditions = new UncertainValues(Arrays.asList(tags), vals, var);
 
-      final Map<Composition, Set<CharacteristicXRay>> stds = new HashMap<>();
+      final Map<Composition, CharacteristicXRaySet> stds = new HashMap<>();
       {
-         final Set<CharacteristicXRay> scxr = new HashSet<>();
+         final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
          scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
          scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
          scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
@@ -608,13 +622,13 @@ public class XPPMatrixCorrectionTest {
          scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
 
          stds.put(std0, scxr);
-         stds.put(std1, Collections.singleton(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
+         stds.put(std1, CharacteristicXRaySet.build(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
       }
 
       final Set<Object> outputs = new HashSet<>();
-      for(final Map.Entry<Composition, Set<CharacteristicXRay>> me : stds.entrySet()) {
+      for(final Map.Entry<Composition, CharacteristicXRaySet> me : stds.entrySet()) {
          final Composition meStd = me.getKey();
-         for(final CharacteristicXRay cxr : me.getValue()) {
+         for(final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
             outputs.add(XPPMatrixCorrection.zaTag(unk, meStd, cxr));
             outputs.add(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, unk, cxr));
             outputs.add(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, meStd, cxr));
@@ -627,12 +641,12 @@ public class XPPMatrixCorrectionTest {
       final UncertainValues inputs = xpp.buildInputs(conditions);
       final long start = System.currentTimeMillis();
       final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
-      final UncertainValues results = UncertainValues.propagate(jac, inputs);
+      final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
       System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
       final long start2 = System.currentTimeMillis();
       final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unk, stds);
-      final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs);
+      final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs).sort();
       System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
       // Test untrimmed vs trimmed
@@ -652,101 +666,106 @@ public class XPPMatrixCorrectionTest {
                assertEquals(cov1, cov2, 0.01 * Math.max(Math.abs(cov1), Math.abs(cov2)));
             }
       }
-      {
-         final Report r = new Report("XPP Report - test4");
-         r.addHeader("test4()");
-         r.addHTML(xpp.toHTML(Mode.NORMAL));
-         r.addHeader("Inputs");
-         r.add(inputs);
-         r.addHeader("Results");
-         r.add(results);
-         r.addHeader("Uncertain Values (relative to inputs)");
-         final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
-         final Table valTable = new Table();
-         valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-         for(final Object outTag : xpp.getOutputTags()) {
-            if(outTag instanceof XPPMatrixCorrection.ResultTag) {
-               final UncertainValue uv = outVals.get(outTag);
-               valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+      final Report r = new Report("XPP Report - test4");
+      try {
+         {
+            r.addHeader("test4()");
+            r.addHTML(xpp.toHTML(Mode.NORMAL));
+            r.addHeader("Inputs");
+            r.add(inputs);
+            r.addHeader("Results");
+            r.add(results);
+            r.addHeader("Uncertain Values (relative to inputs)");
+            final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+            final Table valTable = new Table();
+            valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+            for(final Object outTag : xpp.getOutputTags()) {
+               if(outTag instanceof XPPMatrixCorrection.ResultTag) {
+                  final UncertainValue uv = outVals.get(outTag);
+                  valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+               }
+            }
+            r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+            r.addHeader("Covariance matrix");
+
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+
+            final long start3 = System.currentTimeMillis();
+            final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
+            System.out.println("Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+            for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+               for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+                  if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+                     if(Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
+                           * Math.abs(jac.getEntry(oIdx, iIdx)))
+                        System.out.print(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx) + "=[ "
+                              + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
+                     // assertEquals(jac.getEntry(oIdx, iIdx),
+                     // djac.getEntry(oIdx,
+                     // iIdx), 0.01 *
+                     // Math.abs(jac.getEntry(oIdx, iIdx)));
+                  }
+
+            if(DUMP) {
+               System.out.println("Results");
+               System.out.println(results.toCSV());
+
+               System.out.println("Jacobian");
+               System.out.println(jac.toCSV());
+               System.out.println("Jacobian(estimated)");
+               System.out.println(djac.toCSV());
             }
          }
-         r.addHTML(valTable.toHTML(Mode.NORMAL));
+         if(MC_ITERATIONS > 0) {
+            r.addHeader("Monte Carlo Results");
+            r.add(xpp);
+            r.addHeader("Inputs");
+            r.add(inputs);
+            r.addHeader("Analytical Results");
+            r.add(results);
 
-         r.addHeader("Covariance matrix");
+            final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
+            final UncertainValues resultsMc = mcp.compute(MC_ITERATIONS).sort();
 
-         final UncertainValues sorted = results.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+            if(DUMP) {
+               System.out.println("MC Results");
+               System.out.println(resultsMc.toCSV());
+            }
 
-         r.inBrowser(Mode.VERBOSE);
+            r.addHeader("MC Results");
+            r.add(resultsMc);
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
 
-         final long start3 = System.currentTimeMillis();
-         final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
-         System.out.println("Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
-         for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-            for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-               if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
-                  if(Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01 * Math.abs(jac.getEntry(oIdx, iIdx)))
-                     System.out.print(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx) + "=[ "
-                           + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
-                  // assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx,
-                  // iIdx), 0.01 *
-                  // Math.abs(jac.getEntry(oIdx, iIdx)));
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
+            for(final Object tag : xpp.getOutputTags()) {
+               if(tag instanceof XPPMatrixCorrection.ResultTag) {
+                  r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+                  r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
                }
-
-         if(DUMP) {
-            System.out.println("Results");
-            System.out.println(results.toCSV());
-
-            System.out.println("Jacobian");
-            System.out.println(jac.toCSV());
-            System.out.println("Jacobian(estimated)");
-            System.out.println(djac.toCSV());
+            }
          }
       }
-      if(PERFORM_MC) {
-         final Report r = new Report("XPP Report - test4MC");
-         r.addHeader("test4() - MC");
-         r.add(xpp);
-         r.addHeader("Inputs");
-         r.add(inputs);
-         r.addHeader("Results");
-         r.add(results);
-
-         final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
-         final UncertainValues resultsMc = mcp.compute(160000);
-
-         if(DUMP) {
-            System.out.println("MC Results");
-            System.out.println(resultsMc.toCSV());
-         }
-
-         r.addHeader("MC Results");
-         r.add(resultsMc);
-         final UncertainValues sorted = resultsMc.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
-
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-         for(final Object tag : xpp.getOutputTags()) {
-            if(tag instanceof XPPMatrixCorrection.ResultTag) {
-               r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
-               r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
-            }
-         }
+      catch (Exception e){
+         HTML.error(HTML.escape(e.getMessage()));
+         throw e;
+      }
+      finally {
          r.inBrowser(Mode.VERBOSE);
       }
    }
@@ -812,30 +831,30 @@ public class XPPMatrixCorrectionTest {
 
       final UncertainValues conditions = new UncertainValues(Arrays.asList(tags), vals, var);
 
-      final Map<Composition, Set<CharacteristicXRay>> stds = new HashMap<>();
+      final Map<Composition, CharacteristicXRaySet> stds = new HashMap<>();
       {
          {
-            final Set<CharacteristicXRay> scxr = new HashSet<>();
+            final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
             scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
             scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
             stds.put(std0, scxr);
          }
 
-         stds.put(std1, Collections.singleton(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
+         stds.put(std1, CharacteristicXRaySet.build(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
          {
-            final Set<CharacteristicXRay> scxr = new HashSet<>();
+            final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
             scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
             scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2));
             stds.put(std2, scxr);
          }
          {
-            final Set<CharacteristicXRay> scxr = new HashSet<>();
+            final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
             scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1));
             scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1));
             stds.put(std3, scxr);
          }
          {
-            final Set<CharacteristicXRay> scxr = new HashSet<>();
+            final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
             scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
             scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
             stds.put(std4, scxr);
@@ -843,9 +862,9 @@ public class XPPMatrixCorrectionTest {
       }
 
       final Set<Object> outputs = new HashSet<>();
-      for(final Map.Entry<Composition, Set<CharacteristicXRay>> me : stds.entrySet()) {
+      for(final Map.Entry<Composition, CharacteristicXRaySet> me : stds.entrySet()) {
          final Composition meStd = me.getKey();
-         for(final CharacteristicXRay cxr : me.getValue()) {
+         for(final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
             outputs.add(XPPMatrixCorrection.zaTag(unk, meStd, cxr));
             outputs.add(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, unk, cxr));
             outputs.add(XPPMatrixCorrection.tag2(XPPMatrixCorrection.F_CHI_F, meStd, cxr));
@@ -858,12 +877,12 @@ public class XPPMatrixCorrectionTest {
       final UncertainValues inputs = xpp.buildInputs(conditions);
       final long start = System.currentTimeMillis();
       final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
-      final UncertainValues results = UncertainValues.propagate(jac, inputs);
+      final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
       System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
       final long start2 = System.currentTimeMillis();
       final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unk, stds);
-      final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs);
+      final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs).sort();
       System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
       // Test untrimmed vs trimmed
@@ -883,102 +902,106 @@ public class XPPMatrixCorrectionTest {
                assertEquals(cov1, cov2, 0.01 * Math.max(Math.abs(cov1), Math.abs(cov2)));
             }
       }
-      {
-         final Report r = new Report("XPP Report");
-         r.addHeader("test5()");
-         r.addHTML(xpp.toHTML(Mode.NORMAL));
-         r.addHeader("Inputs");
-         r.add(inputs);
-         r.addHeader("Results");
-         r.add(results);
-         r.addHeader("Uncertain Values (relative to inputs)");
-         final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
-         final Table valTable = new Table();
-         valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-         for(final Object outTag : xpp.getOutputTags()) {
-            if(outTag instanceof XPPMatrixCorrection.ResultTag) {
-               final UncertainValue uv = outVals.get(outTag);
-               valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+
+      final Report r = new Report("XPP Report");
+      try {
+         {
+            r.addHeader("test5()");
+            r.addHTML(xpp.toHTML(Mode.NORMAL));
+            r.addHeader("Inputs");
+            r.add(inputs);
+            r.addHeader("Results");
+            r.add(results);
+            r.addHeader("Uncertain Values (relative to inputs)");
+            final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+            final Table valTable = new Table();
+            valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"), Table.td("Value (Verbose)"));
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+            for(final Object outTag : xpp.getOutputTags()) {
+               if(outTag instanceof XPPMatrixCorrection.ResultTag) {
+                  final UncertainValue uv = outVals.get(outTag);
+                  valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)), Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+               }
+            }
+            r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+            r.addHeader("Covariance matrix");
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+
+            final long start3 = System.currentTimeMillis();
+            final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
+            System.out.println("Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+            for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+               for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+                  if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+                     if(Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
+                           * Math.abs(jac.getEntry(oIdx, iIdx)))
+                        System.out.print(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx) + "=[ "
+                              + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
+                     // assertEquals(jac.getEntry(oIdx, iIdx),
+                     // djac.getEntry(oIdx,
+                     // iIdx), 0.01 *
+                     // Math.abs(jac.getEntry(oIdx, iIdx)));
+                  }
+
+            if(DUMP) {
+               System.out.println("Results");
+               System.out.println(results.toCSV());
+
+               System.out.println("Jacobian");
+               System.out.println(jac.toCSV());
+               System.out.println("Jacobian(estimated)");
+               System.out.println(djac.toCSV());
             }
          }
-         r.addHTML(valTable.toHTML(Mode.NORMAL));
+         if(MC_ITERATIONS > 0) {
+            r.addHeader("Monte Carlo Results");
+            r.add(xpp);
+            r.addHeader("Inputs");
+            r.add(inputs);
 
-         r.addHeader("Covariance matrix");
-         final UncertainValues sorted = results.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+            final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
+            final UncertainValues resultsMc = mcp.compute(MC_ITERATIONS).sort();
 
-         r.inBrowser(Mode.VERBOSE);
+            if(DUMP) {
+               System.out.println("MC Results");
+               System.out.println(resultsMc.toCSV());
+            }
 
-         final long start3 = System.currentTimeMillis();
-         final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, 0.001);
-         System.out.println("Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
-         for(int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-            for(int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-               if(Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
-                  if(Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01 * Math.abs(jac.getEntry(oIdx, iIdx)))
-                     System.out.print(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx) + "=[ "
-                           + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
-                  // assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx,
-                  // iIdx), 0.01 *
-                  // Math.abs(jac.getEntry(oIdx, iIdx)));
+            r.addHeader("MC Results");
+            r.add(resultsMc);
+
+            final StringBuffer sb = new StringBuffer();
+            for(final Object tag : results.getTags()) {
+               if(sb.length() > 0)
+                  sb.append(",");
+               sb.append(HTML.toHTML(tag, Mode.TERSE));
+            }
+            r.addHTML(HTML.p(sb.toString()));
+            r.addImage(results.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
+
+            r.addImage(resultsMc.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Corrolation matrix");
+            final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
+            for(final Object tag : xpp.getOutputTags()) {
+               if(tag instanceof XPPMatrixCorrection.ResultTag) {
+                  r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+                  r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
                }
-
-         if(DUMP) {
-            System.out.println("Results");
-            System.out.println(results.toCSV());
-
-            System.out.println("Jacobian");
-            System.out.println(jac.toCSV());
-            System.out.println("Jacobian(estimated)");
-            System.out.println(djac.toCSV());
+            }
          }
       }
-      if(PERFORM_MC) {
-         final Report r = new Report("XPP Report");
-         r.addHeader("test5() - MC");
-         r.add(xpp);
-         r.addHeader("Inputs");
-         r.add(inputs);
-         r.addHeader("Results");
-         r.add(results);
-
-         final MCPropagator mcp = new MCPropagator(xpp, inputs, 2.0);
-         final UncertainValues resultsMc = mcp.compute(160000);
-
-         if(DUMP) {
-            System.out.println("MC Results");
-            System.out.println(resultsMc.toCSV());
-         }
-
-         r.addHeader("MC Results");
-         r.add(resultsMc);
-
-         final UncertainValues sorted = resultsMc.sort();
-         final StringBuffer sb = new StringBuffer();
-         for(final Object tag : sorted.getTags()) {
-            if(sb.length() > 0)
-               sb.append(",");
-            sb.append(HTML.toHTML(tag, Mode.TERSE));
-         }
-         r.addHTML(HTML.p(sb.toString()));
-         r.addImage(sorted.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Correlation matrix");
-
-         r.addImage(resultsMc.asCovarianceBitmap(8, new ValueToLog3(1.0), new LinearToColor(1.0, Color.blue, Color.red)), "Corrolation matrix");
-         final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-         for(final Object tag : xpp.getOutputTags()) {
-            if(tag instanceof XPPMatrixCorrection.ResultTag) {
-               r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
-               r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
-            }
-         }
+      catch (Exception e){
+         HTML.error(HTML.escape(e.getMessage()));
+         throw e;
+      }
+      finally {
          r.inBrowser(Mode.VERBOSE);
       }
    }

@@ -29,16 +29,32 @@ import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.MassAbsorptionCoefficient;
+import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
- * This class implements the XPP matrix correction algorithm as described in the
+ * <p>This class implements the XPP matrix correction algorithm as described in the
  * "Green Book" (Heinrich & Newbury 1991) by Pouchou and Pichoir. It also
  * implements all the Jacobians necessary to implement an uncertainty
  * calculation to propagate uncertainties in the input parameters into output
  * parameters. It breaks the calculation into a series of much simpler steps for
- * which the Jacobian can be readily calculated.
- *
+ * which the Jacobian can be readily calculated.<p>
+ * 
+ * <p>Since it is derived from {@link NamedMultivariateJacobianFunction}, it computes
+ * not only the value (ie. the k-ratio) but also sensitivity matrix (Jacobian)
+ * that maps uncertainty in the input parameters into uncertainty in the output
+ * parameters.<p>
+ * 
+ * <p>The following parameters are assumed to have associated uncertainties.
+ * <ul>
+ *    <li>The composition of the standards (user provided)</li>
+ *    <li>The composition of the unknown (user provided)</li>
+ *    <li>The beam energy (user provided)</li>
+ *    <li>The take-off angle (user provided)</li>
+ *    <li>The mass absorption coefficient (computed using FFAST)</li>
+ *    <li>The mean ionization coefficient (computed using the equation in PAP1991)</li>
+ * </ul>
+ * 
  * @author Nicholas
  */
 public class XPPMatrixCorrection
@@ -47,7 +63,7 @@ public class XPPMatrixCorrection
    implements
    IToHTML {
 
-   private final Map<Composition, Set<CharacteristicXRay>> mStandards;
+   private final Map<Composition, CharacteristicXRaySet> mStandards;
    private final Composition mUnknown;
 
    public static final String CHI = "&chi;";
@@ -1054,9 +1070,9 @@ public class XPPMatrixCorrection
       }
    }
 
-   private static Set<CharacteristicXRay> extractXRays(final Map<Composition, Set<CharacteristicXRay>> stds) {
-      final Set<CharacteristicXRay> res = new HashSet<>();
-      for(final Map.Entry<Composition, Set<CharacteristicXRay>> me : stds.entrySet())
+   private static CharacteristicXRaySet extractXRays(final Map<Composition, CharacteristicXRaySet> stds) {
+      final CharacteristicXRaySet res = new CharacteristicXRaySet();
+      for(final Map.Entry<Composition, CharacteristicXRaySet> me : stds.entrySet())
          res.addAll(me.getValue());
       return res;
    }
@@ -1077,12 +1093,12 @@ public class XPPMatrixCorrection
       extends
       MultiStepNamedMultivariateJacobianFunction {
 
-      private static List<NamedMultivariateJacobianFunction> buildSteps(final Composition comp, final Set<CharacteristicXRay> scxr)
+      private static List<NamedMultivariateJacobianFunction> buildSteps(final Composition comp, final CharacteristicXRaySet exrs)
             throws ArgumentException {
          final List<NamedMultivariateJacobianFunction> res = new ArrayList<>();
          res.add(new StepMJZBarb(comp));
          final Set<AtomicShell> shells = new HashSet<>();
-         for(final CharacteristicXRay cxr : scxr)
+         for(final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
             shells.add(cxr.getInner());
          {
             final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
@@ -1098,22 +1114,22 @@ public class XPPMatrixCorrection
          }
          {
             final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
-            for(final CharacteristicXRay cxr : scxr)
+            for(final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
                step.add(new StepChi(comp, cxr));
             res.add(NamedMultivariateJacobianFunctionBuilder.join("Chi", step));
          }
          {
             final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
-            for(final CharacteristicXRay cxr : scxr)
+            for(final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
                step.add(new StepFx(comp, cxr));
             res.add(NamedMultivariateJacobianFunctionBuilder.join("Fx", step));
          }
          return res;
       }
 
-      public StepXPP(final Composition comp, final Set<CharacteristicXRay> scxr)
+      public StepXPP(final Composition comp, final CharacteristicXRaySet cxrs)
             throws ArgumentException {
-         super("XPP[" + comp + "]", buildSteps(comp, scxr));
+         super("XPP[" + comp + "]", buildSteps(comp, cxrs));
       }
 
    };
@@ -1127,28 +1143,35 @@ public class XPPMatrixCorrection
     * @return List&lt;NamedMultivariateJacobianFunction&gt;
     * @throws ArgumentException
     */
-   private static List<NamedMultivariateJacobianFunction> buildSteps(final Composition unk, final Map<Composition, Set<CharacteristicXRay>> stds)
+   private static List<NamedMultivariateJacobianFunction> buildSteps(final Composition unk, final Map<Composition, CharacteristicXRaySet> stds)
          throws ArgumentException {
       final List<NamedMultivariateJacobianFunction> res = new ArrayList<>();
       {
          final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
-         final Set<CharacteristicXRay> scxr = new HashSet<>();
-         for(final Map.Entry<Composition, Set<CharacteristicXRay>> me : stds.entrySet()) {
+         // final Set<CharacteristicXRay> scxr = new HashSet<>();
+         final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
+         for(final Map.Entry<Composition, CharacteristicXRaySet> me : stds.entrySet()) {
             step.add(new StepXPP(me.getKey(), me.getValue()));
-            scxr.addAll(me.getValue());
+            // scxr.addAll(me.getValue().getSetOfCharacteristicXRay());
+            cxrs.addAll(me.getValue());
          }
-         step.add(new StepXPP(unk, scxr));
+         step.add(new StepXPP(unk, cxrs));
          res.add(NamedMultivariateJacobianFunctionBuilder.join("XPP", step));
       }
       {
          final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
-         for(final Map.Entry<Composition, Set<CharacteristicXRay>> me : stds.entrySet())
-            for(final CharacteristicXRay cxr : me.getValue())
+         for(final Map.Entry<Composition, CharacteristicXRaySet> me : stds.entrySet())
+            for(final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay())
                step.add(new StepZA(unk, me.getKey(), cxr));
          res.add(NamedMultivariateJacobianFunctionBuilder.join("ZA", step));
       }
       return res;
    }
+   
+   // public Composition 
+   
+   
+   
 
    static public Object beamEnergyTag(final Composition comp) {
       return new CompositionTag(E_0, comp);
@@ -1185,11 +1208,23 @@ public class XPPMatrixCorrection
     *           that the edge energies must all be below the beam energy.
     * @throws ArgumentException
     */
-   public XPPMatrixCorrection(final Composition unk, final Map<Composition, Set<CharacteristicXRay>> stds)
+   public XPPMatrixCorrection(final Composition unk, final Map<Composition, CharacteristicXRaySet> stds)
          throws ArgumentException {
       super("XPP Matrix Correction", buildSteps(unk, stds));
       mStandards = stds;
       mUnknown = unk;
+   }
+   
+   /**
+    * @param unk Composition
+    * @param std Composition
+    * @param scxr A {@link CharacteristicXRay} object. It is important that the
+    *           edge energies must be below the beam energy.
+    * @throws ArgumentException
+    */
+   public XPPMatrixCorrection(final Composition unk, final Composition std, final CharacteristicXRaySet exrs)
+         throws ArgumentException {
+      this(unk, Collections.singletonMap(std, exrs));
    }
 
    /**
@@ -1201,7 +1236,7 @@ public class XPPMatrixCorrection
     */
    public XPPMatrixCorrection(final Composition unk, final Composition std, final CharacteristicXRay cxr)
          throws ArgumentException {
-      this(unk, Collections.singletonMap(std, Collections.singleton(cxr)));
+      this(unk, std, CharacteristicXRaySet.build(cxr));
    }
 
    public UncertainValue computeJi(final Element elm) {
@@ -1256,14 +1291,14 @@ public class XPPMatrixCorrection
       return mip;
    }
 
-   private UncertainValues buildMassAbsorptionCoefficients(final Set<Element> elms, final Set<CharacteristicXRay> scxr) {
+   private UncertainValues buildMassAbsorptionCoefficients(final Set<Element> elms, final CharacteristicXRaySet scxr) {
       final RealVector vals = new ArrayRealVector(elms.size() * scxr.size());
       final RealVector var = new ArrayRealVector(vals.getDimension());
       final List<Object> tags = new ArrayList<>();
       final MassAbsorptionCoefficient macInstance = MassAbsorptionCoefficient.instance();
       int i = 0;
       for(final Element elm : elms) {
-         for(final CharacteristicXRay cxr : scxr) {
+         for(final CharacteristicXRay cxr : scxr.getSetOfCharacteristicXRay()) {
             tags.add(macTag(elm, cxr));
             final UncertainValue j = macInstance.compute(elm, cxr);
             vals.setEntry(i, j.doubleValue());
@@ -1281,9 +1316,9 @@ public class XPPMatrixCorrection
       r.addHeader("XPP Matrix Correction");
       final Table tbl = new Table();
       tbl.addRow(Table.td("Unknown"), Table.td(mUnknown), Table.td());
-      for(final Map.Entry<Composition, Set<CharacteristicXRay>> me : mStandards.entrySet()) {
+      for(final Map.Entry<Composition, CharacteristicXRaySet> me : mStandards.entrySet()) {
          tbl.addRow(Table.td("Standard"), Table.td(me.getKey()), Table.td());
-         for(final CharacteristicXRay cxr : me.getValue())
+         for(final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay())
             tbl.addRow(Table.td(), Table.td("X-Ray Line"), Table.td(cxr.toHTML(Mode.NORMAL)));
       }
       r.add(tbl);

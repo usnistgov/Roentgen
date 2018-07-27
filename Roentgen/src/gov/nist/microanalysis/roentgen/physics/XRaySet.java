@@ -17,20 +17,17 @@ import com.duckandcover.lazy.SimplyLazy;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
+import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
- * <p>
- * XRaySet implements a collection of XRay objects. All the XRay objects must
- * conform to XRaySet.IMemberTest to be a member of the XRaySet. This typically
- * means that the XRay object must be within a certain energy range of the other
- * XRay objects within the XRaySet. Implement IMemberTest to ensure that all
- * x-rays are within a certain number of FWHM of the other x-rays in the set or
- * to ensure that all x-rays are members of the same family or some other useful
- * criteria.
- * </p>
- * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * <p> XRaySet implements a collection of XRay objects. All the XRay objects
+ * must conform to XRaySet.IMemberTest to be a member of the XRaySet. This
+ * typically means that the XRay object must be within a certain energy range of
+ * the other XRay objects within the XRaySet. Implement IMemberTest to ensure
+ * that all x-rays are within a certain number of FWHM of the other x-rays in
+ * the set or to ensure that all x-rays are members of the same family or some
+ * other useful criteria. </p> <p> Copyright Nicholas W. M. Ritchie 2014-2016
  * </p>
  *
  * @author nritchie
@@ -39,13 +36,9 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 public class XRaySet {
 
    /**
-    * <p>
-    * Implement this interface to determine whether an XRay should be a member
-    * of this TransitionSet.
-    * </p>
-    * <p>
-    * Copyright Nicholas W. M. Ritchie 2014-2016
-    * </p>
+    * <p> Implement this interface to determine whether an XRay should be a
+    * member of this TransitionSet. </p> <p> Copyright Nicholas W. M. Ritchie
+    * 2014-2016 </p>
     *
     * @author nritchie
     * @version $Rev: 307 $
@@ -90,13 +83,9 @@ public class XRaySet {
    }
 
    /**
-    * <p>
-    * Use this member test to return all the CharacteristicXRay objects which
-    * result from ionizations in the specified Shell objects.
-    * </p>
-    * <p>
-    * Copyright Nicholas W. M. Ritchie 2014-2016
-    * </p>
+    * <p> Use this member test to return all the CharacteristicXRay objects
+    * which result from ionizations in the specified Shell objects. </p> <p>
+    * Copyright Nicholas W. M. Ritchie 2014-2016 </p>
     *
     * @author nritchie
     * @version $Rev: 307 $
@@ -124,13 +113,8 @@ public class XRaySet {
    }
 
    /**
-    * <p>
-    * Is the edge energy for the specified CharacteristicXRay between eMin and
-    * eMax?
-    * </p>
-    * <p>
-    * Copyright Nicholas W. M. Ritchie 2014-2016
-    * </p>
+    * <p> Is the edge energy for the specified CharacteristicXRay between eMin
+    * and eMax? </p> <p> Copyright Nicholas W. M. Ritchie 2014-2016 </p>
     *
     * @author nritchie
     * @version $Rev: 307 $
@@ -219,6 +203,11 @@ public class XRaySet {
          mName.reset();
       }
       return res;
+   }
+
+   final public void addAll(XRaySet xrs) {
+      for(XRay xr : xrs.getXRaySet())
+         add(xr);
    }
 
    protected boolean belongs(final XRay xr) {
@@ -317,12 +306,8 @@ public class XRaySet {
    }
 
    /**
-    * <p>
-    * A set of CharacteristicXRay objects.
-    * </p>
-    * <p>
-    * Copyright Nicholas W. M. Ritchie 2014-2016
-    * </p>
+    * <p> A set of CharacteristicXRay objects. </p> <p> Copyright Nicholas W. M.
+    * Ritchie 2014-2016 </p>
     *
     * @author nritchie
     * @version $Rev: 307 $
@@ -351,6 +336,12 @@ public class XRaySet {
        */
       public CharacteristicXRaySet() {
          super(new IsCharacteristic());
+      }
+
+      public static CharacteristicXRaySet build(CharacteristicXRay cxr) {
+         final CharacteristicXRaySet res = new CharacteristicXRaySet();
+         res.add(cxr);
+         return res;
       }
 
       /**
@@ -449,13 +440,9 @@ public class XRaySet {
    }
 
    /**
-    * <p>
-    * ElementXRaySet represents a set of CharacteristicXRay objects associated
-    * with one and only one Element.
-    * </p>
-    * <p>
-    * Copyright Nicholas W. M. Ritchie 2014-2016
-    * </p>
+    * <p> ElementXRaySet represents a set of CharacteristicXRay objects
+    * associated with one and only one Element. </p> <p> Copyright Nicholas W.
+    * M. Ritchie 2014-2016 </p>
     *
     * @author nritchie
     * @version $Rev: 307 $
@@ -671,12 +658,14 @@ public class XRaySet {
             if(k) {
                if((ka || kb) && ((!cka || ka) && (!ckb || kb)))
                   res.append(mElement.getAbbrev() + " K");
-               if(ka)
-                  res.append(mElement.getAbbrev() + " K\u03B1");
-               if(kb)
-                  res.append(mElement.getAbbrev() + " K\u03B2");
-               if(!(ka || kb))
-                  res.append(mElement.getAbbrev() + " K misc");
+               else {
+                  if(ka)
+                     res.append(mElement.getAbbrev() + " K\u03B1");
+                  if(kb)
+                     res.append(mElement.getAbbrev() + " K\u03B2");
+                  if(!(ka || kb))
+                     res.append(mElement.getAbbrev() + " K misc");
+               }
             }
             if(l)
                if((!cla || la) && (!clb || lb) && (!clo || lo))
@@ -750,11 +739,84 @@ public class XRaySet {
                t.addRow(Table.td(cxr.toHTML(Mode.TERSE)), Table.td(cxr.toHTML(Mode.VERBOSE)));
 
             }
-
+            return t.toHTML(Mode.VERBOSE);
          }
-
-         // TODO Auto-generated method stub
-         return null;
       }
    }
+
+   /**
+    * Build the ElementXRaySet associated with the specified Element.
+    * 
+    * @param elm The element
+    * @return ElementXRaySet
+    */
+   static public ElementXRaySet build(Element elm) {
+      final ElementXRaySet exrs = new ElementXRaySet(elm);
+      for(CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+         exrs.add(cxr);
+      return exrs;
+   }
+
+   /**
+    * Build the ElementXRaySet associated with the specified Element and energy
+    * interval.
+    * 
+    * @param elm The element
+    * @param iv The interval of edge energies which to include
+    * @return ElementXRaySet
+    */
+   static public ElementXRaySet build(Element elm, Interval iv) {
+      ElementXRaySet exrs = new ElementXRaySet(elm);
+      for(CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+         if(iv.checkPoint(cxr.getEdgeEnergy(), 0.0) == Location.INSIDE)
+            exrs.add(cxr);
+      return exrs;
+   }
+
+   /**
+    * Build the ElementXRaySet associated with the specified Element and
+    * Shell(s).
+    * 
+    * @param elm
+    * @param shells
+    * @return ElementXRaySet
+    */
+   static public ElementXRaySet build(Element elm, Shell[] shells) {
+      ElementXRaySet exrs = new ElementXRaySet(elm);
+      for(CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+         for(Shell sh : shells)
+            if(cxr.getInner().getShell() == sh)
+               exrs.add(cxr);
+      return exrs;
+   }
+
+   /**
+    * Build the ElementXRaySet associated with the specified Element and
+    * Shell(s).
+    * 
+    * @param elm
+    * @param shells
+    * @return ElementXRaySet
+    */
+   static public ElementXRaySet build(Element elm, Principle prin) {
+      ElementXRaySet exrs = new ElementXRaySet(elm);
+      for(CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+         if(cxr.getInner().getShell().getFamily() == prin)
+            exrs.add(cxr);
+      return exrs;
+   }
+
+   /**
+    * Merge an array of {@link CharacteristicXRaySet} into a single one.
+    * 
+    * @param cxrss
+    * @return A new CharacteristicXRaySet instance.
+    */
+   static public CharacteristicXRaySet merge(CharacteristicXRaySet... cxrss) {
+      CharacteristicXRaySet res = new CharacteristicXRaySet();
+      for(CharacteristicXRaySet cxrs : cxrss)
+         res.addAll(cxrs);
+      return res;
+   }
+
 }
