@@ -1,8 +1,13 @@
 # Roentgen - Roadmap
-A Java library for X-ray microanalysis
+Roentgen is divided into three parts
+* Reliquary - A scripting (Jython) container application
+* ReliquaryUtilities - A handful of helper classes and interface for enhanced scripting
+* Roentgen - X-ray microanalysis algorithms
+
+Roentgen is a Java library for X-ray microanalysis
 * Roentgen provides many core algorithms necessary to perform common X-ray microanalysis tasks.
-** Matrix correction (including uncertainty propagation)
-** 
+   * Matrix correction (including uncertainty propagation)
+   *
 * Roentgen builds on Apache Math3 for linear algebra, integration, statistical, optimization and other numerical algorithms.
 ** Uncertainty calculations are fundamental to Roentgen
 * Roentgen provides many basic atomic and X-ray physics classes
