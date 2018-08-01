@@ -825,24 +825,22 @@ public class XPPMatrixCorrection
          final int oA = outputIndex(tag2("A", mComposition, mShell));
          final int oB = outputIndex(tag2("B", mComposition, mShell));
          checkIndices(oA, oB);
-
-         final double B = (b * b * F * (1.0 + eps) - P - phi0 * b * (2.0 + eps)) / eps; // C2
-
+         // Page 62
+         final double B = (b * b * F * (1.0 + eps) - P - phi0 * b * (2.0 + eps)) / eps; // C2-Ok
          rv.setEntry(oB, B);
-         rm.setEntry(oB, iphi0, (-b * (2.0 + eps)) / eps); // C2
-         rm.setEntry(oB, iP, -1.0 / eps); // C2
-         rm.setEntry(oB, iF, (b * b * (1.0 + eps)) / eps); // C2
-         rm.setEntry(oB, ib, (2.0 * b * F * (1.0 + eps) - phi0 * (2.0 + eps)) / eps); // C2
-         rm.setEntry(oB, ieps, (P + 2 * b * phi0 - b * b * F) / (eps * eps)); // C2
-
-         final double k1 = (1.0 + eps) / (eps * eps); // C1
-
-         rv.setEntry(oA, k1 * (b * (b * F - 2.0 * phi0) - P) / b); // C1
-         rm.setEntry(oA, iphi0, -2.0 * k1); // C1
-         rm.setEntry(oA, iP, -k1 / b); // C1
-         rm.setEntry(oA, iF, k1 * b); // C1
-         rm.setEntry(oA, ib, k1 * (b * b * F + P) / (b * b)); // C1
-         rm.setEntry(oA, ieps, (((2.0 + eps) * (P + 2.0 * b * phi0 - b * b * F)) / (b * Math.pow(eps, 3.0)))); // C1
+         rm.setEntry(oB, iphi0, (-b * (2.0 + eps)) / eps); // C2-Ok
+         rm.setEntry(oB, iP, -1.0 / eps); // C2-Ok
+         rm.setEntry(oB, iF, (b * b * (1.0 + eps)) / eps); // C2-Ok
+         rm.setEntry(oB, ib, (2.0 * b * F * (1.0 + eps) - phi0 * (2.0 + eps)) / eps); // C2-Ok
+         rm.setEntry(oB, ieps, (P + 2.0 * b * phi0 - b * b * F) / (eps * eps)); // C2-Ok
+         final double k1 = (1.0 + eps) / (eps * eps); // C1-Ok
+         // Plugging B[b,F,eps,phi0,P] into the expression for A[B,b,F,eps,phi0,P] we get A[b,F,eps,phi0,P].
+         rv.setEntry(oA, k1 * (b * (b * F - 2.0 * phi0) - P) / b); // C1-Ok
+         rm.setEntry(oA, iphi0, -2.0 * k1); // C1-Ok
+         rm.setEntry(oA, iP, -k1 / b); // C1-Ok
+         rm.setEntry(oA, iF, k1 * b); // C1-Ok
+         rm.setEntry(oA, ib, k1 * (F + P / (b * b))); // C1-Ok
+         rm.setEntry(oA, ieps, (((2.0 + eps) * (P + 2.0 * b * phi0 - b * b * F)) / (b * Math.pow(eps, 3.0)))); // C1-Ok
          return Pair.create(rv, rm);
       }
    }

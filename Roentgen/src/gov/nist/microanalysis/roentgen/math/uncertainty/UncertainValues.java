@@ -543,6 +543,17 @@ public class UncertainValues implements IToHTML {
 	}
 
 	/**
+	 * Returns the covariance associated with the specific integer indices.
+	 *
+	 * @param p1 int
+	 * @param p2 int
+	 * @return double The correlation coefficient associated with indices p1 and p2
+	 */
+	public double getCorrelationCoefficient(final int p1, final int p2) {
+		return mCovariance.getEntry(p1, p2) / Math.sqrt(mCovariance.getEntry(p1, p1) * mCovariance.getEntry(p2, p2));
+	}
+
+	/**
 	 * Returns a map of the variance and covariances relative to the specified tag.
 	 *
 	 * @param tag
@@ -648,8 +659,8 @@ public class UncertainValues implements IToHTML {
 				for (final Object colTag : mTags) {
 					final double c = getCovariance(rowTag, colTag);
 					if ((rowTag == colTag) || (mode != Mode.VERBOSE))
-						row.add(Table.tdc(
-								(c > 0.0 ? "" : Transforms.NON_BREAKING_DASH) + "(" + nf.formatHTML(Math.sqrt(Math.abs(c))) + ")<sup>2</sup>"));
+						row.add(Table.tdc((c > 0.0 ? "" : Transforms.NON_BREAKING_DASH) + "("
+								+ nf.formatHTML(Math.sqrt(Math.abs(c))) + ")<sup>2</sup>"));
 					else {
 						final double cv = Math.sqrt(getVariance(rowTag) * getVariance(colTag));
 						final double cc = cv > 0.0 ? c / cv : 0.0;
@@ -658,7 +669,8 @@ public class UncertainValues implements IToHTML {
 						if (cc == 0.0)
 							row.add(Table.td());
 						else
-							row.add(Table.tdc((cc < 0.0 ? Transforms.NON_BREAKING_DASH : "") + bnf2.formatHTML(Math.sqrt(Math.abs(cc)))
+							row.add(Table.tdc((cc < 0.0 ? Transforms.NON_BREAKING_DASH : "")
+									+ bnf2.formatHTML(Math.sqrt(Math.abs(cc)))
 									+ "&middot;&sigma;<sub>R</sub>&sigma;<sub>C</sub>"));
 					}
 				}
@@ -696,6 +708,49 @@ public class UncertainValues implements IToHTML {
 				g2.setColor(corr.map(sc.getEntry(r, c)));
 				g2.fillRect(c * dim, r * dim, dim, dim);
 				g2.fillRect(r * dim, c * dim, dim, dim);
+			}
+		}
+		return bi;
+	}
+
+	/**
+	 * Creates a bitmap that represents the difference between uncertainties associated with these two sets of UncertainValues.
+	 * The difference between the covariances is plotted.
+	 * 
+	 * @param uvs1
+	 * @param uvs2
+	 * @param corr
+	 * @param pixDim
+	 * @return BufferedImage
+	 */
+	public static BufferedImage compareAsBitmap(UncertainValues uvs1, UncertainValues uvs2, final IValueToColor corr,
+			int pixDim) {
+		if (uvs1.getDimension() != uvs2.getDimension())
+			throw new DimensionMismatchException(uvs2.getDimension(), uvs1.getDimension());
+		int dim = uvs1.getDimension();
+		for (int i = 0; i < dim; ++i)
+			assert uvs1.getTag(i) == uvs2.getTag(i) : uvs1.getTag(i) + "!=" + uvs2.getTag(i);
+		final Array2DRowRealMatrix sc = new Array2DRowRealMatrix(dim, dim);
+		for (int r = 0; r < dim; ++r) {
+			for (int c = 0; c < dim; ++c) {
+				final double rr = 0.5*(uvs1.getCovariance(r, c)-uvs2.getCovariance(r, c))/(uvs1.getCovariance(r, c)+uvs2.getCovariance(r, c));
+				if (!Double.isNaN(rr)) {
+					sc.setEntry(r, c, rr);
+					sc.setEntry(c, r, rr);
+				}
+			}
+		}
+		final BufferedImage bi = new BufferedImage(pixDim * dim, pixDim * dim, BufferedImage.TYPE_3BYTE_BGR);
+		final Graphics2D g2 = bi.createGraphics();
+		g2.setColor(Color.WHITE);
+		g2.fillRect(0, 0, bi.getWidth(), bi.getHeight());
+		for (int r = 0; r < dim; ++r) {
+			g2.setColor(corr.map(sc.getEntry(r, r)));
+			g2.fillRect(r * dim, r * dim, dim, dim);
+			for (int c = r + 1; c < dim; ++c) {
+				g2.setColor(corr.map(sc.getEntry(r, c)));
+				g2.fillRect(c * pixDim, r * pixDim, pixDim, pixDim);
+				g2.fillRect(r * pixDim, c * pixDim, pixDim, pixDim);
 			}
 		}
 		return bi;

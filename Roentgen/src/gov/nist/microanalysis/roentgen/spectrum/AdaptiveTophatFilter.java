@@ -56,7 +56,7 @@ public class AdaptiveTophatFilter
          assert minO <= minI;
          final int maxI = Math.min(nCh - 1, mEnergy.channelIndex(eCh + 0.5 * EXTRA * width));
          final int maxO = Math.min(nCh - 1, mEnergy.channelIndex(eCh + EXTRA * width));
-         assert maxO > maxI;
+         assert maxO >= maxI : maxO +">"+maxI;
          final double nNorm = -1.0 / ((minI - minO) + (maxO - maxI));
          final double pNorm = 1.0 / (maxI - minI);
          for(int i = minO; i < minI; ++i)

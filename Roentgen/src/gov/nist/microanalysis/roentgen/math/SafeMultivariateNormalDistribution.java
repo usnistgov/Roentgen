@@ -18,7 +18,7 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 		this(vals, cov, 1.0e-6);
 	}
 
-	SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov, final double tol) {
+	public SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov, final double tol) {
 		super(RandomGeneratorFactory.createRandomGenerator(new Random()), vals.getDimension());
 		mMeans = vals;
 		mMap = new int[vals.getDimension()];

@@ -20,6 +20,7 @@ import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
  * <p>
@@ -189,6 +190,7 @@ public class MathUtilities {
       final int[] mMaxRgb;
       final double mGamma;
       final Color mOutOfRange;
+      final Color mTransparent = new Color(0,0,0,0xFF);
 
       public PositiveNegativeAsColor(final double min, final Color minColor, final double max, final Color maxColor, final Color outOfRange, final double gamma) {
          mRange = Math.max(Math.abs(min), Math.abs(max));
@@ -215,7 +217,9 @@ public class MathUtilities {
       public Color compute(final double val) {
          if((val >= -mRange) && (val <= mRange) && (!Double.isNaN(val))) {
             final double sc = Math.pow(Utility.bound(Math.abs(val) / mRange, 0.0, 1.0), mGamma);
-            if(val < 0.0) {
+            if(val==0.0)
+            	return Color.white;
+            else if(val < 0.0) {
                return new Color((int) (mMinRgb[0] * sc), (int) (mMinRgb[1] * sc), (int) (mMinRgb[2] * sc));
             } else {
                return new Color((int) (mMaxRgb[0] * sc), (int) (mMaxRgb[1] * sc), (int) (mMaxRgb[2] * sc));
@@ -353,4 +357,14 @@ public class MathUtilities {
       }
       return new DescStatTable(desc, bnf);
    }
+   
+   public static final Table.Item td(Number n, BasicNumberFormat bnf){
+	   return Table.td(bnf.formatHTML(n));
+   }
+   
+   public static final Table.Item td(double n, BasicNumberFormat bnf){
+	   return Table.td(bnf.formatHTML(n));
+   }
+
+
 }

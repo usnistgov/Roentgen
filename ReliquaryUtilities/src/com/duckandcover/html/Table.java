@@ -65,12 +65,12 @@ public class Table
          mCenter = center;
       }
 
-      String highest(final Mode mode, final File base, final String dir)
+      protected String highest(final Mode mode, final File base, final String dir)
             throws IOException {
          if(mHTML instanceof IToHTMLExt)
-            return ((IToHTMLExt) mHTML).toHTML(mode, base, dir);
+            return toHTML(mode, base, dir);
          else
-            return mHTML.toHTML(mode);
+            return toHTML(mode);
       }
 
       protected String span() {
@@ -276,7 +276,7 @@ public class Table
    public static Item td(final String html, final int colSpan) {
       return new TD(html, 1, colSpan, false);
    }
-
+   
    public static Item tdc(final String html, final int colSpan) {
       return new TD(html, 1, colSpan, true);
    }
@@ -379,13 +379,14 @@ public class Table
          for(final Item item : row) {
             final Index idx = new Index(r, c);
             if(item != null)
-               sb.append(item.highest(mMode.getOrDefault(idx, mode), base, dir));
+               sb.append(item.toHTML(mMode.getOrDefault(idx, mode), base, dir));
             ++c;
          }
          sb.append("</tr>");
          ++r;
       }
       sb.append("</table>");
+      sb.append("");
       return sb.toString();
    }
 
