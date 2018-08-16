@@ -64,7 +64,19 @@ public class XRay
    public double getEnergy() {
       return mEnergy;
    }
-
+   
+   
+	/**
+	 * Returns the x-ray wavelength in picometer.
+	 * 
+	 * @return double (in pm.)
+	 */
+	public double getWavelength() {
+		return 1.0e12 * (PhysicalConstants.PlanckConstant * PhysicalConstants.SpeedOfLight)
+				/ (getEnergy() * PhysicalConstants.ElectronCharge);
+	}
+	
+	
    @Override
    public String toString() {
       final StringBuffer sb = new StringBuffer();

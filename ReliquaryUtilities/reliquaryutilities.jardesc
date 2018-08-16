@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
 <jardesc>
-    <jar path="Reliquary/build/reliquaryutilities.jar"/>
+    <jar path="Reliquary/build/Lib/reliquaryutilities.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/ReliquaryUtilities/reliquaryutilities.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>

@@ -285,41 +285,67 @@ public class UncertainValues implements IToHTML {
 			}
 		return new UncertainValues(nmjf.getOutputTags(), avg, cov);
 	}
+	
+	
+	/**
+	 * Extract an array of values from this UncertainValue object for the 
+	 * specified list of tags
+	 * 
+	 * @param tags List&lt;? extends Object&gt;
+	 * @return RealVector
+	 */
+	public RealVector extractValues(List<? extends Object> tags) {
+		RealVector res = new ArrayRealVector(tags.size());
+		int i=0;
+		for(Object tag : tags) {
+			res.setEntry(i, getEntry(tag));
+			++i;
+		}
+		return res;
+	}
 
-	public static UncertainValues implicit(final NamedMultivariateJacobianFunction jY,
-			final NamedMultivariateJacobianFunction jX, UncertainValues uv) {
-		final RealVector pt = uv.getValues();
-		final Pair<RealVector, RealMatrix> jXe = jX.evaluate(pt);
-		final Pair<RealVector, RealMatrix> jYe = jY.evaluate(pt);
+	public static UncertainValues implicit(final NamedMultivariateJacobian jY,
+			final NamedMultivariateJacobian jX, UncertainValues uv) {
+		final Pair<RealVector, RealMatrix> jXe = jX.evaluate(uv.extractValues(jX.getInputTags()));
+		final Pair<RealVector, RealMatrix> jYe = jY.evaluate(uv.extractValues(jY.getInputTags()));
 		// From page 64 of NPL Report DEM-ES-011
 		// Jy.Vy.JyT = Jx.Vx.JxT solve for Vy.
-		// 1. Form the Cholesky factor Rx of Vx, i.e., the upper triangular matrix such
-		// that RxT.Rx = Vx.
-		final CholeskyDecomposition chyd = new CholeskyDecomposition(uv.getCovariances());
-		final RealMatrix Rx = chyd.getL();
-		// 2. Factor Jx as the product Jx = Qx.Ux, where Qx is an orthogonal matrix and
-		// Ux is upper triangular.
-		final QRDecomposition qrd = new QRDecomposition(jXe.getSecond());
-		final RealMatrix Qx = qrd.getQ(), Ux = qrd.getR();
-		// 3. Factor Jy as the product Jy = Ly.Uy, where Ly is lower triangular and Uy
-		// is upper triangular.
-		final LUDecomposition lud = new LUDecomposition(jYe.getSecond());
-		// ????What about pivoting?????
-		final RealMatrix Ly = lud.getL(), Uy = lud.getU();
-		// 4. Solve the matrix equation UyT.M1 = I for M1.
-		final RealMatrix M1 = MatrixUtils.inverse(Uy.transpose());
-		// 5. Solve LyT.M2 = M1 for M2,
-		final RealMatrix M2 = MatrixUtils.inverse(Ly.transpose()).multiply(M1);
-		// 6. Form M3 = QxT.M2.
-		final RealMatrix M3 = Qx.transpose().multiply(M2);
-		// 7. Form M4 = UxT.M3.
-		final RealMatrix M4 = Ux.transpose().multiply(M3);
-		// 8. Form M = Rx.M4.
-		final RealMatrix M = Rx.multiply(M4);
-		// 9. Orthogonally triangularize M to give the upper triangular matrix R.
-		final RealMatrix R = new QRDecomposition(M).getR();
-		// 10. Form Vy = RT.R.
-		return new UncertainValues(jY.getOutputTags(), jYe.getFirst(), (R.transpose()).multiply(R));
+		final boolean NAIVE = true;
+		if (NAIVE) {
+			// Order the 
+			UncertainValues ouvs = UncertainValues.extract(jX.getInputTags(), uv);
+			final RealMatrix right = jXe.getSecond().multiply(ouvs.mCovariance.multiply(jXe.getSecond().transpose()));
+			final RealMatrix ijYe=MatrixUtils.inverse(jYe.getSecond());
+			return new UncertainValues(jY.getOutputTags(), jYe.getFirst(), ijYe.multiply(right.multiply(ijYe.transpose())));
+		} else {
+			// 1. Form the Cholesky factor Rx of Vx, i.e., the upper triangular matrix such
+			// that RxT.Rx = Vx.
+			final CholeskyDecomposition chyd = new CholeskyDecomposition(uv.getCovariances());
+			final RealMatrix Rx = chyd.getL();
+			// 2. Factor Jx as the product Jx = Qx.Ux, where Qx is an orthogonal matrix and
+			// Ux is upper triangular.
+			final QRDecomposition qrd = new QRDecomposition(jXe.getSecond());
+			final RealMatrix Qx = qrd.getQ(), Ux = qrd.getR();
+			// 3. Factor Jy as the product Jy = Ly.Uy, where Ly is lower triangular and Uy
+			// is upper triangular.
+			final LUDecomposition lud = new LUDecomposition(jYe.getSecond());
+			// ????What about pivoting?????
+			final RealMatrix Ly = lud.getL(), Uy = lud.getU();
+			// 4. Solve the matrix equation UyT.M1 = I for M1.
+			final RealMatrix M1 = MatrixUtils.inverse(Uy.transpose());
+			// 5. Solve LyT.M2 = M1 for M2,
+			final RealMatrix M2 = MatrixUtils.inverse(Ly.transpose()).multiply(M1);
+			// 6. Form M3 = QxT.M2.
+			final RealMatrix M3 = Qx.transpose().multiply(M2);
+			// 7. Form M4 = UxT.M3.
+			final RealMatrix M4 = Ux.transpose().multiply(M3);
+			// 8. Form M = Rx.M4.
+			final RealMatrix M = Rx.multiply(M4);
+			// 9. Orthogonally triangularize M to give the upper triangular matrix R.
+			final RealMatrix R = new QRDecomposition(M).getR();
+			// 10. Form Vy = RT.R.
+			return new UncertainValues(jY.getOutputTags(), jYe.getFirst(), (R.transpose()).multiply(R));
+		}
 	}
 
 	/**
@@ -714,8 +740,9 @@ public class UncertainValues implements IToHTML {
 	}
 
 	/**
-	 * Creates a bitmap that represents the difference between uncertainties associated with these two sets of UncertainValues.
-	 * The difference between the covariances is plotted.
+	 * Creates a bitmap that represents the difference between uncertainties
+	 * associated with these two sets of UncertainValues. The difference between the
+	 * covariances is plotted.
 	 * 
 	 * @param uvs1
 	 * @param uvs2
@@ -733,7 +760,8 @@ public class UncertainValues implements IToHTML {
 		final Array2DRowRealMatrix sc = new Array2DRowRealMatrix(dim, dim);
 		for (int r = 0; r < dim; ++r) {
 			for (int c = 0; c < dim; ++c) {
-				final double rr = 0.5*(uvs1.getCovariance(r, c)-uvs2.getCovariance(r, c))/(uvs1.getCovariance(r, c)+uvs2.getCovariance(r, c));
+				final double rr = 0.5 * (uvs1.getCovariance(r, c) - uvs2.getCovariance(r, c))
+						/ (uvs1.getCovariance(r, c) + uvs2.getCovariance(r, c));
 				if (!Double.isNaN(rr)) {
 					sc.setEntry(r, c, rr);
 					sc.setEntry(c, r, rr);
