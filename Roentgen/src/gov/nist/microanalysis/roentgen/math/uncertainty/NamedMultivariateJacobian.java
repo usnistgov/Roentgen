@@ -46,15 +46,16 @@ public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction
 		assert uv.getDimension() == nmjf.getInputDimension();
 		final RealMatrix rm = new Array2DRowRealMatrix(nmjf.getOutputDimension(), nmjf.getInputDimension());
 		final RealVector inp = new ArrayRealVector(uv.getValues());
-		final RealVector vals = nmjf.evaluate(inp).getFirst();
+		final RealVector vals = nmjf.compute(inp);
 		for (int c = 0; c < nmjf.getInputDimension(); ++c) {
-			final RealVector pt = new ArrayRealVector(inp);
-			final double deltaX = sc*Math.max(uv.getUncertainty(c), Math.abs(0.01 * pt.getEntry(c)));
+			final RealVector pt0 = new ArrayRealVector(inp), pt1 = new ArrayRealVector(inp);
+			final double deltaX = sc * Math.max(uv.getUncertainty(c), Math.abs(0.01 * pt0.getEntry(c)));
 			assert (deltaX > 0.0);
-			pt.setEntry(c, pt.getEntry(c) + deltaX);
-			final RealVector output = nmjf.evaluate(pt).getFirst();
+			pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
+			pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
+			final RealVector output0 = nmjf.compute(pt0), output1 = nmjf.compute(pt1);
 			for (int r = 0; r < nmjf.getOutputDimension(); ++r) {
-				rm.setEntry(r, c, (output.getEntry(r) - vals.getEntry(r)) / deltaX);
+				rm.setEntry(r, c, (output0.getEntry(r) - output1.getEntry(r)) / deltaX);
 			}
 		}
 		return new NamedMultivariateJacobian(nmjf.getInputTags(), nmjf.getOutputTags(), inp, Pair.create(vals, rm));
@@ -130,6 +131,8 @@ public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction
 	public double getEntry(final Object tag1, final Object tag2) {
 		final int outputIndex = outputIndex(tag1);
 		final int inputIndex = inputIndex(tag2);
+		assert outputIndex != -1 : tag1;
+		assert inputIndex != -1 : tag2;
 		return mResult.getSecond().getEntry(outputIndex, inputIndex);
 	}
 

@@ -285,38 +285,38 @@ public class UncertainValues implements IToHTML {
 			}
 		return new UncertainValues(nmjf.getOutputTags(), avg, cov);
 	}
-	
-	
+
 	/**
-	 * Extract an array of values from this UncertainValue object for the 
-	 * specified list of tags
+	 * Extract an array of values from this UncertainValue object for the specified
+	 * list of tags
 	 * 
 	 * @param tags List&lt;? extends Object&gt;
 	 * @return RealVector
 	 */
 	public RealVector extractValues(List<? extends Object> tags) {
 		RealVector res = new ArrayRealVector(tags.size());
-		int i=0;
-		for(Object tag : tags) {
+		int i = 0;
+		for (Object tag : tags) {
 			res.setEntry(i, getEntry(tag));
 			++i;
 		}
 		return res;
 	}
 
-	public static UncertainValues implicit(final NamedMultivariateJacobian jY,
-			final NamedMultivariateJacobian jX, UncertainValues uv) {
+	public static UncertainValues implicit(final NamedMultivariateJacobian jY, final NamedMultivariateJacobian jX,
+			UncertainValues uv) {
 		final Pair<RealVector, RealMatrix> jXe = jX.evaluate(uv.extractValues(jX.getInputTags()));
 		final Pair<RealVector, RealMatrix> jYe = jY.evaluate(uv.extractValues(jY.getInputTags()));
 		// From page 64 of NPL Report DEM-ES-011
 		// Jy.Vy.JyT = Jx.Vx.JxT solve for Vy.
 		final boolean NAIVE = true;
 		if (NAIVE) {
-			// Order the 
+			// Order the
 			UncertainValues ouvs = UncertainValues.extract(jX.getInputTags(), uv);
 			final RealMatrix right = jXe.getSecond().multiply(ouvs.mCovariance.multiply(jXe.getSecond().transpose()));
-			final RealMatrix ijYe=MatrixUtils.inverse(jYe.getSecond());
-			return new UncertainValues(jY.getOutputTags(), jYe.getFirst(), ijYe.multiply(right.multiply(ijYe.transpose())));
+			final RealMatrix ijYe = MatrixUtils.inverse(jYe.getSecond());
+			return new UncertainValues(jY.getOutputTags(), jYe.getFirst(),
+					ijYe.multiply(right.multiply(ijYe.transpose())));
 		} else {
 			// 1. Form the Cholesky factor Rx of Vx, i.e., the upper triangular matrix such
 			// that RxT.Rx = Vx.
@@ -761,11 +761,10 @@ public class UncertainValues implements IToHTML {
 		for (int r = 0; r < dim; ++r) {
 			for (int c = 0; c < dim; ++c) {
 				final double rr = 0.5 * (uvs1.getCovariance(r, c) - uvs2.getCovariance(r, c))
-						/ (uvs1.getCovariance(r, c) + uvs2.getCovariance(r, c));
-				if (!Double.isNaN(rr)) {
-					sc.setEntry(r, c, rr);
-					sc.setEntry(c, r, rr);
-				}
+						/ Math.max(uvs1.getCovariance(r, c) + uvs2.getCovariance(r, c),
+								1.0e-6 * Math.sqrt(uvs1.getCovariance(r, r) * uvs1.getCovariance(c, c)));
+				sc.setEntry(r, c, rr);
+				sc.setEntry(c, r, rr);
 			}
 		}
 		final BufferedImage bi = new BufferedImage(pixDim * dim, pixDim * dim, BufferedImage.TYPE_3BYTE_BGR);
@@ -776,7 +775,10 @@ public class UncertainValues implements IToHTML {
 			g2.setColor(corr.map(sc.getEntry(r, r)));
 			g2.fillRect(r * dim, r * dim, dim, dim);
 			for (int c = r + 1; c < dim; ++c) {
-				g2.setColor(corr.map(sc.getEntry(r, c)));
+				if (!Double.isNaN(sc.getEntry(r, c)))
+					g2.setColor(corr.map(sc.getEntry(r, c)));
+				else
+					g2.setColor(Color.YELLOW);
 				g2.fillRect(c * pixDim, r * pixDim, pixDim, pixDim);
 				g2.fillRect(r * pixDim, c * pixDim, pixDim, pixDim);
 			}
@@ -889,20 +891,9 @@ public class UncertainValues implements IToHTML {
 		return mCovariance.subtract(zeroed.mCovariance);
 	}
 
-	private int rmHashCode(final RealMatrix rm) {
-		return rm.getData().hashCode();
-	}
-
-	private boolean rmEquals(final RealMatrix rm1, final RealMatrix rm2) {
-		for (int i = 0; i < rm1.getRowDimension(); ++i)
-			if (!Arrays.equals(rm1.getRow(i), rm2.getRow(i)))
-				return false;
-		return true;
-	}
-
 	@Override
 	public int hashCode() {
-		return 37 * Objects.hashCode(mValues, mTags) + rmHashCode(mCovariance);
+		return Objects.hashCode(mValues, mTags, mCovariance);
 	}
 
 	@Override
@@ -914,8 +905,9 @@ public class UncertainValues implements IToHTML {
 		if (getClass() != obj.getClass())
 			return false;
 		final UncertainValues other = (UncertainValues) obj;
-		return rmEquals(mCovariance, other.mCovariance) && Objects.equal(mTags, other.mTags)
-				&& Objects.equal(mValues, other.mValues);
+		return Objects.equal(mCovariance, other.mCovariance) && //
+				Objects.equal(mTags, other.mTags) && //
+				Objects.equal(mValues, other.mValues);
 	}
 
 	/**

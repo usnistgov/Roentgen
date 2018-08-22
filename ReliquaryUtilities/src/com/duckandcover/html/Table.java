@@ -65,14 +65,6 @@ public class Table
          mCenter = center;
       }
 
-      protected String highest(final Mode mode, final File base, final String dir)
-            throws IOException {
-         if(mHTML instanceof IToHTMLExt)
-            return toHTML(mode, base, dir);
-         else
-            return toHTML(mode);
-      }
-
       protected String span() {
          final StringBuffer sb = new StringBuffer();
          if(mColSpan > 1)
@@ -95,13 +87,16 @@ public class Table
       }
 
       public TD(final String html, final int rowSpan, final int colSpan, final boolean center) {
-         this(Transforms.createHTML(html), rowSpan, colSpan, center);
+         super(Transforms.createHTML(html), rowSpan, colSpan, center);
       }
 
       @Override
       public String toHTML(final Mode mode, final File base, final String dir)
             throws IOException {
-         return "<td" + span() + center() + ">" + highest(mode, base, dir) + "</td>";
+    	  if(mHTML instanceof IToHTMLExt)
+    		  return "<td" + span() + center() + ">" + ((IToHTMLExt)mHTML).toHTML(mode, base, dir) + "</td>";
+    	  else
+    		  return "<td" + span() + center() + ">" + mHTML.toHTML(mode) + "</td>";
       }
 
       @Override
@@ -118,13 +113,16 @@ public class Table
       }
 
       public TH(final String html, final int rowSpan, final int colSpan, final boolean center) {
-         this(Transforms.createHTML(html), rowSpan, colSpan, center);
+         super(Transforms.createHTML(html), rowSpan, colSpan, center);
       }
 
       @Override
       public String toHTML(final Mode mode, final File base, final String dir)
             throws IOException {
-         return "<th" + span() + center() + ">" + highest(mode, base, dir) + "</th>";
+    	  if(mHTML instanceof IToHTMLExt)
+    		  return "<th" + span() + center() + ">" + ((IToHTMLExt)mHTML).toHTML(mode, base, dir) + "</th>";
+    	  else
+    		  return "<th" + span() + center() + ">" + mHTML.toHTML(mode) + "</th>";
       }
 
       @Override

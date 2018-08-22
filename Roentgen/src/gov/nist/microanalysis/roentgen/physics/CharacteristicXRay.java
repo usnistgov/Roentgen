@@ -286,6 +286,7 @@ public class CharacteristicXRay extends XRay implements IToHTML {
 		if (getClass() != obj.getClass())
 			return false;
 		final CharacteristicXRay other = (CharacteristicXRay) obj;
-		return Objects.equal(mElement, other.mElement) && Objects.equal(mTransition, other.mTransition);
+		return Objects.equal(mElement, other.mElement) && //
+				Objects.equal(mTransition, other.mTransition);
 	}
 }

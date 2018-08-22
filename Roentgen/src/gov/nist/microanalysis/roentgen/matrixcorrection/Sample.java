@@ -1,7 +1,4 @@
-/**
- * 
- */
-package gov.nist.microanalysis.roentgen.microanalysis;
+package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -21,15 +18,22 @@ import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 public class Sample implements IToHTML {	
 		
 	private static int mNextIndex = 0;
+	
+	public enum Conductivity {
+		Insulator,
+		Semiconductor,
+		Conductor
+	};
 
 	private final int mIndex;
 	private final String mName;
 	private final Optional<Layer> mCoating;
 	private final Optional<Composition> mComposition;
+	private final Optional<Conductivity> mConductivity;
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(mCoating, mComposition, mName, mIndex);
+		return Objects.hash(mCoating, mComposition, mConductivity, mName, mIndex);
 	}
 
 	@Override
@@ -44,14 +48,16 @@ public class Sample implements IToHTML {
 		return (mIndex == other.mIndex) && //
 				Objects.equals(mCoating, other.mCoating) && //
 				Objects.equals(mComposition, other.mComposition) && //
-				Objects.equals(mName, other.mName);
+				Objects.equals(mName, other.mName) && //
+				Objects.equals(mConductivity, other.mConductivity);
 	}
 
-	public Sample(String name, Layer coating, Composition comp) {
+	public Sample(String name, Layer coating, Composition comp, Conductivity conduct) {
 		mIndex = (++mNextIndex);
 		mName = name;
 		mCoating = Optional.ofNullable(coating);
 		mComposition = Optional.ofNullable(comp);
+		mConductivity = Optional.ofNullable(conduct);
 	}
 
 	public boolean isSuitableAsStandard(Element elm) {
@@ -69,12 +75,20 @@ public class Sample implements IToHTML {
 	public Layer getCoating() {
 		return mCoating.get();
 	}
+	
+	public Optional<Conductivity> getConductivity(){
+		return mConductivity;
+	}
 
 	@Override
 	public String toHTML(Mode mode) {
 		Table t = new Table();
 		t.addRow(Table.th("Index"), Table.td(Integer.toString(mIndex)));
 		t.addRow(Table.th("Name"), Table.td(HTML.escape(mName)));
+		if(mConductivity.isPresent())
+			t.addRow(Table.th("Conductivity"), Table.td(mConductivity.toString()));
+		else
+			t.addRow(Table.th("Conductivity"), Table.td("Unknown"));
 		if (isCoated())
 			t.addRow(Table.th("Coated"), Table.td(HTML.toHTML(mCoating, Mode.TERSE)));
 		else

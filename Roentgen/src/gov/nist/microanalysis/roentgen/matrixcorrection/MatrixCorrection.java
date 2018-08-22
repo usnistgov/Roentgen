@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.microanalysis;
+package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 public class MatrixCorrection {
 

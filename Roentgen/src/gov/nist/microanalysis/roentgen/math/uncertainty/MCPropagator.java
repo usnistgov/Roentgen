@@ -32,8 +32,8 @@ public class MCPropagator {
 	private final MultivariateRealDistribution mDistribution;
 	private final Constraint[] mConstraints;
 	private final UncertainValues mValues;
-	private final EstimateUncertainValues mEvals;
-	private final EstimateUncertainValues mPts;
+	private final EstimateUncertainValues mOutputs;
+	private final EstimateUncertainValues mInputs;
 
 	public static class None implements Constraint {
 		@Override
@@ -68,8 +68,8 @@ public class MCPropagator {
 		mFunction = nmvjf;
 		mConstraints = constraints.clone();
 		mValues = uv;
-		mEvals = new EstimateUncertainValues(nmvjf.getOutputTags());
-		mPts = new EstimateUncertainValues(nmvjf.getInputTags());
+		mOutputs = new EstimateUncertainValues(nmvjf.getOutputTags());
+		mInputs = new EstimateUncertainValues(nmvjf.getInputTags());
 		mDistribution = mrd;
 	}
 
@@ -89,6 +89,40 @@ public class MCPropagator {
 			res[i] = new Range(va - sigma * unc, va + sigma * unc);
 		}
 		return res;
+	}
+
+	private void evaluate() {
+		final RealVector pt = MatrixUtils.createRealVector(mDistribution.sample());
+		assert !pt.isNaN();
+		for (int i = 0; i < mConstraints.length; ++i)
+			pt.setEntry(i, mConstraints[i].limit(pt.getEntry(i)));
+		mInputs.add(pt);
+		mOutputs.add(mFunction.compute(pt));
+	}
+
+	private final static class MultiEvaluate extends RecursiveAction {
+
+		private static final int MAX_ITERATIONS = 2000;
+
+		private static final long serialVersionUID = 2121417483581902926L;
+
+		private final MCPropagator mMCP;
+		private final int mNEvals;
+
+		private MultiEvaluate(MCPropagator mcp, int nEvals) {
+			super();
+			mNEvals = nEvals;
+			mMCP = mcp;
+		}
+
+		@Override
+		protected void compute() {
+			if (mNEvals <= MAX_ITERATIONS) {
+				for (int i = 0; i < mNEvals; ++i)
+					mMCP.evaluate();
+			} else
+				invokeAll(new MultiEvaluate(mMCP, mNEvals / 2), new MultiEvaluate(mMCP, mNEvals - (mNEvals / 2)));
+		}
 	}
 
 	public MCPropagator(final NamedMultivariateJacobianFunction nmvjf, final UncertainValues uv,
@@ -118,42 +152,7 @@ public class MCPropagator {
 	public UncertainValues compute(final int nEvals) {
 		for (int eval = 0; eval < nEvals; ++eval)
 			evaluate();
-		return mEvals.estimateDistribution();
-	}
-
-	private void evaluate() {
-		final RealVector pt = MatrixUtils.createRealVector(mDistribution.sample());
-		for (int i = 0; i < mConstraints.length; ++i)
-			pt.setEntry(i, mConstraints[i].limit(pt.getEntry(i)));
-		mPts.add(pt);
-		mEvals.add(mFunction.evaluate(pt).getFirst());
-	}
-
-	private final static class MultiEvaluate extends RecursiveAction {
-
-		private static final int MAX_ITERATIONS = 2000;
-
-		private static final long serialVersionUID = 2121417483581902926L;
-
-		private final MCPropagator mMCP;
-		private final int mNEvals;
-
-		private MultiEvaluate(MCPropagator mcp, int nEvals) {
-			assert nEvals >= MAX_ITERATIONS / 2;
-			mNEvals = nEvals;
-			mMCP = mcp;
-		}
-
-		@Override
-		protected void compute() {
-			if (mNEvals <= MAX_ITERATIONS) {
-				for (int i = 0; i < mNEvals; ++i)
-					mMCP.evaluate();
-				return;
-			}
-			invokeAll(new MultiEvaluate(mMCP, mNEvals / 2), new MultiEvaluate(mMCP, mNEvals - (mNEvals / 2)));
-		}
-
+		return mOutputs.estimateDistribution();
 	}
 
 	/**
@@ -165,26 +164,64 @@ public class MCPropagator {
 	public UncertainValues computeMT(final int nEvals) {
 		ForkJoinPool fjp = new ForkJoinPool();
 		fjp.invoke(new MultiEvaluate(this, nEvals));
-		return mEvals.estimateDistribution();
+		return mOutputs.estimateDistribution();
 	}
 
+	/**
+	 * Returns the {@link UncertainValues} object used
+	 * to seed the {@link MultivariateRealDistribution}
+	 * to provide the randomized arrays of input
+	 * values.
+	 * 
+	 * @return {@link UncertainValues}
+	 */
 	public UncertainValues getInputDistribution() {
 		return mValues;
 	}
 
+	/**
+	 * Computes the UncertainValues object from
+	 * the randomized distribution of draws from 
+	 * the {@link MultivariateRealDistribution} used as the
+	 * source of randomness.
+	 * 
+	 * @return UncertainValues
+	 */
 	public UncertainValues estimatedInputDistribution() {
-		return mPts.estimateDistribution();
+		return mInputs.estimateDistribution();
 	}
 
+	/**
+	 * Returns the estimated output set of random values
+	 * that results from evaluating the {@link NamedMultivariateJacobianFunction}
+	 * at the randomized distribution of values generated
+	 * by the {@link MultivariateRealDistribution}.
+	 * 
+	 * @return UncertainValues
+	 */
 	public UncertainValues estimatedOutputDistribution() {
-		return mEvals.estimateDistribution();
+		return mOutputs.estimateDistribution();
 	}
 
+	/**
+	 * Returns a {@link DescriptiveStatistics} object associated
+	 * with the specified output variable tag.
+	 * 
+	 * @param tag An output variable tag
+	 * @return {@link DescriptiveStatistics}
+	 */
 	public DescriptiveStatistics getOutputStatistics(final Object tag) {
-		return mEvals.getDescriptiveStatistics(tag);
+		return mOutputs.getDescriptiveStatistics(tag);
 	}
 
+	/**
+	 * Returns a {@link DescriptiveStatistics} object associated
+	 * with the specified input variable tag.
+	 * 
+	 * @param tag An input variable tag
+	 * @return {@link DescriptiveStatistics}
+	 */
 	public DescriptiveStatistics getInputStatistics(final Object tag) {
-		return mPts.getDescriptiveStatistics(tag);
+		return mInputs.getDescriptiveStatistics(tag);
 	}
 }

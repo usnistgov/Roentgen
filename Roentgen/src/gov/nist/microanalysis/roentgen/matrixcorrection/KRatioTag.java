@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.microanalysis;
+package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
@@ -27,65 +27,55 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @version $Rev: 312 $
  */
 
-public class KRatioTag extends BaseTag implements IToHTML, Comparable<KRatioTag> {
-
-	private final MeasurementDatum mUnknown;
-	private final MeasurementDatum mStandard;
-	private final ElementXRaySet mXRays;
+public class KRatioTag extends BaseTag<MeasurementDatum, MeasurementDatum, ElementXRaySet> implements IToHTML, Comparable<KRatioTag> {
 
 	public KRatioTag(final MeasurementDatum std, final MeasurementDatum unk, final ElementXRaySet trans) {
 		super("K-ratio", std, unk, trans);
 		assert unk.isSuitableAsUnknown();
 		assert std.isSuitableAsStandard(trans.getElement());
 		assert trans.size() >= 1;
-		mStandard = std;
-		mUnknown = unk;
-		mXRays = trans;
 	}
 
 	public KRatioTag(final MeasurementDatum std, final MeasurementDatum unk, final CharacteristicXRay trans) {
-		super("K-ratio", std, unk, trans);
+		super("K-ratio", std, unk, new ElementXRaySet(trans));
 		assert unk.isSuitableAsUnknown();
 		assert std.isSuitableAsStandard(trans.getElement());
-		mStandard = std;
-		mUnknown = unk;
-		mXRays = new ElementXRaySet(trans);
 	}
 
 	@Override
 	public String toHTML(final Mode mode) {
 		if (mode == Mode.TERSE)
-			return mXRays.toHTML(Mode.TERSE);
+			return getObject3().toHTML(Mode.TERSE);
 		else if (mode == Mode.NORMAL)
-			return mXRays.toHTML(Mode.TERSE) + " using " + mStandard.toHTML(Mode.TERSE);
+			return getObject3().toHTML(Mode.TERSE) + " using " + getObject1().toHTML(Mode.TERSE);
 		else {
 			final Table table = new Table();
 			table.addRow(Table.th("Item"), Table.th("Description"));
-			table.addRow(Table.td("Standard"), Table.td(mStandard.toHTML(Mode.VERBOSE)));
-			table.addRow(Table.td("Unknown"), Table.td(mUnknown.toHTML(Mode.VERBOSE)));
-			table.addRow(Table.td("Transitions"), Table.td(mXRays.toHTML(Mode.VERBOSE)));
+			table.addRow(Table.td("Standard"), Table.td(getObject1().toHTML(Mode.VERBOSE)));
+			table.addRow(Table.td("Unknown"), Table.td(getObject2().toHTML(Mode.VERBOSE)));
+			table.addRow(Table.td("Transitions"), Table.td(getObject3().toHTML(Mode.VERBOSE)));
 			return table.toHTML(Mode.VERBOSE);
 		}
 	}
 
 	@Override
 	public int compareTo(final KRatioTag o) {
-		int c = mXRays.getElement().compareTo(o.mXRays.getElement());
+		int c = getObject3().getElement().compareTo(o.getObject3().getElement());
 		if (c == 0) {
-			final Principle tp = mXRays.getBrightest().getFamily(), op = o.mXRays.getBrightest().getFamily();
+			final Principle tp = getObject3().getBrightest().getFamily(), op = o.getObject3().getBrightest().getFamily();
 			c = tp.compareTo(op);
 		}
 		if (c == 0) {
-			final CharacteristicXRay tb = mXRays.getBrightest(), ob = o.mXRays.getBrightest();
+			final CharacteristicXRay tb = getObject3().getBrightest(), ob = o.getObject3().getBrightest();
 			c = tb.compareTo(ob);
 		}
 		if (!equals(o)) {
 			if (c == 0)
-				c = mXRays.compareTo(o.mXRays);
+				c = getObject3().compareTo(o.getObject3());
 			if (c == 0)
-				c = mStandard.toHTML(Mode.VERBOSE).compareTo(o.mStandard.toHTML(Mode.VERBOSE).toString());
+				c = getObject1().toHTML(Mode.VERBOSE).compareTo(o.getObject1().toHTML(Mode.VERBOSE).toString());
 			if (c == 0)
-				c = mUnknown.toHTML(Mode.VERBOSE).compareTo(o.mUnknown.toHTML(Mode.VERBOSE).toString());
+				c = getObject2().toHTML(Mode.VERBOSE).compareTo(o.getObject2().toHTML(Mode.VERBOSE).toString());
 			if (c == 0)
 				c = hashCode() < o.hashCode() ? -1 : 1;
 		}

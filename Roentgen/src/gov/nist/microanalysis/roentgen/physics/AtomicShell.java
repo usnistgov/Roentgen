@@ -392,7 +392,8 @@ public class AtomicShell
       if(getClass() != obj.getClass())
          return false;
       final AtomicShell other = (AtomicShell) obj;
-      return Objects.equal(mElement, other.mElement) && Objects.equal(mShell, other.mShell);
+      return Objects.equal(mElement, other.mElement) && //
+    		  Objects.equal(mShell, other.mShell);
    }
 
    /**

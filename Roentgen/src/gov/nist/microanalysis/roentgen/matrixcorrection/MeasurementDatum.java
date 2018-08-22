@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.microanalysis;
+package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 

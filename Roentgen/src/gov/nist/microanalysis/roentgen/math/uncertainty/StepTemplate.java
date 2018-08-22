@@ -28,14 +28,14 @@ public class StepTemplate
 
    public static List<? extends Object> buildOutputs(final Composition comp, final AtomicShell shell) {
       final List<Object> res = new ArrayList<>();
-      res.add(new BaseTag("P", comp));
+      res.add(new BaseTag<Composition, Object, Object>("P", comp));
       return res;
    }
 
    public static List<? extends Object> buildInputs(final Composition comp, final AtomicShell shell) {
       final List<Object> res = new ArrayList<>();
-      res.add(new BaseTag("F", comp));
-      res.add(new BaseTag("G", comp, shell));
+      res.add(new BaseTag<Composition, Object, Object>("F", comp));
+      res.add(new BaseTag<Composition, AtomicShell, Object>("G", comp, shell));
       return res;
    }
 
@@ -47,13 +47,13 @@ public class StepTemplate
 
    @Override
    public Pair<RealVector, RealMatrix> value(final RealVector point) {
-      final int iF = inputIndex(new BaseTag("F", mComposition));
-      final int iG = inputIndex(new BaseTag("G", mComposition, mShell));
+      final int iF = inputIndex(new BaseTag<Composition, Object, Object>("F", mComposition));
+      final int iG = inputIndex(new BaseTag<Composition, AtomicShell, Object>("G", mComposition, mShell));
 
       final double F = point.getEntry(iF);
       final double G = point.getEntry(iG);
 
-      final int oP = outputIndex(new BaseTag("P", mComposition));
+      final int oP = outputIndex(new BaseTag<Composition, Object, Object>("P", mComposition));
 
       final RealVector rv = new ArrayRealVector(getOutputDimension());
       final RealMatrix rm = new Array2DRowRealMatrix(getOutputDimension(), getInputDimension());
