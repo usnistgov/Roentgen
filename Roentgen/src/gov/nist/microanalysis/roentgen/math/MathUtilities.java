@@ -69,18 +69,19 @@ public class MathUtilities {
       return toHTML(rm, null, null, nf);
    }
 
-   public static String toHTML(final RealMatrix rm, final List<String> rowLabel, final List<String> colLabel, final NumberFormat nf) {
+   public static String toHTML(final RealMatrix rm, final List<Object> rowLabel, final List<Object> colLabel, final NumberFormat nf) {
       final Table t = new Table();
       if(colLabel != null) {
          final List<Item> header = new ArrayList<>();
          header.add(Table.td());
          for(int c = 0; c < rm.getColumnDimension(); ++c)
-            header.add(Table.th(colLabel.get(c)));
+            header.add(Table.th(HTML.toHTML(colLabel.get(c),Mode.TERSE)));
+         t.addRow(header);
       }
       for(int r = 0; r < rm.getRowDimension(); ++r) {
          final List<Item> items = new ArrayList<>();
          if(rowLabel != null)
-            items.add(Table.th(rowLabel.get(r)));
+            items.add(Table.th(HTML.toHTML(rowLabel.get(r),Mode.TERSE)));
          for(int c = 0; c < rm.getColumnDimension(); ++c)
             items.add(Table.td(nf.format(rm.getEntry(r, c))));
          t.addRow(items);
@@ -88,23 +89,24 @@ public class MathUtilities {
       return t.toHTML(Mode.NORMAL);
    }
 
-   public static String toHTML_Vertical(final RealVector rv, final List<String> label, final NumberFormat nf) {
+   public static String toHTML_Vertical(final RealVector rv, final List<Object> label, final NumberFormat nf) {
       final Table t = new Table();
       for(int i = 0; i < rv.getDimension(); ++i) {
          final List<Item> items = new ArrayList<>();
          if(label != null)
-            items.add(Table.td(label.get(i)));
+            items.add(Table.td(HTML.toHTML(label.get(i),Mode.TERSE)));
          items.add(Table.td(nf.format(rv.getEntry(i))));
+         t.addRow(items);
       }
       return t.toHTML(Mode.NORMAL);
    }
 
-   public static String toHTML_Horizontal(final RealVector rv, final List<String> label, final NumberFormat nf) {
+   public static String toHTML_Horizontal(final RealVector rv, final List<Object> label, final NumberFormat nf) {
       final Table t = new Table();
       final List<Item> hdr = new ArrayList<>();
       final List<Item> data = new ArrayList<>();
       for(int i = 0; i < rv.getDimension(); ++i) {
-         hdr.add(Table.td(label.get(i)));
+         hdr.add(Table.td(HTML.toHTML(label.get(i),Mode.TERSE)));
          data.add(Table.td(nf.format(rv.getEntry(i))));
       }
       t.addRow(hdr);

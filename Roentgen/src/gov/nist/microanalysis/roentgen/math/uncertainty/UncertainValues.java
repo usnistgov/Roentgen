@@ -759,12 +759,13 @@ public class UncertainValues implements IToHTML {
 			assert uvs1.getTag(i) == uvs2.getTag(i) : uvs1.getTag(i) + "!=" + uvs2.getTag(i);
 		final Array2DRowRealMatrix sc = new Array2DRowRealMatrix(dim, dim);
 		for (int r = 0; r < dim; ++r) {
-			for (int c = 0; c < dim; ++c) {
-				final double rr = 0.5 * (uvs1.getCovariance(r, c) - uvs2.getCovariance(r, c))
-						/ Math.max(uvs1.getCovariance(r, c) + uvs2.getCovariance(r, c),
-								1.0e-6 * Math.sqrt(uvs1.getCovariance(r, r) * uvs1.getCovariance(c, c)));
-				sc.setEntry(r, c, rr);
-				sc.setEntry(c, r, rr);
+			final double rr = (uvs1.getCovariance(r, r) - uvs2.getCovariance(r, r))
+					/ Math.max(1.0 - 100, (uvs1.getCovariance(r, r) + uvs2.getCovariance(r, r)));
+			sc.setEntry(r, r, Math.max(-1, Math.min(1.0, rr)));
+			for (int c = r + 1; c < dim; ++c) {
+				final double rc = (uvs1.getCorrelationCoefficient(r, c) - uvs2.getCorrelationCoefficient(r, c)) / 2.0;
+				sc.setEntry(r, c, rc);
+				sc.setEntry(c, r, rc);
 			}
 		}
 		final BufferedImage bi = new BufferedImage(pixDim * dim, pixDim * dim, BufferedImage.TYPE_3BYTE_BGR);

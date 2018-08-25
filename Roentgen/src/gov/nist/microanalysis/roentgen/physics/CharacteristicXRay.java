@@ -28,7 +28,7 @@ import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
  * @author nritchie
  * @version $Rev: 307 $
  */
-public class CharacteristicXRay extends XRay implements IToHTML {
+public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay> {
 
 	private final XRayTransition mTransition;
 	private final Element mElement;
@@ -60,7 +60,6 @@ public class CharacteristicXRay extends XRay implements IToHTML {
 		return AtomicShell.find(elm, tr.getInner()).getEdgeEnergy()
 				- AtomicShell.find(elm, tr.getOuter()).getEdgeEnergy();
 	}
-	
 
 	public double getEdgeEnergy() {
 		return (AtomicShell.find(mElement, mTransition.getInner())).getEdgeEnergy();
@@ -289,4 +288,18 @@ public class CharacteristicXRay extends XRay implements IToHTML {
 		return Objects.equal(mElement, other.mElement) && //
 				Objects.equal(mTransition, other.mTransition);
 	}
+
+	@Override
+	public int compareTo(XRay xr) {
+		if (xr instanceof CharacteristicXRay) {
+			CharacteristicXRay cxr = (CharacteristicXRay) xr;
+			int res = mElement.compareTo(cxr.mElement);
+			if (res == 0)
+				res = mTransition.compareTo(cxr.mTransition);
+			assert (res != 0) || (mElement.equals(cxr.mElement) && mTransition.equals(cxr.mTransition));
+			return res;
+		} else
+			return 1;
+	}
+
 }

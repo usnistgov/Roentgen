@@ -116,7 +116,7 @@ public class Composition extends UncertainValues {
 		return new StoichiometryTag(comp.mHTML, elm);
 	}
 
-	private static List<Object> buildTags(final Composition comp, final Representation mode) {
+	public static List<Object> buildTags(final Composition comp, final Representation mode) {
 		return buildTags(comp.mHTML, comp.getElementList(), mode);
 	}
 

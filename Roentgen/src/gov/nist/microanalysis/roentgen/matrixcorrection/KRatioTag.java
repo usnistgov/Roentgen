@@ -27,32 +27,28 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @version $Rev: 312 $
  */
 
-public class KRatioTag extends BaseTag<MeasurementDatum, MeasurementDatum, ElementXRaySet> implements IToHTML, Comparable<KRatioTag> {
+public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> implements IToHTML, Comparable<KRatioTag> {
 
-	public KRatioTag(final MeasurementDatum std, final MeasurementDatum unk, final ElementXRaySet trans) {
-		super("K-ratio", std, unk, trans);
-		assert unk.isSuitableAsUnknown();
-		assert std.isSuitableAsStandard(trans.getElement());
+	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans) {
+		super("K-ratio", unk, std, trans);
 		assert trans.size() >= 1;
 	}
 
-	public KRatioTag(final MeasurementDatum std, final MeasurementDatum unk, final CharacteristicXRay trans) {
-		super("K-ratio", std, unk, new ElementXRaySet(trans));
-		assert unk.isSuitableAsUnknown();
-		assert std.isSuitableAsStandard(trans.getElement());
+	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans) {
+		super("K-ratio", unk, std, new ElementXRaySet(trans));
 	}
 
 	@Override
 	public String toHTML(final Mode mode) {
 		if (mode == Mode.TERSE)
-			return getObject3().toHTML(Mode.TERSE);
+			return "k<sub>"+getObject3().toHTML(Mode.TERSE)+"</sub>";
 		else if (mode == Mode.NORMAL)
-			return getObject3().toHTML(Mode.TERSE) + " using " + getObject1().toHTML(Mode.TERSE);
+			return "k<sub>"+getObject3().toHTML(Mode.TERSE) + " using " + getObject1().toHTML(Mode.TERSE)+"</sub>";
 		else {
 			final Table table = new Table();
 			table.addRow(Table.th("Item"), Table.th("Description"));
-			table.addRow(Table.td("Standard"), Table.td(getObject1().toHTML(Mode.VERBOSE)));
-			table.addRow(Table.td("Unknown"), Table.td(getObject2().toHTML(Mode.VERBOSE)));
+			table.addRow(Table.td("Unknown"), Table.td(getObject1().toHTML(Mode.VERBOSE)));
+			table.addRow(Table.td("Standard"), Table.td(getObject2().toHTML(Mode.VERBOSE)));
 			table.addRow(Table.td("Transitions"), Table.td(getObject3().toHTML(Mode.VERBOSE)));
 			return table.toHTML(Mode.VERBOSE);
 		}
