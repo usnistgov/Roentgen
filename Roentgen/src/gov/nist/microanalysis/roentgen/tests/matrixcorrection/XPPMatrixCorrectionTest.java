@@ -314,7 +314,7 @@ public class XPPMatrixCorrectionTest {
 		}
 	}
 
-	public Map<Element, Number> buildK411() {
+	public static Map<Element, Number> buildK411() {
 		Map<Element, Number> res = new HashMap<Element, Number>();
 		res.put(Element.Silicon, new UncertainValue(0.25190067871134, 0.00448737523776));
 		res.put(Element.Iron, new UncertainValue(0.11255374113608, 0.00209872307367));
@@ -324,7 +324,7 @@ public class XPPMatrixCorrectionTest {
 		return res;
 	}
 
-	public Map<Element, Number> buildK412() {
+	public static Map<Element, Number> buildK412() {
 		Map<Element, Number> res = new HashMap<Element, Number>();
 		res.put(Element.Silicon, new UncertainValue(0.21226219744446, 0.00359924888862));
 		res.put(Element.Iron, new UncertainValue(0.07726410130474, 0.00139914871578));

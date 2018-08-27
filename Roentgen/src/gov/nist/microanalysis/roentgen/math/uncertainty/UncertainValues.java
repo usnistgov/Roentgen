@@ -358,6 +358,20 @@ public class UncertainValues implements IToHTML {
 		return mValues;
 	}
 
+	/**
+	 * Returns a {@link RealVector} containing the values associated with this
+	 * object in the order specified by the List tags.
+	 *
+	 * @param tags
+	 * @return {@link RealVector}
+	 */
+	final public RealVector getValues(List<? extends Object> tags) {
+		RealVector res = new ArrayRealVector(tags.size());
+		for (int i = 0; i < res.getDimension(); ++i)
+			res.setEntry(i, mValues.getEntry(indexOf(tags.get(i))));
+		return res;
+	}
+
 	final public RealMatrix getCovariances() {
 		return mCovariance;
 	}

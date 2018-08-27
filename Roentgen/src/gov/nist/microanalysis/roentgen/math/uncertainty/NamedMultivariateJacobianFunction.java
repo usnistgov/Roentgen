@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -66,7 +65,7 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 		validateTags(outputTags);
 		mOutputTags = Collections.unmodifiableList(outputTags);
 	}
-	
+
 	protected double inputValue(final Object tag, final RealVector pt) {
 		final int idx = mInputTags.indexOf(tag);
 		return pt.getEntry(idx);
@@ -150,39 +149,24 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 	}
 
 	/**
-	 * Converts a HashMap&lt;Object, Double&gt; to an array ordered according to the
-	 * names in getVariableNames().
+	 * Extracts from <code>point</code> representing an argument to
+	 * <code>nmvj.compute(point)</code> the input RealArray that is suitable as the
+	 * argument to <code>this.comptue(...)</code>.
 	 *
-	 * @param point
-	 * @return RealVector
+	 * @param nmvj  The outer {@link NamedMultivariateJacobianFunction}
+	 * @param point A RealVector of length nmvj.getInputDimension()
+	 * @return RealVector of length this.getInputDimension() containing the
+	 *         appropriate input values from point.
 	 */
-	public RealVector buildInputVector(final HashMap<? extends Object, Double> point) {
-		final double[] args = new double[mInputTags.size()];
-		for (int i = 0; i < mInputTags.size(); ++i) {
-			final Object varTag = mInputTags.get(i);
-			final Double val = point.get(varTag);
-			if (val == null)
-				throw new IndexOutOfBoundsException("No value was specified for the variable \"" + varTag.toString()
-						+ "\" in NamedMultivariateJacobianFunction.evaluate.");
-			args[i] = val.doubleValue();
+	public RealVector extract(final NamedMultivariateJacobianFunction nmvj, final RealVector point) {
+		assert point.getDimension() == nmvj.getInputDimension();
+		final int dim = getInputDimension();
+		final RealVector res = new ArrayRealVector(dim);
+		final List<? extends Object> tags = getInputTags();
+		for (int i = 0; i < dim; ++i) {
+			final double val = point.getEntry(nmvj.inputIndex(tags.get(i)));
+			res.setEntry(i, val);
 		}
-		return MatrixUtils.createRealVector(args);
-	}
-
-	/**
-	 * Builds a map containing the output variable names and the values to associate
-	 * with them as specified in point.
-	 *
-	 * @param point The values to assign to the variables in the same order as the
-	 *              variable tags.
-	 * @return Builds a map containing the
-	 */
-	public Map<? extends Object, Double> buildOutputMap(final RealVector result) {
-		if (result.getDimension() != getOutputDimension())
-			throw new DimensionMismatchException(result.getDimension(), getOutputDimension());
-		final Map<Object, Double> res = new HashMap<>();
-		for (int i = 0; i < mOutputTags.size(); ++i)
-			res.put(mOutputTags.get(i), result.getEntry(i));
 		return res;
 	}
 

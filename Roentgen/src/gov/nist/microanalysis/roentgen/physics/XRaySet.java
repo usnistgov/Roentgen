@@ -758,7 +758,7 @@ public class XRaySet {
 		public String toHTML(final Mode mode) {
 			if (mode == Mode.TERSE) {
 				final CharacteristicXRay br = this.getBrightest();
-				return br.toHTML(Mode.TERSE) + " + " + Integer.toString(mSet.size() - 1) + " others";
+				return br.toHTML(Mode.TERSE) + (mSet.size()>1 ? " + " + Integer.toString(mSet.size() - 1) + " others" : "");
 			} else if (mode == Mode.NORMAL)
 				return HTML.escape(buildName());
 			else {
