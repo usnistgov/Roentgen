@@ -16,10 +16,7 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.OutOfRangeException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.CholeskyDecomposition;
-import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -27,11 +24,12 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
-import com.duckandcover.html.Transforms;
 import com.duckandcover.html.Table.Item;
+import com.duckandcover.html.Transforms;
 import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.swing.IValueToColor;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
@@ -83,7 +81,7 @@ public class UncertainValues implements IToHTML {
 			throw new DimensionMismatchException(covar.getRowDimension(), m);
 		if (covar.getColumnDimension() != m)
 			throw new DimensionMismatchException(covar.getColumnDimension(), m);
-		final double EPS = 1.0e-15;
+		final double EPS = 1.0e-12, SREPS = Math.sqrt(EPS);
 		for (int r = 0; r < covar.getRowDimension(); ++r) {
 			final double entryRR = covar.getEntry(r, r);
 			if (entryRR < 0.0) {
@@ -97,12 +95,18 @@ public class UncertainValues implements IToHTML {
 		for (int r = 0; r < covar.getRowDimension(); ++r)
 			for (int c = r + 1; c < covar.getColumnDimension(); ++c) {
 				final double entryRC = covar.getEntry(r, c);
-				if (Math.abs(entryRC - covar.getEntry(c, r)) > 1.0e-6 * Math.abs(entryRC))
+				if (Math.abs(entryRC - covar.getEntry(c, r)) > SREPS * Math.abs(entryRC))
 					throw new OutOfRangeException(entryRC, covar.getEntry(c, r), covar.getEntry(c, r));
 				final double max = Math.sqrt(covar.getEntry(c, c) * covar.getEntry(r, r));
 				final double rr = entryRC / max;
-				if ((Math.abs(entryRC) > 1.0e-15) && ((rr > MAX_CORR) || (rr < -MAX_CORR)))
-					throw new OutOfRangeException(entryRC, -max, max);
+				if ((rr > MAX_CORR) || (rr < -MAX_CORR)) {
+					if (Math.abs(entryRC) > EPS)
+						throw new OutOfRangeException(entryRC, -max, max);
+					else {
+						covar.setEntry(r, c, Math.signum(rr) * max);
+						covar.setEntry(c, r, Math.signum(rr) * max);
+					}
+				}
 			}
 	}
 
@@ -289,63 +293,18 @@ public class UncertainValues implements IToHTML {
 	/**
 	 * Extract an array of values from this UncertainValue object for the specified
 	 * list of tags
-	 * 
+	 *
 	 * @param tags List&lt;? extends Object&gt;
 	 * @return RealVector
 	 */
-	public RealVector extractValues(List<? extends Object> tags) {
-		RealVector res = new ArrayRealVector(tags.size());
+	public RealVector extractValues(final List<? extends Object> tags) {
+		final RealVector res = new ArrayRealVector(tags.size());
 		int i = 0;
-		for (Object tag : tags) {
+		for (final Object tag : tags) {
 			res.setEntry(i, getEntry(tag));
 			++i;
 		}
 		return res;
-	}
-
-	public static UncertainValues implicit(final NamedMultivariateJacobian jY, final NamedMultivariateJacobian jX,
-			UncertainValues uv) {
-		final Pair<RealVector, RealMatrix> jXe = jX.evaluate(uv.extractValues(jX.getInputTags()));
-		final Pair<RealVector, RealMatrix> jYe = jY.evaluate(uv.extractValues(jY.getInputTags()));
-		// From page 64 of NPL Report DEM-ES-011
-		// Jy.Vy.JyT = Jx.Vx.JxT solve for Vy.
-		final boolean NAIVE = true;
-		if (NAIVE) {
-			// Order the
-			UncertainValues ouvs = UncertainValues.extract(jX.getInputTags(), uv);
-			final RealMatrix right = jXe.getSecond().multiply(ouvs.mCovariance.multiply(jXe.getSecond().transpose()));
-			final RealMatrix ijYe = MatrixUtils.inverse(jYe.getSecond());
-			return new UncertainValues(jY.getOutputTags(), jYe.getFirst(),
-					ijYe.multiply(right.multiply(ijYe.transpose())));
-		} else {
-			// 1. Form the Cholesky factor Rx of Vx, i.e., the upper triangular matrix such
-			// that RxT.Rx = Vx.
-			final CholeskyDecomposition chyd = new CholeskyDecomposition(uv.getCovariances());
-			final RealMatrix Rx = chyd.getL();
-			// 2. Factor Jx as the product Jx = Qx.Ux, where Qx is an orthogonal matrix and
-			// Ux is upper triangular.
-			final QRDecomposition qrd = new QRDecomposition(jXe.getSecond());
-			final RealMatrix Qx = qrd.getQ(), Ux = qrd.getR();
-			// 3. Factor Jy as the product Jy = Ly.Uy, where Ly is lower triangular and Uy
-			// is upper triangular.
-			final LUDecomposition lud = new LUDecomposition(jYe.getSecond());
-			// ????What about pivoting?????
-			final RealMatrix Ly = lud.getL(), Uy = lud.getU();
-			// 4. Solve the matrix equation UyT.M1 = I for M1.
-			final RealMatrix M1 = MatrixUtils.inverse(Uy.transpose());
-			// 5. Solve LyT.M2 = M1 for M2,
-			final RealMatrix M2 = MatrixUtils.inverse(Ly.transpose()).multiply(M1);
-			// 6. Form M3 = QxT.M2.
-			final RealMatrix M3 = Qx.transpose().multiply(M2);
-			// 7. Form M4 = UxT.M3.
-			final RealMatrix M4 = Ux.transpose().multiply(M3);
-			// 8. Form M = Rx.M4.
-			final RealMatrix M = Rx.multiply(M4);
-			// 9. Orthogonally triangularize M to give the upper triangular matrix R.
-			final RealMatrix R = new QRDecomposition(M).getR();
-			// 10. Form Vy = RT.R.
-			return new UncertainValues(jY.getOutputTags(), jYe.getFirst(), (R.transpose()).multiply(R));
-		}
 	}
 
 	/**
@@ -365,8 +324,8 @@ public class UncertainValues implements IToHTML {
 	 * @param tags
 	 * @return {@link RealVector}
 	 */
-	final public RealVector getValues(List<? extends Object> tags) {
-		RealVector res = new ArrayRealVector(tags.size());
+	final public RealVector getValues(final List<? extends Object> tags) {
+		final RealVector res = new ArrayRealVector(tags.size());
 		for (int i = 0; i < res.getDimension(); ++i)
 			res.setEntry(i, mValues.getEntry(indexOf(tags.get(i))));
 		return res;
@@ -705,7 +664,7 @@ public class UncertainValues implements IToHTML {
 						final double cv = Math.sqrt(getVariance(rowTag) * getVariance(colTag));
 						final double cc = cv > 0.0 ? c / cv : 0.0;
 						// Compute the corrolatation coefficient
-						assert (cc >= -MAX_CORR) && (cc <= MAX_CORR) : cc;
+						// assert (cc >= -MAX_CORR) && (cc <= MAX_CORR) : cc;
 						if (cc == 0.0)
 							row.add(Table.td());
 						else
@@ -722,7 +681,7 @@ public class UncertainValues implements IToHTML {
 	}
 
 	public BufferedImage asCovarianceBitmap(final int dim, final IValueToColor sigma, final IValueToColor corr) {
-		final Array2DRowRealMatrix sc = new Array2DRowRealMatrix(getDimension(), getDimension());
+		final RealMatrix sc = new NullableRealMatrix(getDimension(), getDimension());
 		for (int r = 0; r < getDimension(); ++r) {
 			sc.setEntry(r, r, Math.sqrt(mCovariance.getEntry(r, r)) / mValues.getEntry(r));
 			for (int c = r + 1; c < getDimension(); ++c) {
@@ -745,7 +704,11 @@ public class UncertainValues implements IToHTML {
 			g2.setColor(sigma.map(sc.getEntry(r, r)));
 			g2.fillRect(r * dim, r * dim, dim, dim);
 			for (int c = r + 1; c < getDimension(); ++c) {
-				g2.setColor(corr.map(sc.getEntry(r, c)));
+				final double entry = sc.getEntry(r, c);
+				if (!Double.isNaN(entry))
+					g2.setColor(corr.map(entry));
+				else
+					g2.setColor(Color.yellow);
 				g2.fillRect(c * dim, r * dim, dim, dim);
 				g2.fillRect(r * dim, c * dim, dim, dim);
 			}
@@ -757,18 +720,18 @@ public class UncertainValues implements IToHTML {
 	 * Creates a bitmap that represents the difference between uncertainties
 	 * associated with these two sets of UncertainValues. The difference between the
 	 * covariances is plotted.
-	 * 
+	 *
 	 * @param uvs1
 	 * @param uvs2
 	 * @param corr
 	 * @param pixDim
 	 * @return BufferedImage
 	 */
-	public static BufferedImage compareAsBitmap(UncertainValues uvs1, UncertainValues uvs2, final IValueToColor corr,
-			int pixDim) {
+	public static BufferedImage compareAsBitmap(final UncertainValues uvs1, final UncertainValues uvs2,
+			final IValueToColor corr, final int pixDim) {
 		if (uvs1.getDimension() != uvs2.getDimension())
 			throw new DimensionMismatchException(uvs2.getDimension(), uvs1.getDimension());
-		int dim = uvs1.getDimension();
+		final int dim = uvs1.getDimension();
 		for (int i = 0; i < dim; ++i)
 			assert uvs1.getTag(i) == uvs2.getTag(i) : uvs1.getTag(i) + "!=" + uvs2.getTag(i);
 		final Array2DRowRealMatrix sc = new Array2DRowRealMatrix(dim, dim);
@@ -778,8 +741,10 @@ public class UncertainValues implements IToHTML {
 			sc.setEntry(r, r, Math.max(-1, Math.min(1.0, rr)));
 			for (int c = r + 1; c < dim; ++c) {
 				final double rc = (uvs1.getCorrelationCoefficient(r, c) - uvs2.getCorrelationCoefficient(r, c)) / 2.0;
-				sc.setEntry(r, c, rc);
-				sc.setEntry(c, r, rc);
+				if (!Double.isNaN(rc)) {
+					sc.setEntry(r, c, rc);
+					sc.setEntry(c, r, rc);
+				}
 			}
 		}
 		final BufferedImage bi = new BufferedImage(pixDim * dim, pixDim * dim, BufferedImage.TYPE_3BYTE_BGR);
@@ -793,7 +758,7 @@ public class UncertainValues implements IToHTML {
 				if (!Double.isNaN(sc.getEntry(r, c)))
 					g2.setColor(corr.map(sc.getEntry(r, c)));
 				else
-					g2.setColor(Color.YELLOW);
+					g2.setColor(Color.yellow);
 				g2.fillRect(c * pixDim, r * pixDim, pixDim, pixDim);
 				g2.fillRect(r * pixDim, c * pixDim, pixDim, pixDim);
 			}

@@ -43,7 +43,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  * @author Nicholas
  */
-public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariateJacobianFunction
+public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariateJacobianFunctionEx
 		implements INamedMultivariateFunction, IToHTML {
 
 	/**
@@ -159,7 +159,8 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 	 * @param finalOutputs
 	 */
 	public void trimOutputs(final Set<? extends Object> finalOutputs) {
-		mFinalOutputs = finalOutputs;
+		mFinalOutputs = new HashSet<>(getOutputTags());
+		mFinalOutputs.retainAll(finalOutputs);
 	}
 
 	@Override
@@ -256,6 +257,7 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 	 */
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		assert point.getDimension() > 0 : "Zero dimension input in " + this.toString();
 		final List<? extends Object> inpTags = getInputTags();
 		List<Double> vals = new ArrayList<>(); // give & calculated
 		List<Object> valTags = new ArrayList<>(); // assoc. w. vals
@@ -271,7 +273,6 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 		for (int step = 0; step < mSteps.size(); ++step) {
 			final NamedMultivariateJacobianFunction func = mSteps.get(step);
 			final List<? extends Object> fin = func.getInputTags();
-			final List<? extends Object> fout = func.getOutputTags();
 			// Build the vector argument to func and call
 			final RealVector pt = new ArrayRealVector(fin.size());
 			for (int i = 0; i < pt.getDimension(); ++i) {
@@ -283,9 +284,12 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 				pt.setEntry(i, vals.get(idx));
 			}
 			final int fullInpSize = vals.size();
+			if (func instanceof NamedMultivariateJacobianFunctionEx)
+				((NamedMultivariateJacobianFunctionEx) func).initializeConstants(getConstants());
 			final Pair<RealVector, RealMatrix> fres = func.evaluate(pt);
 			final RealVector ovals = fres.getFirst();
 			final RealMatrix ojac = fres.getSecond();
+			final List<? extends Object> fout = func.getOutputTags();
 			if (mFinalOutputs != null) {
 				// Build up a list of computed inputs required by subsequent steps
 				// and final output
@@ -404,9 +408,12 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 		}
 		for (int step = 0; step < mSteps.size(); ++step) {
 			final NamedMultivariateJacobianFunction func = mSteps.get(step);
-			final List<? extends Object> fin = func.getInputTags();
-			final List<? extends Object> fout = func.getOutputTags();
+			if (func instanceof NamedMultivariateJacobianFunctionEx) {
+				NamedMultivariateJacobianFunctionEx funx = (NamedMultivariateJacobianFunctionEx) func;
+				funx.initializeConstants(getConstants());
+			}
 			// Build the vector argument to func and call
+			final List<? extends Object> fin = func.getInputTags();
 			final RealVector pt = new ArrayRealVector(fin.size());
 			for (int i = 0; i < pt.getDimension(); ++i) {
 				final Object tag = fin.get(i);
@@ -417,6 +424,7 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 				pt.setEntry(i, vals.get(idx));
 			}
 			final RealVector ovals = func.compute(pt);
+			final List<? extends Object> fout = func.getOutputTags();
 			if (mFinalOutputs != null) {
 				// Build up a list of computed inputs required by subsequent steps
 				// and final output

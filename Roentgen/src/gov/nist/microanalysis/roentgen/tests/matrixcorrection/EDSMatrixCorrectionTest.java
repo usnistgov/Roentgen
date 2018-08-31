@@ -74,10 +74,11 @@ public class EDSMatrixCorrectionTest {
 	public void test1() throws ParseException, IOException {
 		final Datum[] data = test1Data;
 		MatrixCorrectionDatum unk = new MatrixCorrectionDatum( //
-				Composition.parse("NaAlSi3O8"), new UncertainValue(15.0, 0.1), //
+				Composition.parse("NaAlSi3O8"), false, new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)));
 		MatrixCorrectionDatum std = new MatrixCorrectionDatum( //
 				data[0].mStd, //
+				true, // 
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)));
 
@@ -124,10 +125,10 @@ public class EDSMatrixCorrectionTest {
 	public void test2() throws ParseException, IOException {
 		final Datum[] data = test2Data;
 		MatrixCorrectionDatum unk = new MatrixCorrectionDatum( //
-				Composition.parse("NaAlSi3O8"), new UncertainValue(15.0, 0.1), //
+				Composition.parse("NaAlSi3O8"), false, new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)));
 		MatrixCorrectionDatum std = new MatrixCorrectionDatum( //
-				data[0].mStd, //
+				data[0].mStd, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)));
 
@@ -174,10 +175,10 @@ public class EDSMatrixCorrectionTest {
 	public void test3() throws ParseException, IOException {
 		final Datum[] data = test3Data;
 		MatrixCorrectionDatum unk = new MatrixCorrectionDatum( //
-				Composition.parse("NaAlSi3O8"), new UncertainValue(15.0, 0.1), //
+				Composition.parse("NaAlSi3O8"), false, new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)));
 		MatrixCorrectionDatum std = new MatrixCorrectionDatum( //
-				data[0].mStd, //
+				data[0].mStd, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)));
 

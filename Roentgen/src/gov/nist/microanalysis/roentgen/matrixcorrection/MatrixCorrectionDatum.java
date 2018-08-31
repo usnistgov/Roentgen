@@ -18,12 +18,13 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 public class MatrixCorrectionDatum implements IToHTML {
 	
 	private final Composition mComposition;
+	private final boolean mIsStandard;
 	private final UncertainValue mBeamEnergy;
 	private final UncertainValue mTakeOffAngle;
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(mBeamEnergy, mComposition, mTakeOffAngle);
+		return Objects.hash(mBeamEnergy, mComposition, mTakeOffAngle, Boolean.valueOf(mIsStandard));
 	}
 
 	@Override
@@ -37,14 +38,16 @@ public class MatrixCorrectionDatum implements IToHTML {
 		MatrixCorrectionDatum other = (MatrixCorrectionDatum) obj;
 		return Objects.equals(mBeamEnergy, other.mBeamEnergy) && //
 				Objects.equals(mComposition, other.mComposition) && //
-				Objects.equals(mTakeOffAngle, other.mTakeOffAngle);
+				Objects.equals(mTakeOffAngle, other.mTakeOffAngle) &&
+				(mIsStandard==other.mIsStandard);
 	}
 
 	
-	public MatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle){
+	public MatrixCorrectionDatum(Composition comp, boolean isStandard, UncertainValue beamEnergy, UncertainValue takeOffAngle){
 		mComposition = comp;
 		mBeamEnergy = beamEnergy;
 		mTakeOffAngle = takeOffAngle;
+		mIsStandard=isStandard;
 	}
 	
 	public Composition getComposition() {
@@ -58,6 +61,10 @@ public class MatrixCorrectionDatum implements IToHTML {
 	public UncertainValue getTakeOffAngle() {
 		return mTakeOffAngle;
 	}
+	
+	public boolean isStandard() {
+		return mIsStandard;
+	}
 
 	@Override
 	public String toHTML(Mode mode) {
@@ -67,6 +74,7 @@ public class MatrixCorrectionDatum implements IToHTML {
 		else {
 			Table t = new Table();
 			t.addRow(Table.td("Composition"), Table.td(mComposition.toHTML(Mode.VERBOSE)));
+			t.addRow(Table.td("Is standard?"), Table.td(Boolean.toString(mIsStandard)));
 			t.addRow(Table.td("Beam Energy"), Table.td(bnf.formatHTML(mBeamEnergy)));
 			t.addRow(Table.td("Composition"), Table.td(bnf.formatHTML(mTakeOffAngle)));
 			return t.toHTML(mode);

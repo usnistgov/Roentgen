@@ -10,7 +10,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -23,8 +22,10 @@ import com.duckandcover.html.Table.Item;
 import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunctionEx;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -62,17 +63,17 @@ public class Composition extends UncertainValues {
 	private final String mHTML;
 	private final Representation mRepresentation;
 
-	private static class ElementTag extends BaseTag<String, Element, Object> {
-		public ElementTag(final String prefix, final String html, final Element elm) {
-			super(prefix, "<html>" + html, elm);
+	public static class ElementTag extends BaseTag<Element, String, Object> {
+		private ElementTag(final String prefix, final String html, final Element elm) {
+			super(prefix, elm, "<html>" + html);
 		}
 
 		public Element getElement() {
-			return getObject2();
+			return getObject1();
 		}
 
 		public String getHTML() {
-			return getObject1();
+			return getObject2();
 		}
 	}
 
@@ -82,7 +83,7 @@ public class Composition extends UncertainValues {
 		}
 	}
 
-	public static Object buildMassFractionTag(final Composition comp, final Element elm) {
+	public static MassFractionTag buildMassFractionTag(final Composition comp, final Element elm) {
 		return new MassFractionTag(comp.mHTML, elm);
 	}
 
@@ -92,27 +93,33 @@ public class Composition extends UncertainValues {
 		}
 	}
 
-	public static Object buildNormalizedMassFractionTag(final Composition comp, final Element elm) {
+	public static NormalizedMassFractionTag buildNormalizedMassFractionTag(final Composition comp, final Element elm) {
 		return new NormalizedMassFractionTag(comp.mHTML, elm);
 	}
 
-	public static class AtomFractionTag extends ElementTag {
+	protected static class AtomTypeTag extends ElementTag {
+		protected AtomTypeTag(final String name, final String html, final Element elm) {
+			super(name, html, elm);
+		}
+	}
+
+	public static class AtomFractionTag extends AtomTypeTag {
 		private AtomFractionTag(final String html, final Element elm) {
 			super("A", html, elm);
 		}
 	}
 
-	public static Object buildAtomFractionTag(final Composition comp, final Element elm) {
+	public static AtomFractionTag buildAtomFractionTag(final Composition comp, final Element elm) {
 		return new AtomFractionTag(comp.mHTML, elm);
 	}
 
-	public static class StoichiometryTag extends ElementTag {
+	public static class StoichiometryTag extends AtomTypeTag {
 		private StoichiometryTag(final String html, final Element elm) {
 			super("S", html, elm);
 		}
 	}
 
-	public static Object buildStoichiometryTag(final Composition comp, final Element elm) {
+	public static StoichiometryTag buildStoichiometryTag(final Composition comp, final Element elm) {
 		return new StoichiometryTag(comp.mHTML, elm);
 	}
 
@@ -434,65 +441,82 @@ public class Composition extends UncertainValues {
 		return (p1 != -1) && (p2 != -1) ? getCovariance(p1, p2) : 0.0;
 	}
 
-	public static class AtomFractionToMassFraction extends NamedMultivariateJacobianFunction {
+	public static class AtomFractionToMassFraction extends NamedMultivariateJacobianFunctionEx {
 
 		/**
 		 * Nominally the tabulated atomic weights but can be customized for special
 		 * situations.
 		 */
-		private final RealVector mAtomicWeights;
+		private final Map<Element, Double> mAtomicWeights;
 
-		private static RealVector buildAtomicWeights(final List<? extends Object> elms) {
-			final RealVector atomicWeights = new ArrayRealVector(elms.size());
-			for (int i = 0; i < elms.size(); ++i)
-				atomicWeights.setEntry(i, ((ElementTag) elms.get(i)).getElement().getAtomicWeight());
-			return atomicWeights;
+		private static Map<Element, Double> buildAtomicWeights(final Set<Element> elms) {
+			final Map<Element, Double> res = new HashMap<>();
+			for (final Element elm : elms)
+				res.put(elm, elm.getAtomicWeight());
+			return res;
 		}
 
 		/**
 		 * Constructs a AtomicFractionToMassFraction
 		 *
-		 * @param inputTags
-		 * @param outputTags
+		 * @param Composition   comp
+		 * @param atomicWeights
+		 */
+		public AtomFractionToMassFraction(final Composition comp, final Map<Element, Double> atomicWeights) {
+			super(comp.getTags(), buildTags(comp, Representation.MassFraction));
+			assert (comp.mRepresentation == Representation.AtomFraction)
+					|| (comp.mRepresentation == Representation.Stoichiometry);
+			mAtomicWeights = new HashMap<>(atomicWeights);
+		}
+
+		/**
+		 * Constructs a AtomicFractionToMassFraction
+		 *
+		 * @param Composition   comp
+		 * @param atomicWeights
 		 */
 		public AtomFractionToMassFraction(final Composition comp) {
-			this(comp, buildAtomicWeights(comp.getTags()));
+			this(comp, buildAtomicWeights(comp.getElementSet()));
 		}
 
-		public AtomFractionToMassFraction(final Composition comp, final RealVector atomicWeights) {
-			super(comp.getTags(), buildTags(comp, Representation.MassFraction));
-			mAtomicWeights = new ArrayRealVector(atomicWeights);
+		private double denom(final RealVector point) {
+			double res = 0.0;
+			for (final Object tag : getInputTags()) {
+				final AtomTypeTag aft = (AtomTypeTag) tag;
+				final double a = mAtomicWeights.get(aft.getElement());
+				res += getValue(aft, point) * a;
+			}
+			return res;
 		}
 
-		private double massFraction(final int elmIdx, final RealVector point) {
-			return point.getEntry(elmIdx) * mAtomicWeights.getEntry(elmIdx) / (point.dotProduct(mAtomicWeights));
+		private double massFraction(final AtomTypeTag aft, final RealVector point) {
+			return getValue(aft, point) * mAtomicWeights.get(aft.getElement()) / denom(point);
 		}
 
-		private double deriv(final int idx1, final int idx2, final RealVector point) {
-			final double den = point.dotProduct(mAtomicWeights);
-			final double a1 = mAtomicWeights.getEntry(idx1);
-			final double a2 = mAtomicWeights.getEntry(idx2);
-			if (idx1 == idx2)
-				return a1 * (1.0 / den - a1 * point.getEntry(idx1) / (den * den));
+		private double deriv(final MassFractionTag mft, final AtomTypeTag aft, final RealVector point) {
+			final double den = denom(point);
+			final double a1 = mAtomicWeights.get(mft.getElement());
+			final double a2 = mAtomicWeights.get(aft.getElement());
+			if (mft.getElement() == aft.getElement())
+				return a1 * (1.0 / den - a1 * getValue(aft, point) / (den * den));
 			else
-				return -point.getEntry(idx1) * a1 * a2 / Math.pow(den, 2.0);
+				return -getValue(aft, point) * a1 * a2 / Math.pow(den, 2.0);
 		}
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			if (point.getDimension() != getInputDimension())
-				throw new DimensionMismatchException(point.getDimension(), getInputDimension());
-			final RealVector vals = new ArrayRealVector(point.getDimension());
-			final RealMatrix jac = new Array2DRowRealMatrix(point.getDimension(), point.getDimension());
-			final List<? extends Object> elms = getInputTags();
-			for (int i = 0; i < elms.size(); ++i) {
-				vals.setEntry(i, massFraction(i, point));
-				for (int j = 0; j < elms.size(); ++j)
-					jac.setEntry(i, j, deriv(i, j, point));
+			final RealVector vals = new ArrayRealVector(getOutputDimension());
+			final RealMatrix jac = new NullableRealMatrix(getInputDimension(), getOutputDimension());
+			for (int i = 0; i < getInputDimension(); ++i) {
+				final AtomTypeTag aft = (AtomTypeTag) getInputTags().get(i);
+				vals.setEntry(i, massFraction(aft, point));
+				for (int j = 0; j < getOutputDimension(); ++j) {
+					final MassFractionTag mft = (MassFractionTag) getOutputTags().get(j);
+					writeJacobian(i, mft, deriv(mft, aft, point), jac);
+				}
 			}
 			return Pair.create(vals, jac);
 		}
-
 	}
 
 	public static class MassFractionToAtomFraction extends NamedMultivariateJacobianFunction {
@@ -546,7 +570,7 @@ public class Composition extends UncertainValues {
 			if (point.getDimension() != getInputDimension())
 				throw new DimensionMismatchException(point.getDimension(), getInputDimension());
 			final RealVector vals = new ArrayRealVector(point.getDimension());
-			final RealMatrix jac = new Array2DRowRealMatrix(point.getDimension(), point.getDimension());
+			final RealMatrix jac = new NullableRealMatrix(point.getDimension(), point.getDimension());
 			final List<? extends Object> elms = getInputTags();
 			for (int i = 0; i < elms.size(); ++i) {
 				vals.setEntry(i, atomFraction(i, point));
@@ -656,7 +680,7 @@ public class Composition extends UncertainValues {
 		}
 
 		public Composition getComposition() {
-			return (Composition) getObject1();
+			return getObject1();
 		}
 	}
 
@@ -675,7 +699,7 @@ public class Composition extends UncertainValues {
 		}
 
 		public Composition getComposition() {
-			return (Composition) getObject1();
+			return getObject1();
 		}
 	}
 
@@ -787,7 +811,7 @@ public class Composition extends UncertainValues {
 		}
 
 		public Composition getComposition() {
-			return (Composition) getObject1();
+			return getObject1();
 		}
 	}
 

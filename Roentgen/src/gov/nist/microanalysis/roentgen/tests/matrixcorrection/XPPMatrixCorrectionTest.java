@@ -32,6 +32,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
+import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection.Variates;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
@@ -47,7 +48,7 @@ public class XPPMatrixCorrectionTest {
 	private static final double DELTA_JAC = 0.0001;
 	private static final ValueToLog3 V2L3 = new ValueToLog3(1.0);
 	private static final LinearToColor L2C = new LinearToColor(1.0, Color.blue, Color.red);
-	public static boolean DUMP = true;
+	public static boolean DUMP = false;
 	public static int MC_ITERATIONS = 20000; // 16*8000;
 
 	/**
@@ -70,13 +71,13 @@ public class XPPMatrixCorrectionTest {
 		final Composition std = Composition.massFraction("SiO<sub>2</sub>", elmsS, valsS, varsS);
 
 		MatrixCorrectionDatum stdMcd = new MatrixCorrectionDatum( //
-				std, //
+				std, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
 		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, //
+				unk, false, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
@@ -362,13 +363,13 @@ public class XPPMatrixCorrectionTest {
 				: Composition.massFraction("K412", buildK412());
 
 		MatrixCorrectionDatum stdMcd = new MatrixCorrectionDatum( //
-				std, //
+				std, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
 		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, //
+				unk, false, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
@@ -547,13 +548,13 @@ public class XPPMatrixCorrectionTest {
 				: Composition.massFraction("K412", buildK412());
 
 		MatrixCorrectionDatum stdMcd = new MatrixCorrectionDatum( //
-				std, //
+				std, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
 		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, //
+				unk, false, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
@@ -758,19 +759,19 @@ public class XPPMatrixCorrectionTest {
 				: Composition.massFraction("K412", buildK412());
 
 		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, //
+				std0, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
 		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, //
+				std1, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
 		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, //
+				unk, false, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
@@ -991,37 +992,37 @@ public class XPPMatrixCorrectionTest {
 				: Composition.massFraction("K412", buildK412());
 
 		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, //
+				std0, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
 		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, //
+				std1, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
 		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				std2, //
+				std2, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
 		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				std3, //
+				std3, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
 		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
-				std4, //
+				std4, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
 		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, //
+				unk, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
@@ -1229,5 +1230,277 @@ public class XPPMatrixCorrectionTest {
 			r.inBrowser(Mode.VERBOSE);
 		}
 	}
+	
+	/**
+	 * Compute ZAF for K412 as in SP 260-74 using elements and simple compounds
+	 * Only calculate the uncertainties for a subset of the input parameters.
+	 * 
+	 * @throws ArgumentException
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@Test
+	public void testXPP6() throws ArgumentException, ParseException, IOException {
+		// K412 as in SP 260-74 using elements and simple compounds
+
+		final Composition std0 = Composition.parse("SiO2");
+		final Composition std1 = Composition.parse("Al");
+		final Composition std2 = Composition.parse("Mg");
+		final Composition std3 = Composition.parse("CaF2");
+		final Composition std4 = Composition.parse("Fe");
+
+		final boolean combined = false;
+		final Composition unk = combined ? Composition.combine("K412", //
+				Pair.create(Composition.parse("SiO2"), new UncertainValue(0.4541, 0.0077)), //
+				Pair.create(Composition.parse("FeO"), new UncertainValue(0.0994, 0.0018)), //
+				Pair.create(Composition.parse("MgO"), new UncertainValue(0.1966, 0.0025)), //
+				Pair.create(Composition.parse("CaO"), new UncertainValue(0.1544, 0.0015)), //
+				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
+				: Composition.massFraction("K412", buildK412());
+
+		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
+				std0, true, //
+				new UncertainValue(15.0, 0.1), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
+				std1, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
+		);
+
+		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
+				std2, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
+				std3, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
+				std4, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
+				unk, false, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
+		{
+			{
+				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
+				scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
+				scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
+				stds.put(std0Mcd, scxr);
+			}
+
+			stds.put(std1Mcd,
+					CharacteristicXRaySet.build(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
+			{
+				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
+				scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
+				scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2));
+				stds.put(std2Mcd, scxr);
+			}
+			{
+				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
+				scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1));
+				scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1));
+				stds.put(std3Mcd, scxr);
+			}
+			{
+				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
+				scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
+				scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
+				stds.put(std4Mcd, scxr);
+			}
+		}
+
+		final Set<Object> outputs = new HashSet<>();
+		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getKey();
+			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
+				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
+				outputs.add(XPPMatrixCorrection.tagCharacterisitic(XPPMatrixCorrection.F_CHI_F, unkMcd, cxr));
+				outputs.add(XPPMatrixCorrection.tagCharacterisitic(XPPMatrixCorrection.F_CHI_F, meStd, cxr));
+			}
+		}
+
+		Set<XPPMatrixCorrection.Variates> variates = new HashSet<>();
+		variates.add(Variates.UnknownComposition);
+		variates.add(Variates.StandardComposition);
+		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, variates);
+		xpp.trimOutputs(outputs);
+		assertEquals(xpp.getOutputDimension(), outputs.size());
+		final UncertainValues inputs = xpp.buildInputs(unkMcd, stds.keySet());
+		final long start = System.currentTimeMillis();
+		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
+		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
+		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+
+		final long start2 = System.currentTimeMillis();
+		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds, variates);
+		final UncertainValues inputs2 = xpp2.buildInputs(unkMcd, stds.keySet());
+		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
+		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
+
+		// Test untrimmed vs trimmed
+		for (final Object outTag : outputs) {
+			for (final Object outTag2 : outputs)
+				if (outTag == outTag2) {
+					final int oi1 = results.indexOf(outTag);
+					final double v1 = results.getEntry(oi1);
+					final int oi2 = results2.indexOf(outTag);
+					final double v2 = results2.getEntry(oi2);
+					assertEquals(v1, v2, 0.01 * Math.max(Math.abs(v1), Math.abs(v2)));
+					if (results.getVariance(oi1) > 1.0e-8)
+						assertEquals(results.getVariance(oi1), results2.getVariance(oi2),
+								0.01 * Math.abs(results.getVariance(oi1)));
+				} else {
+					final double cov1 = results.getCovariance(outTag, outTag2);
+					final double cov2 = results2.getCovariance(outTag, outTag2);
+					assertEquals(cov1, cov2, 0.01 * Math.max(Math.abs(cov1), Math.abs(cov2)));
+				}
+		}
+
+		final Report r = new Report("XPP Report - Test5()");
+		UncertainValues resultsD = null;
+		try {
+			{
+				r.addHeader("test6()");
+				r.addHTML(xpp.toHTML(Mode.NORMAL));
+				r.addHeader("Inputs");
+				r.add(inputs);
+				r.addHeader("Results");
+				r.add(results);
+				r.addHeader("Uncertain Values (relative to inputs)");
+				final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+				final Table valTable = new Table();
+				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
+						Table.td("Value (Verbose)"));
+				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+				for (final Object outTag : xpp.getOutputTags()) {
+					if (outTag instanceof XPPMatrixCorrection.ZATag) {
+						final UncertainValue uv = outVals.get(outTag);
+						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
+								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
+								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+					}
+				}
+				r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+				r.addHeader("Covariance matrix");
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : results.getTags()) {
+					if (sb.length() > 0)
+						sb.append(",");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				r.addHTML(HTML.p(sb.toString()));
+				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
+
+				final long start3 = System.currentTimeMillis();
+				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				System.out.println(
+						"Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
+									* Math.abs(jac.getEntry(oIdx, iIdx)))
+								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
+							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
+									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
+						}
+
+				resultsD = UncertainValues.propagate(djac, inputs).sort();
+				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
+				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+
+				if (DUMP) {
+					System.out.println("Results");
+					System.out.println(results.toCSV());
+
+					System.out.println("Jacobian");
+					System.out.println(jac.toCSV());
+					System.out.println("Jacobian(estimated)");
+					System.out.println(djac.toCSV());
+				}
+			}
+			if (MC_ITERATIONS > 0) {
+				r.addHeader("Monte Carlo Results");
+
+				final MCPropagator mcp = new MCPropagator(xpp, inputs, SIGMA,
+						new SafeMultivariateNormalDistribution(inputs.getValues(), inputs.getCovariances()));
+				final UncertainValues resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+
+				if (DUMP) {
+					System.out.println("MC Results");
+					System.out.println(resultsMc.toCSV());
+				}
+				r.add(resultsMc);
+
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : results.getTags()) {
+					if (sb.length() > 0)
+						sb.append(",");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				r.addHTML(HTML.p(sb.toString()));
+
+				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Analytical result matrix");
+				r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "MC result matrix");
+				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
+
+				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
+				for (final Object tag : xpp.getOutputTags()) {
+					if (tag instanceof XPPMatrixCorrection.ZATag) {
+						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
+					}
+				}
+				{
+					r.addHeader("Compare MC to Analytical");
+					Table t = new Table();
+					t.addRow(Table.th("Tag"), //
+							Table.th("V(MonteCarlo)"), //
+							Table.th("U(Monte Carlo)"), //
+							Table.th("V(Analytical)"), //
+							Table.th("U(Analytic)"), //
+							Table.th("V(Delta)"), //
+							Table.th("U(Delta)"));
+					for (final Object tag : xpp.getOutputTags())
+						if (tag instanceof XPPMatrixCorrection.ZATag) {
+							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
+									MathUtilities.td(results.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(results.getUncertainty(tag), bnf),
+									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
+						}
+					r.add(t);
+				}
+				r.addHeader("Done!");
+
+			}
+		} catch (Exception e) {
+			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
+			throw e;
+		} finally {
+			r.inBrowser(Mode.VERBOSE);
+		}
+	}
+
 
 }

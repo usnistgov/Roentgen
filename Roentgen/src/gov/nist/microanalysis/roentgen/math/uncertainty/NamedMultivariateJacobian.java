@@ -3,7 +3,6 @@ package gov.nist.microanalysis.roentgen.math.uncertainty;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -15,6 +14,7 @@ import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -25,12 +25,12 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  *
  * @author Nicholas
  */
-public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction implements IToHTML {
+public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunctionEx implements IToHTML {
 
 	private final RealVector mPoint;
 	private final Pair<RealVector, RealMatrix> mResult;
 
-	private NamedMultivariateJacobian(final List<? extends Object> inp, final List<? extends Object> out,
+	public NamedMultivariateJacobian(final List<? extends Object> inp, final List<? extends Object> out,
 			final RealVector pt, final Pair<RealVector, RealMatrix> result) {
 		super(inp, out);
 		mPoint = pt;
@@ -44,7 +44,7 @@ public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction
 	public static NamedMultivariateJacobian computeDelta(final NamedMultivariateJacobianFunction nmjf,
 			final UncertainValues uv, final double sc) {
 		assert uv.getDimension() == nmjf.getInputDimension();
-		final RealMatrix rm = new Array2DRowRealMatrix(nmjf.getOutputDimension(), nmjf.getInputDimension());
+		final RealMatrix rm = new NullableRealMatrix(nmjf.getOutputDimension(), nmjf.getInputDimension());
 		final RealVector inp = new ArrayRealVector(uv.getValues());
 		final RealVector vals = nmjf.compute(inp);
 		for (int c = 0; c < nmjf.getInputDimension(); ++c) {

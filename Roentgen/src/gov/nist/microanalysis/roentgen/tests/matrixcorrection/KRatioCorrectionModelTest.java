@@ -40,21 +40,21 @@ public class KRatioCorrectionModelTest {
 		final Composition unk = Composition.massFraction("K412", XPPMatrixCorrectionTest.buildK412());
 
 		MatrixCorrectionDatum stdK411Mcd = new MatrixCorrectionDatum( //
-				std0, //
+				std0, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), //
 						Math.toRadians(0.9)) //
 		);
 
 		MatrixCorrectionDatum stdAlMcd = new MatrixCorrectionDatum( //
-				std1, //
+				std1, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), //
 						Math.toRadians(0.7)) //
 		);
 
 		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, //
+				unk, false, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);

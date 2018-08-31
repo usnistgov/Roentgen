@@ -8,7 +8,6 @@ import java.util.Objects;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -18,6 +17,8 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
+
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 
 /**
  * <p>
@@ -149,6 +150,37 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 	}
 
 	/**
+	 * First checks to see if <code>tag</code> is an input variable in which case it
+	 * gets the associated value from <code>point</code>. Otherwise, it returns the
+	 * constant value associate with <code>tag</code>.
+	 *
+	 * @param tag
+	 * @param point
+	 * @return double
+	 */
+	public double getValue(final Object tag, final RealVector point) {
+		final int p = inputIndex(tag);
+		assert p != -1 : "The tag " + tag + " is not defined in " + toString();
+		return point.getEntry(p);
+	}
+
+	/**
+	 * Only writes <code>value</code> to the Jacobian matrix <code>jacob</code> if
+	 * <code>tag</code> is an input variable (not a constant.)
+	 *
+	 *
+	 * @param row
+	 * @param tag
+	 * @param value
+	 * @param jacob
+	 */
+	public void writeJacobian(final int row, final Object tag, final double value, final RealMatrix jacob) {
+		final int p = inputIndex(tag);
+		if (p != -1)
+			jacob.setEntry(row, p, value);
+	}
+
+	/**
 	 * Extracts from <code>point</code> representing an argument to
 	 * <code>nmvj.compute(point)</code> the input RealArray that is suitable as the
 	 * argument to <code>this.comptue(...)</code>.
@@ -164,8 +196,9 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 		final RealVector res = new ArrayRealVector(dim);
 		final List<? extends Object> tags = getInputTags();
 		for (int i = 0; i < dim; ++i) {
-			final double val = point.getEntry(nmvj.inputIndex(tags.get(i)));
-			res.setEntry(i, val);
+			final int idx = nmvj.inputIndex(tags.get(i));
+			assert idx != -1 : "Can't find " + tags.get(i) + " in the arguments to " + nmvj.toString();
+			res.setEntry(i, point.getEntry(idx));
 		}
 		return res;
 	}
@@ -197,7 +230,7 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 		final Pair<RealVector, RealMatrix> res = evaluate(fargs);
 		final RealVector fvals = res.getFirst();
 		final RealMatrix fjac = res.getSecond();
-		final RealMatrix outc = new Array2DRowRealMatrix(fvals.getDimension(), args.size());
+		final RealMatrix outc = new NullableRealMatrix(fvals.getDimension(), args.size());
 		final List<? extends Object> foTags = getOutputTags();
 		for (int c = 0; c < argTags.size(); ++c) {
 			final int idx = foTags.indexOf(argTags.get(c));

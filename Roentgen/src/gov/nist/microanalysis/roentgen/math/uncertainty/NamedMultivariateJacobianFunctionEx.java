@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 
 import com.duckandcover.html.HTML;
@@ -60,15 +59,12 @@ abstract public class NamedMultivariateJacobianFunctionEx extends NamedMultivari
 	}
 
 	/**
-	 * Initializes the constant tags with the specified values. The tag for value
-	 * <code>vals.getEntry(i)</code> is <code>list.get(i)</code>. 
+	 * Initializes the constant tags with the associated values.
 	 * 
-	 * @param list
-	 * @param vals
+	 * @param mod Map&lt;Object,Double&gt; where Object is a tag
 	 */
 	public void initializeConstants(final Map<Object, Double> mod) {
-		for (Map.Entry<Object, Double> me : mod.entrySet())
-			mConstants.put(me.getKey(), me.getValue());
+		mConstants.putAll(mod);
 	}
 
 	/**
@@ -102,32 +98,15 @@ abstract public class NamedMultivariateJacobianFunctionEx extends NamedMultivari
 	 * @param point
 	 * @return double
 	 */
+	@Override
 	public double getValue(final Object tag, final RealVector point) {
 		final int p = inputIndex(tag);
 		if (p != -1) {
 			assert !isConstant(tag);
 			return point.getEntry(p);
 		} else {
-			assert isConstant(tag);
+			assert isConstant(tag) : "Can't find the constant " + tag;
 			return getConstant(tag);
-		}
-	}
-
-	/**
-	 * Only writes <code>value</code> to the covariance matrix <code>cov</code> if
-	 * <code>tag</code> is an input variable (not a constant.)
-	 *
-	 *
-	 * @param row
-	 * @param tag
-	 * @param value
-	 * @param cov
-	 */
-	public void writeCovariance(final int row, final Object tag, final double value, final RealMatrix cov) {
-		final int p = inputIndex(tag);
-		if (p == -1) {
-			assert !isConstant(tag);
-			cov.setEntry(row, p, value);
 		}
 	}
 

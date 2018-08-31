@@ -23,7 +23,17 @@ import com.duckandcover.html.Report;
  * <li>C<sub>x,z</sub> = &delta;h/&delta;C<sub>x</sub> and
  * &delta;h/&delta;C<sub>z</sub>,
  * </ul>
- * 
+ *
+ * <p>
+ * To conform to the implementation of explicit measurement model using the
+ * {@link NamedMultivariateJacobianFunction}, this class requires the use of
+ * constants as implemented in {@link NamedMultivariateJacobianFunctionEx} to
+ * pass in the values associated with the output variables (the y values).
+ * </p>
+ *
+ *
+ *
+ *
  * @author Nicholas
  *
  */
@@ -34,9 +44,9 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 
 	private static final boolean NAIVE = true;
 
-	private static Map<Object, Double> buildTempConstants(List<? extends Object> inps) {
-		Map<Object, Double> res = new HashMap<>();
-		for (Object tag : inps)
+	private static Map<Object, Double> buildTempConstants(final List<? extends Object> inps) {
+		final Map<Object, Double> res = new HashMap<>();
+		for (final Object tag : inps)
 			res.put(tag, Double.valueOf(Double.NaN));
 		return res;
 	}
@@ -44,16 +54,14 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 	/**
 	 * <li>C<sub>y</sub> = &delta;h/&delta;C<sub>y</sub>
 	 * <li>C<sub>x</sub> = &delta;h/&delta;C<sub>x</sub>
-	 * 
+	 *
 	 * @param cy
 	 * @param cx
-	 * @param outputTags
 	 */
 
 	public ImplicitMeasurementModel( //
 			final NamedMultivariateJacobianFunctionEx cy, //
-			final NamedMultivariateJacobianFunctionEx cx, //
-			final List<? extends Object> outputTags) {
+			final NamedMultivariateJacobianFunctionEx cx) {
 		super(cx.getInputTags(), cy.getInputTags());
 		initializeConstants(buildTempConstants(cy.getInputTags()));
 		mCy = cy;
@@ -62,7 +70,7 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 		mCx.initializeConstants(buildTempConstants(cy.getInputTags()));
 	}
 
-	private RealVector constantsToPoint(NamedMultivariateJacobianFunctionEx nmjfe) {
+	private RealVector constantsToPoint(final NamedMultivariateJacobianFunctionEx nmjfe) {
 		final List<? extends Object> inpTags = nmjfe.getInputTags();
 		final int sz = inpTags.size();
 		final RealVector res = new ArrayRealVector(sz);
@@ -71,8 +79,9 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 		return res;
 	}
 
-	private static Map<Object, Double> pointToConstants(NamedMultivariateJacobianFunctionEx nmjfe, RealVector point) {
-		Map<Object, Double> res = new HashMap<>();
+	private static Map<Object, Double> pointToConstants(final NamedMultivariateJacobianFunctionEx nmjfe,
+			final RealVector point) {
+		final Map<Object, Double> res = new HashMap<>();
 		final List<? extends Object> inpTags = nmjfe.getInputTags();
 		for (int i = 0; i < point.getDimension(); ++i)
 			res.put(inpTags.get(i), point.getEntry(i));
@@ -89,7 +98,7 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 	 * <li>C<sub>x,z</sub> = &delta;h/&delta;C<sub>x</sub> and
 	 * &delta;h/&delta;C<sub>z</sub>,
 	 * </ul>
-	 * 
+	 *
 	 * @param point
 	 * @return Pair&lt;RealVector, RealMatrix&gt;
 	 */
@@ -127,12 +136,42 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 			return Pair.create(yPoint, rm);
 		} else {
 			assert false;
+			// 1. Form the Cholesky factor Rx of Vx, i.e., the upper triangular matrix such
+			// that RxT.Rx = Vx.
+			// final CholeskyDecomposition chyd = new
+			// CholeskyDecomposition(uv.getCovariances());
+			// final RealMatrix Rx = chyd.getL();
+			// 2. Factor Jx as the product Jx = Qx.Ux, where Qx is an orthogonal matrix and
+			// Ux is upper triangular.
+			// final QRDecomposition qrd = new QRDecomposition(jXe.getSecond());
+			// final RealMatrix Qx = qrd.getQ(), Ux = qrd.getR();
+			// 3. Factor Jy as the product Jy = Ly.Uy, where Ly is lower triangular and Uy
+			// is upper triangular.
+			// final LUDecomposition lud = new LUDecomposition(jYe.getSecond());
+			// ????What about pivoting?????
+			// final RealMatrix Ly = lud.getL(), Uy = lud.getU();
+			// 4. Solve the matrix equation UyT.M1 = I for M1.
+			// final RealMatrix M1 = MatrixUtils.inverse(Uy.transpose());
+			// 5. Solve LyT.M2 = M1 for M2,
+			// final RealMatrix M2 = MatrixUtils.inverse(Ly.transpose()).multiply(M1);
+			// 6. Form M3 = QxT.M2.
+			// final RealMatrix M3 = Qx.transpose().multiply(M2);
+			// 7. Form M4 = UxT.M3.
+			// final RealMatrix M4 = Ux.transpose().multiply(M3);
+			// 8. Form M = Rx.M4.
+			// final RealMatrix M = Rx.multiply(M4);
+			// 9. Orthogonally triangularize M to give the upper triangular matrix R.
+			// final RealMatrix R = new QRDecomposition(M).getR();
+			// 10. Form Vy = RT.R.
+			// return Pair.create(yPoint, (R.transpose()).multiply(R));
 		}
 		return null;
+
 	}
 
-	public String toHTML(Mode mode) {
-		Report r = new Report("Implicit Measurement Model");
+	@Override
+	public String toHTML(final Mode mode) {
+		final Report r = new Report("Implicit Measurement Model");
 		r.addHeader("Implicit Measurement Model - " + this.toString());
 		r.addHTML(
 				"<p>Solve C<sub>y</sub> U<sub>y</sub> C<sub>y</sub><sup>T</sup> = C<sub>x</sub> U<sub>x</sub> C<sub>x</sub><sup>T</sup> ");
