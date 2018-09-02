@@ -128,80 +128,94 @@ public class NamedMultivariateJacobianFunctionBuilder implements IToHTML {
 		return "Combined " + mName;
 	}
 
+	private static class Implementation extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+
+		private final List<NamedMultivariateJacobianFunction> mFuncs;
+
+		private Implementation(List<? extends Object> inpTags, List<? extends Object> outTags,
+				List<NamedMultivariateJacobianFunction> funcs) {
+			super(inpTags, outTags);
+			mFuncs = funcs;
+		}
+
+		/*
+		 * This function evaluates each of the individual
+		 * NamedMultivariateJacobianFunction instances and then combines the outputs
+		 * into a single RealVector and RealMatrix corresponding to the values and
+		 * Jacobian elements.
+		 *
+		 * @see org.apache.commons.math3.fitting.leastsquares.
+		 * MultivariateJacobianFunction#
+		 * value(org.apache.commons.math3.linear.RealVector)
+		 */
+		@Override
+		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+			final List<? extends Object> output = getOutputTags();
+			final int oDim = output.size();
+			assert oDim > 0 : "Output dimensions is zero in " + toString();
+			final int iDim = getInputDimension();
+			assert iDim > 0 : "Input dimensions is zero in " + toString();
+			final RealVector vals = new ArrayRealVector(oDim);
+			final RealMatrix cov = new NullableRealMatrix(oDim, iDim);
+			for (final NamedMultivariateJacobianFunction func : mFuncs) {
+				final RealVector funcPoint = func.extractArgument(this, point);
+				func.initializeConstants(getConstants());
+				final Pair<RealVector, RealMatrix> v = func.value(funcPoint);
+				final RealVector fVals = v.getFirst();
+				final RealMatrix fJac = v.getSecond();
+				final List<? extends Object> fout = func.getOutputTags();
+				final List<? extends Object> fin = func.getInputTags();
+				final int fOutDim = fout.size();
+				final int fInDim = fin.size();
+				for (int r = 0; r < fOutDim; ++r) {
+					final int idxr = outputIndex(fout.get(r));
+					vals.setEntry(idxr, fVals.getEntry(r));
+					for (int c = 0; c < fInDim; ++c) {
+						final int idxc = inputIndex(fin.get(c));
+						cov.setEntry(idxr, idxc, fJac.getEntry(r, c));
+					}
+				}
+			}
+			return Pair.create(vals, cov);
+		}
+		
+		/*
+		 * This function evaluates each of the individual
+		 * NamedMultivariateJacobianFunction instances and then combines the outputs
+		 * into a single RealVector and RealMatrix corresponding to the values and
+		 * Jacobian elements.
+		 */
+		@Override
+		public RealVector optimized(final RealVector point) {
+			final List<? extends Object> output = getOutputTags();
+			final int oDim = output.size();
+			assert oDim > 0 : "Output dimensions is zero in " + toString();
+			final int iDim = getInputDimension();
+			assert iDim > 0 : "Input dimensions is zero in " + toString();
+			final RealVector vals = new ArrayRealVector(oDim);
+			for (final NamedMultivariateJacobianFunction func : mFuncs) {
+				final RealVector funcPoint = func.extractArgument(this, point);
+				func.initializeConstants(getConstants());
+				final RealVector fVals = func.compute(funcPoint);
+				final List<? extends Object> fout = func.getOutputTags();
+				final int fOutDim = fout.size();
+				for (int r = 0; r < fOutDim; ++r) {
+					final int idxr = outputIndex(fout.get(r));
+					vals.setEntry(idxr, fVals.getEntry(r));
+				}
+			}
+			return vals;
+		}
+
+	}
+
 	/**
 	 * @return
 	 */
 	public NamedMultivariateJacobianFunction build() {
-		final NamedMultivariateJacobianFunctionEx res = new NamedMultivariateJacobianFunctionEx(//
+		final NamedMultivariateJacobianFunction res = new Implementation(//
 				mInputTags.get(), //
-				mOutputTags.get()) {
-
-			/**
-			 * Extracts the correct values from point to build the input RealVector for
-			 * func.
-			 *
-			 * @param func
-			 * @param point
-			 * @return RealVector with dimension of func.getInputDimension()
-			 */
-			private RealVector buildInput(final NamedMultivariateJacobianFunction func, final RealVector point) {
-				final List<? extends Object> tags = func.getInputTags();
-				final RealVector res = new ArrayRealVector(tags.size());
-				for (int i = 0; i < tags.size(); ++i) {
-					final Object tag = tags.get(i);
-					final int idx = inputIndex(tag);
-					assert (idx >= 0) && (idx < getInputDimension());
-					res.setEntry(i, point.getEntry(idx));
-				}
-				return res;
-			}
-
-			/*
-			 * This function evaluates each of the individual
-			 * NamedMultivariateJacobianFunction instances and then combines the outputs
-			 * into a single RealVector and RealMatrix corresponding to the values and
-			 * Jacobian elements.
-			 *
-			 * @see org.apache.commons.math3.fitting.leastsquares.
-			 * MultivariateJacobianFunction#
-			 * value(org.apache.commons.math3.linear.RealVector)
-			 */
-			@Override
-			public Pair<RealVector, RealMatrix> value(final RealVector point) {
-				final List<? extends Object> output = getOutputTags();
-				final int oDim = output.size();
-				assert oDim > 0 : "Output dimensions is zero in " + toString();
-				final int iDim = getInputDimension();
-				assert iDim > 0 : "Input dimensions is zero in " + toString();
-				final RealVector vals = new ArrayRealVector(oDim);
-				final RealMatrix cov = new NullableRealMatrix(oDim, iDim);
-				for (final NamedMultivariateJacobianFunction func : mFuncs) {
-					final RealVector funcPoint = buildInput(func, point);
-					if (funcPoint.getDimension() > 0) {
-						if (func instanceof NamedMultivariateJacobianFunctionEx)
-							((NamedMultivariateJacobianFunctionEx) func).initializeConstants(getConstants());
-						final Pair<RealVector, RealMatrix> v = func.value(funcPoint);
-						final RealVector fVals = v.getFirst();
-						final RealMatrix fJac = v.getSecond();
-						final List<? extends Object> fout = func.getOutputTags();
-						final List<? extends Object> fin = func.getInputTags();
-						final int fOutDim = fout.size();
-						final int fInDim = fin.size();
-						for (int r = 0; r < fOutDim; ++r) {
-							final int idxr = outputIndex(fout.get(r));
-							vals.setEntry(idxr, fVals.getEntry(r));
-							for (int c = 0; c < fInDim; ++c) {
-								final int idxc = inputIndex(fin.get(c));
-								cov.setEntry(idxr, idxc, fJac.getEntry(r, c));
-							}
-						}
-					} else {
-
-					}
-				}
-				return Pair.create(vals, cov);
-			}
-		};
+				mOutputTags.get(), mFuncs);
 		return res;
 	}
 

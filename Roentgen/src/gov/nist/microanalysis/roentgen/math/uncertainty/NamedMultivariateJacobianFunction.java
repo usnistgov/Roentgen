@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -18,7 +19,6 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
-import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 
 /**
  * <p>
@@ -46,6 +46,11 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 	 */
 	private final List<? extends Object> mOutputTags;
 
+	/***
+	 * A set of constant values for use evaluating the MulitvariateJacobianFunction.
+	 */
+	private final Map<Object, Double> mConstants = new HashMap<>();
+
 	/**
 	 * Check tags are only used once.
 	 *
@@ -65,11 +70,6 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 		mInputTags = Collections.unmodifiableList(inputTags);
 		validateTags(outputTags);
 		mOutputTags = Collections.unmodifiableList(outputTags);
-	}
-
-	protected double inputValue(final Object tag, final RealVector pt) {
-		final int idx = mInputTags.indexOf(tag);
-		return pt.getEntry(idx);
 	}
 
 	/**
@@ -150,21 +150,6 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 	}
 
 	/**
-	 * First checks to see if <code>tag</code> is an input variable in which case it
-	 * gets the associated value from <code>point</code>. Otherwise, it returns the
-	 * constant value associate with <code>tag</code>.
-	 *
-	 * @param tag
-	 * @param point
-	 * @return double
-	 */
-	public double getValue(final Object tag, final RealVector point) {
-		final int p = inputIndex(tag);
-		assert p != -1 : "The tag " + tag + " is not defined in " + toString();
-		return point.getEntry(p);
-	}
-
-	/**
 	 * Only writes <code>value</code> to the Jacobian matrix <code>jacob</code> if
 	 * <code>tag</code> is an input variable (not a constant.)
 	 *
@@ -190,7 +175,7 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 	 * @return RealVector of length this.getInputDimension() containing the
 	 *         appropriate input values from point.
 	 */
-	public RealVector extract(final NamedMultivariateJacobianFunction nmvj, final RealVector point) {
+	public RealVector extractArgument(final NamedMultivariateJacobianFunction nmvj, final RealVector point) {
 		assert point.getDimension() == nmvj.getInputDimension();
 		final int dim = getInputDimension();
 		final RealVector res = new ArrayRealVector(dim);
@@ -201,44 +186,6 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 			res.setEntry(i, point.getEntry(idx));
 		}
 		return res;
-	}
-
-	/**
-	 * <p>
-	 * Evaluates this function based on a superset of the input arguments.
-	 * <code>argTags</code> must contain all the tags in
-	 * <code>this.getInputTags()</code>. The values in <code>args</code> are
-	 * identified by the Objects in <code>argTags</code>.
-	 * </p>
-	 * <p>
-	 * The return value is a pair containing a vector with values associated with
-	 * <code>this.getOutputTags()</code> and a Jacobian matrix with
-	 * <code>this.getOutputTags()</code> rows and <code>argTags</code> columns.
-	 * </p>
-	 *
-	 * @param argTags The tags associated with <code>args</code>. A superset of the
-	 *                tags in <code>this.getInputTags()</code>.
-	 * @param args    The values associated with <code>argTags</code>
-	 * @return Pair&lt;RealVector, RealMatrix&gt;
-	 */
-	public Pair<RealVector, RealMatrix> evaluate(final List<? extends Object> argTags, final List<Double> args) {
-		assert argTags.size() == args.size() : "argTags.size() must equals argTags.getDimension()";
-		final RealVector fargs = new ArrayRealVector(getInputDimension());
-		final List<? extends Object> fin = getInputTags();
-		for (int i = 0; i < fargs.getDimension(); ++i)
-			fargs.setEntry(i, args.get(argTags.indexOf(fin.get(i))));
-		final Pair<RealVector, RealMatrix> res = evaluate(fargs);
-		final RealVector fvals = res.getFirst();
-		final RealMatrix fjac = res.getSecond();
-		final RealMatrix outc = new NullableRealMatrix(fvals.getDimension(), args.size());
-		final List<? extends Object> foTags = getOutputTags();
-		for (int c = 0; c < argTags.size(); ++c) {
-			final int idx = foTags.indexOf(argTags.get(c));
-			if (idx >= 0)
-				for (int r = 0; r < fvals.getDimension(); ++r)
-					outc.setEntry(r, c, fjac.getEntry(r, idx));
-		}
-		return Pair.create(fvals, outc);
 	}
 
 	/**
@@ -365,10 +312,88 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 			}
 		};
 	}
+	
+	
+	/**
+	 * Initializes the constant tags with the specified values. The tag for value
+	 * <code>vals.getEntry(i)</code> is <code>list.get(i)</code>. Checks first to
+	 * see is the tag is being used as an input variable and won't define it as a
+	 * constant if it is an input item.
+	 * 
+	 * @param list
+	 * @param vals
+	 */
+	public void initializeConstants(final List<? extends Object> list, final RealVector vals) {
+		for (int i = 0; i < list.size(); ++i)
+			if (inputIndex(list.get(i)) == -1)
+				mConstants.put(list.get(i), vals.getEntry(i));
+	}
+
+	/**
+	 * Initializes the constant tags with the associated values.
+	 * 
+	 * @param mod Map&lt;Object,Double&gt; where Object is a tag
+	 */
+	public void initializeConstants(final Map<Object, Double> mod) {
+		mConstants.putAll(mod);
+	}
+
+	/**
+	 * Returns the constant value associated with <code>tag</code>.
+	 * 
+	 * @param tag
+	 * @return double
+	 */
+	public double getConstant(final Object tag) {
+		assert inputIndex(tag) == -1 : "Tag " + tag + " is not a constant.";
+		return mConstants.get(tag).doubleValue();
+	}
+
+	/**
+	 * Check whether <code>tag</code> is defined as a constant value.
+	 * 
+	 * @param tag A tag
+	 * @return true if <code>tag</code> is initialized as a constant, false
+	 *         otherwise.
+	 */
+	public boolean isConstant(final Object tag) {
+		return mConstants.containsKey(tag);
+	}
+
+	/**
+	 * First checks to see if <code>tag</code> is an input variable in which case it
+	 * gets the associated value from <code>point</code>. Otherwise, it returns the
+	 * constant value associate with <code>tag</code>.
+	 *
+	 * @param tag
+	 * @param point
+	 * @return double
+	 */
+	public double getValue(final Object tag, final RealVector point) {
+		final int p = inputIndex(tag);
+		if (p != -1) {
+			assert !isConstant(tag);
+			return point.getEntry(p);
+		} else {
+			assert isConstant(tag) : "Can't find the constant " + tag;
+			return getConstant(tag);
+		}
+	}
+
+	/**
+	 * Returns an unmodifiable view of the map of tags and the associated constant
+	 * values.
+	 * 
+	 * @return Map<Object, Double>
+	 */
+	public Map<Object, Double> getConstants() {
+		return Collections.unmodifiableMap(mConstants);
+	}
+
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(mInputTags, mOutputTags);
+		return Objects.hash(mInputTags, mOutputTags, mConstants);
 	}
 
 	@Override
@@ -380,18 +405,17 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 		if (getClass() != obj.getClass())
 			return false;
 		final NamedMultivariateJacobianFunction other = (NamedMultivariateJacobianFunction) obj;
-		if (!mInputTags.equals(other.mInputTags))
-			return false;
-		if (!mOutputTags.equals(other.mOutputTags))
-			return false;
-		return true;
+		return Objects.equals(mInputTags, other.mInputTags) && //
+				Objects.equals(mOutputTags, other.mOutputTags) && //
+				Objects.equals(mConstants, other.mConstants);
 	}
 
 	@Override
 	public String toHTML(final Mode mode) {
 		switch (mode) {
 		case TERSE: {
-			return HTML.escape("V[" + getOutputTags().size() + " values]=F(" + getInputTags().size() + " arguments)");
+			return HTML.escape("V[" + getOutputTags().size() + " values]=F(" + getInputTags().size() + " arguments, "
+					+ getConstants().size() + " constants)");
 		}
 		case NORMAL: {
 			final StringBuffer sb = new StringBuffer();
@@ -408,6 +432,12 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 				sb.append(tag.toString());
 				first = false;
 			}
+			first = true;
+			for (final Object tag : getConstants().keySet()) {
+				sb.append(first ? ";" : ",");
+				sb.append(tag.toString());
+				first = false;
+			}
 			sb.append(")");
 			return HTML.escape(sb.toString());
 		}
@@ -420,8 +450,16 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 			final Table args = new Table();
 			for (final Object tag : getInputTags())
 				args.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)));
-			res.addRow(Table.td(outs.toHTML(Mode.NORMAL)), Table.td(" = F("), Table.td(args.toHTML(Mode.NORMAL)),
-					Table.td(")"));
+			final Table consts = new Table();
+			for (final Object tag : getConstants().keySet())
+				consts.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)));
+			res.addRow(//
+					Table.td(outs.toHTML(Mode.NORMAL)), //
+					Table.td(" = F("), //
+					Table.td(args.toHTML(Mode.NORMAL)), //
+					Table.td(";"), //
+					Table.td(consts.toHTML(Mode.NORMAL)), //
+					Table.td(")")); //
 			return res.toHTML(Mode.NORMAL);
 		}
 		}

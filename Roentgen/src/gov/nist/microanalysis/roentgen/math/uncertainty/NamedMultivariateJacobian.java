@@ -25,7 +25,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  *
  * @author Nicholas
  */
-public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunctionEx implements IToHTML {
+public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction implements IToHTML {
 
 	private final RealVector mPoint;
 	private final Pair<RealVector, RealMatrix> mResult;

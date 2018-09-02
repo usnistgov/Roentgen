@@ -17,7 +17,7 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
 import gov.nist.microanalysis.roentgen.math.uncertainty.INamedMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunctionEx;
+import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
@@ -63,7 +63,7 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 		return res;
 	}
 
-	private static class UnknownModel extends NamedMultivariateJacobianFunctionEx {
+	private static class UnknownModel extends NamedMultivariateJacobianFunction {
 		private final MatrixCorrectionDatum mUnknown;
 		private final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;
 
@@ -129,7 +129,7 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 		}
 	}
 
-	private static class StandardsModel extends NamedMultivariateJacobianFunctionEx
+	private static class StandardsModel extends NamedMultivariateJacobianFunction
 			implements INamedMultivariateFunction {
 
 		private final MatrixCorrectionDatum mUnknown;

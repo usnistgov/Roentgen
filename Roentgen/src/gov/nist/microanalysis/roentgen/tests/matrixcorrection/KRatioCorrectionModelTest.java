@@ -83,8 +83,8 @@ public class KRatioCorrectionModelTest {
 			final MatrixCorrectionDatum meStd = me.getKey();
 			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
 				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection.tagCharacterisitic(XPPMatrixCorrection.F_CHI_F, unkMcd, cxr));
-				outputs.add(XPPMatrixCorrection.tagCharacterisitic(XPPMatrixCorrection.F_CHI_F, meStd, cxr));
+				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
+				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}
 		}
 

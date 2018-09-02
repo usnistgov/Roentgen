@@ -37,10 +37,10 @@ import com.duckandcover.html.Report;
  * @author Nicholas
  *
  */
-abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobianFunctionEx {
+abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobianFunction {
 
-	private final NamedMultivariateJacobianFunctionEx mCy;
-	private final NamedMultivariateJacobianFunctionEx mCx;
+	private final NamedMultivariateJacobianFunction mCy;
+	private final NamedMultivariateJacobianFunction mCx;
 
 	private static final boolean NAIVE = true;
 
@@ -60,8 +60,8 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 	 */
 
 	public ImplicitMeasurementModel( //
-			final NamedMultivariateJacobianFunctionEx cy, //
-			final NamedMultivariateJacobianFunctionEx cx) {
+			final NamedMultivariateJacobianFunction cy, //
+			final NamedMultivariateJacobianFunction cx) {
 		super(cx.getInputTags(), cy.getInputTags());
 		initializeConstants(buildTempConstants(cy.getInputTags()));
 		mCy = cy;
@@ -70,7 +70,7 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 		mCx.initializeConstants(buildTempConstants(cy.getInputTags()));
 	}
 
-	private RealVector constantsToPoint(final NamedMultivariateJacobianFunctionEx nmjfe) {
+	private RealVector constantsToPoint(final NamedMultivariateJacobianFunction nmjfe) {
 		final List<? extends Object> inpTags = nmjfe.getInputTags();
 		final int sz = inpTags.size();
 		final RealVector res = new ArrayRealVector(sz);
@@ -79,7 +79,7 @@ abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobian
 		return res;
 	}
 
-	private static Map<Object, Double> pointToConstants(final NamedMultivariateJacobianFunctionEx nmjfe,
+	private static Map<Object, Double> pointToConstants(final NamedMultivariateJacobianFunction nmjfe,
 			final RealVector point) {
 		final Map<Object, Double> res = new HashMap<>();
 		final List<? extends Object> inpTags = nmjfe.getInputTags();

@@ -43,7 +43,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  * @author Nicholas
  */
-public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariateJacobianFunctionEx
+public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariateJacobianFunction
 		implements INamedMultivariateFunction, IToHTML {
 
 	/**
@@ -272,6 +272,7 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 		RealMatrix expJac = MatrixUtils.createRealIdentityMatrix(point.getDimension());
 		for (int step = 0; step < mSteps.size(); ++step) {
 			final NamedMultivariateJacobianFunction func = mSteps.get(step);
+			func.initializeConstants(getConstants());
 			final List<? extends Object> fin = func.getInputTags();
 			// Build the vector argument to func and call
 			final RealVector pt = new ArrayRealVector(fin.size());
@@ -284,8 +285,6 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 				pt.setEntry(i, vals.get(idx));
 			}
 			final int fullInpSize = vals.size();
-			if (func instanceof NamedMultivariateJacobianFunctionEx)
-				((NamedMultivariateJacobianFunctionEx) func).initializeConstants(getConstants());
 			final Pair<RealVector, RealMatrix> fres = func.evaluate(pt);
 			final RealVector ovals = fres.getFirst();
 			final RealMatrix ojac = fres.getSecond();
@@ -408,10 +407,7 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 		}
 		for (int step = 0; step < mSteps.size(); ++step) {
 			final NamedMultivariateJacobianFunction func = mSteps.get(step);
-			if (func instanceof NamedMultivariateJacobianFunctionEx) {
-				NamedMultivariateJacobianFunctionEx funx = (NamedMultivariateJacobianFunctionEx) func;
-				funx.initializeConstants(getConstants());
-			}
+			func.initializeConstants(getConstants());
 			// Build the vector argument to func and call
 			final List<? extends Object> fin = func.getInputTags();
 			final RealVector pt = new ArrayRealVector(fin.size());

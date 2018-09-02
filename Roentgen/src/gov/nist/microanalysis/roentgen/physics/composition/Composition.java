@@ -25,7 +25,6 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunctionEx;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -441,7 +440,7 @@ public class Composition extends UncertainValues {
 		return (p1 != -1) && (p2 != -1) ? getCovariance(p1, p2) : 0.0;
 	}
 
-	public static class AtomFractionToMassFraction extends NamedMultivariateJacobianFunctionEx {
+	public static class AtomFractionToMassFraction extends NamedMultivariateJacobianFunction {
 
 		/**
 		 * Nominally the tabulated atomic weights but can be customized for special
