@@ -79,7 +79,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	private final Map<MatrixCorrectionDatum, CharacteristicXRaySet> mStandards;
 	// The types of variables to compute Jacobian elements.
 	private final Set<Variates> mVariates = new HashSet<>();
-
+	
 	public enum Variates {
 		MeanIonizationPotential, //
 		MassAbsorptionCofficient, //
@@ -1687,8 +1687,11 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	 * @return List&lt;NamedMultivariateJacobianFunction&gt;
 	 * @throws ArgumentException
 	 */
-	private static List<NamedMultivariateJacobianFunction> buildSteps(final MatrixCorrectionDatum unk,
-			final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds, Set<Variates> variates)
+	private static List<NamedMultivariateJacobianFunction> buildSteps( //
+			final MatrixCorrectionDatum unk, //
+			final Map<MatrixCorrectionDatum, //
+			CharacteristicXRaySet> stds, //
+			Set<Variates> variates)
 			throws ArgumentException {
 		final List<NamedMultivariateJacobianFunction> res = new ArrayList<>();
 		{
@@ -1780,7 +1783,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	public XPPMatrixCorrection(//
 			final MatrixCorrectionDatum unk, //
 			final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds, //
-			Set<Variates> variates //
+			Set<Variates> variates  //
 	) throws ArgumentException {
 		super("XPP Matrix Correction", buildSteps(unk, stds, variates));
 		mStandards = stds;

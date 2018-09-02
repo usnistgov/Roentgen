@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -288,15 +287,16 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
+					BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
 					for (final Object tag : xpp.getOutputTags())
 						if (tag instanceof XPPMatrixCorrection.ZAFTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
-									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
-									MathUtilities.td(results.getValue(tag).doubleValue(), bnf),
-									MathUtilities.td(results.getUncertainty(tag), bnf),
-									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
-									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
+									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
+									MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(results.getUncertainty(tag), bnf2),
+									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 						}
 					r.add(t);
 				}
@@ -394,7 +394,7 @@ public class XPPMatrixCorrectionTest {
 				final long start = System.currentTimeMillis();
 				final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
-				System.out.println("Full Timing = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+				System.out.println("Full Timing(2) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
 				r.add(results);
@@ -595,7 +595,7 @@ public class XPPMatrixCorrectionTest {
 				final long start = System.currentTimeMillis();
 				final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
-				System.out.println("Timing = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+				System.out.println("Timing(3) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
 				r.add(results);
@@ -871,7 +871,7 @@ public class XPPMatrixCorrectionTest {
 				final long start3 = System.currentTimeMillis();
 				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
-						"Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+						"Trimmed Delta Timing (4) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
@@ -1063,21 +1063,20 @@ public class XPPMatrixCorrectionTest {
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}
 		}
-
-		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds);
+		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.defaultVariates());
 		xpp.trimOutputs(outputs);
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValues inputs = xpp.buildInput(unkMcd, stds.keySet());
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
-		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+		System.out.println("Trimmed Timing (5) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds);
 		final UncertainValues inputs2 = xpp2.buildInput(unkMcd, stds.keySet());
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
-		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
+		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
 		for (final Object outTag : outputs) {
@@ -1137,7 +1136,7 @@ public class XPPMatrixCorrectionTest {
 				final long start3 = System.currentTimeMillis();
 				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
-						"Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
@@ -1342,13 +1341,13 @@ public class XPPMatrixCorrectionTest {
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
-		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+		System.out.println("Trimmed Timing (6) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds, variates);
 		final UncertainValues inputs2 = xpp2.buildInput(unkMcd, stds.keySet());
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
-		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
+		System.out.println("Full Timing (6) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
 		for (final Object outTag : outputs) {
@@ -1369,7 +1368,7 @@ public class XPPMatrixCorrectionTest {
 				}
 		}
 
-		final Report r = new Report("XPP Report - Test5()");
+		final Report r = new Report("XPP Report - Test6()");
 		UncertainValues resultsD = null;
 		try {
 			{
@@ -1408,7 +1407,7 @@ public class XPPMatrixCorrectionTest {
 				final long start3 = System.currentTimeMillis();
 				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
-						"Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+						"Trimmed Delta Timing (6) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
@@ -1610,7 +1609,6 @@ public class XPPMatrixCorrectionTest {
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}
 		}
-
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
 		xpp.trimOutputs(outputs);
 		assertEquals(xpp.getOutputDimension(), outputs.size());
@@ -1618,13 +1616,13 @@ public class XPPMatrixCorrectionTest {
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
-		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+		System.out.println("Trimmed Timing (7) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
 		final UncertainValues inputs2 = xpp2.buildInput(unkMcd, stds.keySet());
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
-		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
+		System.out.println("Full Timing (7) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
 		for (final Object outTag : outputs) {
@@ -1645,11 +1643,11 @@ public class XPPMatrixCorrectionTest {
 				}
 		}
 
-		final Report r = new Report("XPP Report - Test5()");
+		final Report r = new Report("XPP Report - Test7()");
 		UncertainValues resultsD = null;
 		try {
 			{
-				r.addHeader("test6()");
+				r.addHeader("test7()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
 				r.add(inputs);
@@ -1684,7 +1682,7 @@ public class XPPMatrixCorrectionTest {
 				final long start3 = System.currentTimeMillis();
 				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
-						"Trimmed Delta Timing = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+						"Trimmed Delta Timing (7) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {

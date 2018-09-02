@@ -81,7 +81,7 @@ public class UncertainValues implements IToHTML {
 			throw new DimensionMismatchException(covar.getRowDimension(), m);
 		if (covar.getColumnDimension() != m)
 			throw new DimensionMismatchException(covar.getColumnDimension(), m);
-		final double EPS = 1.0e-12, SREPS = Math.sqrt(EPS);
+		final double EPS = 1.0e-10, SREPS = Math.sqrt(EPS);
 		for (int r = 0; r < covar.getRowDimension(); ++r) {
 			final double entryRR = covar.getEntry(r, r);
 			if (entryRR < 0.0) {
