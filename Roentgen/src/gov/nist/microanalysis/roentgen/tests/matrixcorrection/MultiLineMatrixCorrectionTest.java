@@ -25,11 +25,11 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.EDSMatrixCorrection;
-import gov.nist.microanalysis.roentgen.matrixcorrection.EDSMatrixCorrection.XRayWeightTag;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MultiLineMatrixCorrection;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MultiLineMatrixCorrection.XRayWeightTag;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 
-public class EDSMatrixCorrectionTest {
+public class MultiLineMatrixCorrectionTest {
 
 	private class Datum {
 
@@ -101,7 +101,7 @@ public class EDSMatrixCorrectionTest {
 				mxrs.put(d.mXRay.getElement(), new ElementXRaySet(d.mXRay));
 		}
 		List<ElementXRaySet> lexrs = new ArrayList<>(mxrs.values());
-		EDSMatrixCorrection emc = new EDSMatrixCorrection(unk, std, lexrs);
+		MultiLineMatrixCorrection emc = new MultiLineMatrixCorrection(unk, std, lexrs);
 		Pair<RealVector, RealMatrix> res = emc.evaluate(point);
 
 		Report r = new Report("EDSMatrixCorrection - 1");
@@ -151,7 +151,7 @@ public class EDSMatrixCorrectionTest {
 				mxrs.put(d.mXRay.getElement(), new ElementXRaySet(d.mXRay));
 		}
 		List<ElementXRaySet> lexrs = new ArrayList<>(mxrs.values());
-		EDSMatrixCorrection emc = new EDSMatrixCorrection(unk, std, lexrs);
+		MultiLineMatrixCorrection emc = new MultiLineMatrixCorrection(unk, std, lexrs);
 		Pair<RealVector, RealMatrix> res = emc.evaluate(point);
 
 		Report r = new Report("EDSMatrixCorrection - 2");
@@ -201,7 +201,7 @@ public class EDSMatrixCorrectionTest {
 				mxrs.put(d.mXRay.getElement(), new ElementXRaySet(d.mXRay));
 		}
 		List<ElementXRaySet> lexrs = new ArrayList<>(mxrs.values());
-		EDSMatrixCorrection emc = new EDSMatrixCorrection(unk, std, lexrs);
+		MultiLineMatrixCorrection emc = new MultiLineMatrixCorrection(unk, std, lexrs);
 		Pair<RealVector, RealMatrix> res = emc.evaluate(point);
 
 		Report r = new Report("EDSMatrixCorrection - 3");

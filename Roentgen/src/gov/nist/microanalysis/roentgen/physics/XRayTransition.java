@@ -460,7 +460,7 @@ public enum XRayTransition implements Comparable<XRayTransition> {
     * @return String in HTML
     */
    public String toHTML() {
-      return mInner.toHTML() + "-" + mOuter.toHTML();
+      return mInner.toHTML() + "&#8209;" + mOuter.toHTML();
    }
 
    /**

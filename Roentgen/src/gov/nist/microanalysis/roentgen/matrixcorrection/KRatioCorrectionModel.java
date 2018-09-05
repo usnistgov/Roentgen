@@ -34,6 +34,11 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  * for z in { Elements }
  * </p>
  *
+ * <p>
+ * Requires values for k<sub>z</sub>, C<sub>std,z</sub>, ZAF<sub>unk,std,z</sub>
+ * and the associated Jacobians. Solves for C<sub>unk,z</sub>.
+ * </p>
+ *
  * @author nicholas
  *
  */
@@ -174,8 +179,8 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 			return new ArrayList<>(tags);
 		}
 
-		private StandardsModel(final MatrixCorrectionDatum unk, final Map<ElementXRaySet, MatrixCorrectionDatum> stds)
-				throws ArgumentException {
+		private StandardsModel(final MatrixCorrectionDatum unk, //
+				final Map<ElementXRaySet, MatrixCorrectionDatum> stds) throws ArgumentException {
 			super(buildInputs(unk, stds), buildOutputs(unk));
 			mUnknown = unk;
 			mStandards = stds;
@@ -271,6 +276,10 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 	@Override
 	public String toString() {
 		return "k-ratio Correction";
+	}
+
+	public KRatioCorrectionModel(final XPPMatrixCorrection xpp) throws ArgumentException {
+		this(xpp.getUnknown(), xpp.getStandards());
 	}
 
 	public KRatioCorrectionModel(//

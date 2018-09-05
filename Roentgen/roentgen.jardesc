@@ -17,15 +17,13 @@
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.math"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.janedoe"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.matrixcorrection"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.physics"/>
-        <folder path="/Roentgen/bin"/>
-        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.quant"/>
-        <file path="/Roentgen/debug.log"/>
+        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.matrixcorrection"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.swing"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.math.uncertainty"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.physics.composition"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.tests.spectrum"/>
-        <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.microanalysis"/>
         <file path="/Roentgen/.project"/>
         <javaElement handleIdentifier="=Roentgen/src&lt;gov.nist.microanalysis.roentgen.DataStore"/>
         <folder path="/Roentgen/target"/>

@@ -30,12 +30,12 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> implements IToHTML, Comparable<KRatioTag> {
 
 	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans) {
-		super("K-ratio", unk, std, trans);
+		super("k", unk, std, trans);
 		assert trans.size() >= 1;
 	}
 
 	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans) {
-		super("K-ratio", unk, std, new ElementXRaySet(trans));
+		super("k", unk, std, new ElementXRaySet(trans));
 	}
 
 	@Override

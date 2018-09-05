@@ -1,16 +1,6 @@
 import sys
 
-#jarDir = "C:\\Users\\Nicholas\\Documents\\workspace\\Reliquary\\build"
-#jarDir = "C:\\Users\\nritchie.NIST\\Desktop\\TmpRoentgen\\workspace\\Reliquary\\build"
-jarDir = "D:\\Users\\Nicholas\\git\\Roentgen\\Reliquary\\build"
-sys.path.append(jarDir)
-sys.packageManager.addJarDir(jarDir,True)
-
 import java.lang as jl
-
-#for key, entry in dict(jl.System.getProperties()).iteritems():
-#    print key+"\t"+entry
-
 import gov.nist.microanalysis.roentgen.physics as _rp
 import gov.nist.microanalysis.roentgen.physics.composition as _rpc
 import org.apache.commons.math3.linear as _ml3
@@ -46,11 +36,11 @@ def massFraction(name, elms):
     Constructs a Composition object representing a mass fraction with the specified name and composition.
     elms = { "Fe": (0.3,0.01), "Mg":(0.2,0.02), "O": 0.5 } represents a material with 30+-1% iron, 20+-2% magnesium and 50+-0% oxygen."""
     ell = []
-    vals = _ml3.RealVector(size(elms))
-    vars = _ml3.RealVector(size(elms))
+    vals = _ml3.ArrayRealVector(len(elms))
+    vars = _ml3.ArrayRealVector(len(elms))
     for i, (elm, v) in enumerate(elms.iteritems()):
         ell.append(_rp.Element.parse(elm))
-        if isinstance(tuple, v) or isinstance(list, v):
+        if isinstance(v, tuple) or isinstance(v, list):
             vals.setEntry(i, v[0])
             if len(v)>1:
                 vars.setEntry(i, v[1]*v[1])
@@ -64,11 +54,19 @@ def material(chemForm):
     Create a Composition object representing the chemical formula in chemForm"""    
     return _rpc.Composition.parse(chemForm)
 
-def transitions(elm, fam):
-    """transitions(elm,fam)
+def transition(trStr):
+    from gov.nist.microanalysis.roentgen.physics import CharacteristicXRay
+    return CharacteristicXRay.parse(trStr)
+    
+
+def transitions(elm, fam, minWeight=0.001):
+    """transitions(elm,fam,[minWeight=0.001])
     Returns a ElementXRaySet containing the transitions associated with the specified element and family.
     Ex: transitions("Fe","K")"""
     from gov.nist.microanalysis.roentgen.physics import XRaySet
     elm = element(elm)
     fam = family(fam)
-    return XRaySet.build(elm, fam)
+    return XRaySet.build(elm, fam, minWeight)
+
+
+print "Roentgen scripting initialized..."

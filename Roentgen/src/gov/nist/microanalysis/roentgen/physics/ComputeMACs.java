@@ -11,13 +11,21 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
+import gov.nist.microanalysis.roentgen.math.uncertainty.INamedMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.MassAbsorptionCoefficient.MaterialMAC;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 
-public class ComputeMACs extends NamedMultivariateJacobianFunction {
+/**
+ * Compute the material mass absorption coefficient given the elemental mass
+ * absorption coefficients.
+ * 
+ * @author nicholas
+ *
+ */
+public class ComputeMACs extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
 
 	private static List<Object> inputTags(final List<Composition> comps, final XRay xray) {
 		final List<Object> res = new ArrayList<>();
@@ -116,5 +124,26 @@ public class ComputeMACs extends NamedMultivariateJacobianFunction {
 			res.setEntry(i, tmp);
 		}
 		return Pair.create(res, cov);
+	}
+
+	@Override
+	public RealVector optimized(RealVector point) {
+		final RealVector res = new ArrayRealVector(getOutputDimension());
+		final List<? extends Object> macTags = getOutputTags();
+		final List<? extends Object> inp = getInputTags();
+		for (int i = 0; i < macTags.size(); ++i) {
+			final MaterialMAC macTag = (MaterialMAC) macTags.get(i);
+			final Composition mf = macTag.getComposition();
+			final XRay xr = macTag.getXRay();
+			double tmp = 0.0;
+			for (final Element elm : mf.getElementSet()) {
+				final int p = inp.indexOf(new MassAbsorptionCoefficient.ElementMAC(elm, xr));
+				final int q = inp.indexOf(Composition.buildMassFractionTag(mf, elm));
+				assert (p >= 0) && (q >= 0);
+				tmp += point.getEntry(p) * point.getEntry(q);
+			}
+			res.setEntry(i, tmp);
+		}
+		return res;
 	}
 }

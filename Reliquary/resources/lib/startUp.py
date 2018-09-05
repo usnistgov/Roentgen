@@ -22,9 +22,15 @@ class PyAction(jxsw.AbstractAction):
     def actionPerformed(self, actionEvent):
         self._func(actionEvent)
     
-def report(html):
-    __worker__.publishHTML(html)
-    
+def report(html, p=True):
+    """
+    report(html, [p=True])
+    Adds text as html to the report document. If p=True wrap the text in <p>...</p>"""
+    if not p:
+        __worker__.publishHTML(html)
+    else:
+        __worker__.publishHTML("<p>"+html+"</p>")
+
 def verbose(obj, dest=None):
     if isinstance(obj, dach.IToHTML):
         if dest and isinstance(obj, dach.IToHTMLExt):

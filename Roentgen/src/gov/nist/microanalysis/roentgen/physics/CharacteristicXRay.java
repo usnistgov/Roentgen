@@ -15,6 +15,7 @@ import com.google.common.base.Objects;
 import gov.nist.microanalysis.roentgen.Globals;
 import gov.nist.microanalysis.roentgen.math.Utility;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
+import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
  * <p>
@@ -250,16 +251,23 @@ public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay
 		switch (mode) {
 		default:
 		case TERSE:
-		case NORMAL:
-			return mElement.getAbbrev() + " " + mTransition.toHTML();
+			return mElement.getAbbrev() + "&nbsp;" + mTransition.toHTML();
+		case NORMAL:	{		
+			final Table t = new Table();
+			BasicNumberFormat bnf = new BasicNumberFormat("#,##0.0");
+			t.addRow(Table.td(toHTML(Mode.TERSE)+"&nbsp;("+ getTransition().toSeigbahn()+")"), Table.td(bnf.formatHTML(getEnergy()) + " eV"));
+			return t.toHTML(Mode.VERBOSE);
+		}
 		case VERBOSE: {
 			final Table t = new Table();
-			t.addRow(Table.th("Property"), Table.th("Value"));
-			t.addRow(Table.td("Name"), Table.td(toHTML(Mode.TERSE)));
-			t.addRow(Table.td("Seigbahn"), Table.td(mElement.getAbbrev() + " " + getTransition().toSeigbahn()));
-			t.addRow(Table.td("Inner"), Table.td(getInner().toHTML(Mode.TERSE)));
-			t.addRow(Table.td("Outer"), Table.td(getOuter().toHTML(Mode.TERSE)));
-			t.addRow(Table.td("Energy"), Table.td(Double.toString(getEnergy()) + " eV"));
+			BasicNumberFormat bnf = new BasicNumberFormat("#,##0.0");
+			t.addRow(Table.th("Name"), Table.th("Seigbahn"), Table.th("Inner"), Table.th("Outer"), Table.th("Weight"), Table.th("Energy"));
+			t.addRow(Table.td(toHTML(Mode.TERSE)), //
+					Table.td(mElement.getAbbrev() + " " + getTransition().toSeigbahn()), //
+					Table.td(getInner().toHTML(Mode.TERSE)), //
+					Table.td(getOuter().toHTML(Mode.TERSE)), //
+					Table.td(bnf.formatHTML(getWeight()*100.0)+" %"), //
+					Table.td(bnf.formatHTML(getEnergy()) + " eV"));
 			return t.toHTML(Mode.VERBOSE);
 		}
 		}

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.ArrayList;
@@ -36,7 +33,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @author nicholas
  *
  */
-public class EDSMatrixCorrection extends NamedMultivariateJacobianFunction {
+public class MultiLineMatrixCorrection extends NamedMultivariateJacobianFunction {
 
 	public static class XRayWeightTag extends BaseTag<CharacteristicXRay, Object, Object> {
 
@@ -62,12 +59,12 @@ public class EDSMatrixCorrection extends NamedMultivariateJacobianFunction {
 			MatrixCorrectionDatum std, //
 			List<ElementXRaySet> lexrs) {
 		List<Object> res = new ArrayList<>();
-		for (ElementXRaySet exrs : lexrs)
+		for (ElementXRaySet exrs : lexrs) 
 			res.add(new MatrixCorrectionTag(unk, std, exrs));
 		return res;
 	}
 
-	public EDSMatrixCorrection(MatrixCorrectionDatum unk, MatrixCorrectionDatum std, List<ElementXRaySet> lexrs) {
+	public MultiLineMatrixCorrection(MatrixCorrectionDatum unk, MatrixCorrectionDatum std, List<ElementXRaySet> lexrs) {
 		super(buildInputTags(unk, std, lexrs), buildOutputTags(unk, std, lexrs));
 	}
 

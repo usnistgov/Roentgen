@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,7 +48,7 @@ public class XPPMatrixCorrectionTest {
 	private static final ValueToLog3 V2L3 = new ValueToLog3(1.0);
 	private static final LinearToColor L2C = new LinearToColor(1.0, Color.blue, Color.red);
 	public static boolean DUMP = false;
-	public static int MC_ITERATIONS = 16*8000;
+	public static int MC_ITERATIONS = 16 * 8000;
 
 	/**
 	 * Computes Si and O in Al2SiO5 using SiO2
@@ -97,7 +96,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("test1()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				final UncertainValues inputs = xpp.buildInput(unkMcd, Collections.singleton(stdMcd));
+				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
 				final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
@@ -186,10 +185,15 @@ public class XPPMatrixCorrectionTest {
 				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8)
-							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
-									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
-
+						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > //
+							0.01 * Math.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx)))) {
+								System.out.print(jac.getOutputTags().get(oIdx));
+								System.out.print(jac.getInputTags().get(iIdx));
+								assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
+										.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
+							}
+						}
 				if (DUMP) {
 					System.out.println("Results");
 					System.out.println(results.toCSV());
@@ -216,7 +220,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Monte Carlo Results");
 				r.add(xpp);
 				r.addHeader("Inputs");
-				final UncertainValues inputs = xpp.buildInput(unkMcd, Collections.singleton(stdMcd));
+				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
 				final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
 
@@ -388,7 +392,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("test2()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				final UncertainValues inputs = xpp.buildInput(unkMcd, stds.keySet());
+				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
 
 				final long start = System.currentTimeMillis();
@@ -452,7 +456,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Monte Carlo Results");
 				r.add(xpp);
 				r.addHeader("Inputs");
-				final UncertainValues inputs = xpp.buildInput(unkMcd, Collections.singleton(stdMcd));
+				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
 				final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
 				r.addHeader("Analytic Results");
@@ -590,7 +594,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("test3()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				final UncertainValues inputs = xpp.buildInput(unkMcd, Collections.singleton(stdMcd));
+				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
 				final long start = System.currentTimeMillis();
 				final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
@@ -657,7 +661,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Monte Carlo Results");
 				r.add(xpp);
 				r.addHeader("Inputs");
-				final UncertainValues inputs = xpp.buildInput(unkMcd, Collections.singleton(stdMcd));
+				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
 				final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
 				r.addHeader("Analytic Results");
@@ -801,7 +805,7 @@ public class XPPMatrixCorrectionTest {
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds);
 		xpp.trimOutputs(outputs);
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValues inputs = xpp.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
@@ -809,7 +813,7 @@ public class XPPMatrixCorrectionTest {
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds);
-		final UncertainValues inputs2 = xpp2.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs2 = xpp2.buildInput();
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
@@ -1066,7 +1070,7 @@ public class XPPMatrixCorrectionTest {
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.defaultVariates());
 		xpp.trimOutputs(outputs);
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValues inputs = xpp.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
@@ -1074,7 +1078,7 @@ public class XPPMatrixCorrectionTest {
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds);
-		final UncertainValues inputs2 = xpp2.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs2 = xpp2.buildInput();
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
@@ -1337,7 +1341,7 @@ public class XPPMatrixCorrectionTest {
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, variates);
 		xpp.trimOutputs(outputs);
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValues inputs = xpp.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
@@ -1345,7 +1349,7 @@ public class XPPMatrixCorrectionTest {
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds, variates);
-		final UncertainValues inputs2 = xpp2.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs2 = xpp2.buildInput();
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (6) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
@@ -1532,31 +1536,31 @@ public class XPPMatrixCorrectionTest {
 				std0, true, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
-				MatrixCorrectionDatum.roughness(10.0,3.2));
+				MatrixCorrectionDatum.roughness(10.0, 3.2));
 		// Ba, Ti, Si, O
 		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
 				std1, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
-				MatrixCorrectionDatum.roughness(10.0,3.6));
+				MatrixCorrectionDatum.roughness(10.0, 3.6));
 		// Zn
 		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
 				std2, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
-				MatrixCorrectionDatum.roughness(10.0,7.14));
+				MatrixCorrectionDatum.roughness(10.0, 7.14));
 		// Zr
 		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
 				std3, true, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
-				MatrixCorrectionDatum.roughness(10.0,5.62));
+				MatrixCorrectionDatum.roughness(10.0, 5.62));
 
 		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
 				unk, false, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
-				MatrixCorrectionDatum.roughness(10.0,3.5));
+				MatrixCorrectionDatum.roughness(10.0, 3.5));
 
 		// IUPAC Seigbahn Standard Energy ZAF Z A F k-ratio
 		// O K-L3 O Kα1 BaTiSi3O9 0.5249 1.0163 0.9979 1.0184 1.0001 0.992287
@@ -1612,7 +1616,7 @@ public class XPPMatrixCorrectionTest {
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
 		xpp.trimOutputs(outputs);
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValues inputs = xpp.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
@@ -1620,7 +1624,7 @@ public class XPPMatrixCorrectionTest {
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
-		final UncertainValues inputs2 = xpp2.buildInput(unkMcd, stds.keySet());
+		final UncertainValues inputs2 = xpp2.buildInput();
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (7) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 

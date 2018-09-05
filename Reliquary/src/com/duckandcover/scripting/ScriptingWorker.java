@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import javax.swing.SwingWorker;
 
 import org.python.util.InteractiveConsole;
+import org.python.util.PythonInterpreter;
 
 import com.duckandcover.Reliquary;
 import com.duckandcover.html.HTML;
@@ -199,13 +200,14 @@ public class ScriptingWorker extends SwingWorker<Object, ScriptOutput> {
 		try {
 			Thread.currentThread().setName("Jython Interactive Console");
 			Properties props = new Properties();
-			final String path = System.getProperty("user.dir");
+			final String path = "C:/Users/nicho/git/Roentgen/Reliquary/build/Lib";
 			// props.put("python.path", path);
-			props.put("java.ext.dir", "C:\\Users\\Nicholas\\Java Apps\\Jython\\Lib\\site-packages");
-			props.put("python.home", "D:\\Users\\Nicholas\\git\\Roentgen\\Reliquary\\ext");
+			//props.put("java.ext.dirs", path);
+			//props.put("python.packages.paths",path);
+			//props.put("python.packages.directories",path);
 			props.put("python.cachedir.skip", "false");
-			props.put("python.cachedir", path + "\\jython_cache");
-
+			props.put("python.cachedir", path + "/jython_cache");
+			PythonInterpreter.initialize(System.getProperties(), props, new String[0]);
 			mScripter = new InteractiveConsole();
 			mScripter.setOut(new PyOutStream() {
 				@Override

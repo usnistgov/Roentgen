@@ -757,11 +757,12 @@ public class XRaySet {
 		@Override
 		public String toHTML(final Mode mode) {
 			if (mode == Mode.TERSE) {
-				final CharacteristicXRay br = this.getBrightest();
-				return br.toHTML(Mode.TERSE) + (mSet.size()>1 ? " + " + Integer.toString(mSet.size() - 1) + " others" : "");
-			} else if (mode == Mode.NORMAL)
 				return HTML.escape(buildName());
-			else {
+			} else if (mode == Mode.NORMAL) {
+				final CharacteristicXRay br = this.getBrightest();
+				return br.toHTML(Mode.TERSE)
+						+ (mSet.size() > 1 ? "&nbsp;+&nbsp;" + Integer.toString(mSet.size() - 1) + "&nbsp;others" : "");
+			} else {
 				final Table t = new Table();
 				t.addRow(Table.th("Transition"), Table.th("Details"));
 				for (final CharacteristicXRay cxr : getSetOfCharacteristicXRay()) {
@@ -829,6 +830,21 @@ public class XRaySet {
 		ElementXRaySet exrs = new ElementXRaySet(elm);
 		for (CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
 			if (cxr.getInner().getShell().getFamily() == prin)
+				exrs.add(cxr);
+		return exrs;
+	}
+
+	/**
+	 * Build the ElementXRaySet associated with the specified Element and Shell(s).
+	 * 
+	 * @param elm
+	 * @param shells
+	 * @return ElementXRaySet
+	 */
+	static public ElementXRaySet build(Element elm, Principle prin, double minWeight) {
+		ElementXRaySet exrs = new ElementXRaySet(elm);
+		for (CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+			if ((cxr.getInner().getShell().getFamily() == prin) && (cxr.getWeight() > minWeight))
 				exrs.add(cxr);
 		return exrs;
 	}

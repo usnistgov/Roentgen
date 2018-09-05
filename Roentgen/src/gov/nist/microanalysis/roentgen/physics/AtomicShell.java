@@ -422,7 +422,7 @@ public class AtomicShell
          default:
          case TERSE:
          case NORMAL:
-            return mElement.getAbbrev() + " " + mShell.toHTML();
+            return mElement.getAbbrev() + "&nbsp;" + mShell.toHTML();
          case VERBOSE: {
             final StringBuffer sb = new StringBuffer();
             sb.append("<table><tr><th>Property</th><th>Value</th>");
