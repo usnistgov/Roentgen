@@ -10,6 +10,10 @@ import sys
 import com.duckandcover as dac
 import com.duckandcover.html as dach
 
+hVerbose = dach.IToHTML.Mode.VERBOSE
+hNormal = dach.IToHTML.Mode.NORMAL
+hTerse = dach.IToHTML.Mode.TERSE
+
 class PyAction(jxsw.AbstractAction):
     """Defines a Python class the extends javax.swing.AbstractAction using a Python function which takes a single argument, an javax.swing.ActionEvent.
     The constructor takes a name, a function of one argument and an optional javax.swing.Icon"""
@@ -34,27 +38,27 @@ def report(html, p=True):
 def verbose(obj, dest=None):
     if isinstance(obj, dach.IToHTML):
         if dest and isinstance(obj, dach.IToHTMLExt):
-            report(obj.toHTML(dach.IToHTML.Mode.VERBOSE, rApp.getReport(), dest))            
+            report(obj.toHTML(hVerbose, rApp.getReport(), dest))            
         else:
-            report(obj.toHTML(dach.IToHTML.Mode.VERBOSE))
+            report(obj.toHTML(hVerbose))
     else:
         print str(obj)
 
 def normal(obj, dest=None):
     if isinstance(obj, dach.IToHTML):
         if dest and isinstance(obj, dach.IToHTMLExt):
-            report(obj.toHTML(dach.IToHTML.Mode.NORMAL, rApp.getReport(), dest))            
+            report(obj.toHTML(hNormal, rApp.getReport(), dest))            
         else:
-            report(obj.toHTML(dach.IToHTML.Mode.NORMAL))
+            report(obj.toHTML(hNormal))
     else:
         print str(obj)
 
 def terse(obj, dest=None):
     if isinstance(obj, dach.IToHTML):
         if dest and isinstance(obj, dach.IToHTMLExt):
-            report(obj.toHTML(dach.IToHTML.Mode.TERSE, rApp.getReport(), dest))
+            report(obj.toHTML(hTerse, rApp.getReport(), dest))
         else:
-            report(obj.toHTML(dach.IToHTML.Mode.TERSE))
+            report(obj.toHTML(hTerse))
     else:
         print str(obj)
 

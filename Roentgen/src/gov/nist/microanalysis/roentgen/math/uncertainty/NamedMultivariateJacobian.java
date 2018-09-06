@@ -50,7 +50,7 @@ public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction
 		for (int c = 0; c < nmjf.getInputDimension(); ++c) {
 			final RealVector pt0 = new ArrayRealVector(inp), pt1 = new ArrayRealVector(inp);
 			final double deltaX = sc * Math.max(uv.getUncertainty(c), Math.abs(0.01 * pt0.getEntry(c)));
-			assert (deltaX > 0.0);
+			assert deltaX > 0.0;
 			pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
 			pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
 			final RealVector output0 = nmjf.compute(pt0), output1 = nmjf.compute(pt1);

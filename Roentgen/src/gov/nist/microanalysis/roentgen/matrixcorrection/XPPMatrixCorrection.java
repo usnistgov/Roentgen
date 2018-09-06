@@ -59,13 +59,14 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  * <p>
  * The following parameters are assumed to have associated uncertainties.
  * <ul>
- * <li>The composition of the standards (user provided)</li>
- * <li>The composition of the unknown (user provided)</li>
- * <li>The beam energy (user provided)</li>
- * <li>The take-off angle (user provided)</li>
+ * <li>The composition of the standards (user specified)</li>
+ * <li>The composition of the unknown (user specified)</li>
+ * <li>The beam energy (user specified)</li>
+ * <li>The take-off angle (user specified)</li>
  * <li>The mass absorption coefficient (computed using FFAST)</li>
  * <li>The mean ionization coefficient (computed using the equation in
  * PAP1991)</li>
+ * <li>Surface roughness (user specified)</li>
  * </ul>
  * 
  * @author Nicholas
@@ -76,7 +77,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	// The nominal value of the unknown.
 	private final MatrixCorrectionDatum mUnknown;
 	// The standard values
-	private final Map<MatrixCorrectionDatum, CharacteristicXRaySet> mStandards;
+	private final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;
 	// The types of variables to compute Jacobian elements.
 	private final Set<Variates> mVariates = new HashSet<>();
 
@@ -87,6 +88,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		UnknownComposition, //
 		BeamEnergy, //
 		TakeOffAngle, //
+		WeightsOfLines, //
 		SurfaceRoughness
 	};
 
@@ -176,6 +178,13 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 
 	static public Object tagAtomicNumber(MatrixCorrectionDatum mcd, CharacteristicXRay cxr) {
 		return tagCharacterisitic("Z", mcd, cxr);
+	}
+
+	public static class XRayWeightTag extends BaseTag<CharacteristicXRay, Object, Object> {
+
+		public XRayWeightTag(CharacteristicXRay cxr) {
+			super("W", cxr);
+		}
 	}
 
 	public static final String EPS = "&epsilon;";
@@ -1079,7 +1088,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		}
 	};
 
-	static public class StepEps // C1
+	static private class StepEps // C1
 			extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
 
 		private static final double MIN_EPS = 1.0e-6;
@@ -1518,7 +1527,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 			res.add(tagFxF(std, cxr));
 			res.add(zTag(unk, std, cxr));
 			res.add(aTag(unk, std, cxr));
-			res.add(zaTag(unk, std, cxr));
+			res.add(zafTag(unk, std, cxr));
 			res.add(new KRatioTag(unk, std, cxr));
 			return res;
 		}
@@ -1554,7 +1563,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 
 			final int oFxFu = outputIndex(tagFxF(mUnknown, mXRay));
 			final int oFxFs = outputIndex(tagFxF(mStandard, mXRay));
-			final int oZA = outputIndex(zaTag(mUnknown, mStandard, mXRay));
+			final int oZA = outputIndex(zafTag(mUnknown, mStandard, mXRay));
 			final int oZ = outputIndex(zTag(mUnknown, mStandard, mXRay));
 			final int oA = outputIndex(aTag(mUnknown, mStandard, mXRay));
 			final int oK = outputIndex(new KRatioTag(mUnknown, mStandard, mXRay));
@@ -1603,7 +1612,8 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 			final int iFu = inputIndex(tagShell("F", mUnknown, mXRay.getInner()));
 			final int iFs = inputIndex(tagShell("F", mStandard, mXRay.getInner()));
 			final int iCu = inputIndex(Composition.buildMassFractionTag(mUnknown.getComposition(), mXRay.getElement()));
-			final int iCs = inputIndex(Composition.buildMassFractionTag(mStandard.getComposition(), mXRay.getElement()));
+			final int iCs = inputIndex(
+					Composition.buildMassFractionTag(mStandard.getComposition(), mXRay.getElement()));
 			checkIndices(iFxu, iFxs, iFu, iFs, iCu, iCs);
 
 			final double Fxu = point.getEntry(iFxu);
@@ -1617,7 +1627,7 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 
 			final int oFxFu = outputIndex(tagFxF(mUnknown, mXRay));
 			final int oFxFs = outputIndex(tagFxF(mStandard, mXRay));
-			final int oZA = outputIndex(zaTag(mUnknown, mStandard, mXRay));
+			final int oZA = outputIndex(zafTag(mUnknown, mStandard, mXRay));
 			final int oZ = outputIndex(zTag(mUnknown, mStandard, mXRay));
 			final int oA = outputIndex(aTag(mUnknown, mStandard, mXRay));
 			final int oK = outputIndex(new KRatioTag(mUnknown, mStandard, mXRay));
@@ -1635,13 +1645,162 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		public String toString() {
 			return "StepZA[" + mStandard + "," + mUnknown + "," + mXRay + "]";
 		}
+	}
+
+	/**
+	 * Takes the matrix corrections for the individual lines and sums them as
+	 * appropriate for k-ratios measured from multiple lines simultaneously as is
+	 * the case in EDS.
+	 * 
+	 * Takes as inputs
+	 * <ol>
+	 * <li>Characteristic x-ray weights (XRayWeightTag)
+	 * <li>ZAF associated with single characteristic lines
+	 * (XPPMatrixCorrection.zaTag)
+	 * </ol>
+	 * Returns as outputs
+	 * <ol>
+	 * <li>The effective ZAF for a set of characteristic x-ray lines from a single
+	 * element (MatrixCorrectionTag)
+	 * </ol>
+	 * 
+	 * @author nicholas
+	 *
+	 */
+	private static class StepCombine //
+			extends NamedMultivariateJacobianFunction //
+			implements INamedMultivariateFunction {
+
+		private static List<? extends Object> buildInputTags(MatrixCorrectionDatum unk, //
+				MatrixCorrectionDatum std, //
+				ElementXRaySet exrs, //
+				Set<Variates> variates //
+		) {
+			List<Object> res = new ArrayList<>();
+			for (CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay()) {
+				res.add(zafTag(unk, std, cxr));
+				res.add(new KRatioTag(unk, std, cxr));
+				if (variates.contains(Variates.WeightsOfLines))
+					res.add(new XRayWeightTag(cxr));
+			}
+			return res;
+		}
+
+		private static List<? extends Object> buildOutputTags(MatrixCorrectionDatum unk, //
+				MatrixCorrectionDatum std, //
+				ElementXRaySet exrs, //
+				Set<Variates> variates //
+		) {
+			List<Object> res = new ArrayList<>();
+			res.add(zafTag(unk, std, exrs));
+			res.add(new KRatioTag(unk, std, exrs));
+			return res;
+		}
+
+		public StepCombine( //
+				MatrixCorrectionDatum unk, //
+				MatrixCorrectionDatum std, //
+				ElementXRaySet lexrs, //
+				Set<Variates> variates //
+		) {
+			super(buildInputTags(unk, std, lexrs, variates), buildOutputTags(unk, std, lexrs, variates));
+		}
+
+		@Override
+		public Pair<RealVector, RealMatrix> value(RealVector point) {
+
+			RealVector rv = new ArrayRealVector(getOutputDimension());
+			RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+
+			for (int row = 0; row < getOutputDimension(); ++row) {
+				Object tag = getOutputTags().get(row);
+				if (tag instanceof MatrixCorrectionTag) {
+					MatrixCorrectionTag mct = (MatrixCorrectionTag) tag;
+					List<CharacteristicXRay> lcrs = new ArrayList<>(
+							mct.getElementXRaySet().getSetOfCharacteristicXRay());
+					MatrixCorrectionDatum std = mct.getStandard();
+					MatrixCorrectionDatum unk = mct.getUnknown();
+					final int kRow = outputIndex(new KRatioTag(unk, std, mct.getElementXRaySet()));
+					checkIndices(kRow);
+					final int sz = lcrs.size();
+					final XRayWeightTag[] xrwts = new XRayWeightTag[sz];
+					final int[] kIdx = new int[sz];
+					final int[] zafIdx = new int[sz];
+					final double[] cxrW = new double[sz];
+					final double[] cxrZ = new double[sz];
+					final double[] cxrK = new double[sz];
+					double sumW = 0.0, zafEff = 0.0, kEff = 0.0;
+					for (int i = 0; i < sz; ++i) {
+						final CharacteristicXRay cxr = lcrs.get(i);
+						xrwts[i] = new XRayWeightTag(cxr);
+						kIdx[i] = inputIndex(new KRatioTag(unk, std, cxr));
+						zafIdx[i] = inputIndex(zafTag(unk, std, cxr));
+						cxrW[i] = getValue(xrwts[i], point);
+						cxrZ[i] = point.getEntry(zafIdx[i]);
+						cxrK[i] = point.getEntry(kIdx[i]);
+						sumW += cxrW[i];
+						zafEff += cxrW[i] * cxrZ[i];
+						kEff += cxrW[i] * cxrK[i];
+					}
+					checkIndices(kIdx);
+					checkIndices(zafIdx);
+					zafEff /= sumW;
+					kEff /= sumW;
+					rv.setEntry(row, zafEff);
+					rv.setEntry(kRow, kEff);
+					for (int i = 0; i < sz; ++i) {
+						rm.setEntry(row, zafIdx[i], cxrW[i] / sumW);
+						writeJacobian(row, xrwts[i], cxrZ[i] / sumW - zafEff / sumW, rm);
+						rm.setEntry(kRow, kIdx[i], cxrW[i] / sumW);
+						writeJacobian(kRow, xrwts[i], cxrK[i] / sumW - kEff / sumW, rm);
+					}
+				}
+			}
+			return Pair.create(rv, rm);
+		}
+
+		@Override
+		public RealVector optimized(RealVector point) {
+			RealVector rv = new ArrayRealVector(getOutputDimension());
+			for (int row = 0; row < getOutputDimension(); ++row) {
+				Object tag = getOutputTags().get(row);
+				if (tag instanceof MatrixCorrectionTag) {
+					MatrixCorrectionTag mct = (MatrixCorrectionTag) tag;
+					List<CharacteristicXRay> lcrs = new ArrayList<>(
+							mct.getElementXRaySet().getSetOfCharacteristicXRay());
+					MatrixCorrectionDatum std = mct.getStandard();
+					MatrixCorrectionDatum unk = mct.getUnknown();
+					final int kRow = outputIndex(new KRatioTag(unk, std, mct.getElementXRaySet()));
+					final int sz = lcrs.size();
+					double sumW = 0.0, zafEff = 0.0, kEff = 0.0;
+					for (int i = 0; i < sz; ++i) {
+						final CharacteristicXRay cxr = lcrs.get(i);
+						final int zafIdx = inputIndex(zafTag(unk, std, cxr));
+						final int kIdx = inputIndex(new KRatioTag(unk, std, cxr));
+						final double cxrW = getValue(new XRayWeightTag(cxr), point);
+						final double cxrZ = point.getEntry(zafIdx);
+						final double cxrK = point.getEntry(kIdx);
+						sumW += cxrW;
+						zafEff += cxrW * cxrZ;
+						kEff += cxrW * cxrK;
+					}
+					rv.setEntry(row, zafEff / sumW);
+					rv.setEntry(kRow, kEff / sumW);
+				}
+			}
+			return rv;
+		}
+		
+		public String toString() {
+			return "Combine";
+		}
 
 	}
 
-	private static CharacteristicXRaySet extractXRays(final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds) {
+	private static CharacteristicXRaySet extractXRays(final Map<ElementXRaySet, MatrixCorrectionDatum> stds) {
 		final CharacteristicXRaySet res = new CharacteristicXRaySet();
-		for (final CharacteristicXRaySet cxrs : stds.values())
-			res.addAll(cxrs);
+		for (final ElementXRaySet exrs : stds.keySet())
+			res.addAll(exrs);
 		return res;
 	}
 
@@ -1705,6 +1864,22 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 
 	};
 
+	private static Map<MatrixCorrectionDatum, CharacteristicXRaySet> convert(
+			Map<ElementXRaySet, MatrixCorrectionDatum> mem //
+	) {
+		Map<MatrixCorrectionDatum, CharacteristicXRaySet> res = new HashMap<>();
+		Set<MatrixCorrectionDatum> stds = new HashSet<>(mem.values());
+		for (MatrixCorrectionDatum std : stds) {
+			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
+			for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : mem.entrySet())
+				if (me.getValue().equals(std))
+					cxrs.addAll(me.getKey());
+			assert cxrs.size() > 0;
+			res.put(std, cxrs);
+		}
+		return res;
+	}
+
 	/**
 	 * This method joins together the individual Composition computations into a
 	 * single final step that outputs the final matrix corrections.
@@ -1716,14 +1891,14 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	 */
 	private static List<NamedMultivariateJacobianFunction> buildSteps( //
 			final MatrixCorrectionDatum unk, //
-			final Map<MatrixCorrectionDatum, //
-					CharacteristicXRaySet> stds, //
+			final Map<ElementXRaySet, MatrixCorrectionDatum> stds, //
 			Set<Variates> variates) throws ArgumentException {
 		final List<NamedMultivariateJacobianFunction> res = new ArrayList<>();
+		Map<MatrixCorrectionDatum, CharacteristicXRaySet> cstds = convert(stds);
 		{
 			final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
 			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
-			for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
+			for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : cstds.entrySet()) {
 				step.add(new StepXPP(me.getKey(), me.getValue(), variates));
 				cxrs.addAll(me.getValue());
 			}
@@ -1732,10 +1907,20 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		}
 		{
 			final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
-			for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet())
+			for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : cstds.entrySet())
 				for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay())
 					step.add(new StepZA(unk, me.getKey(), cxr));
 			res.add(NamedMultivariateJacobianFunctionBuilder.join("ZA", step));
+		}
+		{
+			final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+			for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+				final ElementXRaySet exrs = me.getKey();
+				if (exrs.size() > 1)
+					step.add(new StepCombine(unk, me.getValue(), exrs, variates));
+			}
+			if (step.size() > 0)
+				res.add(NamedMultivariateJacobianFunctionBuilder.join("Combine", step));
 		}
 		return res;
 	}
@@ -1765,9 +1950,14 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		return new MatrixCorrectionDatumTag2<CharacteristicXRay>(name, comp, other);
 	}
 
-	static public Object zaTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
+	static public Object zafTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
 			final CharacteristicXRay cxr) {
 		return new MatrixCorrectionTag(unk, std, cxr);
+	}
+
+	static public Object zafTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
+			final ElementXRaySet exrs) {
+		return new MatrixCorrectionTag(unk, std, exrs);
 	}
 
 	static public Object zTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
@@ -1808,14 +1998,14 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	 */
 	public XPPMatrixCorrection(//
 			final MatrixCorrectionDatum unk, //
-			final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds, //
+			final Map<ElementXRaySet, MatrixCorrectionDatum> stds, //
 			Set<Variates> variates //
 	) throws ArgumentException {
 		super("XPP Matrix Correction", buildSteps(unk, stds, variates));
 		mStandards = stds;
 		mUnknown = unk;
 		mVariates.addAll(variates);
-		initializeConstants(unk, stds.keySet());
+		initializeConstants();
 	}
 
 	/**
@@ -1825,8 +2015,8 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	 *             the edge energies must all be below the beam energy.
 	 * @throws ArgumentException
 	 */
-	public XPPMatrixCorrection(final MatrixCorrectionDatum unk,
-			final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds) throws ArgumentException {
+	public XPPMatrixCorrection(final MatrixCorrectionDatum unk, final Map<ElementXRaySet, MatrixCorrectionDatum> stds)
+			throws ArgumentException {
 		this(unk, stds, defaultVariates());
 	}
 
@@ -1838,8 +2028,8 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	 * @throws ArgumentException
 	 */
 	public XPPMatrixCorrection(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
-			final CharacteristicXRaySet exrs, Set<Variates> variates) throws ArgumentException {
-		this(unk, Collections.singletonMap(std, exrs), variates);
+			final ElementXRaySet exrs, Set<Variates> variates) throws ArgumentException {
+		this(unk, Collections.singletonMap(exrs, std), variates);
 	}
 
 	/**
@@ -1871,12 +2061,12 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	 * @throws ArgumentException
 	 */
 	public UncertainValues buildInput() throws ArgumentException {
-		Set<MatrixCorrectionDatum> stds = mStandards.keySet();
+		Set<MatrixCorrectionDatum> stds = new HashSet<>(mStandards.values());
 		List<UncertainValues> variables = new ArrayList<>();
 
 		final Set<Element> elms = new TreeSet<>();
 		elms.addAll(mUnknown.getComposition().getElementSet());
-		for (final MatrixCorrectionDatum std : mStandards.keySet())
+		for (final MatrixCorrectionDatum std : stds)
 			elms.addAll(std.getComposition().getElementSet());
 		final UncertainValues mip = buildMeanIonizationPotentials(elms);
 		if (mVariates.contains(Variates.MeanIonizationPotential))
@@ -1884,7 +2074,6 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		final UncertainValues macs = buildMassAbsorptionCoefficients(elms, extractXRays(mStandards));
 		if (mVariates.contains(Variates.MassAbsorptionCofficient))
 			variables.add(macs);
-
 		if (mVariates.contains(Variates.BeamEnergy)) {
 			List<Object> tags = new ArrayList<>();
 			tags.add(beamEnergyTag(mUnknown));
@@ -1939,10 +2128,39 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 			UncertainValues uvs = new UncertainValues(tags, vals, vars);
 			variables.add(uvs);
 		}
-
+		if (mVariates.contains(Variates.WeightsOfLines)) {
+			CharacteristicXRaySet all = new CharacteristicXRaySet();
+			for (ElementXRaySet exrs : mStandards.keySet())
+				if (exrs.size() > 1)
+					all.addAll(exrs);
+			int sz = all.size();
+			if (sz > 0) {
+				List<Object> tags = new ArrayList<>();
+				RealVector vals = new ArrayRealVector(sz);
+				RealVector vars = new ArrayRealVector(sz);
+				int i = 0;
+				for (CharacteristicXRay cxr : all.getSetOfCharacteristicXRay()) {
+					tags.add(new XRayWeightTag(cxr));
+					final double w = cxr.getWeight();
+					assert w > 0.0 : cxr;
+					vals.setEntry(i, w);
+					if (w > 0.5)
+						vars.setEntry(i, Math.pow(0.05 * w, 2.0));
+					else if (w > 0.1)
+						vars.setEntry(i, Math.pow(0.1 * w, 2.0));
+					else if (w > 0.01)
+						vars.setEntry(i, Math.pow(0.2 * w, 2.0));
+					else
+						vars.setEntry(i, Math.pow(0.5 * w, 2.0));
+					++i;
+				}
+				UncertainValues uvs = new UncertainValues(tags, vals, vars);
+				variables.add(uvs);
+			}
+		}
 		if (mVariates.contains(Variates.UnknownComposition))
 			variables.add(mUnknown.getComposition().asMassFraction());
-		for (final MatrixCorrectionDatum std : mStandards.keySet())
+		for (final MatrixCorrectionDatum std : stds)
 			if (mVariates.contains(Variates.StandardComposition))
 				variables.add(std.getComposition().asMassFraction());
 		return UncertainValues.build(getInputTags(), variables.toArray(new UncertainValues[variables.size()]));
@@ -1956,12 +2174,12 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 	 *             {@link MatrixCorrectionDatum} associated with the standards
 	 * @throws ArgumentException
 	 */
-	private void initializeConstants(final MatrixCorrectionDatum unk, Set<MatrixCorrectionDatum> stds)
-			throws ArgumentException {
+	private void initializeConstants() throws ArgumentException {
 		List<UncertainValues> constants = new ArrayList<>();
 		final Set<Element> elms = new TreeSet<>();
 		elms.addAll(mUnknown.getComposition().getElementSet());
-		for (final MatrixCorrectionDatum std : mStandards.keySet())
+		final HashSet<MatrixCorrectionDatum> stdSet = new HashSet<>(mStandards.values());
+		for (final MatrixCorrectionDatum std : stdSet)
 			elms.addAll(std.getComposition().getElementSet());
 		if (!mVariates.contains(Variates.MeanIonizationPotential)) {
 			final UncertainValues mip = buildMeanIonizationPotentials(elms);
@@ -1973,15 +2191,15 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		}
 		if (!mVariates.contains(Variates.BeamEnergy)) {
 			List<Object> tags = new ArrayList<>();
-			tags.add(beamEnergyTag(unk));
-			for (MatrixCorrectionDatum std : stds)
+			tags.add(beamEnergyTag(mUnknown));
+			for (MatrixCorrectionDatum std : stdSet)
 				tags.add(beamEnergyTag(std));
 			RealVector vals = new ArrayRealVector(tags.size());
 			RealVector vars = new ArrayRealVector(tags.size());
-			vals.setEntry(0, unk.getBeamEnergy().doubleValue());
-			vars.setEntry(0, unk.getBeamEnergy().variance());
+			vals.setEntry(0, mUnknown.getBeamEnergy().doubleValue());
+			vars.setEntry(0, mUnknown.getBeamEnergy().variance());
 			int idx = 1;
-			for (MatrixCorrectionDatum std : stds) {
+			for (MatrixCorrectionDatum std : stdSet) {
 				vals.setEntry(idx, std.getBeamEnergy().doubleValue());
 				vars.setEntry(idx, std.getBeamEnergy().variance());
 				++idx;
@@ -1991,15 +2209,15 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		}
 		if (!mVariates.contains(Variates.TakeOffAngle)) {
 			List<Object> tags = new ArrayList<>();
-			tags.add(takeOffAngleTag(unk));
-			for (MatrixCorrectionDatum std : stds)
+			tags.add(takeOffAngleTag(mUnknown));
+			for (MatrixCorrectionDatum std : stdSet)
 				tags.add(takeOffAngleTag(std));
 			RealVector vals = new ArrayRealVector(tags.size());
 			RealVector vars = new ArrayRealVector(tags.size());
-			vals.setEntry(0, unk.getTakeOffAngle().doubleValue());
-			vars.setEntry(0, unk.getTakeOffAngle().variance());
+			vals.setEntry(0, mUnknown.getTakeOffAngle().doubleValue());
+			vars.setEntry(0, mUnknown.getTakeOffAngle().variance());
 			int idx = 1;
-			for (MatrixCorrectionDatum std : stds) {
+			for (MatrixCorrectionDatum std : stdSet) {
 				vals.setEntry(idx, std.getTakeOffAngle().doubleValue());
 				vars.setEntry(idx, std.getTakeOffAngle().variance());
 				++idx;
@@ -2009,15 +2227,15 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		}
 		if (!mVariates.contains(Variates.SurfaceRoughness)) {
 			List<Object> tags = new ArrayList<>();
-			tags.add(tagRoughness(unk));
-			for (MatrixCorrectionDatum std : stds)
+			tags.add(tagRoughness(mUnknown));
+			for (MatrixCorrectionDatum std : stdSet)
 				tags.add(tagRoughness(std));
 			RealVector vals = new ArrayRealVector(tags.size());
 			RealVector vars = new ArrayRealVector(tags.size());
 			vals.setEntry(0, 0.0);
-			vars.setEntry(0, Math.pow(unk.getRoughness(), 2.0));
+			vars.setEntry(0, Math.pow(mUnknown.getRoughness(), 2.0));
 			int idx = 1;
-			for (MatrixCorrectionDatum std : stds) {
+			for (MatrixCorrectionDatum std : stdSet) {
 				vals.setEntry(idx, 0.0);
 				vars.setEntry(idx, Math.pow(std.getRoughness(), 2.0));
 				++idx;
@@ -2025,9 +2243,37 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 			UncertainValues uvs = new UncertainValues(tags, vals, vars);
 			constants.add(uvs);
 		}
+		if (!mVariates.contains(Variates.WeightsOfLines)) {
+			CharacteristicXRaySet all = new CharacteristicXRaySet();
+			for (ElementXRaySet exrs : mStandards.keySet())
+				if (exrs.size() > 1)
+					all.addAll(exrs);
+			int sz = all.size();
+			if (sz > 0) {
+				List<Object> tags = new ArrayList<>();
+				RealVector vals = new ArrayRealVector(sz);
+				RealVector vars = new ArrayRealVector(sz);
+				int i = 0;
+				for (CharacteristicXRay cxr : all.getSetOfCharacteristicXRay()) {
+					tags.add(new XRayWeightTag(cxr));
+					final double w = cxr.getWeight();
+					vals.setEntry(i, w);
+					if (w > 0.5)
+						vars.setEntry(i, Math.pow(0.05 * w, 2.0));
+					else if (w > 0.1)
+						vars.setEntry(i, Math.pow(0.1 * w, 2.0));
+					else if (w > 0.01)
+						vars.setEntry(i, Math.pow(0.2 * w, 2.0));
+					else
+						vars.setEntry(i, Math.pow(0.5 * w, 2.0));
+				}
+				UncertainValues uvs = new UncertainValues(tags, vals, vars);
+				constants.add(uvs);
+			}
+		}
 		if (!mVariates.contains(Variates.UnknownComposition))
 			constants.add(mUnknown.getComposition().asMassFraction());
-		for (final MatrixCorrectionDatum std : mStandards.keySet())
+		for (final MatrixCorrectionDatum std : stdSet)
 			if (!mVariates.contains(Variates.StandardComposition))
 				constants.add(std.getComposition().asMassFraction());
 		if (constants.size() > 0) {
@@ -2100,9 +2346,8 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		return new SubsetNamedMultivariateJacobianFunction(jac, inTags, outTags);
 	}
 
-	public Map<MatrixCorrectionDatum, CharacteristicXRaySet> getStandards() {
-		Map<MatrixCorrectionDatum, CharacteristicXRaySet> res = new HashMap<MatrixCorrectionDatum, CharacteristicXRaySet>(
-				mStandards);
+	public Map<ElementXRaySet, MatrixCorrectionDatum> getStandards() {
+		Map<ElementXRaySet, MatrixCorrectionDatum> res = new HashMap<ElementXRaySet, MatrixCorrectionDatum>(mStandards);
 		return Collections.unmodifiableMap(res);
 	}
 
@@ -2116,9 +2361,9 @@ public class XPPMatrixCorrection extends MultiStepNamedMultivariateJacobianFunct
 		r.addHeader("XPP Matrix Correction");
 		final Table tbl = new Table();
 		tbl.addRow(Table.td("Unknown"), Table.td(mUnknown), Table.td());
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : mStandards.entrySet()) {
-			tbl.addRow(Table.td("Standard"), Table.td(me.getKey()), Table.td());
-			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay())
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : mStandards.entrySet()) {
+			tbl.addRow(Table.td("Standard"), Table.td(me.getValue()), Table.td());
+			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay())
 				tbl.addRow(Table.td(), Table.td("X-Ray Line"), Table.td(cxr.toHTML(Mode.NORMAL)));
 		}
 		r.add(tbl);

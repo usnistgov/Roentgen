@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.physics;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -37,7 +38,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @author nritchie
  * @version $Rev: 307 $
  */
-public class XRaySet {
+public class XRaySet implements Iterable<XRay> {
 
 	/**
 	 * <p>
@@ -546,6 +547,10 @@ public class XRaySet {
 			mElement = cxr.getElement();
 			add(cxr);
 		}
+		
+		public static ElementXRaySet singleton(Element elm, XRayTransition tr) {
+			return new ElementXRaySet(CharacteristicXRay.create(elm, tr));
+		}
 
 		/**
 		 * A set containing all transitions below maxE for the specified element.
@@ -860,6 +865,11 @@ public class XRaySet {
 		for (CharacteristicXRaySet cxrs : cxrss)
 			res.addAll(cxrs);
 		return res;
+	}
+
+	@Override
+	public Iterator<XRay> iterator() {
+		return mSet.iterator();
 	}
 
 }

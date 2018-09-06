@@ -1,5 +1,6 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
+import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -120,5 +121,10 @@ public class MatrixCorrectionDatum implements IToHTML {
 				t.addRow(Table.td("Roughness"), Table.td(bnf.formatHTML(mRoughness.get().doubleValue())));
 			return t.toHTML(mode);
 		}
+	}
+	
+	public String toString() {
+		DecimalFormat df = new DecimalFormat("0.0");
+		return mComposition.toString() + " at " + df.format(mBeamEnergy.doubleValue()) + " keV";
 	}
 }

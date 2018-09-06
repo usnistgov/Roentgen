@@ -28,12 +28,15 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.MCPropagator;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionTag;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection.Variates;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
+import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
+import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
@@ -81,12 +84,9 @@ public class XPPMatrixCorrectionTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-		scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
-		scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
-
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		stds.put(stdMcd, scxr);
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1)), stdMcd);
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds);
 		final Report r = new Report("XPP Report - test1");
 		UncertainValues resultsD = null;
@@ -130,7 +130,7 @@ public class XPPMatrixCorrectionTest {
 				assertEquals(results.getEntry(tagFChiFu), 0.635, 0.001);
 				Object tagFChiFs = XPPMatrixCorrection.tagFxF(stdMcd, cxr);
 				assertEquals(results.getEntry(tagFChiFs), 0.822, 0.001);
-				Object tagZA = XPPMatrixCorrection.zaTag(unkMcd, stdMcd, cxr);
+				Object tagZA = XPPMatrixCorrection.zafTag(unkMcd, stdMcd, cxr);
 				assertEquals(results.getEntry(tagZA), 0.781, 0.001);
 
 				// Check that INamedMultivariateFunction works...
@@ -248,7 +248,7 @@ public class XPPMatrixCorrectionTest {
 				assertEquals(results.getEntry(XPPMatrixCorrection.tagChi(stdMcd, cxr)), 6414.025, 0.001);
 				assertEquals(results.getEntry(XPPMatrixCorrection.tagFxF(unkMcd, cxr)), 0.376, 0.001);
 				assertEquals(results.getEntry(XPPMatrixCorrection.tagFxF(stdMcd, cxr)), 0.353, 0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection.zaTag(unkMcd, stdMcd, cxr)), 1.078, 0.001);
+				assertEquals(results.getEntry(XPPMatrixCorrection.zafTag(unkMcd, stdMcd, cxr)), 1.078, 0.001);
 
 				r.addHeader("Analyic Results");
 				r.add(results);
@@ -293,7 +293,17 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Delta)"));
 					BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
 					for (final Object tag : xpp.getOutputTags())
-						if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+						if (tag instanceof MatrixCorrectionTag) {
+							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
+									MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(results.getUncertainty(tag), bnf2),
+									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
+						}
+					for (final Object tag : xpp.getOutputTags())
+						if (tag instanceof KRatioTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
@@ -373,17 +383,15 @@ public class XPPMatrixCorrectionTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-		scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
-		scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
-		scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
-		scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
-		scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1));
-		scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1));
-		scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1)), stdMcd);
 
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		stds.put(stdMcd, scxr);
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds);
 		final Report r = new Report("XPP Report - test2");
 		UncertainValues resultsD = null;
@@ -409,7 +417,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputTags()) {
-					if (outTag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -485,7 +493,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputTags()) {
-					if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -502,7 +510,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputTags())
-						if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -557,29 +565,30 @@ public class XPPMatrixCorrectionTest {
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
-		final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-		// scxr.add(CharacteristicXRay.create(Element.Silicon,
+		// final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
+		// stds.put(ElementXRaySet.singleton((Element.Silicon,
 		// XRayTransition.KA1));
-		// scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
-		// scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
-		scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
-		scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2));
-		// scxr.add(CharacteristicXRay.create(Element.Calcium,
+		// stds.put(ElementXRaySet.singleton((Element.Iron, XRayTransition.KA1));
+		// stds.put(ElementXRaySet.singleton((Element.Iron, XRayTransition.LA1));
+		// stds.put(ElementXRaySet.singleton((Element.Magnesium, XRayTransition.KA1));
+		// stds.put(ElementXRaySet.singleton((Element.Magnesium, XRayTransition.KA2));
+		// stds.put(ElementXRaySet.singleton((Element.Calcium,
 		// XRayTransition.KA1));
-		// scxr.add(CharacteristicXRay.create(Element.Calcium,
+		// stds.put(ElementXRaySet.singleton((Element.Calcium,
 		// XRayTransition.L3M1));
-		// scxr.add(CharacteristicXRay.create(Element.Oxygen,
+		// stds.put(ElementXRaySet.singleton((Element.Oxygen,
 		// XRayTransition.KA1));
 
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		stds.put(stdMcd, scxr);
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1)), stdMcd);
+		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2)), stdMcd);
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getKey();
-			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}
@@ -610,7 +619,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputTags()) {
-					if (outTag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -692,7 +701,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputTags()) {
-					if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -709,7 +718,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputTags())
-						if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -775,28 +784,24 @@ public class XPPMatrixCorrectionTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
 		{
-			final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-			scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
-			scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
-			scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
-			scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
-			scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2));
-			scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1));
-			scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1));
-			scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
-
-			stds.put(std0Mcd, scxr);
-			stds.put(std1Mcd,
-					CharacteristicXRaySet.build(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1)), std0Mcd);
+			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)), std1Mcd);
 		}
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getKey();
-			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}
@@ -852,7 +857,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputTags()) {
-					if (outTag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -927,7 +932,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputTags()) {
-					if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -944,7 +949,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputTags())
-						if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1027,42 +1032,25 @@ public class XPPMatrixCorrectionTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		{
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
-				stds.put(std0Mcd, scxr);
-			}
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		stds.put(ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1), std0Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1), std0Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1), std1Mcd);
 
-			stds.put(std1Mcd,
-					CharacteristicXRaySet.build(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2));
-				stds.put(std2Mcd, scxr);
-			}
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1));
-				stds.put(std3Mcd, scxr);
-			}
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
-				stds.put(std4Mcd, scxr);
-			}
-		}
+		stds.put(ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1), std2Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA2), std2Mcd);
+
+		stds.put(ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1), std3Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Calcium, XRayTransition.L3M1), std3Mcd);
+
+		stds.put(ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1), std4Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1), std4Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getKey();
-			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}
@@ -1118,7 +1106,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputTags()) {
-					if (outTag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1193,7 +1181,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputTags()) {
-					if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -1209,7 +1197,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputTags())
-						if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1294,42 +1282,26 @@ public class XPPMatrixCorrectionTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		{
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
-				stds.put(std0Mcd, scxr);
-			}
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		stds.put(ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1), std0Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1), std0Mcd);
 
-			stds.put(std1Mcd,
-					CharacteristicXRaySet.build(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)));
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2));
-				stds.put(std2Mcd, scxr);
-			}
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Calcium, XRayTransition.L3M1));
-				stds.put(std3Mcd, scxr);
-			}
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1));
-				stds.put(std4Mcd, scxr);
-			}
-		}
+		stds.put(ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1), std1Mcd);
+
+		stds.put(ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1), std2Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA2), std2Mcd);
+
+		stds.put(ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1), std3Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Calcium, XRayTransition.L3M1), std3Mcd);
+
+		stds.put(ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1), std4Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1), std4Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getKey();
-			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}
@@ -1389,7 +1361,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputTags()) {
-					if (outTag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1464,7 +1436,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputTags()) {
-					if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -1480,7 +1452,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputTags())
-						if (tag instanceof XPPMatrixCorrection.ZAFTag) {
+						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1562,55 +1534,29 @@ public class XPPMatrixCorrectionTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.5));
 
-		// IUPAC Seigbahn Standard Energy ZAF Z A F k-ratio
-		// O K-L3 O Kα1 BaTiSi3O9 0.5249 1.0163 0.9979 1.0184 1.0001 0.992287
-		// Mg K-L3 Mg Kα1 Mg2SiO4 1.2536 0.7388 1.1343 0.6515 0.9996 0.064471
-		// Si K-L3 Si Kα1 BaTiSi3O9 1.7397 0.9969 0.9977 0.9980 1.0012 0.914605
-		// Ti K-L3 Ti Kα1 BaTiSi3O9 4.5109 0.9868 0.9973 0.9906 0.9989 0.510866
-		// Zn K-L3 Zn Kα1 Pure Zn 8.6389 0.8804 0.8920 0.9870 1.0000 0.035367
-		// Zr L3-M5 Zr Lα1 Pure Zr 2.0423 0.6802 0.8393 0.8091 1.0016 0.050359
-		// Ba L3-M5 Ba Lα1 BaTiSi3O9 4.4663 0.9882 0.9972 0.9906 1.0003 0.799365
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		{
-			// Mg
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1));
-				stds.put(std0Mcd, scxr);
-			}
-
-			// Ba, Ti, Si, O
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Barium, XRayTransition.LA1));
-				scxr.add(CharacteristicXRay.create(Element.Titanium, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1));
-				scxr.add(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1));
-				stds.put(std1Mcd, scxr);
-			}
-			// Zn
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Zinc, XRayTransition.KA1));
-				stds.put(std2Mcd, scxr);
-			}
-			// Zr
-			{
-				final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-				scxr.add(CharacteristicXRay.create(Element.Zirconium, XRayTransition.LA1));
-				stds.put(std3Mcd, scxr);
-			}
-		}
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		// Mg
+		stds.put(ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1), std0Mcd);
+		// Ba, Ti, Si, O
+		stds.put(ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1), std1Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Titanium, XRayTransition.KA1), std1Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1), std1Mcd);
+		stds.put(ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1), std1Mcd);
+		// Zn
+		stds.put(ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1), std2Mcd);
+		// Zr
+		stds.put(ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1), std3Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getKey();
-			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.zTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.aTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
+				outputs.add(new KRatioTag(unkMcd, meStd, cxr));
 			}
 		}
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
@@ -1664,7 +1610,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputTags()) {
-					if (outTag instanceof XPPMatrixCorrection.ZAFTag) {
+					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1704,17 +1650,17 @@ public class XPPMatrixCorrectionTest {
 
 				Table res = new Table();
 				res.addRow(Table.th("Line"), Table.th("ZA"), Table.th("Z"), Table.th("A"));
+				BasicNumberFormat bnf2 = new BasicNumberFormat("0.000");
 
-				for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-					final MatrixCorrectionDatum meStd = me.getKey();
-					for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-						Object zaTag = XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr);
+				for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+					final MatrixCorrectionDatum meStd = me.getValue();
+					for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+						Object zaTag = XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr);
 						Object zTag = XPPMatrixCorrection.zTag(unkMcd, meStd, cxr);
 						Object aTag = XPPMatrixCorrection.aTag(unkMcd, meStd, cxr);
 						UncertainValue za = results.getUncertainValue(zaTag);
 						UncertainValue a = results.getUncertainValue(aTag);
 						UncertainValue z = results.getUncertainValue(zTag);
-						BasicNumberFormat bnf2 = new BasicNumberFormat("0.000");
 						res.addRow(Table.td(cxr), //
 								Table.td(bnf2.formatHTML(za, OutputMode.ValuePlusUncertainty)), //
 								Table.td(bnf2.formatHTML(z, OutputMode.ValuePlusUncertainty)), //
@@ -1724,46 +1670,253 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("ZAF results");
 				r.add(res, Mode.NORMAL);
 
-				for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-					final MatrixCorrectionDatum meStd = me.getKey();
-					for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-						Object zaTag = XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr);
+				Table tk = new Table();
+				for (final Object tag : xpp.getOutputTags())
+					if (tag instanceof KRatioTag) {
+						tk.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+								MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
+								MathUtilities.td(results.getUncertainty(tag), bnf2),
+								MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+								MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
+					}
+				r.addHeader("K-ratio");
+				r.add(tk, Mode.NORMAL);
+
+				for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+					final MatrixCorrectionDatum meStd = me.getValue();
+					for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+						Object zaTag = XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr);
 						Object fUnkTag = XPPMatrixCorrection.tagFxF(unkMcd, cxr);
 						Object fStdTag = XPPMatrixCorrection.tagFxF(meStd, cxr);
 						double za = results.getEntry(zaTag);
 						double a = results.getEntry(fUnkTag) / results.getEntry(fStdTag);
 						double z = za / a;
+						// IUPAC Seigbahn Standard Energy ZAF Z A F k-ratio
+						// O K-L3 O Kα1 BaTiSi3O9 0.5249 1.0163 0.9979 1.0184 1.0001 0.992287
+						// Mg K-L3 Mg Kα1 Mg2SiO4 1.2536 0.7388 1.1343 0.6515 0.9996 0.064471
+						// Si K-L3 Si Kα1 BaTiSi3O9 1.7397 0.9969 0.9977 0.9980 1.0012 0.914605
+						// Ti K-L3 Ti Kα1 BaTiSi3O9 4.5109 0.9868 0.9973 0.9906 0.9989 0.510866
+						// Zn K-L3 Zn Kα1 Pure Zn 8.6389 0.8804 0.8920 0.9870 1.0000 0.035367
+						// Zr L3-M5 Zr Lα1 Pure Zr 2.0423 0.6802 0.8393 0.8091 1.0016 0.050359
+						// Ba L3-M5 Ba Lα1 BaTiSi3O9 4.4663 0.9882 0.9972 0.9906 1.0003 0.799365
 						if (cxr.getElement() == Element.Oxygen) {
-							assertEquals(1.0163, za, 0.002);
+							assertEquals(0.9979 * 1.0184, za, 0.002);
 							assertEquals(0.9979, z, 0.002);
 							assertEquals(1.0184, a, 0.002);
 						} else if (cxr.getElement() == Element.Magnesium) {
-							assertEquals(0.7388, za, 0.03); // ??????
-							assertEquals(1.1343, z, 0.02); // ??????
+							assertEquals(1.1343 * 0.6515, za, 0.025); // ??????
+							assertEquals(1.1343, z, 0.005); // ??????
 							assertEquals(0.6515, a, 0.025); // ??????
 						} else if (cxr.getElement() == Element.Silicon) {
-							assertEquals(0.9969, za, 0.002);
+							assertEquals(0.9977 * 0.9980, za, 0.002);
 							assertEquals(0.9977, z, 0.002);
 							assertEquals(0.9980, a, 0.002);
 						} else if (cxr.getElement() == Element.Titanium) {
-							assertEquals(0.9868, za, 0.003);
+							assertEquals(0.9973 * 0.9906, za, 0.003);
 							assertEquals(0.9973, z, 0.002);
 							assertEquals(0.9906, a, 0.002);
 						} else if (cxr.getElement() == Element.Zinc) {
-							assertEquals(0.8804, za, 0.002);
-							assertEquals(0.8920, z, 0.002);
-							assertEquals(0.9870, a, 0.002);
+							assertEquals(0.8920 * 0.9870, za, 0.005);
+							assertEquals(0.8920, z, 0.005);
+							assertEquals(0.9870, a, 0.005);
 						} else if (cxr.getElement() == Element.Zirconium) {
-							assertEquals(0.6802, za, 0.02); // ??????
-							assertEquals(0.8393, z, 0.02); // ??????
+							assertEquals(0.8393 * 0.8091, za, 0.02); // ??????
+							assertEquals(0.8393, z, 0.008); // ??????
 							assertEquals(0.8091, a, 0.02);// ??????
 						} else if (cxr.getElement() == Element.Barium) {
-							assertEquals(0.9882, za, 0.002);
+							assertEquals(0.9972 * 0.9906, za, 0.002);
 							assertEquals(0.9972, z, 0.002);
 							assertEquals(0.9906, a, 0.002);
 						}
 					}
 				}
+				if (DUMP) {
+					System.out.println("Results");
+					System.out.println(results.toCSV());
+
+					System.out.println("Jacobian");
+					System.out.println(jac.toCSV());
+					System.out.println("Jacobian(estimated)");
+					System.out.println(djac.toCSV());
+				}
+			}
+		} catch (Exception e) {
+			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
+			throw e;
+		} finally {
+			r.inBrowser(Mode.VERBOSE);
+		}
+	}
+
+	/**
+	 * Compute ZAF for K412 as in SP 260-74 using elements and simple compounds
+	 * 
+	 * @throws ArgumentException
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@Test
+	public void testXPP8() throws ArgumentException, ParseException, IOException {
+		// K412 as in SP 260-74 using elements and simple compounds
+
+		final Composition std0 = Composition.parse("SiO2");
+		final Composition std1 = Composition.parse("Al");
+		final Composition std2 = Composition.parse("Mg");
+		final Composition std3 = Composition.parse("CaF2");
+		final Composition std4 = Composition.parse("Fe");
+
+		final boolean combined = false;
+		final Composition unk = combined ? Composition.combine("K412", //
+				Pair.create(Composition.parse("SiO2"), new UncertainValue(0.4541, 0.0077)), //
+				Pair.create(Composition.parse("FeO"), new UncertainValue(0.0994, 0.0018)), //
+				Pair.create(Composition.parse("MgO"), new UncertainValue(0.1966, 0.0025)), //
+				Pair.create(Composition.parse("CaO"), new UncertainValue(0.1544, 0.0015)), //
+				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
+				: Composition.massFraction("K412", buildK412());
+
+		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
+				std0, true, //
+				new UncertainValue(15.0, 0.1), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
+				std1, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
+		);
+
+		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
+				std2, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
+				std3, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
+				std4, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
+				unk, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		stds.put(ElementXRaySet.build(Element.Silicon, Principle.K, 0.001), std0Mcd);
+		stds.put(ElementXRaySet.build(Element.Oxygen, Principle.K, 0.001), std0Mcd);
+		stds.put(ElementXRaySet.build(Element.Aluminum, Principle.K, 0.001), std1Mcd);
+
+		stds.put(ElementXRaySet.build(Element.Magnesium, Principle.K, 0.001), std2Mcd);
+
+		stds.put(ElementXRaySet.build(Element.Calcium, Principle.K, 0.001), std3Mcd);
+		stds.put(ElementXRaySet.build(Element.Calcium, Principle.L, 0.001), std3Mcd);
+
+		stds.put(ElementXRaySet.build(Element.Iron, Principle.K, 0.001), std4Mcd);
+		stds.put(ElementXRaySet.build(Element.Iron, Principle.L, 0.001), std4Mcd);
+
+		final Set<Object> outputs = new HashSet<>();
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			final ElementXRaySet exrs = me.getKey();
+			outputs.add(new MatrixCorrectionTag(unkMcd, meStd, exrs));
+		}
+		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.defaultVariates());
+		xpp.trimOutputs(outputs);
+		assertEquals(xpp.getOutputDimension(), outputs.size());
+		final UncertainValues inputs = xpp.buildInput();
+		final long start = System.currentTimeMillis();
+		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
+		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
+		System.out.println("Trimmed Timing (5) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+
+		final long start2 = System.currentTimeMillis();
+		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds);
+		final UncertainValues inputs2 = xpp2.buildInput();
+		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
+		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
+
+		// Test untrimmed vs trimmed
+		for (final Object outTag : outputs) {
+			for (final Object outTag2 : outputs)
+				if (outTag == outTag2) {
+					final int oi1 = results.indexOf(outTag);
+					final double v1 = results.getEntry(oi1);
+					final int oi2 = results2.indexOf(outTag);
+					final double v2 = results2.getEntry(oi2);
+					assertEquals(v1, v2, 0.01 * Math.max(Math.abs(v1), Math.abs(v2)));
+					if (results.getVariance(oi1) > 1.0e-8)
+						assertEquals(results.getVariance(oi1), results2.getVariance(oi2),
+								0.01 * Math.abs(results.getVariance(oi1)));
+				} else {
+					final double cov1 = results.getCovariance(outTag, outTag2);
+					final double cov2 = results2.getCovariance(outTag, outTag2);
+					assertEquals(cov1, cov2, 0.01 * Math.max(Math.abs(cov1), Math.abs(cov2)));
+				}
+		}
+
+		final Report r = new Report("XPP Report - Test8()");
+		UncertainValues resultsD = null;
+		try {
+			{
+				r.addHeader("test8()");
+				r.addHTML(xpp.toHTML(Mode.NORMAL));
+				r.addHeader("Inputs");
+				r.add(inputs);
+				r.addHeader("Results");
+				r.add(results);
+				r.addHeader("Uncertain Values (relative to inputs, trimmed)");
+				final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+				final Table valTable = new Table();
+				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
+						Table.td("Value (Verbose)"));
+				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+				for (final Object outTag : xpp.getOutputTags()) {
+					if (outTag instanceof MatrixCorrectionTag) {
+						final UncertainValue uv = outVals.get(outTag);
+						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
+								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
+								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+					}
+				}
+				r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+				r.addHeader("Covariance matrix");
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : results.getTags()) {
+					if (sb.length() > 0)
+						sb.append(",");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				r.addHTML(HTML.p(sb.toString()));
+				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
+
+				final long start3 = System.currentTimeMillis();
+				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				System.out.println(
+						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
+									* Math.abs(jac.getEntry(oIdx, iIdx)))
+								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
+							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
+									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
+						}
+
+				resultsD = UncertainValues.propagate(djac, inputs).sort();
+				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
+				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
 
 				if (DUMP) {
 					System.out.println("Results");
@@ -1774,6 +1927,63 @@ public class XPPMatrixCorrectionTest {
 					System.out.println("Jacobian(estimated)");
 					System.out.println(djac.toCSV());
 				}
+			}
+			if (MC_ITERATIONS > 0) {
+				r.addHeader("Monte Carlo Results");
+
+				final MCPropagator mcp = new MCPropagator(xpp, inputs, SIGMA,
+						new SafeMultivariateNormalDistribution(inputs.getValues(), inputs.getCovariances()));
+				final UncertainValues resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+
+				if (DUMP) {
+					System.out.println("MC Results");
+					System.out.println(resultsMc.toCSV());
+				}
+				r.add(resultsMc);
+
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : results.getTags()) {
+					if (sb.length() > 0)
+						sb.append(",");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				r.addHTML(HTML.p(sb.toString()));
+
+				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Analytical result matrix");
+				r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "MC result matrix");
+				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
+
+				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
+				for (final Object tag : xpp.getOutputTags()) {
+					if (tag instanceof MatrixCorrectionTag) {
+						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
+					}
+				}
+				{
+					r.addHeader("Compare MC to Analytical");
+					Table t = new Table();
+					t.addRow(Table.th("Tag"), //
+							Table.th("V(MonteCarlo)"), //
+							Table.th("U(Monte Carlo)"), //
+							Table.th("V(Analytical)"), //
+							Table.th("U(Analytic)"), //
+							Table.th("V(Delta)"), //
+							Table.th("U(Delta)"));
+					for (final Object tag : xpp.getOutputTags())
+						if (tag instanceof MatrixCorrectionTag) {
+							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
+									MathUtilities.td(results.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(results.getUncertainty(tag), bnf),
+									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
+						}
+					r.add(t);
+				}
+				r.addHeader("Done!");
+
 			}
 		} catch (Exception e) {
 			r.addHTML(HTML.error(HTML.escape(e.getMessage())));

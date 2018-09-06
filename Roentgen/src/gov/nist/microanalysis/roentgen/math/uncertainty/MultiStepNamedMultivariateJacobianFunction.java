@@ -170,16 +170,10 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 			return HTML.escape(mName) + ": A " + Integer.toString(mSteps.size()) + "-Step Calculation";
 		case NORMAL: {
 			final Table tbl = new Table();
-			tbl.addRow(Table.td("Steps"), Table.td(Integer.toString(mSteps.size())));
-			final List<? extends Object> inp = getInputTags();
-			tbl.addRow(Table.th("Inputs", 2));
-			for (int i = 0; i < inp.size(); ++i)
-				tbl.addRow(Table.td("Input " + Integer.toString(i + 1)), Table.td(HTML.toHTML(inp.get(i), Mode.TERSE)));
-			final List<? extends Object> out = getOutputTags();
-			tbl.addRow(Table.th("Outputs", 2));
-			for (int i = 0; i < out.size(); ++i)
-				tbl.addRow(Table.td("Output " + Integer.toString(i + 1)),
-						Table.td(HTML.toHTML(out.get(i), Mode.TERSE)));
+			for (int si = 0; si < mSteps.size(); ++si) {
+				String html = HTML.toHTML(mSteps.get(si), Mode.NORMAL);
+				tbl.addRow(Table.td("Step " + si), Table.td(html));
+			}
 			return HTML.subHeader(HTML.escape(mName)) + tbl.toHTML(mode);
 		}
 		default:

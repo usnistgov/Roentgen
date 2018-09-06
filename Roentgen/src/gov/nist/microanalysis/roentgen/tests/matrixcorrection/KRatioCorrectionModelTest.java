@@ -24,7 +24,7 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
-import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
+import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
@@ -59,30 +59,26 @@ public class KRatioCorrectionModelTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		final CharacteristicXRay feTr = CharacteristicXRay.create(Element.Iron, XRayTransition.KA1);
-		final CharacteristicXRay mgTr = CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1);
-		final CharacteristicXRay caTr = CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1);
-		final CharacteristicXRay oTr = CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1);
-		final CharacteristicXRay alTr = CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1);
-		final CharacteristicXRay siTr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
-		{
-			final CharacteristicXRaySet scxr = new CharacteristicXRaySet();
-			scxr.add(siTr);
-			scxr.add(feTr);
-			scxr.add(mgTr);
-			scxr.add(caTr);
-			scxr.add(oTr);
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final ElementXRaySet feTr = ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1);
+		final ElementXRaySet mgTr = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
+		final ElementXRaySet caTr = ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1);
+		final ElementXRaySet oTr = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
+		final ElementXRaySet alTr = ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1);
+		final ElementXRaySet siTr = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
+			stds.put(siTr, stdK411Mcd);
+			stds.put(feTr, stdK411Mcd);
+			stds.put(mgTr, stdK411Mcd);
+			stds.put(caTr, stdK411Mcd);
+			stds.put(oTr, stdK411Mcd);
 
-			stds.put(stdK411Mcd, scxr);
-			stds.put(stdAlMcd, CharacteristicXRaySet.build(alTr));
-		}
+			stds.put(alTr, stdAlMcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getKey();
-			for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection.zaTag(unkMcd, meStd, cxr));
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
 			}

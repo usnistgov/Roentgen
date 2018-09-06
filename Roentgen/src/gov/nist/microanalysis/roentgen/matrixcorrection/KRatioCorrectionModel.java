@@ -1,7 +1,6 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,6 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.INamedMultivariateFuncti
 import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
@@ -264,15 +262,6 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 
 	}
 
-	private static Map<ElementXRaySet, MatrixCorrectionDatum> convert(
-			final Map<MatrixCorrectionDatum, CharacteristicXRaySet> mcx) {
-		final Map<ElementXRaySet, MatrixCorrectionDatum> res = new HashMap<>();
-		for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : mcx.entrySet())
-			for (final Element elm : me.getValue().getElementSet())
-				res.put(me.getValue().getElementXRaySet(elm), me.getKey());
-		return res;
-	}
-
 	@Override
 	public String toString() {
 		return "k-ratio Correction";
@@ -284,12 +273,12 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 
 	public KRatioCorrectionModel(//
 			final MatrixCorrectionDatum unk, //
-			final Map<MatrixCorrectionDatum, CharacteristicXRaySet> stds //
+			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
 	) throws ArgumentException {
-		super(new UnknownModel(unk, convert(stds)), new StandardsModel(unk, convert(stds)));
+		super(new UnknownModel(unk, stds), new StandardsModel(unk, stds));
 		final Set<Element> selm1 = new HashSet<Element>();
 		final Set<Element> selm2 = new HashSet<Element>(unk.getComposition().getElementSet());
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds2 = convert(stds);
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds2 = stds;
 		for (final ElementXRaySet exrs : stds2.keySet()) {
 			final Element elm = exrs.getElement();
 			if (selm1.contains(elm))

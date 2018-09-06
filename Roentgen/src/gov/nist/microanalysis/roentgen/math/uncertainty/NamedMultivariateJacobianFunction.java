@@ -19,7 +19,6 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
-
 /**
  * <p>
  * The Jacobian is a matrix consisting of n partial derivatives associated with
@@ -312,8 +311,7 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 			}
 		};
 	}
-	
-	
+
 	/**
 	 * Initializes the constant tags with the specified values. The tag for value
 	 * <code>vals.getEntry(i)</code> is <code>list.get(i)</code>. Checks first to
@@ -390,7 +388,6 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 		return Collections.unmodifiableMap(mConstants);
 	}
 
-
 	@Override
 	public int hashCode() {
 		return Objects.hash(mInputTags, mOutputTags, mConstants);
@@ -418,28 +415,37 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 					+ getConstants().size() + " constants)");
 		}
 		case NORMAL: {
-			final StringBuffer sb = new StringBuffer();
-			for (final Object tag : getOutputTags())
-				if (sb.length() == 0)
-					sb.append("<" + tag.toString());
-				else
-					sb.append("," + tag.toString());
-			sb.append(">=F(");
-			boolean first = true;
-			for (final Object tag : getOutputTags()) {
-				if (!first)
-					sb.append(",");
-				sb.append(tag.toString());
-				first = false;
+			Table t = new Table();
+			t.addRow(Table.th(HTML.escape(toString()), 2));
+			{
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : getOutputTags()) {
+					if (sb.length() != 0)
+						sb.append("<br/>");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				t.addRow(Table.td("Ouputs"), Table.td(sb.toString()));
 			}
-			first = true;
-			for (final Object tag : getConstants().keySet()) {
-				sb.append(first ? ";" : ",");
-				sb.append(tag.toString());
-				first = false;
+			{
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : getInputTags()) {
+					if (sb.length() != 0)
+						sb.append("<br/>");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				t.addRow(Table.td("Inputs"), Table.td(sb.toString()));
 			}
-			sb.append(")");
-			return HTML.escape(sb.toString());
+			{
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : getConstants().keySet()) {
+					if (sb.length() != 0)
+						sb.append("<br/>");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				if(sb.length()>0)
+				t.addRow(Table.td("Constants"), Table.td(sb.toString()));
+			}
+			return t.toHTML(Mode.NORMAL);
 		}
 		default:
 		case VERBOSE: {
