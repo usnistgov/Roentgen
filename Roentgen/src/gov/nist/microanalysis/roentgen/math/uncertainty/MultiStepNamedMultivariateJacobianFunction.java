@@ -43,7 +43,8 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  * @author Nicholas
  */
-public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariateJacobianFunction
+public class MultiStepNamedMultivariateJacobianFunction //
+		extends NamedMultivariateJacobianFunction //
 		implements INamedMultivariateFunction, IToHTML {
 
 	/**
@@ -309,13 +310,13 @@ public class MultiStepNamedMultivariateJacobianFunction extends NamedMultivariat
 				}
 				// Fill jacobian with combination of old and new
 				final RealMatrix ojacx = MatrixUtils.createRealMatrix(outTagsx.size(), valTags.size());
+				final int[] foutIdxs = new int[outTagsx.size()];
+				for (int outIdx = 0; outIdx < outTagsx.size(); ++outIdx)
+					foutIdxs[outIdx] = func.outputIndex(outTagsx.get(outIdx)); // May be -1
 				for (int inIdx = 0; inIdx < valTags.size(); ++inIdx) {
 					final int finIdx = func.inputIndex(valTags.get(inIdx)); // May be
-																			// -1
 					for (int outIdx = 0; outIdx < outTagsx.size(); ++outIdx) {
-						final int foutIdx = func.outputIndex(outTagsx.get(outIdx)); // May
-																					// be
-																					// -1
+						final int foutIdx = foutIdxs[outIdx]; // May be -1
 						if ((finIdx != -1) && (foutIdx != -1))
 							ojacx.setEntry(outIdx, inIdx, ojac.getEntry(foutIdx, finIdx));
 						else // the output value was carried along from the input

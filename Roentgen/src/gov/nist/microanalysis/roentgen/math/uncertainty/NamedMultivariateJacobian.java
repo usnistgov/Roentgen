@@ -25,7 +25,9 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  *
  * @author Nicholas
  */
-public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction implements IToHTML {
+public class NamedMultivariateJacobian //
+		extends NamedMultivariateJacobianFunction //
+		implements IToHTML {
 
 	private final RealVector mPoint;
 	private final Pair<RealVector, RealMatrix> mResult;
@@ -71,10 +73,9 @@ public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction
 
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
-		if (point.equals(mPoint))
-			return mResult;
-		else
-			return null;
+		assert point.equals(
+				mPoint) : "The argument to NamedMultivariateJacobian.value(...) does not match the one used to create it.";
+		return point.equals(mPoint) ? mResult : null;
 	}
 
 	/**
@@ -89,12 +90,42 @@ public class NamedMultivariateJacobian extends NamedMultivariateJacobianFunction
 		final RealVector vals = mResult.getFirst();
 		final RealMatrix jac = mResult.getSecond();
 		for (int r = 0; r < output.size(); ++r) {
-			final int idx = inputIndex(output.get(r));
-			rv.setEntry(r, vals.getEntry(idx));
+			final int row = outputIndex(output.get(r));
+			assert row != -1 : "Input index associated with " + output.get(r) + " is not available.";
+			rv.setEntry(r, vals.getEntry(row));
 			for (int c = 0; c < getInputDimension(); ++c)
-				rm.setEntry(r, c, jac.getEntry(idx, c));
+				rm.setEntry(r, c, jac.getEntry(row, c));
 		}
 		return new NamedMultivariateJacobian(getInputTags(), output, mPoint, Pair.create(rv, rm));
+	}
+
+	/**
+	 * Extract a subset of the input and output values and the associated Jacobian
+	 * elements.
+	 *
+	 * @param input
+	 * @param output
+	 * @return {@link NamedMultivariateJacobian}
+	 */
+	public NamedMultivariateJacobian extract(final List<? extends Object> input, final List<? extends Object> output) {
+		final RealVector rv = new ArrayRealVector(output.size());
+		final RealMatrix rm = MatrixUtils.createRealMatrix(output.size(), input.size());
+		final RealVector vals = mResult.getFirst();
+		final RealMatrix jac = mResult.getSecond();
+		final int[] colIdx = new int[input.size()];
+		for (int c = 0; c < input.size(); ++c) {
+			colIdx[c] = inputIndex(input.get(c));
+			assert colIdx[c] != -1 : "Input index associated with " + input.get(c) + " is not available.";
+		}
+
+		for (int r = 0; r < output.size(); ++r) {
+			final int row = outputIndex(output.get(r));
+			assert row != -1 : "Output index associated with " + output.get(r) + " is not available.";
+			rv.setEntry(r, vals.getEntry(row));
+			for (int c = 0; c < colIdx.length; ++c)
+				rm.setEntry(r, c, jac.getEntry(row, colIdx[c]));
+		}
+		return new NamedMultivariateJacobian(input, output, mPoint, Pair.create(rv, rm));
 	}
 
 	public String toCSV() {

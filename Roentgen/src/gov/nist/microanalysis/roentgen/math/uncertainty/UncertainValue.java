@@ -60,7 +60,9 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @version $Rev: 199 $
  */
 @XStreamAlias("UncertainValue")
-final public class UncertainValue extends Number implements Comparable<UncertainValue>, IToHTML {
+final public class UncertainValue //
+		extends Number //
+		implements Comparable<UncertainValue>, IToHTML {
 
 	private static final long serialVersionUID = 119495064970078787L;
 

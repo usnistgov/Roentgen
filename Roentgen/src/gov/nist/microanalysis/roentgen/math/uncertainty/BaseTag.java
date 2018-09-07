@@ -18,7 +18,8 @@ import com.google.common.base.Objects;
  *
  * @author Nicholas
  */
-public class BaseTag<H,I,J> implements IToHTML {
+public class BaseTag<H, I, J> //
+		implements IToHTML {
 
 	final String mName;
 	final H mObject1;
@@ -94,7 +95,7 @@ public class BaseTag<H,I,J> implements IToHTML {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		final BaseTag<?,?,?> other = (BaseTag<?,?,?>) obj;
+		final BaseTag<?, ?, ?> other = (BaseTag<?, ?, ?>) obj;
 		return Objects.equal(mName, other.mName) && //
 				Objects.equal(mObject1, other.mObject1) && //
 				Objects.equal(mObject2, other.mObject2) && //

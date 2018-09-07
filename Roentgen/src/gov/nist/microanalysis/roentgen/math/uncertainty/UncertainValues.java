@@ -60,7 +60,8 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @author Nicholas
  * @version 1.0
  */
-public class UncertainValues implements IToHTML {
+public class UncertainValues //
+		implements IToHTML {
 
 	private static final double MAX_CORR = 1.00000001;
 	private final RealVector mValues;
@@ -119,7 +120,11 @@ public class UncertainValues implements IToHTML {
 	 * @param vals  {@link RealVector}
 	 * @param covar {@link RealMatrix}
 	 */
-	public UncertainValues(final List<? extends Object> tags, final RealVector vals, final RealMatrix covar) {
+	public UncertainValues( //
+			final List<? extends Object> tags, //
+			final RealVector vals, //
+			final RealMatrix covar //
+	) {
 		if (vals.getDimension() != tags.size())
 			throw new DimensionMismatchException(covar.getRowDimension(), tags.size());
 		if (covar.getRowDimension() != tags.size())
@@ -143,7 +148,9 @@ public class UncertainValues implements IToHTML {
 	 * @param tags List&lt;Object&gt; A list of objects implementing hashCode() and
 	 *             equals().
 	 */
-	public UncertainValues(final List<? extends Object> tags) {
+	public UncertainValues(//
+			final List<? extends Object> tags //
+	) {
 		this(tags, new ArrayRealVector(tags.size()), new Array2DRowRealMatrix(tags.size(), tags.size()));
 		mValues.set(Double.NaN);
 	}
@@ -157,7 +164,11 @@ public class UncertainValues implements IToHTML {
 	 * @param vals      {@link RealVector}
 	 * @param variances {@link RealVector} covariances are zero.
 	 */
-	public UncertainValues(final List<? extends Object> tags, final RealVector vals, final RealVector variances) {
+	public UncertainValues( //
+			final List<? extends Object> tags, //
+			final RealVector vals, //
+			final RealVector variances //
+	) {
 		this(tags, vals, MatrixUtils.createRealDiagonalMatrix(variances.toArray()));
 	}
 
@@ -181,7 +192,9 @@ public class UncertainValues implements IToHTML {
 		return new ArrayRealVector(d);
 	}
 
-	public UncertainValues(final Map<? extends Object, UncertainValue> vals) {
+	public UncertainValues(//
+			final Map<? extends Object, UncertainValue> vals //
+	) {
 		this(Arrays.asList(vals.keySet().toArray()), extractValues(vals), extractVariances(vals));
 	}
 
@@ -246,12 +259,24 @@ public class UncertainValues implements IToHTML {
 		return res;
 	}
 
-	public static UncertainValues propagate(final NamedMultivariateJacobianFunction nmjf, final UncertainValues vals) {
-		assert nmjf.getInputTags().equals(vals.getTags());
-		final Pair<RealVector, RealMatrix> eval = nmjf.evaluate(vals.getValues());
+	/**
+	 * Returns the UncertainValues that result from applying the function/Jacobian
+	 * in <code>nmjf</code> to the input values/variances in <code>input</code>.
+	 * 
+	 * 
+	 * @param nmjf
+	 * @param input
+	 * @return UncertainValues
+	 */
+	public static UncertainValues propagate( //
+			final NamedMultivariateJacobianFunction nmjf, //
+			final UncertainValues input //
+	) {
+		assert nmjf.getInputTags().equals(input.getTags());
+		final Pair<RealVector, RealMatrix> eval = nmjf.evaluate(input.getValues());
 		final RealMatrix jac = eval.getSecond();
 		return new UncertainValues(nmjf.getOutputTags(), eval.getFirst(),
-				jac.multiply(vals.getCovariances().multiply(jac.transpose())));
+				jac.multiply(input.getCovariances().multiply(jac.transpose())));
 	}
 
 	public static UncertainValues forceMinCovariance(final UncertainValues vals, final RealVector minCov) {
@@ -263,8 +288,20 @@ public class UncertainValues implements IToHTML {
 		return new UncertainValues(vals.getTags(), vals.getValues(), cov);
 	}
 
-	public static UncertainValues propagateMC(final NamedMultivariateJacobianFunction nmjf, final UncertainValues vals,
-			final int nEvals) {
+	/**
+	 * Similar to <code>propagate(...)</code> except uses a Monte Carlo-style
+	 * evaluation rather than the Jacobian to propagate the uncertainties.
+	 * 
+	 * @param nmjf
+	 * @param vals
+	 * @param nEvals
+	 * @return UncertainValues
+	 */
+	public static UncertainValues propagateMC(//
+			final NamedMultivariateJacobianFunction nmjf, //
+			final UncertainValues vals, //
+			final int nEvals //
+			) {
 		final MultivariateNormalDistribution mnd = new MultivariateNormalDistribution(vals.mValues.toArray(),
 				vals.mCovariance.getData());
 		final List<RealVector> evals = new ArrayList<>();

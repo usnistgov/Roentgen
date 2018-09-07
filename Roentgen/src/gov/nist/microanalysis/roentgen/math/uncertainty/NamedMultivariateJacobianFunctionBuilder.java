@@ -28,7 +28,8 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
  *
  * @author Nicholas
  */
-public class NamedMultivariateJacobianFunctionBuilder implements IToHTML {
+public class NamedMultivariateJacobianFunctionBuilder //
+		implements IToHTML {
 
 	private final String mName;
 	private final List<NamedMultivariateJacobianFunction> mFuncs = new ArrayList<>();
@@ -139,8 +140,8 @@ public class NamedMultivariateJacobianFunctionBuilder implements IToHTML {
 		private final List<NamedMultivariateJacobianFunction> mFuncs;
 		private final String mName;
 
-		private Implementation(String name, List<? extends Object> inpTags, List<? extends Object> outTags,
-				List<NamedMultivariateJacobianFunction> funcs) {
+		private Implementation(final String name, final List<? extends Object> inpTags,
+				final List<? extends Object> outTags, final List<NamedMultivariateJacobianFunction> funcs) {
 			super(inpTags, outTags);
 			mFuncs = funcs;
 			mName = name;
@@ -173,15 +174,14 @@ public class NamedMultivariateJacobianFunctionBuilder implements IToHTML {
 				final RealMatrix fJac = v.getSecond();
 				final List<? extends Object> fout = func.getOutputTags();
 				final List<? extends Object> fin = func.getInputTags();
-				final int fOutDim = fout.size();
-				final int fInDim = fin.size();
-				for (int r = 0; r < fOutDim; ++r) {
+				final int[] findx = new int[fin.size()];
+				for (int c = 0; c < findx.length; ++c)
+					findx[c] = inputIndex(fin.get(c));
+				for (int r = 0; r < fout.size(); ++r) {
 					final int idxr = outputIndex(fout.get(r));
 					vals.setEntry(idxr, fVals.getEntry(r));
-					for (int c = 0; c < fInDim; ++c) {
-						final int idxc = inputIndex(fin.get(c));
-						cov.setEntry(idxr, idxc, fJac.getEntry(r, c));
-					}
+					for (int c = 0; c < findx.length; ++c)
+						cov.setEntry(idxr, findx[c], fJac.getEntry(r, c));
 				}
 			}
 			return Pair.create(vals, cov);
@@ -223,7 +223,7 @@ public class NamedMultivariateJacobianFunctionBuilder implements IToHTML {
 			case NORMAL: {
 				final Table tbl = new Table();
 				for (int si = 0; si < mFuncs.size(); ++si) {
-					String html = HTML.toHTML(mFuncs.get(si), Mode.NORMAL);
+					final String html = HTML.toHTML(mFuncs.get(si), Mode.NORMAL);
 					tbl.addRow(Table.td("Step " + si), Table.td(html));
 				}
 				return HTML.subHeader(HTML.escape(mName)) + tbl.toHTML(mode);
@@ -302,7 +302,8 @@ public class NamedMultivariateJacobianFunctionBuilder implements IToHTML {
 		final NamedMultivariateJacobianFunction res = new Implementation( //
 				mName, //
 				mInputTags.get(), //
-				mOutputTags.get(), mFuncs);
+				mOutputTags.get(), //
+				mFuncs);
 		return res;
 	}
 

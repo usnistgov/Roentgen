@@ -33,7 +33,8 @@ import com.duckandcover.html.Table;
  * @author nritchie
  * @version $Rev: $
  */
-abstract public class NamedMultivariateJacobianFunction implements MultivariateJacobianFunction, IToHTML {
+abstract public class NamedMultivariateJacobianFunction //
+		implements MultivariateJacobianFunction, IToHTML {
 
 	/***
 	 * Unique object tags identifying each of the random variable arguments to the
@@ -442,8 +443,8 @@ abstract public class NamedMultivariateJacobianFunction implements MultivariateJ
 						sb.append("<br/>");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
 				}
-				if(sb.length()>0)
-				t.addRow(Table.td("Constants"), Table.td(sb.toString()));
+				if (sb.length() > 0)
+					t.addRow(Table.td("Constants"), Table.td(sb.toString()));
 			}
 			return t.toHTML(Mode.NORMAL);
 		}

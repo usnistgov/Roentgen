@@ -37,7 +37,8 @@ import com.duckandcover.html.Report;
  * @author Nicholas
  *
  */
-abstract public class ImplicitMeasurementModel extends NamedMultivariateJacobianFunction {
+abstract public class ImplicitMeasurementModel //
+		extends NamedMultivariateJacobianFunction {
 
 	private final NamedMultivariateJacobianFunction mCy;
 	private final NamedMultivariateJacobianFunction mCx;

@@ -21,7 +21,8 @@ import org.apache.commons.math3.util.Pair;
  * @author nicho
  *
  */
-public class ParallelNamedMultivariateJacobianFunction extends NamedMultivariateJacobianFunction
+public class ParallelNamedMultivariateJacobianFunction //
+		extends NamedMultivariateJacobianFunction //
 		implements INamedMultivariateFunction {
 
 	private final ForkJoinPool mPool;
@@ -105,7 +106,7 @@ public class ParallelNamedMultivariateJacobianFunction extends NamedMultivariate
 	public Pair<RealVector, RealMatrix> value(RealVector point) {
 		RealVector rv = new ArrayRealVector(getOutputDimension());
 		RealMatrix rm = new Array2DRowRealMatrix(getOutputDimension(), getInputDimension());
-		if (mPool!=null) {
+		if (mPool != null) {
 			List<Callable<Result>> tasks = new ArrayList<>();
 			for (NamedMultivariateJacobianFunction func : mFuncs) {
 				func.initializeConstants(getConstants());
@@ -117,12 +118,15 @@ public class ParallelNamedMultivariateJacobianFunction extends NamedMultivariate
 					final Result tmp = fp.get();
 					List<? extends Object> outTags = tmp.mFunc.getOutputTags();
 					List<? extends Object> inTags = tmp.mFunc.getInputTags();
+					final int[] inIdx = new int[inTags.size()];
+					for (int c = 0; c < inIdx.length; ++c)
+						inIdx[c] = inputIndex(inTags.get(c));
 					for (int r = 0; r < outTags.size(); ++r) {
 						final Object outTag = outTags.get(r);
 						final int outIdx = outputIndex(outTag);
 						rv.setEntry(outIdx, tmp.mValues.getEntry(r));
 						for (int c = 0; c < inTags.size(); ++c)
-							rm.setEntry(outIdx, inputIndex(inTags.get(c)), tmp.mJacobian.getEntry(r, c));
+							rm.setEntry(outIdx, inIdx[c], tmp.mJacobian.getEntry(r, c));
 					}
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
@@ -136,12 +140,15 @@ public class ParallelNamedMultivariateJacobianFunction extends NamedMultivariate
 				RealMatrix prm = pr.getSecond();
 				List<? extends Object> outTags = func.getOutputTags();
 				List<? extends Object> inTags = func.getInputTags();
+				final int[] inIdx = new int[inTags.size()];
+				for (int c = 0; c < inIdx.length; ++c)
+					inIdx[c] = inputIndex(inTags.get(c));
 				for (int r = 0; r < outTags.size(); ++r) {
 					final Object outTag = outTags.get(r);
 					final int outIdx = outputIndex(outTag);
 					rv.setEntry(outIdx, prv.getEntry(r));
-					for (int c = 0; c < inTags.size(); ++c)
-						rm.setEntry(outIdx, inputIndex(inTags.get(c)), prm.getEntry(r, c));
+					for (int c = 0; c < inIdx.length; ++c)
+						rm.setEntry(outIdx, inIdx[c], prm.getEntry(r, c));
 				}
 			}
 		}
@@ -151,7 +158,7 @@ public class ParallelNamedMultivariateJacobianFunction extends NamedMultivariate
 	@Override
 	public RealVector optimized(RealVector point) {
 		RealVector rv = new ArrayRealVector(getOutputDimension());
-		if (mPool!=null) {
+		if (mPool != null) {
 			List<Callable<Result>> tasks = new ArrayList<>();
 			for (NamedMultivariateJacobianFunction func : mFuncs) {
 				func.initializeConstants(getConstants());
@@ -181,15 +188,15 @@ public class ParallelNamedMultivariateJacobianFunction extends NamedMultivariate
 		}
 		return rv;
 	}
-	
+
 	public String toString() {
-		StringBuffer sb=new StringBuffer();
-		for(NamedMultivariateJacobianFunction func: mFuncs) {
-			if(sb.length()>0)
+		StringBuffer sb = new StringBuffer();
+		for (NamedMultivariateJacobianFunction func : mFuncs) {
+			if (sb.length() > 0)
 				sb.append(",");
 			sb.append(func.toString());
 		}
-		return "Parallelized["+sb.toString()+"]";
+		return "Parallelized[" + sb.toString() + "]";
 	}
 
 }
