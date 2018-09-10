@@ -1,5 +1,6 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +37,35 @@ import com.duckandcover.html.Table;
 abstract public class NamedMultivariateJacobianFunction //
 		implements MultivariateJacobianFunction, IToHTML {
 
+	/**
+	 * Seems to produce a 10 % - 20 % improvement in overall
+	 * evaluation speed. 
+	 * 
+	 * @author nicholas
+	 *
+	 * @param <H>
+	 */
+	private static class FastIndex<H> extends ArrayList<H> {
+
+		private static final long serialVersionUID = 2429500537433349495L;
+
+		private final Map<H, Integer> mIndex;
+		
+		private FastIndex(List<H> list){
+			super(list);
+			mIndex = new HashMap<>();
+			for(int i=0;i<list.size();++i)
+				mIndex.put(list.get(i), i);
+		}
+		
+		@Override
+		public int indexOf(Object h) {
+			final Integer res=mIndex.get(h);
+			return res==null ? -1 : res.intValue();
+		}
+	}
+	
+	
 	/***
 	 * Unique object tags identifying each of the random variable arguments to the
 	 * functions
@@ -67,9 +97,9 @@ abstract public class NamedMultivariateJacobianFunction //
 			final List<? extends Object> outputTags) {
 		validateTags(inputTags);
 		assert inputTags != outputTags;
-		mInputTags = Collections.unmodifiableList(inputTags);
+		mInputTags = new FastIndex<>(inputTags);
 		validateTags(outputTags);
-		mOutputTags = Collections.unmodifiableList(outputTags);
+		mOutputTags = new FastIndex<>(outputTags);
 	}
 
 	/**
@@ -344,7 +374,8 @@ abstract public class NamedMultivariateJacobianFunction //
 	 * @return double
 	 */
 	public double getConstant(final Object tag) {
-		assert inputIndex(tag) == -1 : "Tag " + tag + " is not a constant.";
+		assert inputIndex(tag) == -1 : "Tag " + tag + " is a variable.";
+		assert mConstants.containsKey(tag) : "Tag " + tag + " is not a constant";
 		return mConstants.get(tag).doubleValue();
 	}
 
@@ -371,7 +402,7 @@ abstract public class NamedMultivariateJacobianFunction //
 	public double getValue(final Object tag, final RealVector point) {
 		final int p = inputIndex(tag);
 		if (p != -1) {
-			assert !isConstant(tag);
+			// assert !isConstant(tag);
 			return point.getEntry(p);
 		} else {
 			assert isConstant(tag) : "Can't find the constant " + tag;

@@ -29,13 +29,39 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 
 public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> implements IToHTML, Comparable<KRatioTag> {
 
-	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans) {
+	public enum Method {
+		Measured,
+		Calculated
+	};
+	
+	private final Method mMethod;
+	
+	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans, Method meth) {
 		super("k", unk, std, trans);
 		assert trans.size() >= 1;
+		mMethod = meth;
 	}
 
-	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans) {
+	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans, Method meth) {
 		super("k", unk, std, new ElementXRaySet(trans));
+		mMethod = meth;
+	}
+
+	@Override
+	public int hashCode() {
+		return 31 * super.hashCode() + mMethod.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		KRatioTag other = (KRatioTag) obj;
+		return mMethod == other.mMethod;
 	}
 
 	@Override
@@ -46,10 +72,12 @@ public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDa
 			return "k<sub>"+getObject3().toHTML(Mode.TERSE) + " using " + getObject1().toHTML(Mode.TERSE)+"</sub>";
 		else {
 			final Table table = new Table();
-			table.addRow(Table.th("Item"), Table.th("Description"));
+			
+			table.addRow(Table.th("K-ratio",2));
 			table.addRow(Table.td("Unknown"), Table.td(getObject1().toHTML(Mode.VERBOSE)));
 			table.addRow(Table.td("Standard"), Table.td(getObject2().toHTML(Mode.VERBOSE)));
 			table.addRow(Table.td("Transitions"), Table.td(getObject3().toHTML(Mode.VERBOSE)));
+			table.addRow(Table.td("Method"), Table.td(mMethod.toString()));
 			return table.toHTML(Mode.VERBOSE);
 		}
 	}

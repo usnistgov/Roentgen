@@ -2,8 +2,10 @@ package gov.nist.microanalysis.roentgen.math.uncertainty;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -37,14 +39,16 @@ public class NamedMultivariateJacobianFunctionBuilder //
 	private final SimplyLazy<List<? extends Object>> mInputTags = new SimplyLazy<List<? extends Object>>() {
 		@Override
 		protected List<? extends Object> initialize() {
-			final List<Object> res = new ArrayList<>();
+			final Set<Object> res = new HashSet<>();
+			final Set<Object> out = new HashSet<>();
 			for (final NamedMultivariateJacobianFunction func : mFuncs) {
 				final List<? extends Object> inp = func.getInputTags();
 				for (final Object tag : inp)
-					if (!res.contains(tag))
+					if (!out.contains(tag))
 						res.add(tag);
+				out.addAll(func.getOutputTags());
 			}
-			return res;
+			return new ArrayList<>(res);
 		}
 
 	};
@@ -52,7 +56,7 @@ public class NamedMultivariateJacobianFunctionBuilder //
 	private final SimplyLazy<List<? extends Object>> mOutputTags = new SimplyLazy<List<? extends Object>>() {
 		@Override
 		protected List<? extends Object> initialize() {
-			final List<Object> res = new ArrayList<>();
+			final Set<Object> res = new HashSet<>();
 			for (final NamedMultivariateJacobianFunction func : mFuncs) {
 				final List<? extends Object> out = func.getOutputTags();
 				for (final Object tag : out) {
@@ -60,7 +64,7 @@ public class NamedMultivariateJacobianFunctionBuilder //
 					res.add(tag);
 				}
 			}
-			return res;
+			return new ArrayList<>(res);
 		}
 	};
 
@@ -96,6 +100,7 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		mFuncs.add(func);
 		validate();
 		mInputTags.reset();
+		mOutputTags.reset();
 		return this;
 	}
 
@@ -168,7 +173,13 @@ public class NamedMultivariateJacobianFunctionBuilder //
 			final RealMatrix cov = new NullableRealMatrix(oDim, iDim);
 			for (final NamedMultivariateJacobianFunction func : mFuncs) {
 				final RealVector funcPoint = func.extractArgument(this, point);
-				func.initializeConstants(getConstants());
+				Map<Object, Double> consts = new HashMap<>(getConstants());
+				if(func instanceof ImplicitMeasurementModel2) {
+					final List<? extends Object> fOut= func.getOutputTags();
+					for(Object tag : fOut)
+						consts.put(tag, getValue(tag, point));
+				} 
+				func.initializeConstants(consts);
 				final Pair<RealVector, RealMatrix> v = func.value(funcPoint);
 				final RealVector fVals = v.getFirst();
 				final RealMatrix fJac = v.getSecond();

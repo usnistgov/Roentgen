@@ -32,6 +32,7 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionTag;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection.Variates;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -51,7 +52,7 @@ public class XPPMatrixCorrectionTest {
 	private static final ValueToLog3 V2L3 = new ValueToLog3(1.0);
 	private static final LinearToColor L2C = new LinearToColor(1.0, Color.blue, Color.red);
 	public static boolean DUMP = false;
-	public static int MC_ITERATIONS = 16 * 8000;
+	public static int MC_ITERATIONS = 16000; // 16 * 8000;
 
 	/**
 	 * Computes Si and O in Al2SiO5 using SiO2
@@ -1556,7 +1557,7 @@ public class XPPMatrixCorrectionTest {
 				outputs.add(XPPMatrixCorrection.aTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
-				outputs.add(new KRatioTag(unkMcd, meStd, cxr));
+				outputs.add(new KRatioTag(unkMcd, meStd, cxr, Method.Calculated));
 			}
 		}
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
@@ -1836,13 +1837,13 @@ public class XPPMatrixCorrectionTest {
 		final long start = System.currentTimeMillis();
 		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
-		System.out.println("Trimmed Timing (5) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
+		System.out.println("Trimmed Timing (8) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection xpp2 = new XPPMatrixCorrection(unkMcd, stds);
 		final UncertainValues inputs2 = xpp2.buildInput();
 		final UncertainValues results2 = UncertainValues.propagate(xpp2, inputs2).sort();
-		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
+		System.out.println("Full Timing (8) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
 		for (final Object outTag : outputs) {
@@ -1902,7 +1903,7 @@ public class XPPMatrixCorrectionTest {
 				final long start3 = System.currentTimeMillis();
 				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
-						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
+						"Trimmed Delta Timing (8) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {

@@ -240,6 +240,30 @@ public class UncertainValues //
 		return res;
 	}
 
+	public static UncertainValues combine(final UncertainValues... uvs) throws ArgumentException {
+		// Test that each requested tag is defined once and only once.
+		final List<Object> tags = new ArrayList<>();
+		for (final UncertainValues uv : uvs) {
+			for (final Object tag : uv.getTags())
+				if (tags.contains(tag))
+					throw new ArgumentException("The tag " + tag + " is duplicated in UncertainValues.combine(...)");
+				else
+					tags.add(tag);
+		}
+		final UncertainValues res = new UncertainValues(tags);
+		int r0 = 0;
+		for (final UncertainValues uv : uvs) {
+			int dr = 0;
+			for (; dr < uv.getDimension(); ++dr) {
+				res.mValues.setEntry(r0 + dr, uv.getEntry(dr));
+				for (int dc = 0; dc < uv.getDimension(); ++dc)
+					res.mCovariance.setEntry(r0 + dr, r0 + dc, uv.mCovariance.getEntry(dr, dc));
+			}
+			r0 += dr;
+		}
+		return res;
+	}
+
 	/**
 	 * Return an {@link UncertainValues} object with the same dimension and values
 	 * as input except all the covariances except those associated with tag are
@@ -262,8 +286,8 @@ public class UncertainValues //
 	/**
 	 * Returns the UncertainValues that result from applying the function/Jacobian
 	 * in <code>nmjf</code> to the input values/variances in <code>input</code>.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param nmjf
 	 * @param input
 	 * @return UncertainValues
@@ -291,7 +315,7 @@ public class UncertainValues //
 	/**
 	 * Similar to <code>propagate(...)</code> except uses a Monte Carlo-style
 	 * evaluation rather than the Jacobian to propagate the uncertainties.
-	 * 
+	 *
 	 * @param nmjf
 	 * @param vals
 	 * @param nEvals
@@ -301,7 +325,7 @@ public class UncertainValues //
 			final NamedMultivariateJacobianFunction nmjf, //
 			final UncertainValues vals, //
 			final int nEvals //
-			) {
+	) {
 		final MultivariateNormalDistribution mnd = new MultivariateNormalDistribution(vals.mValues.toArray(),
 				vals.mCovariance.getData());
 		final List<RealVector> evals = new ArrayList<>();
@@ -603,6 +627,13 @@ public class UncertainValues //
 				if (mCovariance.getEntry(p, i) != 0.0)
 					res.put(mTags.get(i), mCovariance.getEntry(p, i));
 		}
+		return res;
+	}
+
+	public Map<Object, Double> getValueMap() {
+		final Map<Object, Double> res = new HashMap<>();
+		for (final Object tag : getTags())
+			res.put(tag, getEntry(tag));
 		return res;
 	}
 
