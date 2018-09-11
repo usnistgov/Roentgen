@@ -1996,3 +1996,60 @@ public class XPPMatrixCorrectionTest {
 	}
 
 }
+
+// Unmodifiable FastIndex
+// Full Timing(2) = 142 ms
+// Timing(3) = 12 ms
+// Trimmed Timing (4) = 21 ms
+// Full Timing (4) = 117 ms
+// Trimmed Delta Timing (4) = 205 ms
+// Trimmed Timing (5) = 15 ms
+// Full Timing (5) = 111 ms
+// Trimmed Delta Timing (5) = 226 ms
+// Trimmed Timing (6) = 9 ms
+// Full Timing (6) = 48 ms
+// Trimmed Delta Timing (6) = 66 ms
+// Trimmed Timing (7) = 26 ms
+// Full Timing (7) = 103 ms
+// Trimmed Delta Timing (7) = 210 ms
+// Trimmed Timing (8) = 271 ms
+// Full Timing (8) = 1744 ms
+// Trimmed Delta Timing (8) = 2682 ms
+
+// ArrayList
+// Full Timing(2) = 109 ms
+// Timing(3) = 14 ms
+// Trimmed Timing (4) = 27 ms
+// Full Timing (4) = 98 ms
+// Trimmed Delta Timing (4) = 209 ms
+// Trimmed Timing (5) = 21 ms
+// Full Timing (5) = 103 ms
+// Trimmed Delta Timing (5) = 243 ms
+// Trimmed Timing (6) = 7 ms
+// Full Timing (6) = 50 ms
+// Trimmed Delta Timing (6) = 86 ms
+// Trimmed Timing (7) = 20 ms
+// Full Timing (7) = 91 ms
+// Trimmed Delta Timing (7) = 213 ms
+// Trimmed Timing (8) = 239 ms
+// Full Timing (8) = 1760 ms
+// Trimmed Delta Timing (8) = 2837 ms
+
+// FastIndex
+// Full Timing(2) = 102 ms
+// Timing(3) = 14 ms
+// Trimmed Timing (4) = 21 ms
+// Full Timing (4) = 98 ms
+// Trimmed Delta Timing (4) = 196 ms
+// Trimmed Timing (5) = 16 ms
+// Full Timing (5) = 120 ms
+// Trimmed Delta Timing (5) = 209 ms
+// Trimmed Timing (6) = 6 ms
+// Full Timing (6) = 44 ms
+// Trimmed Delta Timing (6) = 57 ms
+// Trimmed Timing (7) = 20 ms
+// Full Timing (7) = 80 ms
+// Trimmed Delta Timing (7) = 176 ms
+// Trimmed Timing (8) = 222 ms
+// Full Timing (8) = 1726 ms
+// Trimmed Delta Timing (8) = 2407 ms
