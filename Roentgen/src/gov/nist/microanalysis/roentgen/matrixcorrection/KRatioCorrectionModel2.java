@@ -82,7 +82,8 @@ public class KRatioCorrectionModel2 //
 				final double cUnk = point.getEntry(iMFUnk);
 				final double cStd = point.getEntry(iMFStd);
 				final double zaf = point.getEntry(iZAF);
-				rv.setEntry(oHTag, kMeas - (cUnk/cStd)*zaf);
+				final double hi = kMeas - (cUnk/cStd)*zaf;
+				rv.setEntry(oHTag, hi);
 				rm.setEntry(oHTag, iKMeas, 1.0);
 				rm.setEntry(oHTag, iMFUnk, (-1.0/cStd)*zaf);
 				rm.setEntry(oHTag, iMFStd, (cUnk/(cStd*cStd))*zaf);

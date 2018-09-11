@@ -38,8 +38,7 @@ abstract public class NamedMultivariateJacobianFunction //
 		implements MultivariateJacobianFunction, IToHTML {
 
 	/**
-	 * Seems to produce a 10 % - 20 % improvement in overall
-	 * evaluation speed. 
+	 * Seems to produce a 10 % - 20 % improvement in overall evaluation speed.
 	 * 
 	 * @author nicholas
 	 *
@@ -50,22 +49,21 @@ abstract public class NamedMultivariateJacobianFunction //
 		private static final long serialVersionUID = 2429500537433349495L;
 
 		private final Map<H, Integer> mIndex;
-		
-		private FastIndex(List<H> list){
+
+		private FastIndex(List<H> list) {
 			super(list);
 			mIndex = new HashMap<>();
-			for(int i=0;i<list.size();++i)
+			for (int i = 0; i < list.size(); ++i)
 				mIndex.put(list.get(i), i);
 		}
-		
+
 		@Override
 		public int indexOf(Object h) {
-			final Integer res=mIndex.get(h);
-			return res==null ? -1 : res.intValue();
+			final Integer res = mIndex.get(h);
+			return res == null ? -1 : res.intValue();
 		}
 	}
-	
-	
+
 	/***
 	 * Unique object tags identifying each of the random variable arguments to the
 	 * functions
@@ -262,6 +260,10 @@ abstract public class NamedMultivariateJacobianFunction //
 	}
 
 	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValues uvs) {
+		return getOutputValues(uvs, 1.0e-6);
+	}
+
+	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValues uvs, double tol) {
 		final Pair<RealVector, RealMatrix> pvm = evaluate(uvs.getValues());
 		final RealVector vals = pvm.getFirst();
 		final RealMatrix jac = pvm.getSecond();
@@ -277,7 +279,7 @@ abstract public class NamedMultivariateJacobianFunction //
 			for (int outIdx = 0; outIdx < outTags.size(); ++outIdx) {
 				final UncertainValue val = res.get(outTags.get(outIdx));
 				final double sigma = Math.sqrt(covTag.getEntry(outIdx, outIdx));
-				if (sigma > Math.abs(1.0e-8 * val.doubleValue()))
+				if (sigma > Math.abs(tol * val.doubleValue()))
 					val.assignComponent(inTag, sigma);
 			}
 		}

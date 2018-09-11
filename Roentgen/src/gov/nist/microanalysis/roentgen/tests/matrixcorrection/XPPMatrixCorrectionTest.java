@@ -52,7 +52,7 @@ public class XPPMatrixCorrectionTest {
 	private static final ValueToLog3 V2L3 = new ValueToLog3(1.0);
 	private static final LinearToColor L2C = new LinearToColor(1.0, Color.blue, Color.red);
 	public static boolean DUMP = false;
-	public static int MC_ITERATIONS = 16000; // 16 * 8000;
+	public static int MC_ITERATIONS = 16 * 8000;
 
 	/**
 	 * Computes Si and O in Al2SiO5 using SiO2
@@ -318,6 +318,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Done!");
 			}
 		} catch (Exception e) {
+			e.printStackTrace();
 			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
 			throw e;
 		} finally {
