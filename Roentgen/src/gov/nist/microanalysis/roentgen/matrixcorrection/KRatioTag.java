@@ -27,22 +27,24 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @version $Rev: 312 $
  */
 
-public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> implements IToHTML, Comparable<KRatioTag> {
+public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet>
+		implements IToHTML, Comparable<KRatioTag> {
 
 	public enum Method {
-		Measured,
-		Calculated
+		Measured, Calculated
 	};
-	
+
 	private final Method mMethod;
-	
-	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans, Method meth) {
+
+	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans,
+			Method meth) {
 		super("k", unk, std, trans);
 		assert trans.size() >= 1;
 		mMethod = meth;
 	}
 
-	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans, Method meth) {
+	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans,
+			Method meth) {
 		super("k", unk, std, new ElementXRaySet(trans));
 		mMethod = meth;
 	}
@@ -66,14 +68,16 @@ public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDa
 
 	@Override
 	public String toHTML(final Mode mode) {
+		String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
 		if (mode == Mode.TERSE)
-			return "k<sub>"+getObject3().toHTML(Mode.TERSE)+"</sub>";
+			return "k<sub>" + getObject3().toHTML(Mode.TERSE) + "," + meth + "</sub>";
 		else if (mode == Mode.NORMAL)
-			return "k<sub>"+getObject3().toHTML(Mode.TERSE) + " using " + getObject1().toHTML(Mode.TERSE)+"</sub>";
+			return "k<sub>" + getObject3().toHTML(Mode.TERSE) + " using " + getObject1().toHTML(Mode.TERSE) + "," + meth
+					+ "</sub>";
 		else {
 			final Table table = new Table();
-			
-			table.addRow(Table.th("K-ratio",2));
+
+			table.addRow(Table.th("K-ratio", 2));
 			table.addRow(Table.td("Unknown"), Table.td(getObject1().toHTML(Mode.VERBOSE)));
 			table.addRow(Table.td("Standard"), Table.td(getObject2().toHTML(Mode.VERBOSE)));
 			table.addRow(Table.td("Transitions"), Table.td(getObject3().toHTML(Mode.VERBOSE)));
@@ -86,7 +90,8 @@ public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDa
 	public int compareTo(final KRatioTag o) {
 		int c = getObject3().getElement().compareTo(o.getObject3().getElement());
 		if (c == 0) {
-			final Principle tp = getObject3().getBrightest().getFamily(), op = o.getObject3().getBrightest().getFamily();
+			final Principle tp = getObject3().getBrightest().getFamily(),
+					op = o.getObject3().getBrightest().getFamily();
 			c = tp.compareTo(op);
 		}
 		if (c == 0) {

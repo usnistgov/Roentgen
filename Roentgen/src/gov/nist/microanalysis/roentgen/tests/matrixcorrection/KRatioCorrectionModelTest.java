@@ -42,10 +42,9 @@ import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 public class KRatioCorrectionModelTest {
-	
+
 	private static final ValueToLog3 V2L3 = new ValueToLog3(1.0);
 	private static final LinearToColor L2C = new LinearToColor(1.0, Color.blue, Color.red);
-
 
 	@Test
 	public void test1() throws ParseException, ArgumentException, IOException {
@@ -296,7 +295,7 @@ public class KRatioCorrectionModelTest {
 			report.inBrowser(Mode.NORMAL);
 		}
 	}
-	
+
 	@Test
 	public void test3() throws ParseException, ArgumentException, IOException {
 		// K412 as in SP 260-74 using elements and simple compounds
@@ -320,7 +319,7 @@ public class KRatioCorrectionModelTest {
 				new UncertainValue(15.0, 0.05), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
 				MatrixCorrectionDatum.roughness(10.0, 7.14));
-		
+
 		// Zr
 		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
 				Composition.parse("Zr"), true, //
@@ -334,7 +333,7 @@ public class KRatioCorrectionModelTest {
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 2.65));
 
-		//Ti
+		// Ti
 		MatrixCorrectionDatum std5Mcd = new MatrixCorrectionDatum( //
 				Composition.parse("Ti"), true, //
 				new UncertainValue(15.0, 0.12), //
@@ -426,8 +425,32 @@ public class KRatioCorrectionModelTest {
 				t.addRow(Table.td(elm), Table.td(HTML.toHTML(uv, Mode.VERBOSE)));
 			}
 			report.add(t);
-			
+
 			UncertainValues results = UncertainValues.propagate(eval, msInp);
+			{
+				Table t2 = new Table();
+				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
+				BasicNumberFormat bnf = new BasicNumberFormat("0.00E0");
+				for (Object tag : msInp.sort().getTags())
+					t2.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+							Table.td(bnf.formatHTML(msInp.getEntry(tag))), //
+							Table.td(bnf.formatHTML(msInp.getUncertainty(tag))));
+				report.addSubHeader("Inputs");
+				report.add(t2);
+			}
+
+			{
+				Table t2 = new Table();
+				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
+				BasicNumberFormat bnf = new BasicNumberFormat("#,##0.00000");
+				for (Object tag : results.getTags())
+					t2.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+							Table.td(bnf.formatHTML(results.getEntry(tag))), //
+							Table.td(bnf.formatHTML(results.getUncertainty(tag))));
+				report.addSubHeader("Outputs");
+				report.add(t2);
+			}
+
 			report.addImage(results.asCovarianceBitmap(4, V2L3, L2C), "Correlation matrix");
 
 			Set<Object> tags = new HashSet<>();
@@ -439,10 +462,19 @@ public class KRatioCorrectionModelTest {
 			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Zirconium));
 			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Barium));
 			ms.trimOutputs(tags);
-			
+
 			UncertainValues resultsTr = UncertainValues.propagate(ms, msInp);
+			{
+				Table t2 = new Table();
+				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
+				BasicNumberFormat bnf = new BasicNumberFormat("#,##0.00000");
+				for (Object tag : resultsTr.getTags())
+					t2.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), Table.td(bnf.formatHTML(resultsTr.getEntry(tag))),
+							Table.td(bnf.formatHTML(resultsTr.getUncertainty(tag))));
+				report.add(t2);
+			}
 			report.addImage(resultsTr.asCovarianceBitmap(16, V2L3, L2C), "Correlation matrix (Trimmed)");
-			
+
 		} catch (Throwable e) {
 			e.printStackTrace();
 			report.addNote(e.getMessage());
@@ -450,6 +482,5 @@ public class KRatioCorrectionModelTest {
 			report.inBrowser(Mode.NORMAL);
 		}
 	}
-
 
 }
