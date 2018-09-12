@@ -24,7 +24,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  * @author nicholas
  *
  */
-abstract public class MatrixCorrectionModel extends MultiStepNamedMultivariateJacobianFunction {
+abstract public class MatrixCorrectionModel extends SerialNamedMultivariateJacobianFunction {
 
 	protected final MatrixCorrectionDatum mUnknown;
 	protected final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;

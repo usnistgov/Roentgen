@@ -20,12 +20,12 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.MultiStepNamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionTag;
@@ -100,7 +100,7 @@ public class KRatioCorrectionModelTest {
 			}
 		}
 
-		KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(unkMcd, stds);
+		KRatioCorrectionModel krcm = new KRatioCorrectionModel(unkMcd, stds);
 		Map<Object, Double> constants = new HashMap<>();
 
 		constants.put(Composition.buildMassFractionTag(unk, Element.Silicon), 0.211982);
@@ -262,8 +262,8 @@ public class KRatioCorrectionModelTest {
 		List<NamedMultivariateJacobianFunction> steps = new ArrayList<>();
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.defaultVariates());
 		steps.add(xpp);
-		steps.add(new KRatioCorrectionModel2(unkMcd, stds));
-		MultiStepNamedMultivariateJacobianFunction ms = new MultiStepNamedMultivariateJacobianFunction("k-ratio",
+		steps.add(new KRatioCorrectionModel(unkMcd, stds));
+		SerialNamedMultivariateJacobianFunction ms = new SerialNamedMultivariateJacobianFunction("k-ratio",
 				steps);
 		UncertainValues msInp = UncertainValues.build(ms.getInputTags(), xpp.buildInput(), kuv);
 
@@ -399,18 +399,18 @@ public class KRatioCorrectionModelTest {
 		List<NamedMultivariateJacobianFunction> steps = new ArrayList<>();
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
 		steps.add(xpp);
-		steps.add(new KRatioCorrectionModel2(unkMcd, stds));
-		MultiStepNamedMultivariateJacobianFunction ms = new MultiStepNamedMultivariateJacobianFunction("k-ratio",
+		steps.add(new KRatioCorrectionModel(unkMcd, stds));
+		SerialNamedMultivariateJacobianFunction ms = new SerialNamedMultivariateJacobianFunction("k-ratio",
 				steps);
 		UncertainValues msInp = UncertainValues.build(ms.getInputTags(), xpp.buildInput(), kuv);
 
-		Report report = new Report("K-Ratio (2)");
+		Report report = new Report("K-Ratio (3)");
 		try {
-			report.addHeader("K-ratio Test2");
+			report.addHeader("K-ratio Test3");
 			report.addSubHeader("Inputs");
 			report.add(msInp);
 			report.addSubHeader("Function");
-			report.add(ms);
+			report.addHTML(HTML.toHTML(ms,Mode.NORMAL));
 			// UncertainValues res = UncertainValues.propagate(ms, msInp);
 			NamedMultivariateJacobian eval = new NamedMultivariateJacobian(ms, msInp.getValues());
 			report.addSubHeader("Jacobian");

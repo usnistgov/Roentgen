@@ -10,7 +10,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel2;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag.Method;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -21,8 +21,8 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  * @author nicholas
  *
  */
-public class KRatioCorrectionModel2 //
-		extends ImplicitMeasurementModel2 {
+public class KRatioCorrectionModel
+		extends ImplicitMeasurementModel {
 
 	private static List<? extends Object> buildOutputs(//
 			Composition unk //
@@ -93,10 +93,15 @@ public class KRatioCorrectionModel2 //
 		}
 	}
 
-	public KRatioCorrectionModel2(//
+	public KRatioCorrectionModel(//
 			final MatrixCorrectionDatum unk, //
 			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
 	) {
 		super(new KRatioH(unk, stds), buildOutputs(unk.getComposition()));
 	}
+	
+	public String toString() {
+		return "K-implicit model";
+	}
+	
 }

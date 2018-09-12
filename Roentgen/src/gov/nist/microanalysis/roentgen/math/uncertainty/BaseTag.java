@@ -39,8 +39,10 @@ public class BaseTag<H, I, J> //
 	 */
 	protected BaseTag(final String name, final H obj1, final I obj2, final J obj3) {
 		mName = name;
+		assert obj1 != null;
 		mObject1 = obj1;
 		mObject2 = obj2;
+		assert !((obj2 == null) && (obj3 != null));
 		mObject3 = obj3;
 		// Calculate this once to speed access
 		mHashCode = Objects.hashCode(mName, mObject1, mObject2, mObject3);

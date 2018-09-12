@@ -29,7 +29,7 @@ import org.apache.commons.math3.util.Pair;
  * @author Nicholas
  *
  */
-public class ImplicitMeasurementModel2 //
+public class ImplicitMeasurementModel
 		extends NamedMultivariateJacobianFunction {
 
 	protected static class hTag extends BaseTag<Object, Object, Object> {
@@ -59,7 +59,7 @@ public class ImplicitMeasurementModel2 //
 		return res;
 	}
 
-	public ImplicitMeasurementModel2(final NamedMultivariateJacobianFunction h,
+	public ImplicitMeasurementModel(final NamedMultivariateJacobianFunction h,
 			final List<? extends Object> outputTags) {
 		super(buildInputs(h, outputTags), outputTags);
 		mHFunction = h;

@@ -19,9 +19,9 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
  * A Jacobian function evaluated at a specific point in input tag space. This is
- * particularly useful for complex multistep calculations in which the early
- * part of the calculation is reused many times in the later part of the
- * calculation.
+ * particularly useful for complex multistep calculations in which result from
+ * an early part of the calculation is reused many times in the later part of
+ * the calculation.
  *
  * @author Nicholas
  */

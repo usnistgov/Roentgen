@@ -25,7 +25,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * <p>
  * Turns a calculation based on a sequential set of
  * {@link NamedMultivariateJacobianFunction} steps into a single
- * {@link MultiStepNamedMultivariateJacobianFunction}.
+ * {@link SerialNamedMultivariateJacobianFunction}.
  * </p>
  * <p>
  * Starting with mStep.get(0), the {@link NamedMultivariateJacobianFunction} is
@@ -36,14 +36,15 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * </p>
  * <p>
  * The utility of this depends upon the chain rule which allows us to calculate
- * df(g(x))/dx = (df/dy)(dy/dx) = (df(y)/dy)dg(x)/dx. At each step, all we need
- * to compute are the partial derivatives for each function with respect to the
+ * &delta;f(g(x))/&delta;x = (&delta;f/&delta;y)(&delta;y/&delta;x) =
+ * (&delta;f(y)/&delta;y)&delta;g(x)/&delta;x. At each step, all we need to
+ * compute are the partial derivatives for each function with respect to the
  * input variables - ie. the Jacobian.
  * </p>
  *
  * @author Nicholas
  */
-public class MultiStepNamedMultivariateJacobianFunction //
+public class SerialNamedMultivariateJacobianFunction
 		extends NamedMultivariateJacobianFunction //
 		implements INamedMultivariateFunction, IToHTML {
 
@@ -85,18 +86,27 @@ public class MultiStepNamedMultivariateJacobianFunction //
 		return new ArrayList<>(minimumInputRequirements(0, steps));
 	}
 
-	private static Set<Object> minimumInputRequirements(final int step,
-			final List<NamedMultivariateJacobianFunction> steps) {
-		final Set<Object> sob = new HashSet<>();
-		final Set<Object> outs = new HashSet<>();
-		for (int st = step; st < steps.size(); ++st) {
+	/**
+	 * Determines the smallest list of tags required as input to step number 'step'
+	 * and all subsequent steps.
+	 *
+	 * @param step  First step to include
+	 * @param steps The list of steps
+	 * @return Set&lt;Object&gt; The set of tags
+	 */
+	private static Set<Object> minimumInputRequirements(//
+			final int step, //
+			final List<NamedMultivariateJacobianFunction> steps //
+	) {
+		final Set<Object> inputs = new HashSet<>();
+		for (int st = steps.size() - 1; st >= step; --st) {
 			final NamedMultivariateJacobianFunction nmjf = steps.get(st);
-			for (final Object tag : nmjf.getInputTags())
-				if (!outs.contains(tag))
-					sob.add(tag);
-			outs.addAll(nmjf.getOutputTags());
+			inputs.removeAll(nmjf.getOutputTags());
+			inputs.addAll(nmjf.getInputTags());
+			if (nmjf instanceof ImplicitMeasurementModel)
+				inputs.addAll(nmjf.getOutputTags());
 		}
-		return sob;
+		return inputs;
 	}
 
 	/**
@@ -107,7 +117,7 @@ public class MultiStepNamedMultivariateJacobianFunction //
 	 * @param steps
 	 * @throws ArgumentException
 	 */
-	public MultiStepNamedMultivariateJacobianFunction(final String name,
+	public SerialNamedMultivariateJacobianFunction(final String name,
 			final List<NamedMultivariateJacobianFunction> steps) throws ArgumentException {
 		super(computeInputs(steps), computeOutputs(steps));
 		mName = name;
@@ -136,13 +146,13 @@ public class MultiStepNamedMultivariateJacobianFunction //
 
 	/**
 	 * Returns the index of the step in which the value associated with the
-	 * specified tag is requested.
+	 * specified tag is required as input.
 	 *
 	 * @param tag A tag associated with an NamedMultivariateJacobianFunction input
 	 * @returns int The index of the NamedMultivariateJacobianFunction in which this
 	 *          tag is requested as input.
 	 */
-	final public int findOutput(final Object tag) {
+	final public int findAsInput(final Object tag) {
 		for (int i = 0; i < mSteps.size(); ++i)
 			if (mSteps.get(i).getInputTags().contains(tag))
 				return i;
@@ -254,7 +264,10 @@ public class MultiStepNamedMultivariateJacobianFunction //
 	}
 
 	/*
-	 * (non-Javadoc)
+	 * This function builds the output vector and Jacobian by calling in sequence
+	 * the steps in the calculation and building cumulatively the result Jacobian.
+	 * After each step, the outputs from that step become available as inputs to
+	 * subsequent steps.
 	 *
 	 * @see
 	 * org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
@@ -264,13 +277,15 @@ public class MultiStepNamedMultivariateJacobianFunction //
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		assert point.getDimension() > 0 : "Zero dimension input in " + this.toString();
 		final List<? extends Object> inpTags = getInputTags();
+		// inputs contains tags and the associated values (inputs and calculated values)
 		final Map<Object, Double> inputs = new HashMap<>(); // tag -> index in valTags
 		// Add the input tags and values
 		for (int i = 0; i < point.getDimension(); ++i)
 			inputs.put(inpTags.get(i), point.getEntry(i));
-		// Start with a identity matrix for the input values
-		RealMatrix expJac = MatrixUtils.createRealIdentityMatrix(point.getDimension());
-		List<? extends Object> prevCols = Collections.unmodifiableList(inpTags);
+		// Cumulative Jacobian: Start with an identity matrix representing the partials
+		// the input values relative to themselves and accumulate.
+		RealMatrix cumJac = MatrixUtils.createRealIdentityMatrix(point.getDimension());
+		// prevRows keeps track of the rows in the previous step's Jacobian
 		List<? extends Object> prevRows = Collections.unmodifiableList(inpTags);
 
 		for (int step = 0; step < mSteps.size(); ++step) {
@@ -279,7 +294,7 @@ public class MultiStepNamedMultivariateJacobianFunction //
 			// Initialize constants based on this->getConstants()
 			final Map<Object, Double> consts = new HashMap<>(getConstants());
 			final List<? extends Object> fout = func.getOutputTags();
-			if (func instanceof ImplicitMeasurementModel2) {
+			if (func instanceof ImplicitMeasurementModel) {
 				// Add in output values as constants...
 				for (final Object tag : fout)
 					consts.put(tag, inputs.get(tag));
@@ -303,61 +318,87 @@ public class MultiStepNamedMultivariateJacobianFunction //
 			// expJac[expRows][expCols]
 			for (int i = 0; i < ovals.getDimension(); ++i)
 				inputs.put(fout.get(i), ovals.getEntry(i));
-			{
+			{ // Build the resulting Jacobian
 				final List<? extends Object> currCols = prevRows; // output becomes input
 				// Build currRows from prevRows + newItems
 				final List<Object> currRows = new ArrayList<>(prevRows); // old + new output
-				final int[] foutIdx = new int[fout.size()];
-				if (func instanceof ImplicitMeasurementModel2) {
+				// foutIdx is where to place the out
+				final int[] foutRow = new int[fout.size()];
+				if (func instanceof ImplicitMeasurementModel) {
+					// Output tag will be one of the previous steps output tags also
 					for (int i = 0; i < fout.size(); ++i) {
-						final int prevIdx = prevCols.indexOf(fout.get(i));
-						assert prevIdx != -1;
-						foutIdx[i] = prevIdx;
+						final int prevIdx = prevRows.indexOf(fout.get(i));
+						assert prevIdx != -1 : "Jacobian elements should alread exist for " + fout.get(i);
+						foutRow[i] = prevIdx;
 					}
 				} else {
+					// Add the output tag to the end off currRows
 					for (int i = 0; i < fout.size(); ++i) {
 						final Object tag = fout.get(i);
-						assert prevCols.indexOf(tag) == -1;
+						assert prevRows.indexOf(tag) == -1 : tag + " was already calculated.";
 						currRows.add(tag);
-						foutIdx[i] = currRows.size() - 1;
+						foutRow[i] = currRows.size() - 1;
 					}
 				}
-				final RealVector newVals = new ArrayRealVector(currRows.size());
-				// Build the extended output
-				for (int row = 0; row < currRows.size(); ++row)
-					newVals.setEntry(row, inputs.get(currRows.get(row)));
-				// Build the extended Jacobian
+				// Build the extended Jacobian previous inputs and current outputs
 				final RealMatrix newJac = MatrixUtils.createRealMatrix(currRows.size(), currCols.size());
 				for (int rc = 0; rc < currCols.size(); ++rc)
 					newJac.setEntry(rc, rc, fout.contains(currCols.get(rc)) ? 0.0 : 1.0);
 				for (int c = 0; c < fin.size(); ++c) {
 					final int col = currCols.indexOf(fin.get(c));
-					if (col == -1)
-						continue;
-					for (int r = 0; r < foutIdx.length; ++r) {
-						final int row = foutIdx[r];
-						assert row != -1;
-						newJac.setEntry(row, col, ojac.getEntry(r, c));
+					assert col != -1 : fin.get(c) + " was not a row in the previous Jacobian.";
+					for (int r = 0; r < foutRow.length; ++r) {
+						assert foutRow[r] < newJac.getRowDimension() : fout.get(foutRow[r]);
+						assert foutRow[r] != -1;
+						newJac.setEntry(foutRow[r], col, ojac.getEntry(r, c));
 					}
 				}
-				expJac = newJac.multiply(expJac);
-				prevRows = Collections.unmodifiableList(currRows);
-				prevCols = Collections.unmodifiableList(currCols);
+				/*
+				 * Keep the Jacobian row count as small as possible each step by eliminating
+				 * rows associated with values that are not required as input to subsequent
+				 * steps.
+				 */
+				if (mFinalOutputs != null) {
+					// Determine the minimum set if outputs to retain
+					final Set<Object> minOutputs = minimumInputRequirements(step + 1, mSteps);
+					minOutputs.addAll(mFinalOutputs);
+					// Build a list of rows to keep and their index
+					final List<Object> trimmedRows = new ArrayList<>();
+					final List<Integer> trimmedIdx = new ArrayList<>();
+					for (int r = 0; r < currRows.size(); ++r) {
+						final Object tag = currRows.get(r);
+						if (minOutputs.contains(tag)) {
+							trimmedRows.add(tag);
+							trimmedIdx.add(r);
+						} else
+							inputs.remove(tag);
+					}
+					// Build the trimmed Jacobian
+					final RealMatrix trimmedJac = MatrixUtils.createRealMatrix(trimmedIdx.size(), currCols.size());
+					for (int r = trimmedIdx.size() - 1; r >= 0; --r)
+						trimmedJac.setRow(r, newJac.getRow(trimmedIdx.get(r)));
+					// Calculate the cumulative Jacobian
+					cumJac = trimmedJac.multiply(cumJac);
+					prevRows = Collections.unmodifiableList(trimmedRows);
+				} else {
+					// Calculate the cumulative Jacobian
+					cumJac = newJac.multiply(cumJac);
+					prevRows = Collections.unmodifiableList(currRows);
+				}
 			}
 		}
+		// Build the output structures
 		final List<? extends Object> outs = getOutputTags();
 		final RealVector resVals = new ArrayRealVector(outs.size());
-		for (int r = 0; r < outs.size(); ++r)
-			resVals.setEntry(r, inputs.get(outs.get(r)));
-		final int outValSize = outs.size();
-		final int inpValSize = inpTags.size();
-		assert inputs.size() == expJac.getRowDimension();
-		assert expJac.getColumnDimension() == inpValSize;
-		final RealMatrix resJac = MatrixUtils.createRealMatrix(outValSize, inpValSize);
-		for(int row=0;row<outValSize;++row) {
-			final int outIdx=prevRows.indexOf(outs.get(row));
-			for(int c=0;c<inpValSize;++c)
-				resJac.setEntry(row, c, expJac.getEntry(outIdx, c));
+		final RealMatrix resJac = MatrixUtils.createRealMatrix(outs.size(), inpTags.size());
+		{ // Ensure the output rows are ordered correctly.
+			assert inputs.size() == cumJac.getRowDimension();
+			assert cumJac.getColumnDimension() == inpTags.size();
+			for (int row = outs.size() - 1; row >= 0; --row) {
+				final Object rowTag = outs.get(row);
+				resVals.setEntry(row, inputs.get(rowTag));
+				resJac.setRow(row, cumJac.getRow(prevRows.indexOf(rowTag)));
+			}
 		}
 		return Pair.create(resVals, resJac);
 	}
@@ -377,7 +418,7 @@ public class MultiStepNamedMultivariateJacobianFunction //
 			// Initialize constants based on this->getConstants()
 			final Map<Object, Double> consts = new HashMap<>(getConstants());
 			final List<? extends Object> fout = func.getOutputTags();
-			if (func instanceof ImplicitMeasurementModel2) {
+			if (func instanceof ImplicitMeasurementModel) {
 				// Add in output values as constants...
 				for (final Object tag : fout)
 					consts.put(tag, inputs.get(tag));
@@ -397,10 +438,10 @@ public class MultiStepNamedMultivariateJacobianFunction //
 			for (int i = 0; i < ovals.getDimension(); ++i)
 				inputs.put(fout.get(i), ovals.getEntry(i));
 		}
-
+		// Build the outputs in the correct order.
 		final List<? extends Object> outs = getOutputTags();
 		final RealVector resVals = new ArrayRealVector(outs.size());
-		for (int r = 0; r < outs.size(); ++r)
+		for (int r = outs.size() - 1; r >= 0; --r)
 			resVals.setEntry(r, inputs.get(outs.get(r)));
 		return resVals;
 	}

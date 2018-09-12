@@ -24,7 +24,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
 import gov.nist.microanalysis.roentgen.math.uncertainty.INamedMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.MatrixCorrectionModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.MultiStepNamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunctionBuilder;
@@ -1286,7 +1286,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel
 		}
 	}
 
-	private static class StepAaBb extends MultiStepNamedMultivariateJacobianFunction
+	private static class StepAaBb extends SerialNamedMultivariateJacobianFunction
 			implements INamedMultivariateFunction {
 
 		private static List<NamedMultivariateJacobianFunction> buildSteps(final MatrixCorrectionDatum datum,
@@ -1837,7 +1837,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel
 	 *
 	 * @author nritchie
 	 */
-	private static final class StepXPP extends MultiStepNamedMultivariateJacobianFunction
+	private static final class StepXPP extends SerialNamedMultivariateJacobianFunction
 			implements INamedMultivariateFunction {
 
 		private static List<NamedMultivariateJacobianFunction> buildSteps(final MatrixCorrectionDatum datum,

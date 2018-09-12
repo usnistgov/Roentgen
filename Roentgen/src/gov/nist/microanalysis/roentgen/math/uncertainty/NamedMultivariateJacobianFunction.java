@@ -448,7 +448,10 @@ abstract public class NamedMultivariateJacobianFunction //
 			return HTML.escape("V[" + getOutputTags().size() + " values]=F(" + getInputTags().size() + " arguments, "
 					+ getConstants().size() + " constants)");
 		}
-		case NORMAL: {
+		case NORMAL:
+			return HTML.escape(toString());
+		default:
+		case VERBOSE: {
 			Table t = new Table();
 			t.addRow(Table.th(HTML.escape(toString()), 2));
 			{
@@ -480,27 +483,6 @@ abstract public class NamedMultivariateJacobianFunction //
 					t.addRow(Table.td("Constants"), Table.td(sb.toString()));
 			}
 			return t.toHTML(Mode.NORMAL);
-		}
-		default:
-		case VERBOSE: {
-			final Table res = new Table();
-			final Table outs = new Table();
-			for (final Object tag : getOutputTags())
-				outs.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)));
-			final Table args = new Table();
-			for (final Object tag : getInputTags())
-				args.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)));
-			final Table consts = new Table();
-			for (final Object tag : getConstants().keySet())
-				consts.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)));
-			res.addRow(//
-					Table.td(outs.toHTML(Mode.NORMAL)), //
-					Table.td(" = F("), //
-					Table.td(args.toHTML(Mode.NORMAL)), //
-					Table.td(";"), //
-					Table.td(consts.toHTML(Mode.NORMAL)), //
-					Table.td(")")); //
-			return res.toHTML(Mode.NORMAL);
 		}
 		}
 	}
