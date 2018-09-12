@@ -39,6 +39,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
+import joinery.DataFrame;
 
 /**
  * <p>
@@ -72,8 +73,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  *
  * @author Nicholas
  */
-public class XPPMatrixCorrection extends MatrixCorrectionModel
-		implements INamedMultivariateFunction, IToHTML {
+public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamedMultivariateFunction, IToHTML {
 
 	// The nominal value of the unknown.
 	private final MatrixCorrectionDatum mUnknown;
@@ -1552,7 +1552,8 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel
 			return res;
 		}
 
-		public StepZA(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay cxr, Set<Variates> variates) {
+		public StepZA(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay cxr,
+				Set<Variates> variates) {
 			super(buildInputs(unk, std, cxr, variates), buildOutputs(unk, std, cxr));
 			mUnknown = unk;
 			mStandard = std;
@@ -1566,7 +1567,8 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel
 			final int iFu = inputIndex(tagShell("F", mUnknown, mXRay.getInner()));
 			final int iFs = inputIndex(tagShell("F", mStandard, mXRay.getInner()));
 			final MassFractionTag cut = Composition.buildMassFractionTag(mUnknown.getComposition(), mXRay.getElement());
-			final MassFractionTag cst = Composition.buildMassFractionTag(mStandard.getComposition(), mXRay.getElement());
+			final MassFractionTag cst = Composition.buildMassFractionTag(mStandard.getComposition(),
+					mXRay.getElement());
 
 			checkIndices(iFxu, iFxs, iFu, iFs);
 
@@ -2376,6 +2378,67 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel
 
 	public MatrixCorrectionDatum getUnknown() {
 		return mUnknown;
+	}
+
+	private double phiRhoZ(double rhoZ, double a, double b, double A, double B, double phi0) {
+		return A * Math.exp(-a * rhoZ) + (B * rhoZ + phi0 - A) * Math.exp(-b * rhoZ);
+	}
+
+	public DataFrame<Double> computePhiRhoZCurve( //
+			Map<Object, Double> outputs, //
+			double rhoZmax, //
+			double dRhoZ, //
+			double minWeight //
+	) {
+		DataFrame<Double> res = new DataFrame<>();
+		{
+			List<Double> vals = new ArrayList<>();
+			for (double rhoZ = 0.0; rhoZ <= rhoZmax; rhoZ += dRhoZ)
+				vals.add(rhoZ);
+			res.add("rhoZ", vals);
+		}
+		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : mStandards.entrySet()) {
+			for (CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
+				if (cxr.getWeight() > minWeight) {
+					{
+						final MatrixCorrectionDatum std = me.getValue();
+						final double a = outputs.get(tagShell("a", std, cxr.getInner())).doubleValue();
+						final double b = outputs.get(tagShell("b", std, cxr.getInner())).doubleValue();
+						final double A = outputs.get(tagShell("A", std, cxr.getInner())).doubleValue();
+						final double B = outputs.get(tagShell("B", std, cxr.getInner())).doubleValue();
+						final double chi = outputs.get(new ChiTag(std, cxr)).doubleValue();
+						final double phi0 = outputs.get(new Phi0Tag(std, cxr.getInner())).doubleValue();
+						List<Double> vals1 = new ArrayList<>();
+						List<Double> vals2 = new ArrayList<>();
+						for (double rhoZ = 0.0; rhoZ <= rhoZmax; rhoZ += dRhoZ) {
+							final double prz = phiRhoZ(rhoZ, a, b, A, B, phi0);
+							vals1.add(prz);
+							vals2.add(prz * Math.exp(-chi * rhoZ));
+						}
+						res.add(std.getComposition().toString() + "[" + cxr.toString() + ", gen]", vals1);
+						res.add(std.getComposition().toString() + "[" + cxr.toString() + ", emit]", vals2);
+					}
+					{
+						final double a = outputs.get(tagShell("a", mUnknown, cxr.getInner())).doubleValue();
+						final double b = outputs.get(tagShell("b", mUnknown, cxr.getInner())).doubleValue();
+						final double A = outputs.get(tagShell("A", mUnknown, cxr.getInner())).doubleValue();
+						final double B = outputs.get(tagShell("B", mUnknown, cxr.getInner())).doubleValue();
+						final double chi = outputs.get(new ChiTag(mUnknown, cxr)).doubleValue();
+						final double phi0 = outputs.get(new Phi0Tag(mUnknown, cxr.getInner())).doubleValue();
+						List<Double> vals1 = new ArrayList<>();
+						List<Double> vals2 = new ArrayList<>();
+						for (double rhoZ = 0.0; rhoZ <= rhoZmax; rhoZ += dRhoZ) {
+							final double prz = phiRhoZ(rhoZ, a, b, A, B, phi0);
+							vals1.add(prz);
+							vals2.add(prz * Math.exp(-chi * rhoZ));
+						}
+						res.add(mUnknown.getComposition().toString() + "[" + cxr.toString() + ", gen]", vals1);
+						res.add(mUnknown.getComposition().toString() + "[" + cxr.toString() + ", emit]", vals2);
+					}
+				}
+			}
+		}
+		return res;
 	}
 
 	@Override

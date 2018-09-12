@@ -24,6 +24,13 @@
 		<name>Microscopy and Microanalysis Research Group - NIST</name>
 		<url>https://www.nist.gov/mml/materials-measurement-science-division/microscopy-and-microanalysis-research-group</url>
 	</organization>
+	<repositories>
+		<repository>
+			<id>JCenter</id>
+			<name>JCenter</name>
+			<url> http://jcenter.bintray.com</url>
+		</repository>
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -129,6 +136,41 @@
 			<groupId>org.junit.vintage</groupId>
 			<artifactId>junit-vintage-engine</artifactId>
 			<version>5.3.0-M1</version>
+		</dependency>
+		<dependency>
+			<groupId>joinery</groupId>
+			<artifactId>joinery-dataframe</artifactId>
+			<version>1.9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>4.0.0</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.xeiam.xchart</groupId>
+			<artifactId>xchart</artifactId>
+			<version>2.5.1</version>
+			<optional>true</optional>
+			<exclusions>
+				<exclusion>
+					<groupId>de.erichseifert.vectorgraphics2d</groupId>
+					<artifactId>VectorGraphics2D</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>rhino</groupId>
+			<artifactId>js</artifactId>
+			<version>1.7R2</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+			<version>3.0.0.M1</version>
+			<optional>true</optional>
 		</dependency>
 	</dependencies>
 </project>

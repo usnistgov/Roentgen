@@ -44,6 +44,7 @@ import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat.OutputMode;
+import joinery.DataFrame;
 
 public class XPPMatrixCorrectionTest {
 
@@ -1994,7 +1995,88 @@ public class XPPMatrixCorrectionTest {
 			r.inBrowser(Mode.VERBOSE);
 		}
 	}
+	
+	@Test
+	public void testXPP9() throws ArgumentException, ParseException, IOException {
+		final Composition std0 = Composition.parse("SiO2");
+		final Composition std1 = Composition.parse("Al");
+		final Composition std2 = Composition.parse("Mg");
+		final Composition std3 = Composition.parse("CaF2");
+		final Composition std4 = Composition.parse("Fe");
 
+		final boolean combined = false;
+		final Composition unk = combined ? Composition.combine("K412", //
+				Pair.create(Composition.parse("SiO2"), new UncertainValue(0.4541, 0.0077)), //
+				Pair.create(Composition.parse("FeO"), new UncertainValue(0.0994, 0.0018)), //
+				Pair.create(Composition.parse("MgO"), new UncertainValue(0.1966, 0.0025)), //
+				Pair.create(Composition.parse("CaO"), new UncertainValue(0.1544, 0.0015)), //
+				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
+				: Composition.massFraction("K412", buildK412());
+
+		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
+				std0, true, //
+				new UncertainValue(15.0, 0.1), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
+				std1, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
+		);
+
+		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
+				std2, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
+				std3, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
+				std4, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
+				unk, true, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+
+		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		stds.put(ElementXRaySet.build(Element.Silicon, Principle.K, 0.001), std0Mcd);
+		stds.put(ElementXRaySet.build(Element.Oxygen, Principle.K, 0.001), std0Mcd);
+		stds.put(ElementXRaySet.build(Element.Aluminum, Principle.K, 0.001), std1Mcd);
+
+		stds.put(ElementXRaySet.build(Element.Magnesium, Principle.K, 0.001), std2Mcd);
+
+		stds.put(ElementXRaySet.build(Element.Calcium, Principle.K, 0.001), std3Mcd);
+		stds.put(ElementXRaySet.build(Element.Calcium, Principle.L, 0.001), std3Mcd);
+
+		stds.put(ElementXRaySet.build(Element.Iron, Principle.K, 0.001), std4Mcd);
+		stds.put(ElementXRaySet.build(Element.Iron, Principle.L, 0.001), std4Mcd);
+
+		final Set<Object> outputs = new HashSet<>();
+		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+			final MatrixCorrectionDatum meStd = me.getValue();
+			final ElementXRaySet exrs = me.getKey();
+			outputs.add(new MatrixCorrectionTag(unkMcd, meStd, exrs));
+		}
+		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.minimalVariates());
+		final UncertainValues results = UncertainValues.propagate(xpp, xpp.buildInput());
+		
+		DataFrame<Double> df=xpp.computePhiRhoZCurve(results.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
+		df.writeCsv("C:\\Users\\nicho\\OneDrive\\Desktop\\prz412.csv");
+	}
+	
+	
+	
 }
 
 // Unmodifiable FastIndex
