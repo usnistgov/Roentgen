@@ -32,14 +32,14 @@ import org.apache.commons.math3.util.Pair;
 public class ImplicitMeasurementModel
 		extends NamedMultivariateJacobianFunction {
 
-	protected static class hTag extends BaseTag<Object, Object, Object> {
+	public static class hTag extends BaseTag<Object, Object, Object> {
 
 		public hTag(final Object tag) {
 			super("h", tag);
 		}
 	}
 
-	protected static List<? extends Object> buildHTags(//
+	public static List<? extends Object> buildHTags(//
 			final List<? extends Object> outtags //
 	) {
 		final List<Object> res = new ArrayList<>();

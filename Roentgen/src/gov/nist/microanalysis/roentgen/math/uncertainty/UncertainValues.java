@@ -353,7 +353,7 @@ public class UncertainValues //
 
 	/**
 	 * Extract an array of values from this UncertainValue object for the specified
-	 * list of tags
+	 * list of tags in the order specified by the tag list.
 	 *
 	 * @param tags List&lt;? extends Object&gt;
 	 * @return RealVector
@@ -364,6 +364,28 @@ public class UncertainValues //
 		for (final Object tag : tags) {
 			res.setEntry(i, getEntry(tag));
 			++i;
+		}
+		return res;
+	}
+
+	/**
+	 * Extract an array of values from this UncertainValue object for the specified
+	 * list of tags in the order specified by the tag list.
+	 *
+	 * @param tags List&lt;? extends Object&gt;
+	 * @return RealVector
+	 */
+	public RealMatrix extractCovariances(final List<? extends Object> tags) {
+		final RealMatrix res = MatrixUtils.createRealMatrix(tags.size(), tags.size());
+		for (int r = 0; r < tags.size(); ++r) {
+			int ridx = indexOf(tags.get(r));
+			res.setEntry(r, r, getCovariance(r, r));
+			for (int c = r+1; c < tags.size(); ++c) {
+				int cidx = indexOf(tags.get(c));
+				final double cv = getCovariance(ridx, cidx);
+				res.setEntry(r, c, cv);
+				res.setEntry(c, r, cv);
+			}
 		}
 		return res;
 	}

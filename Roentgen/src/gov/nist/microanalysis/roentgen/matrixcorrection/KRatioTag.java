@@ -48,6 +48,30 @@ public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDa
 		super("k", unk, std, new ElementXRaySet(trans));
 		mMethod = meth;
 	}
+	
+	public MatrixCorrectionDatum getUnknown() {
+		return getObject1();
+	}
+
+	public MatrixCorrectionDatum getStandard() {
+		return getObject2();
+	}
+	
+	public ElementXRaySet getXRaySet() {
+		return getObject3();
+	}
+	
+	public Method getMethod() {
+		return mMethod;
+	}
+
+	public boolean isMeasured() {
+		return mMethod==Method.Measured;
+	}
+
+	public boolean isCalcualted() {
+		return mMethod==Method.Calculated;
+	}
 
 	@Override
 	public int hashCode() {

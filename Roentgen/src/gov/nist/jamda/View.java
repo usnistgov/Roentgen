@@ -6,6 +6,8 @@ import java.io.IOException;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.IToHTMLExt;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
+
 /**
  * Implements a 2D window onto a HyperSheet
  * 
@@ -15,24 +17,20 @@ import com.duckandcover.html.IToHTMLExt;
 public class View implements IToHTML, IToHTMLExt {
 	
 	private final DataFrame mSheet;
-	private int mXAxis;
-	private int mYAxis;
+	private Extent mExtent;
 	
 	
-	public View(DataFrame sheet, int xAxis, int yAxis){
+	public View(DataFrame sheet, Extent extent) throws ArgumentException{
+		if(extent.getDimensionality()>2)
+			throw new ArgumentException("The dimensionality of a view's extent must be 1 or 2.");
 		mSheet = sheet;
-		mXAxis = xAxis;
-		mYAxis = yAxis;
+		mExtent=extent;
 	}
 	
-	final int getXDimension() {
-		return mXAxis;
+	final Extent getExtent() {
+		return mExtent;
 	}
 	
-	final int getYDimension() {
-		return mYAxis;
-	}
-
 	@Override
 	public String toHTML(Mode mode, File base, String dir) throws IOException {
 		// TODO Auto-generated method stub
@@ -41,6 +39,18 @@ public class View implements IToHTML, IToHTMLExt {
 
 	@Override
 	public String toHTML(Mode mode) {
+
+		
+		if(mExtent.getDimensionality()==1) {
+			
+			
+			
+		} else {
+			
+			
+		}
+		
+		
 		// TODO Auto-generated method stub
 		return null;
 	}
