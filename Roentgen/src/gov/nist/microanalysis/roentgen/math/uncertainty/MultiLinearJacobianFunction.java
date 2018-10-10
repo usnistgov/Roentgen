@@ -11,7 +11,7 @@ import com.duckandcover.lazy.SimplyLazy;
 
 /**
  * <p>
- * A extension of {@link NamedMultivariateJacobianFunction} for the special case
+ * A extension of {@link LabeledMultivariateJacobianFunction} for the special case
  * of multiple functions whose outputs are linear combinations of the input
  * vector elements.
  * </p>
@@ -20,7 +20,7 @@ import com.duckandcover.lazy.SimplyLazy;
  * @version 1.0
  */
 public abstract class MultiLinearJacobianFunction //
-		extends NamedMultivariateJacobianFunction {
+		extends LabeledMultivariateJacobianFunction {
 
 	private final SimplyLazy<RealMatrix> mJacobian = new SimplyLazy<RealMatrix>() {
 
@@ -31,11 +31,11 @@ public abstract class MultiLinearJacobianFunction //
 
 	};
 
-	private static List<Object> buildTags(final String prefix, final int nCh) {
-		final List<Object> tags = new ArrayList<>();
+	private static List<Object> buildLabels(final String prefix, final int nCh) {
+		final List<Object> labels = new ArrayList<>();
 		for (int i = 0; i < nCh; ++i)
-			tags.add(prefix + "[" + Integer.toString(i) + "]");
-		return tags;
+			labels.add(prefix + "[" + Integer.toString(i) + "]");
+		return labels;
 	}
 
 	/**
@@ -45,7 +45,7 @@ public abstract class MultiLinearJacobianFunction //
 	 * @param outputPrefix
 	 */
 	public MultiLinearJacobianFunction(final int nInput, final String inputPrefix, final String outputPrefix) {
-		super(buildTags(inputPrefix, nInput), buildTags(outputPrefix, nInput));
+		super(buildLabels(inputPrefix, nInput), buildLabels(outputPrefix, nInput));
 	}
 
 	/**

@@ -16,7 +16,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.optim.ConvergenceChecker;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.TrimmedNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
@@ -38,15 +38,11 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
 public class KRatioIteration {
 
 	private final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;
-	private final double mBeamEnergy;
-	private final double mTakeOffAngle;
 
-	public KRatioIteration(final UncertainValues kratios, final double e0, final double toa,
-			final Map<ElementXRaySet, MatrixCorrectionDatum> stds) {
+	public KRatioIteration(//
+			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
+	) {
 		mStandards = stds;
-		mBeamEnergy = e0;
-		mTakeOffAngle = toa;
-
 	}
 
 	/**
@@ -56,9 +52,10 @@ public class KRatioIteration {
 	 * @param kratios
 	 * @return {@link MatrixCorrectionDatum}
 	 */
-	public MatrixCorrectionDatum computeEstimate(final UncertainValues kratios) {
+	public MatrixCorrectionDatum computeEstimate(final UncertainValues kratios, double e0, double takeOffAngle) {
 		final Map<Object, Double> krm = kratios.getValueMap();
 		final Map<Element, Number> men = new HashMap<>();
+		MatrixCorrectionDatum unk = null;
 		for (final Map.Entry<Object, Double> me : krm.entrySet()) {
 			assert me.getKey() instanceof KRatioTag;
 			if (me.getKey() instanceof KRatioTag) {
@@ -69,11 +66,15 @@ public class KRatioIteration {
 				final double cStd = std.getEntry(Composition.buildMassFractionTag(std, xrs.getElement()));
 				final double kR = me.getValue().doubleValue();
 				men.put(xrs.getElement(), kR * cStd);
+				assert (unk==null) || (unk==tag.getUnknown());
+				if(unk==null)
+					unk=tag.getUnknown();
 			}
 		}
 		final Composition comp = Composition.massFraction("Estimate", men);
-		return new MatrixCorrectionDatum(comp, false, new UncertainValue(mBeamEnergy),
-				new UncertainValue(mTakeOffAngle));
+		
+		
+		return new MatrixCorrectionDatum(comp, false, new UncertainValue(e0), new UncertainValue(takeOffAngle));
 	}
 
 	/**
@@ -85,17 +86,17 @@ public class KRatioIteration {
 	 * @return Composition
 	 * @throws ArgumentException
 	 */
-	public Composition optimize(final UncertainValues kratios) //
+	public Composition optimize(final UncertainValues kratios, final double e0, final double takeOffAngle) //
 			throws ArgumentException {
 
-		final MatrixCorrectionDatum unkMcd = computeEstimate(kratios);
+		final MatrixCorrectionDatum unkMcd = computeEstimate(kratios, e0, takeOffAngle);
 
 		final Set<Variates> minVariates = XPPMatrixCorrection.minimalVariates();
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, mStandards, minVariates);
 		final KRatioHModel hModel = new KRatioHModel(unkMcd, mStandards);
 
 		// Build the full model with xpp and hModel
-		final List<NamedMultivariateJacobianFunction> steps = new ArrayList<>();
+		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		steps.add(xpp);
 		steps.add(hModel);
 		final SerialNamedMultivariateJacobianFunction model = //
@@ -109,22 +110,22 @@ public class KRatioIteration {
 		}
 		// Trim the inputs down to only the elements in the unknown...
 		final TrimmedNamedMultivariateJacobianFunction trimmed = //
-				new TrimmedNamedMultivariateJacobianFunction(model, compInp, model.getOutputTags());
+				new TrimmedNamedMultivariateJacobianFunction(model, compInp, model.getOutputLabels());
 		// Build up a full set of all required inputs and constants
-		final UncertainValues msInp = UncertainValues.build(model.getInputTags(), xpp.buildInput(), kratios);
+		final UncertainValues msInp = UncertainValues.build(model.getInputLabels(), xpp.buildInput(), kratios);
 		{ // Initialize all non-variables as constants...
 			final Map<Object, Double> mod = new HashMap<>();
-			for (final Object tag : msInp.getTags())
+			for (final Object tag : msInp.getLabels())
 				if (!compInp.contains(tag))
 					mod.put(tag, msInp.getEntry(tag));
 			trimmed.initializeConstants(mod);
 		}
 		final ConvergenceChecker<Evaluation> checker = new EvaluationRmsChecker(1.0e-3);
-		final List<? extends Object> trOutTags = trimmed.getOutputTags();
+		final List<? extends Object> trOutTags = trimmed.getOutputLabels();
 		final LeastSquaresProblem lsm = LeastSquaresFactory.create( //
 				trimmed, // The trimmed model
 				new ArrayRealVector(trOutTags.size()), // Goal of zero
-				unkMcd.getComposition().extractValues(trimmed.getInputTags()), // Starting estimate
+				unkMcd.getComposition().extractValues(trimmed.getInputLabels()), // Starting estimate
 				checker, 100, 100);
 		final LevenbergMarquardtOptimizer lmo = new LevenbergMarquardtOptimizer();
 		final Optimum res = lmo.optimize(lsm);

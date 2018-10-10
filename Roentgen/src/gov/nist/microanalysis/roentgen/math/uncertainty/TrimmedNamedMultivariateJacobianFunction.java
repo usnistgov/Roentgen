@@ -7,7 +7,6 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
-
 import gov.nist.microanalysis.roentgen.ArgumentException;
 
 /**
@@ -19,28 +18,34 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  */
 public class TrimmedNamedMultivariateJacobianFunction //
-		extends NamedMultivariateJacobianFunction {
+		extends LabeledMultivariateJacobianFunction {
 
-	private final NamedMultivariateJacobianFunction mBase;
+	private final LabeledMultivariateJacobianFunction mBase;
 
+	/**
+	 * @param base The base {@link LabeledMultivariateJacobianFunction}
+	 * @param inputLabels The input labels for the {@link TrimmedNamedMultivariateJacobianFunction}
+	 * @param outputLabels The output labels for the {@link TrimmedNamedMultivariateJacobianFunction}
+	 * @throws ArgumentException
+	 */
 	public TrimmedNamedMultivariateJacobianFunction(//
-			NamedMultivariateJacobianFunction base, //
-			List<? extends Object> inputs, //
-			List<? extends Object> outputs //
+			LabeledMultivariateJacobianFunction base, //
+			List<? extends Object> inputLabels, //
+			List<? extends Object> outputLabels //
 	) throws ArgumentException {
-		super(inputs, outputs);
-		assert base.getInputTags().containsAll(inputs);
-		assert base.getOutputTags().containsAll(outputs);
-		if (!base.getInputTags().containsAll(inputs))
-			throw new ArgumentException("Some of the requested input tags are not in the base function's inputs.");
-		if (base.getOutputTags().containsAll(outputs))
-			throw new ArgumentException("Some of the requested output tags are not in the base function's outputs.");
+		super(inputLabels, outputLabels);
+		assert base.getInputLabels().containsAll(inputLabels);
+		assert base.getOutputLabels().containsAll(outputLabels);
+		if (!base.getInputLabels().containsAll(inputLabels))
+			throw new ArgumentException("Some of the requested input labels are not in the base function's inputs.");
+		if (base.getOutputLabels().containsAll(outputLabels))
+			throw new ArgumentException("Some of the requested output labels are not in the base function's outputs.");
 		mBase = base;
 	}
 
 	@Override
 	public Pair<RealVector, RealMatrix> value(RealVector point) {
-		List<? extends Object> baseInputs = mBase.getInputTags();
+		List<? extends Object> baseInputs = mBase.getInputLabels();
 		RealVector basePoint = new ArrayRealVector(baseInputs.size());
 		for (int i = 0; i < baseInputs.size(); ++i) {
 			int idx = inputIndex(baseInputs.get(i));
@@ -49,14 +54,14 @@ public class TrimmedNamedMultivariateJacobianFunction //
 			basePoint.setEntry(i, value);
 		}
 		Pair<RealVector, RealMatrix> tmp = mBase.value(point);
-		List<? extends Object> outTags = getOutputTags();
-		int[] outIdx = new int[outTags.size()];
+		List<? extends Object> outLabels = getOutputLabels();
+		int[] outIdx = new int[outLabels.size()];
 		for (int i = 0; i < outIdx.length; ++i)
-			outIdx[i] = outputIndex(outTags.get(i));
-		List<? extends Object> inTags = getInputTags();
-		int[] inIdx = new int[inTags.size()];
+			outIdx[i] = outputIndex(outLabels.get(i));
+		List<? extends Object> inLabels = getInputLabels();
+		int[] inIdx = new int[inLabels.size()];
 		for (int i = 0; i < inIdx.length; ++i)
-			inIdx[i] = inputIndex(inTags.get(i));
+			inIdx[i] = inputIndex(inLabels.get(i));
 		RealVector rv = new ArrayRealVector(outIdx.length);
 		RealMatrix rm = MatrixUtils.createRealMatrix(outIdx.length, inIdx.length);
 		for (int r = 0; r < outIdx.length; ++r) {

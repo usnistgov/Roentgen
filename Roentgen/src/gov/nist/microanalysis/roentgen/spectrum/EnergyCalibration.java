@@ -16,7 +16,7 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -32,7 +32,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  */
 abstract public class EnergyCalibration
    extends
-   NamedMultivariateJacobianFunction
+   LabeledMultivariateJacobianFunction
    implements
    IToHTML {
 

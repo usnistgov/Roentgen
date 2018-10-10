@@ -3,9 +3,9 @@ package gov.nist.microanalysis.roentgen.matrixcorrection;
 import java.util.Date;
 import java.util.Optional;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
+import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 
-public class ProbeCurrentTag extends BaseTag<Integer, Object, Object> {
+public class ProbeCurrentTag extends BaseLabel<Integer, Object, Object> {
 
 	private final Optional<Date> mTimestamp;
 

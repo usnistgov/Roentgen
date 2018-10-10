@@ -3,7 +3,7 @@
  */
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
+import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 
@@ -11,7 +11,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @author nicho
  *
  */
-public class MatrixCorrectionTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> {
+public class MatrixCorrectionTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> {
 
 	public MatrixCorrectionTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet exrs) {
 		super("ZAF", unk, std, exrs);

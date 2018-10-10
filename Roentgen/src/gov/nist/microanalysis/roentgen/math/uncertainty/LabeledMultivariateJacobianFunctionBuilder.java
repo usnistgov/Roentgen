@@ -28,15 +28,17 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 
 /**
  * <p>
- * Takes multiple independent {@link NamedMultivariateJacobianFunction} objects
- * and combines them into a single {@link NamedMultivariateJacobianFunction}.
- * The input {@link NamedMultivariateJacobianFunction} objects usually take a
- * similar list of arguments. None of the input
- * {@link NamedMultivariateJacobianFunction}s may return the same output tag.
+ * Takes multiple independent {@link LabeledMultivariateJacobianFunction}
+ * objects and combines them into a single
+ * {@link LabeledMultivariateJacobianFunction}. The input
+ * {@link LabeledMultivariateJacobianFunction} objects usually take a similar
+ * list of arguments. None of the input
+ * {@link LabeledMultivariateJacobianFunction}s may return the same output
+ * label.
  * </p>
  * 
  * <p>
- * This class wraps a set of {@link NamedMultivariateJacobianFunction} that
+ * This class wraps a set of {@link LabeledMultivariateJacobianFunction} that
  * could be calculated in parallel. The output from one is not used as input to
  * another. This class is different from
  * {@link SerialNamedMultivariateJacobianFunction} which implements a sequential
@@ -47,35 +49,34 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
  *
  * @author Nicholas
  */
-public class NamedMultivariateJacobianFunctionBuilder //
-		implements IToHTML {
+public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 
 	private final String mName;
-	private final List<NamedMultivariateJacobianFunction> mFuncs = new ArrayList<>();
+	private final List<LabeledMultivariateJacobianFunction> mFuncs = new ArrayList<>();
 
-	private final SimplyLazy<List<? extends Object>> mInputTags = new SimplyLazy<List<? extends Object>>() {
+	private final SimplyLazy<List<? extends Object>> mInputLabels = new SimplyLazy<List<? extends Object>>() {
 		@Override
 		protected List<? extends Object> initialize() {
 			final Set<Object> res = new HashSet<>();
 			final Set<Object> out = new HashSet<>();
-			for (final NamedMultivariateJacobianFunction func : mFuncs) {
-				final List<? extends Object> inp = func.getInputTags();
+			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
+				final List<? extends Object> inp = func.getInputLabels();
 				for (final Object tag : inp)
 					if (!out.contains(tag))
 						res.add(tag);
-				out.addAll(func.getOutputTags());
+				out.addAll(func.getOutputLabels());
 			}
 			return new ArrayList<>(res);
 		}
 
 	};
 
-	private final SimplyLazy<List<? extends Object>> mOutputTags = new SimplyLazy<List<? extends Object>>() {
+	private final SimplyLazy<List<? extends Object>> mOutputLabels = new SimplyLazy<List<? extends Object>>() {
 		@Override
 		protected List<? extends Object> initialize() {
 			final Set<Object> res = new HashSet<>();
-			for (final NamedMultivariateJacobianFunction func : mFuncs) {
-				final List<? extends Object> out = func.getOutputTags();
+			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
+				final List<? extends Object> out = func.getOutputLabels();
 				for (final Object tag : out) {
 					assert !res.contains(tag) : "Duplicate output tag";
 					res.add(tag);
@@ -92,8 +93,8 @@ public class NamedMultivariateJacobianFunctionBuilder //
 	 */
 	private void validate() throws ArgumentException {
 		final List<Object> all = new ArrayList<>();
-		for (final NamedMultivariateJacobianFunction func : mFuncs) {
-			for (final Object tag : func.getOutputTags()) {
+		for (final LabeledMultivariateJacobianFunction func : mFuncs) {
+			for (final Object tag : func.getOutputLabels()) {
 				if (all.contains(tag))
 					throw new ArgumentException("The output tag " + tag.toString() + " is repeated.");
 				all.add(tag);
@@ -101,29 +102,70 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		}
 	}
 
-	public NamedMultivariateJacobianFunctionBuilder(final String name) throws ArgumentException {
+	/**
+	 * Constructs the builder.
+	 * 
+	 * @param name The name of the resulting function.
+	 * @throws ArgumentException
+	 */
+	public LabeledMultivariateJacobianFunctionBuilder( //
+			final String name //
+	) throws ArgumentException {
 		mName = name;
 	}
 
-	public NamedMultivariateJacobianFunctionBuilder(final String name,
-			final List<NamedMultivariateJacobianFunction> funcs) throws ArgumentException {
+	/**
+	 * Constructs the builder.
+	 * 
+	 * @param name  The name of the resulting function.
+	 * @param funcs A list of {@link LabeledMultivariateJacobianFunction} instances
+	 *              that are combined.
+	 * @throws ArgumentException
+	 */
+	public LabeledMultivariateJacobianFunctionBuilder( //
+			final String name, //
+			final List<LabeledMultivariateJacobianFunction> funcs //
+	) throws ArgumentException {
 		this(name);
 		mFuncs.addAll(funcs);
 		validate();
 	}
 
-	public NamedMultivariateJacobianFunctionBuilder add(final NamedMultivariateJacobianFunction func)
-			throws ArgumentException {
+	/**
+	 * Add an additional {@link LabeledMultivariateJacobianFunction} to the builder.
+	 * 
+	 * @param func
+	 * @return {@link LabeledMultivariateJacobianFunctionBuilder}
+	 * @throws ArgumentException
+	 */
+	public LabeledMultivariateJacobianFunctionBuilder add( //
+			final LabeledMultivariateJacobianFunction func //
+	) throws ArgumentException {
 		mFuncs.add(func);
 		validate();
-		mInputTags.reset();
-		mOutputTags.reset();
+		mInputLabels.reset();
+		mOutputLabels.reset();
 		return this;
 	}
 
-	public static NamedMultivariateJacobianFunction join(final String name,
-			final List<NamedMultivariateJacobianFunction> funcs) throws ArgumentException {
-		final NamedMultivariateJacobianFunctionBuilder j = new NamedMultivariateJacobianFunctionBuilder(name, funcs);
+	/**
+	 * Static means to build the combination
+	 * {@link LabeledMultivariateJacobianFunction} from a list of constituent
+	 * {@link LabeledMultivariateJacobianFunction} instances.
+	 * 
+	 * @param name  A name for the resulting
+	 *              {@link LabeledMultivariateJacobianFunction}
+	 * @param funcs A list of constituent
+	 *              {@link LabeledMultivariateJacobianFunction} instances.
+	 * @return {@link LabeledMultivariateJacobianFunction}
+	 * @throws ArgumentException
+	 */
+	public static LabeledMultivariateJacobianFunction join( //
+			final String name, //
+			final List<LabeledMultivariateJacobianFunction> funcs //
+	) throws ArgumentException {
+		final LabeledMultivariateJacobianFunctionBuilder j = new LabeledMultivariateJacobianFunctionBuilder(name,
+				funcs);
 		return j.build();
 	}
 
@@ -142,29 +184,41 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		return rep.toHTML(mode);
 	}
 
-	public List<? extends Object> getInputTags() {
-		return mInputTags.get();
+	/**
+	 * Returns a list of input labelsthat is constructed from specified
+	 * constituent {@link LabeledMultivariateJacobianFunction} instances.
+	 * 
+	 * @return List&lt;? extends Object&gt;
+	 */
+	public List<? extends Object> getInputLabels() {
+		return mInputLabels.get();
 	}
 
-	public List<? extends Object> getOutputTags() {
-		return mOutputTags.get();
+	/**
+	 * Returns a list of output labels that is constructed from specified
+	 * constituent {@link LabeledMultivariateJacobianFunction} instances.
+	 * 
+	 * @return List&lt;? extends Object&gt;
+	 */
+	public List<? extends Object> getOutputLabels() {
+		return mOutputLabels.get();
 	}
 
 	@Override
 	public String toString() {
-		return "Combined " + mName;
+		return mName;
 	}
 
 	private static class Implementation //
-			extends NamedMultivariateJacobianFunction //
-			implements INamedMultivariateFunction, IToHTML {
+			extends LabeledMultivariateJacobianFunction //
+			implements ILabeledMultivariateFunction, IToHTML {
 
-		private final List<NamedMultivariateJacobianFunction> mFuncs;
+		private final List<LabeledMultivariateJacobianFunction> mFuncs;
 		private final String mName;
 
-		private Implementation(final String name, final List<? extends Object> inpTags,
-				final List<? extends Object> outTags, final List<NamedMultivariateJacobianFunction> funcs) {
-			super(inpTags, outTags);
+		private Implementation(final String name, final List<? extends Object> inpLabels,
+				final List<? extends Object> outLabels, final List<LabeledMultivariateJacobianFunction> funcs) {
+			super(inpLabels, outLabels);
 			mFuncs = funcs;
 			mName = name;
 		}
@@ -181,18 +235,18 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		 */
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final List<? extends Object> output = getOutputTags();
+			final List<? extends Object> output = getOutputLabels();
 			final int oDim = output.size();
 			assert oDim > 0 : "Output dimensions is zero in " + toString();
 			final int iDim = getInputDimension();
 			assert iDim > 0 : "Input dimensions is zero in " + toString();
 			final RealVector vals = new ArrayRealVector(oDim);
 			final RealMatrix cov = new NullableRealMatrix(oDim, iDim);
-			for (final NamedMultivariateJacobianFunction func : mFuncs) {
+			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				final RealVector funcPoint = func.extractArgument(this, point);
 				Map<Object, Double> consts = new HashMap<>(getConstants());
 				if (func instanceof ImplicitMeasurementModel) {
-					final List<? extends Object> fOut = func.getOutputTags();
+					final List<? extends Object> fOut = func.getOutputLabels();
 					for (Object tag : fOut)
 						consts.put(tag, getValue(tag, point));
 				}
@@ -200,8 +254,8 @@ public class NamedMultivariateJacobianFunctionBuilder //
 				final Pair<RealVector, RealMatrix> v = func.value(funcPoint);
 				final RealVector fVals = v.getFirst();
 				final RealMatrix fJac = v.getSecond();
-				final List<? extends Object> fout = func.getOutputTags();
-				final List<? extends Object> fin = func.getInputTags();
+				final List<? extends Object> fout = func.getOutputLabels();
+				final List<? extends Object> fin = func.getInputLabels();
 				final int[] findx = new int[fin.size()];
 				for (int c = 0; c < findx.length; ++c)
 					findx[c] = inputIndex(fin.get(c));
@@ -223,17 +277,17 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		 */
 		@Override
 		public RealVector optimized(final RealVector point) {
-			final List<? extends Object> output = getOutputTags();
+			final List<? extends Object> output = getOutputLabels();
 			final int oDim = output.size();
 			assert oDim > 0 : "Output dimensions is zero in " + toString();
 			final int iDim = getInputDimension();
 			assert iDim > 0 : "Input dimensions is zero in " + toString();
 			final RealVector vals = new ArrayRealVector(oDim);
-			for (final NamedMultivariateJacobianFunction func : mFuncs) {
+			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				final RealVector funcPoint = func.extractArgument(this, point);
 				func.initializeConstants(getConstants());
 				final RealVector fVals = func.compute(funcPoint);
-				final List<? extends Object> fout = func.getOutputTags();
+				final List<? extends Object> fout = func.getOutputLabels();
 				final int fOutDim = fout.size();
 				for (int r = 0; r < fOutDim; ++r) {
 					final int idxr = outputIndex(fout.get(r));
@@ -245,35 +299,35 @@ public class NamedMultivariateJacobianFunctionBuilder //
 
 		@Override
 		public String toHTML(final Mode mode) {
-			return NamedMultivariateJacobianFunctionBuilder.toHTML(mName, mFuncs, getInputTags(), getOutputTags(),
+			return LabeledMultivariateJacobianFunctionBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(),
 					mode);
 		}
 
 	}
 
-	public static class ParallelImplementation //
-			extends NamedMultivariateJacobianFunction //
-			implements INamedMultivariateFunction {
+	private static class ParallelImplementation //
+			extends LabeledMultivariateJacobianFunction //
+			implements ILabeledMultivariateFunction {
 
 		private final ForkJoinPool mPool;
-		private final List<NamedMultivariateJacobianFunction> mFuncs;
+		private final List<LabeledMultivariateJacobianFunction> mFuncs;
 		private final String mName;
 
-		private static List<Object> buildInputs(List<NamedMultivariateJacobianFunction> steps) {
+		private static List<Object> buildInputs(List<LabeledMultivariateJacobianFunction> steps) {
 			Set<Object> res = new HashSet<>();
-			for (NamedMultivariateJacobianFunction func : steps)
-				res.addAll(func.getInputTags());
+			for (LabeledMultivariateJacobianFunction func : steps)
+				res.addAll(func.getInputLabels());
 			return new ArrayList<>(res);
 		}
 
-		private static List<Object> buildOutputs(List<NamedMultivariateJacobianFunction> steps) {
+		private static List<Object> buildOutputs(List<LabeledMultivariateJacobianFunction> steps) {
 			Set<Object> res = new HashSet<>();
-			for (NamedMultivariateJacobianFunction func : steps)
-				res.addAll(func.getOutputTags());
+			for (LabeledMultivariateJacobianFunction func : steps)
+				res.addAll(func.getOutputLabels());
 			return new ArrayList<>(res);
 		}
 
-		public ParallelImplementation(String name, List<NamedMultivariateJacobianFunction> steps, ForkJoinPool fjp) {
+		public ParallelImplementation(String name, List<LabeledMultivariateJacobianFunction> steps, ForkJoinPool fjp) {
 			super(buildInputs(steps), buildOutputs(steps));
 			mFuncs = new ArrayList<>(steps);
 			mPool = fjp;
@@ -281,11 +335,11 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		}
 
 		private static final class Result {
-			private final NamedMultivariateJacobianFunction mFunc;
+			private final LabeledMultivariateJacobianFunction mFunc;
 			private final RealVector mValues;
 			private final RealMatrix mJacobian;
 
-			Result(NamedMultivariateJacobianFunction func, RealVector vals, RealMatrix jac) {
+			Result(LabeledMultivariateJacobianFunction func, RealVector vals, RealMatrix jac) {
 				mFunc = func;
 				mValues = vals;
 				mJacobian = jac;
@@ -295,10 +349,10 @@ public class NamedMultivariateJacobianFunctionBuilder //
 
 		private static final class NMJFValue implements Callable<Result> {
 
-			private final NamedMultivariateJacobianFunction mFunc;
+			private final LabeledMultivariateJacobianFunction mFunc;
 			private final RealVector mPoint;
 
-			private NMJFValue(NamedMultivariateJacobianFunction func, RealVector point) {
+			private NMJFValue(LabeledMultivariateJacobianFunction func, RealVector point) {
 				mFunc = func;
 				mPoint = point;
 			}
@@ -312,10 +366,10 @@ public class NamedMultivariateJacobianFunctionBuilder //
 
 		private static final class NMJFOptimized implements Callable<Result> {
 
-			private final NamedMultivariateJacobianFunction mFunc;
+			private final LabeledMultivariateJacobianFunction mFunc;
 			private final RealVector mPoint;
 
-			private NMJFOptimized(NamedMultivariateJacobianFunction func, RealVector point) {
+			private NMJFOptimized(LabeledMultivariateJacobianFunction func, RealVector point) {
 				mFunc = func;
 				mPoint = point;
 			}
@@ -339,7 +393,7 @@ public class NamedMultivariateJacobianFunctionBuilder //
 			RealVector rv = new ArrayRealVector(getOutputDimension());
 			RealMatrix rm = new Array2DRowRealMatrix(getOutputDimension(), getInputDimension());
 			List<Callable<Result>> tasks = new ArrayList<>();
-			for (NamedMultivariateJacobianFunction func : mFuncs) {
+			for (LabeledMultivariateJacobianFunction func : mFuncs) {
 				func.initializeConstants(getConstants());
 				tasks.add(new NMJFValue(func, func.extractArgument(this, point)));
 			}
@@ -347,16 +401,16 @@ public class NamedMultivariateJacobianFunctionBuilder //
 			for (Future<Result> fp : res) {
 				try {
 					final Result tmp = fp.get();
-					List<? extends Object> outTags = tmp.mFunc.getOutputTags();
-					List<? extends Object> inTags = tmp.mFunc.getInputTags();
-					final int[] inIdx = new int[inTags.size()];
+					List<? extends Object> outLabels = tmp.mFunc.getOutputLabels();
+					List<? extends Object> inLabels = tmp.mFunc.getInputLabels();
+					final int[] inIdx = new int[inLabels.size()];
 					for (int c = 0; c < inIdx.length; ++c)
-						inIdx[c] = inputIndex(inTags.get(c));
-					for (int r = 0; r < outTags.size(); ++r) {
-						final Object outTag = outTags.get(r);
-						final int outIdx = outputIndex(outTag);
+						inIdx[c] = inputIndex(inLabels.get(c));
+					for (int r = 0; r < outLabels.size(); ++r) {
+						final Object outLabel = outLabels.get(r);
+						final int outIdx = outputIndex(outLabel);
 						rv.setEntry(outIdx, tmp.mValues.getEntry(r));
-						for (int c = 0; c < inTags.size(); ++c)
+						for (int c = 0; c < inLabels.size(); ++c)
 							rm.setEntry(outIdx, inIdx[c], tmp.mJacobian.getEntry(r, c));
 					}
 				} catch (InterruptedException | ExecutionException e) {
@@ -370,7 +424,7 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		public RealVector optimized(RealVector point) {
 			RealVector rv = new ArrayRealVector(getOutputDimension());
 			List<Callable<Result>> tasks = new ArrayList<>();
-			for (NamedMultivariateJacobianFunction func : mFuncs) {
+			for (LabeledMultivariateJacobianFunction func : mFuncs) {
 				func.initializeConstants(getConstants());
 				tasks.add(new NMJFOptimized(func, func.extractArgument(this, point)));
 			}
@@ -378,9 +432,9 @@ public class NamedMultivariateJacobianFunctionBuilder //
 			for (Future<Result> fp : res) {
 				try {
 					final Result tmp = fp.get();
-					List<? extends Object> outTags = tmp.mFunc.getOutputTags();
-					for (int r = 0; r < outTags.size(); ++r)
-						rv.setEntry(outputIndex(outTags.get(r)), tmp.mValues.getEntry(r));
+					List<? extends Object> outLabels = tmp.mFunc.getOutputLabels();
+					for (int r = 0; r < outLabels.size(); ++r)
+						rv.setEntry(outputIndex(outLabels.get(r)), tmp.mValues.getEntry(r));
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
 				}
@@ -394,16 +448,16 @@ public class NamedMultivariateJacobianFunctionBuilder //
 
 		@Override
 		public String toHTML(final Mode mode) {
-			return NamedMultivariateJacobianFunctionBuilder.toHTML(mName, mFuncs, getInputTags(), getOutputTags(),
+			return LabeledMultivariateJacobianFunctionBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(),
 					mode);
 		}
 	}
 
 	protected static String toHTML(//
 			String name, //
-			List<NamedMultivariateJacobianFunction> funcs, //
-			List<? extends Object> inpTags, //
-			List<? extends Object> outTags, //
+			List<LabeledMultivariateJacobianFunction> funcs, //
+			List<? extends Object> inpLabels, //
+			List<? extends Object> outLabels, //
 			final Mode mode) {
 		switch (mode) {
 		case TERSE:
@@ -419,26 +473,26 @@ public class NamedMultivariateJacobianFunctionBuilder //
 		default:
 		case VERBOSE: {
 			final Report report = new Report(name + " Consolidated Calculation Report");
-			final Map<Object, Integer> valTags = new HashMap<>();
+			final Map<Object, Integer> valLabels = new HashMap<>();
 			final Map<Object, Integer> usage = new HashMap<>();
-			for (final Object inp : inpTags) {
-				valTags.put(inp, 0);
+			for (final Object inp : inpLabels) {
+				valLabels.put(inp, 0);
 				usage.put(inp, 0);
 			}
 			for (int i = 0; i < funcs.size(); ++i) {
 				report.addSubHeader("Step " + Integer.toString(i + 1));
-				final NamedMultivariateJacobianFunction func = funcs.get(i);
+				final LabeledMultivariateJacobianFunction func = funcs.get(i);
 				{
 					final Table tbl = new Table();
 					tbl.addRow(Table.th("Input Variable"), Table.th("Source"));
-					for (final Object tag : func.getInputTags())
+					for (final Object tag : func.getInputLabels())
 						tbl.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), Table.td("Input"));
 					report.add(tbl);
 				}
 				{
 					final Table tbl = new Table();
 					tbl.addRow(Table.th("Output Variable"), Table.th("Source"));
-					for (final Object tag : func.getOutputTags())
+					for (final Object tag : func.getOutputLabels())
 						tbl.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), Table.td("Output"));
 					report.add(tbl);
 				}
@@ -451,17 +505,17 @@ public class NamedMultivariateJacobianFunctionBuilder //
 	/**
 	 * @return NamedMultivariateJacobianFunction
 	 */
-	public NamedMultivariateJacobianFunction build() {
-		final NamedMultivariateJacobianFunction res = new Implementation( //
+	public LabeledMultivariateJacobianFunction build() {
+		final LabeledMultivariateJacobianFunction res = new Implementation( //
 				mName, //
-				mInputTags.get(), //
-				mOutputTags.get(), //
+				mInputLabels.get(), //
+				mOutputLabels.get(), //
 				mFuncs);
 		return res;
 	}
 
-	public NamedMultivariateJacobianFunction buildParallel(ForkJoinPool pool) {
-		final NamedMultivariateJacobianFunction res = new ParallelImplementation( //
+	public LabeledMultivariateJacobianFunction buildParallel(ForkJoinPool pool) {
+		final LabeledMultivariateJacobianFunction res = new ParallelImplementation( //
 				mName, //
 				mFuncs, //
 				pool);

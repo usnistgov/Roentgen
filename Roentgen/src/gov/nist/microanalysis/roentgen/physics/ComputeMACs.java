@@ -11,8 +11,8 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
-import gov.nist.microanalysis.roentgen.math.uncertainty.INamedMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.MassAbsorptionCoefficient.MaterialMAC;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -25,7 +25,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.Represent
  * @author nicholas
  *
  */
-public class ComputeMACs extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+public class ComputeMACs extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 	private static List<Object> inputTags(final List<Composition> comps, final XRay xray) {
 		final List<Object> res = new ArrayList<>();
@@ -38,7 +38,7 @@ public class ComputeMACs extends NamedMultivariateJacobianFunction implements IN
 			res.add(new MassAbsorptionCoefficient.ElementMAC(elm, xray));
 		// Mass fraction of each element in each material
 		for (final Composition comp : comps)
-			res.addAll(comp.getTags());
+			res.addAll(comp.getLabels());
 		return res;
 	}
 
@@ -55,7 +55,7 @@ public class ComputeMACs extends NamedMultivariateJacobianFunction implements IN
 			final XRay xray) {
 		final ComputeMACs cmac = new ComputeMACs(materials, xray);
 		// Builds an input uncertainty matrix directly
-		final List<? extends Object> inp = cmac.getInputTags();
+		final List<? extends Object> inp = cmac.getInputLabels();
 		final UncertainValues uvs = new UncertainValues(inp);
 		final Set<Element> elms = new HashSet<>();
 		// Initialize the elemental fractions for each material
@@ -106,8 +106,8 @@ public class ComputeMACs extends NamedMultivariateJacobianFunction implements IN
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector res = new ArrayRealVector(getOutputDimension());
 		final RealMatrix cov = new NullableRealMatrix(getOutputDimension(), getInputDimension());
-		final List<? extends Object> macTags = getOutputTags();
-		final List<? extends Object> inp = getInputTags();
+		final List<? extends Object> macTags = getOutputLabels();
+		final List<? extends Object> inp = getInputLabels();
 		for (int i = 0; i < macTags.size(); ++i) {
 			final MaterialMAC macTag = (MaterialMAC) macTags.get(i);
 			final Composition mf = macTag.getComposition();
@@ -129,8 +129,8 @@ public class ComputeMACs extends NamedMultivariateJacobianFunction implements IN
 	@Override
 	public RealVector optimized(RealVector point) {
 		final RealVector res = new ArrayRealVector(getOutputDimension());
-		final List<? extends Object> macTags = getOutputTags();
-		final List<? extends Object> inp = getInputTags();
+		final List<? extends Object> macTags = getOutputLabels();
+		final List<? extends Object> inp = getInputLabels();
 		for (int i = 0; i < macTags.size(); ++i) {
 			final MaterialMAC macTag = (MaterialMAC) macTags.get(i);
 			final Composition mf = macTag.getComposition();

@@ -23,8 +23,8 @@ import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -62,7 +62,7 @@ public class Composition extends UncertainValues {
 	private final String mHTML;
 	private final Representation mRepresentation;
 
-	public static class ElementTag extends BaseTag<Element, String, Object> {
+	public static class ElementTag extends BaseLabel<Element, String, Object> {
 		private ElementTag(final String prefix, final String html, final Element elm) {
 			super(prefix, elm, "<html>" + html);
 		}
@@ -260,7 +260,7 @@ public class Composition extends UncertainValues {
 	 */
 	public static Composition pureElement(final Element elm, final double purity) {
 		final Map<Element, Number> men = new TreeMap<>();
-		men.put(elm, new UncertainValue(purity, 1.0 - purity));
+		men.put(elm, new UncertainValue(purity, "d" + elm.toString(), 1.0 - purity));
 		return massFraction("Pure " + elm.getAbbrev(), men);
 	}
 
@@ -400,7 +400,7 @@ public class Composition extends UncertainValues {
 
 	public Set<Element> getElementSet() {
 		final TreeSet<Element> res = new TreeSet<>();
-		for (final Object obj : getTags()) {
+		for (final Object obj : getLabels()) {
 			assert obj instanceof ElementTag;
 			res.add(((ElementTag) obj).getElement());
 		}
@@ -409,7 +409,7 @@ public class Composition extends UncertainValues {
 
 	private List<Element> getElementList() {
 		final List<Element> res = new ArrayList<>();
-		for (final Object obj : getTags()) {
+		for (final Object obj : getLabels()) {
 			assert obj instanceof ElementTag;
 			res.add(((ElementTag) obj).getElement());
 		}
@@ -417,7 +417,7 @@ public class Composition extends UncertainValues {
 	}
 
 	public UncertainValue getValue(final Element elm) {
-		for (final Object obj : getTags()) {
+		for (final Object obj : getLabels()) {
 			assert obj instanceof ElementTag;
 			if (((ElementTag) obj).getElement() == elm)
 				return super.getValue(obj);
@@ -427,7 +427,7 @@ public class Composition extends UncertainValues {
 
 	public double getCovariance(final Element elm1, final Element elm2) {
 		int p1 = -1, p2 = -1;
-		final List<Object> tags = getTags();
+		final List<Object> tags = getLabels();
 		for (int i = 0; i < tags.size(); ++i) {
 			final Object obj = tags.get(i);
 			assert obj instanceof ElementTag;
@@ -440,7 +440,7 @@ public class Composition extends UncertainValues {
 		return (p1 != -1) && (p2 != -1) ? getCovariance(p1, p2) : 0.0;
 	}
 
-	public static class AtomFractionToMassFraction extends NamedMultivariateJacobianFunction {
+	public static class AtomFractionToMassFraction extends LabeledMultivariateJacobianFunction {
 
 		/**
 		 * Nominally the tabulated atomic weights but can be customized for special
@@ -462,7 +462,7 @@ public class Composition extends UncertainValues {
 		 * @param atomicWeights
 		 */
 		public AtomFractionToMassFraction(final Composition comp, final Map<Element, Double> atomicWeights) {
-			super(comp.getTags(), buildTags(comp, Representation.MassFraction));
+			super(comp.getLabels(), buildTags(comp, Representation.MassFraction));
 			assert (comp.mRepresentation == Representation.AtomFraction)
 					|| (comp.mRepresentation == Representation.Stoichiometry);
 			mAtomicWeights = new HashMap<>(atomicWeights);
@@ -480,7 +480,7 @@ public class Composition extends UncertainValues {
 
 		private double denom(final RealVector point) {
 			double res = 0.0;
-			for (final Object tag : getInputTags()) {
+			for (final Object tag : getInputLabels()) {
 				final AtomTypeTag aft = (AtomTypeTag) tag;
 				final double a = mAtomicWeights.get(aft.getElement());
 				res += getValue(aft, point) * a;
@@ -507,10 +507,10 @@ public class Composition extends UncertainValues {
 			final RealVector vals = new ArrayRealVector(getOutputDimension());
 			final RealMatrix jac = new NullableRealMatrix(getInputDimension(), getOutputDimension());
 			for (int i = 0; i < getInputDimension(); ++i) {
-				final AtomTypeTag aft = (AtomTypeTag) getInputTags().get(i);
+				final AtomTypeTag aft = (AtomTypeTag) getInputLabels().get(i);
 				vals.setEntry(i, massFraction(aft, point));
 				for (int j = 0; j < getOutputDimension(); ++j) {
-					final MassFractionTag mft = (MassFractionTag) getOutputTags().get(j);
+					final MassFractionTag mft = (MassFractionTag) getOutputLabels().get(j);
 					writeJacobian(i, mft, deriv(mft, aft, point), jac);
 				}
 			}
@@ -518,7 +518,7 @@ public class Composition extends UncertainValues {
 		}
 	}
 
-	public static class MassFractionToAtomFraction extends NamedMultivariateJacobianFunction {
+	public static class MassFractionToAtomFraction extends LabeledMultivariateJacobianFunction {
 
 		/**
 		 * Nominally the tabulated atomic weights but can be customized for special
@@ -570,7 +570,7 @@ public class Composition extends UncertainValues {
 				throw new DimensionMismatchException(point.getDimension(), getInputDimension());
 			final RealVector vals = new ArrayRealVector(point.getDimension());
 			final RealMatrix jac = new NullableRealMatrix(point.getDimension(), point.getDimension());
-			final List<? extends Object> elms = getInputTags();
+			final List<? extends Object> elms = getInputLabels();
 			for (int i = 0; i < elms.size(); ++i) {
 				vals.setEntry(i, atomFraction(i, point));
 				for (int j = 0; j < elms.size(); ++j)
@@ -619,8 +619,8 @@ public class Composition extends UncertainValues {
 		final List<Element> elms = getElementList();
 		switch (mRepresentation) {
 		case MassFraction: {
-			final UncertainValues mf = UncertainValues.propagate(NamedMultivariateJacobianFunction.normalize(getTags(),
-					buildTags(mHTML, elms, Representation.NormalizedMassFraction)), this);
+			final UncertainValues mf = UncertainValues.propagate(LabeledMultivariateJacobianFunction
+					.normalize(getLabels(), buildTags(mHTML, elms, Representation.NormalizedMassFraction)), this);
 			return new Composition(Representation.NormalizedMassFraction, mHTML, elms, mf.getValues(),
 					mf.getCovariances());
 		}
@@ -651,15 +651,15 @@ public class Composition extends UncertainValues {
 		switch (mRepresentation) {
 		case NormalizedMassFraction:
 		case MassFraction: {
-			final UncertainValues mf = UncertainValues.propagate(new MassFractionToAtomFraction(getTags(),
+			final UncertainValues mf = UncertainValues.propagate(new MassFractionToAtomFraction(getLabels(),
 					buildTags(mHTML, elms, Representation.NormalizedMassFraction)), this);
 			return new Composition(Representation.AtomFraction, mHTML, elms, mf.getValues(), mf.getCovariances());
 		}
 		case AtomFraction:
 			return this;
 		case Stoichiometry: {
-			final UncertainValues mf = UncertainValues.propagate(NamedMultivariateJacobianFunction.normalize(getTags(),
-					buildTags(mHTML, elms, Representation.AtomFraction)), this);
+			final UncertainValues mf = UncertainValues.propagate(LabeledMultivariateJacobianFunction
+					.normalize(getLabels(), buildTags(mHTML, elms, Representation.AtomFraction)), this);
 			return new Composition(Representation.AtomFraction, mHTML, elms, mf.getValues(), mf.getCovariances());
 		}
 		default:
@@ -672,7 +672,7 @@ public class Composition extends UncertainValues {
 		return mRepresentation;
 	}
 
-	public static class TotalTag extends BaseTag<Composition, Object, Object> {
+	public static class TotalTag extends BaseLabel<Composition, Object, Object> {
 
 		private TotalTag(final Composition comp) {
 			super("Total", comp);
@@ -688,10 +688,11 @@ public class Composition extends UncertainValues {
 	}
 
 	public UncertainValues getAnalyticalTotal() {
-		return UncertainValues.propagate(NamedMultivariateJacobianFunction.sum(getTags(), new TotalTag(this)), this);
+		return UncertainValues.propagate(LabeledMultivariateJacobianFunction.sum(getLabels(), new TotalTag(this)),
+				this);
 	}
 
-	public static class MeanZTag extends BaseTag<Composition, Object, Object> {
+	public static class MeanZTag extends BaseLabel<Composition, Object, Object> {
 
 		public MeanZTag(final Composition comp) {
 			super("MeanZ", comp);
@@ -707,12 +708,12 @@ public class Composition extends UncertainValues {
 	}
 
 	public UncertainValues getMeanAtomicNumber() {
-		final List<? extends Object> tags = getTags();
+		final List<? extends Object> tags = getLabels();
 		final double[] z = new double[tags.size()];
 		for (int i = 0; i < z.length; ++i)
 			z[i] = ((ElementTag) tags.get(i)).getElement().getAtomicNumber();
 		return UncertainValues.propagate(
-				NamedMultivariateJacobianFunction.linear(tags, MatrixUtils.createRealVector(z), buildMeanZTag(this)),
+				LabeledMultivariateJacobianFunction.linear(tags, MatrixUtils.createRealVector(z), buildMeanZTag(this)),
 				this);
 	}
 
@@ -754,7 +755,7 @@ public class Composition extends UncertainValues {
 			final Composition mf = asMassFraction();
 			t.addRow(Table.th("Element"), Table.thc("Z"), Table.thc("Atoms"), Table.thc("Mass<br/>Fraction"));
 			final BasicNumberFormat nf = MASS_FRACTION_FORMAT;
-			for (final Object tag : getTags()) {
+			for (final Object tag : getLabels()) {
 				final ElementTag elementTag = (ElementTag) tag;
 				final Element elm = elementTag.getElement();
 				final UncertainValue uv = getValue(elementTag);
@@ -803,7 +804,7 @@ public class Composition extends UncertainValues {
 		}
 	}
 
-	private static final class FracTag extends BaseTag<Composition, Object, Object> {
+	private static final class FracTag extends BaseLabel<Composition, Object, Object> {
 
 		protected FracTag(final Composition comp) {
 			super("f", comp);
@@ -814,7 +815,7 @@ public class Composition extends UncertainValues {
 		}
 	}
 
-	private static final class CombineMassFractions extends NamedMultivariateJacobianFunction {
+	private static final class CombineMassFractions extends LabeledMultivariateJacobianFunction {
 
 		private final String mHTML;
 
@@ -833,7 +834,7 @@ public class Composition extends UncertainValues {
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final List<? extends Object> inTags = getInputTags();
+			final List<? extends Object> inTags = getInputLabels();
 			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			for (final Object inTag : inTags) {
@@ -890,7 +891,7 @@ public class Composition extends UncertainValues {
 		for (final Map.Entry<Composition, Number> me : mfs.entrySet()) {
 			final Composition comp = me.getKey();
 			uvs[i] = comp;
-			for (final Object ctag : me.getKey().getTags()) {
+			for (final Object ctag : me.getKey().getLabels()) {
 				assert ctag instanceof MassFractionTag;
 				final MassFractionTag mft = (MassFractionTag) ctag;
 				if (!elms.contains(mft.getElement()))
@@ -972,7 +973,7 @@ public class Composition extends UncertainValues {
 	 *         non-zero.
 	 */
 	public boolean contains(final Element element) {
-		for (final Object obj : getTags())
+		for (final Object obj : getLabels())
 			if (((ElementTag) obj).getElement() == element)
 				return true;
 		return false;

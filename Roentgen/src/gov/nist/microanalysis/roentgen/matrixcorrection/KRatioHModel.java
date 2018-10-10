@@ -11,13 +11,13 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag.Method;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
-class KRatioHModel extends NamedMultivariateJacobianFunction {
+class KRatioHModel extends LabeledMultivariateJacobianFunction {
 
 	private final MatrixCorrectionDatum mUnknown;
 	private final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;
@@ -50,7 +50,7 @@ class KRatioHModel extends NamedMultivariateJacobianFunction {
 			final MatrixCorrectionDatum unk, //
 			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
 	) {
-		super(buildInputs(unk, stds), KRatioCorrectionModel.buildHTags(buildOutputs(unk.getComposition())));
+		super(buildInputs(unk, stds), KRatioCorrectionModel.buildHLabels(buildOutputs(unk.getComposition())));
 		mUnknown = unk;
 		mStandards = stds;
 	}
@@ -66,7 +66,7 @@ class KRatioHModel extends NamedMultivariateJacobianFunction {
 			final Object mfUnkTag = Composition.buildMassFractionTag(unk, elm);
 			final Object mfStdTag = Composition.buildMassFractionTag(me.getValue().getComposition(), elm);
 			final Object zafTag = new MatrixCorrectionTag(mUnknown, me.getValue(), me.getKey());
-			final Object hTag = new ImplicitMeasurementModel.hTag(Composition.buildMassFractionTag(unk, elm));
+			final Object hTag = new ImplicitMeasurementModel.HLabel(Composition.buildMassFractionTag(unk, elm));
 			final int iKMeas = inputIndex(kMeasTag);
 			final int iMFUnk = inputIndex(mfUnkTag);
 			final int iMFStd = inputIndex(mfStdTag);

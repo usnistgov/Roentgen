@@ -21,8 +21,8 @@ import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobian;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel;
@@ -144,9 +144,9 @@ public class KRatioCorrectionModelTest {
 			mouv.put(new MatrixCorrectionTag(unkMcd, stdK411Mcd, oTr), new UncertainValue(1.0023));
 			mouv.put(new MatrixCorrectionTag(unkMcd, stdAlMcd, alTr), new UncertainValue(0.6523));
 
-			UncertainValues uvs = UncertainValues.extract(krcm.getInputTags(), new UncertainValues(mouv));
+			UncertainValues uvs = UncertainValues.extract(krcm.getInputLabels(), new UncertainValues(mouv));
 
-			NamedMultivariateJacobian nmvj = new NamedMultivariateJacobian(krcm, uvs.getValues());
+			LabeledMultivariateJacobian nmvj = new LabeledMultivariateJacobian(krcm, uvs.getValues());
 			r.addHeader("Jacobian");
 
 			r.addHTML(nmvj.toHTML(Mode.NORMAL, new BasicNumberFormat("0.000")));
@@ -259,13 +259,13 @@ public class KRatioCorrectionModelTest {
 		kvars.setEntry(6, Math.pow(0.001, 2.0));
 		UncertainValues kuv = new UncertainValues(lkr, kvals, kvars);
 
-		List<NamedMultivariateJacobianFunction> steps = new ArrayList<>();
+		List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.defaultVariates());
 		steps.add(xpp);
 		steps.add(new KRatioCorrectionModel(unkMcd, stds));
 		SerialNamedMultivariateJacobianFunction ms = new SerialNamedMultivariateJacobianFunction("k-ratio",
 				steps);
-		UncertainValues msInp = UncertainValues.build(ms.getInputTags(), xpp.buildInput(), kuv);
+		UncertainValues msInp = UncertainValues.build(ms.getInputLabels(), xpp.buildInput(), kuv);
 
 		Report report = new Report("K-Ratio (2)");
 		try {
@@ -275,7 +275,7 @@ public class KRatioCorrectionModelTest {
 			report.addSubHeader("Function");
 			report.add(ms);
 			// UncertainValues res = UncertainValues.propagate(ms, msInp);
-			NamedMultivariateJacobian eval = new NamedMultivariateJacobian(ms, msInp.getValues());
+			LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(ms, msInp.getValues());
 			report.addSubHeader("Jacobian");
 			report.add(eval);
 			report.addSubHeader("Result");
@@ -396,13 +396,13 @@ public class KRatioCorrectionModelTest {
 
 		UncertainValues kuv = new UncertainValues(lkr, kvals, kvars);
 
-		List<NamedMultivariateJacobianFunction> steps = new ArrayList<>();
+		List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
 		steps.add(xpp);
 		steps.add(new KRatioCorrectionModel(unkMcd, stds));
 		SerialNamedMultivariateJacobianFunction ms = new SerialNamedMultivariateJacobianFunction("k-ratio",
 				steps);
-		UncertainValues msInp = UncertainValues.build(ms.getInputTags(), xpp.buildInput(), kuv);
+		UncertainValues msInp = UncertainValues.build(ms.getInputLabels(), xpp.buildInput(), kuv);
 
 		Report report = new Report("K-Ratio (3)");
 		try {
@@ -412,7 +412,7 @@ public class KRatioCorrectionModelTest {
 			report.addSubHeader("Function");
 			report.addHTML(HTML.toHTML(ms,Mode.NORMAL));
 			// UncertainValues res = UncertainValues.propagate(ms, msInp);
-			NamedMultivariateJacobian eval = new NamedMultivariateJacobian(ms, msInp.getValues());
+			LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(ms, msInp.getValues());
 			report.addSubHeader("Jacobian");
 			report.add(eval);
 			report.addSubHeader("Result");
@@ -431,7 +431,7 @@ public class KRatioCorrectionModelTest {
 				Table t2 = new Table();
 				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
 				BasicNumberFormat bnf = new BasicNumberFormat("0.00E0");
-				for (Object tag : msInp.sort().getTags())
+				for (Object tag : msInp.sort().getLabels())
 					t2.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 							Table.td(bnf.formatHTML(msInp.getEntry(tag))), //
 							Table.td(bnf.formatHTML(msInp.getUncertainty(tag))));
@@ -443,7 +443,7 @@ public class KRatioCorrectionModelTest {
 				Table t2 = new Table();
 				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
 				BasicNumberFormat bnf = new BasicNumberFormat("#,##0.00000");
-				for (Object tag : results.getTags())
+				for (Object tag : results.getLabels())
 					t2.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 							Table.td(bnf.formatHTML(results.getEntry(tag))), //
 							Table.td(bnf.formatHTML(results.getUncertainty(tag))));
@@ -468,7 +468,7 @@ public class KRatioCorrectionModelTest {
 				Table t2 = new Table();
 				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
 				BasicNumberFormat bnf = new BasicNumberFormat("#,##0.00000");
-				for (Object tag : resultsTr.getTags())
+				for (Object tag : resultsTr.getLabels())
 					t2.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), Table.td(bnf.formatHTML(resultsTr.getEntry(tag))),
 							Table.td(bnf.formatHTML(resultsTr.getUncertainty(tag))));
 				report.add(t2);

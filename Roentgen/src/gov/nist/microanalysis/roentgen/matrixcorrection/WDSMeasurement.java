@@ -11,8 +11,8 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
@@ -31,13 +31,13 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @author Nicholas
  *
  */
-public class WDSMeasurement extends NamedMultivariateJacobianFunction {
+public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 
 	enum Model {
 		TwoPoint
 	};
 
-	protected static class WDSIntensityTag extends BaseTag<Double,Integer,Object> {
+	protected static class WDSIntensityTag extends BaseLabel<Double,Integer,Object> {
 
 		protected WDSIntensityTag(String name, double lPos, int rep) {
 			super(name, Double.valueOf(lPos), Integer.valueOf(rep));
@@ -52,7 +52,7 @@ public class WDSMeasurement extends NamedMultivariateJacobianFunction {
 		}
 	}
 
-	protected static class WDSLiveTimeTag extends BaseTag<Double,Integer,Object> {
+	protected static class WDSLiveTimeTag extends BaseLabel<Double,Integer,Object> {
 
 		protected WDSLiveTimeTag(String name, double lPos, int rep) {
 			super(name, Double.valueOf(lPos), Integer.valueOf(rep));
@@ -170,7 +170,7 @@ public class WDSMeasurement extends NamedMultivariateJacobianFunction {
 	 * @author Nicholas
 	 *
 	 */
-	public static class CorrectedIntensity extends BaseTag<CharacteristicXRay,Integer,Object> {
+	public static class CorrectedIntensity extends BaseLabel<CharacteristicXRay,Integer,Object> {
 
 		public CorrectedIntensity(CharacteristicXRay cxr, int rep) {
 			super("I<sub>BC," + cxr.toHTML(Mode.TERSE) + "</sub>", cxr, Integer.valueOf(rep));
@@ -179,9 +179,9 @@ public class WDSMeasurement extends NamedMultivariateJacobianFunction {
 
 	protected final ArrayList<OnPeakPacket> mMeasurements;
 
-	private static List<BaseTag<?,?,?>> inputTags(List<OnPeakPacket> dataTags) {
+	private static List<BaseLabel<?,?,?>> inputTags(List<OnPeakPacket> dataTags) {
 		HashSet<BackgroundPacket> backs = new HashSet<>();
-		ArrayList<BaseTag<?,?,?>> res = new ArrayList<>();
+		ArrayList<BaseLabel<?,?,?>> res = new ArrayList<>();
 		for (OnPeakPacket pack : dataTags) {
 			res.add(pack.mOnPeakI);
 			res.add(pack.mOnPeakLT);
@@ -195,8 +195,8 @@ public class WDSMeasurement extends NamedMultivariateJacobianFunction {
 		return res;
 	}
 
-	private static List<BaseTag<?,?,?>> outputTags(List<OnPeakPacket> dataTags) {
-		ArrayList<BaseTag<?,?,?>> res = new ArrayList<>();
+	private static List<BaseLabel<?,?,?>> outputTags(List<OnPeakPacket> dataTags) {
+		ArrayList<BaseLabel<?,?,?>> res = new ArrayList<>();
 		for (OnPeakPacket pack : dataTags)
 			res.add(new CorrectedIntensity(pack.mOnPeakI.mXRay, pack.mOnPeakI.getRepetition()));
 		return res;

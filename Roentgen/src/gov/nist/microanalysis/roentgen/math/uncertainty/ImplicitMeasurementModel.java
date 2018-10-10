@@ -21,47 +21,56 @@ import org.apache.commons.math3.util.Pair;
  * </ul>
  *
  * <p>
- * The values associated with the output tags are passed in as constant values
- * to conform to ensure that the input and output tags are dijoint.
+ * The values associated with the output labels are passed in as constant values
+ * to conform to ensure that the input and output labels are disjoint.
  * </p>
  *
  *
  * @author Nicholas
  *
  */
-public class ImplicitMeasurementModel
-		extends NamedMultivariateJacobianFunction {
+public class ImplicitMeasurementModel //
+		extends LabeledMultivariateJacobianFunction {
 
-	public static class hTag extends BaseTag<Object, Object, Object> {
+	public static class HLabel extends BaseLabel<Object, Object, Object> {
 
-		public hTag(final Object tag) {
-			super("h", tag);
+		public HLabel(final Object label) {
+			super("h", label);
 		}
 	}
 
-	public static List<? extends Object> buildHTags(//
-			final List<? extends Object> outtags //
+	/**
+	 * Builds a special set of labels to represent the function
+	 * <b>h</b>(<b>X</b>,<b>Y</b>,<b>Z</b>) = <b>0</b>.
+	 * 
+	 * @param outlabels
+	 * @return List&lt;? extends Object&gt;
+	 */
+	public static List<? extends Object> buildHLabels(//
+			final List<? extends Object> outlabels //
 	) {
 		final List<Object> res = new ArrayList<>();
-		for (final Object tag : outtags)
-			res.add(new hTag(tag));
+		for (final Object label : outlabels)
+			res.add(new HLabel(label));
 		return res;
 	}
 
-	private final NamedMultivariateJacobianFunction mHFunction;
+	private final LabeledMultivariateJacobianFunction mHFunction;
 
 	private static List<? extends Object> buildInputs(//
-			final NamedMultivariateJacobianFunction h, //
-			final List<? extends Object> outputTags //
+			final LabeledMultivariateJacobianFunction h, //
+			final List<? extends Object> outputLabels //
 	) {
-		final List<? extends Object> res = new ArrayList<>(h.getInputTags());
-		res.removeAll(outputTags);
+		final List<? extends Object> res = new ArrayList<>(h.getInputLabels());
+		res.removeAll(outputLabels);
 		return res;
 	}
 
-	public ImplicitMeasurementModel(final NamedMultivariateJacobianFunction h,
-			final List<? extends Object> outputTags) {
-		super(buildInputs(h, outputTags), outputTags);
+	public ImplicitMeasurementModel(//
+			final LabeledMultivariateJacobianFunction h, //
+			final List<? extends Object> outputLabels //
+	) {
+		super(buildInputs(h, outputLabels), outputLabels);
 		mHFunction = h;
 	}
 
@@ -78,29 +87,29 @@ public class ImplicitMeasurementModel
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector hPoint = new ArrayRealVector(mHFunction.getInputDimension());
 		for (int r = 0; r < hPoint.getDimension(); ++r)
-			hPoint.setEntry(r, getValue(mHFunction.getInputTags().get(r), point));
+			hPoint.setEntry(r, getValue(mHFunction.getInputLabels().get(r), point));
 		final Pair<RealVector, RealMatrix> hpr = mHFunction.evaluate(hPoint);
 		// hpr.getFirst() values should all be close to zero...
 		final RealMatrix hrm = hpr.getSecond();
-		final List<? extends Object> hIn = mHFunction.getInputTags();
+		final List<? extends Object> hIn = mHFunction.getInputLabels();
 		final int outDim = getOutputDimension();
 		final int inDim = getInputDimension();
 		final RealMatrix mcy = MatrixUtils.createRealMatrix(outDim, outDim);
 		for (int c = 0; c < outDim; ++c) {
-			final int cIdx = hIn.indexOf(getOutputTags().get(c));
+			final int cIdx = hIn.indexOf(getOutputLabels().get(c));
 			for (int r = 0; r < outDim; ++r)
 				mcy.setEntry(r, c, hrm.getEntry(r, cIdx));
 		}
 		final RealMatrix mcyInv = MatrixUtils.inverse(mcy);
 		final RealMatrix mcx = MatrixUtils.createRealMatrix(outDim, inDim);
 		for (int c = 0; c < inDim; ++c) {
-			final int cIdx = hIn.indexOf(getInputTags().get(c));
+			final int cIdx = hIn.indexOf(getInputLabels().get(c));
 			for (int r = 0; r < outDim; ++r)
 				mcx.setEntry(r, c, hrm.getEntry(r, cIdx));
 		}
 		final RealVector rv = new ArrayRealVector(outDim);
 		for (int r = 0; r < rv.getDimension(); ++r)
-			rv.setEntry(r, getConstant(getOutputTags().get(r)));
+			rv.setEntry(r, getConstant(getOutputLabels().get(r)));
 		return Pair.create(rv, mcyInv.multiply(mcx));
 	}
 }

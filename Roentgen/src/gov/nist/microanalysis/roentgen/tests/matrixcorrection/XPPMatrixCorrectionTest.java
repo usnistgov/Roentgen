@@ -25,7 +25,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
 import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
 import gov.nist.microanalysis.roentgen.math.uncertainty.MCPropagator;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobian;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag;
@@ -100,7 +100,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Inputs");
 				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
-				final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
+				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
 				Object tagAu = XPPMatrixCorrection.tagShell("A", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagAu), 401.654, 0.001);
@@ -164,7 +164,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					final UncertainValue uv = outVals.get(outTag);
 					valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 							Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -174,7 +174,7 @@ public class XPPMatrixCorrectionTest {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -183,15 +183,15 @@ public class XPPMatrixCorrectionTest {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian jac = LabeledMultivariateJacobian.compute(xpp, inputs.getValues());
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
 							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > //
 							0.01 * Math.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx)))) {
-								System.out.print(jac.getOutputTags().get(oIdx));
-								System.out.print(jac.getInputTags().get(iIdx));
+								System.out.print(jac.getOutputLabels().get(oIdx));
+								System.out.print(jac.getInputLabels().get(iIdx));
 								assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 										.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
 							}
@@ -268,7 +268,7 @@ public class XPPMatrixCorrectionTest {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : resultsMc.getTags()) {
+				for (final Object tag : resultsMc.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -278,7 +278,7 @@ public class XPPMatrixCorrectionTest {
 
 				r.addSubHeader("Phi0");
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object tag : xpp.getOutputTags()) {
+				for (final Object tag : xpp.getOutputLabels()) {
 					r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 					r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 				}
@@ -294,7 +294,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
@@ -304,7 +304,7 @@ public class XPPMatrixCorrectionTest {
 									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 						}
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof KRatioTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
@@ -407,7 +407,7 @@ public class XPPMatrixCorrectionTest {
 				r.add(inputs);
 
 				final long start = System.currentTimeMillis();
-				final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
+				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
 				System.out.println("Full Timing(2) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -419,7 +419,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
@@ -432,7 +432,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Covariance matrix");
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -440,8 +440,8 @@ public class XPPMatrixCorrectionTest {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian jac = LabeledMultivariateJacobian.compute(xpp, inputs.getValues());
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8)
@@ -486,7 +486,7 @@ public class XPPMatrixCorrectionTest {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -495,7 +495,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputTags()) {
+				for (final Object tag : xpp.getOutputLabels()) {
 					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
@@ -512,7 +512,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
@@ -609,7 +609,7 @@ public class XPPMatrixCorrectionTest {
 				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
 				final long start = System.currentTimeMillis();
-				final NamedMultivariateJacobian xppI = new NamedMultivariateJacobian(xpp, inputs.getValues());
+				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
 				System.out.println("Timing(3) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -621,7 +621,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
@@ -634,7 +634,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Covariance matrix");
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -642,14 +642,14 @@ public class XPPMatrixCorrectionTest {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final NamedMultivariateJacobian jac = NamedMultivariateJacobian.compute(xpp, inputs.getValues());
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian jac = LabeledMultivariateJacobian.compute(xpp, inputs.getValues());
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
 							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
 									* Math.abs(jac.getEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+								System.out.println(xpp.getInputLabels().get(iIdx) + ", " + xpp.getOutputLabels().get(oIdx)
 										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
 							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
@@ -691,7 +691,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("MC Results");
 				r.add(resultsMc);
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -703,7 +703,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputTags()) {
+				for (final Object tag : xpp.getOutputLabels()) {
 					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
@@ -720,7 +720,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
@@ -815,7 +815,7 @@ public class XPPMatrixCorrectionTest {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
-		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
+		final LabeledMultivariateJacobian jac = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
 		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -859,7 +859,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
@@ -872,7 +872,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Covariance matrix");
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -881,7 +881,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
 						"Trimmed Delta Timing (4) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -889,7 +889,7 @@ public class XPPMatrixCorrectionTest {
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
 							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
 									* Math.abs(jac.getEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+								System.out.println(xpp.getInputLabels().get(iIdx) + ", " + xpp.getOutputLabels().get(oIdx)
 										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
 							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
@@ -922,7 +922,7 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("Monte Carlo Results");
 				r.add(resultsMc);
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -934,7 +934,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputTags()) {
+				for (final Object tag : xpp.getOutputLabels()) {
 					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
@@ -951,7 +951,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
@@ -1063,7 +1063,7 @@ public class XPPMatrixCorrectionTest {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
-		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
+		final LabeledMultivariateJacobian jac = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
 		System.out.println("Trimmed Timing (5) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -1108,7 +1108,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
@@ -1120,7 +1120,7 @@ public class XPPMatrixCorrectionTest {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1129,7 +1129,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
 						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1137,7 +1137,7 @@ public class XPPMatrixCorrectionTest {
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
 							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
 									* Math.abs(jac.getEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+								System.out.println(xpp.getInputLabels().get(iIdx) + ", " + xpp.getOutputLabels().get(oIdx)
 										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
 							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
@@ -1171,7 +1171,7 @@ public class XPPMatrixCorrectionTest {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1183,7 +1183,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputTags()) {
+				for (final Object tag : xpp.getOutputLabels()) {
 					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
@@ -1199,7 +1199,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
@@ -1318,7 +1318,7 @@ public class XPPMatrixCorrectionTest {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
-		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
+		final LabeledMultivariateJacobian jac = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
 		System.out.println("Trimmed Timing (6) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -1363,7 +1363,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
@@ -1375,7 +1375,7 @@ public class XPPMatrixCorrectionTest {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1384,7 +1384,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
 						"Trimmed Delta Timing (6) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1392,7 +1392,7 @@ public class XPPMatrixCorrectionTest {
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
 							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
 									* Math.abs(jac.getEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+								System.out.println(xpp.getInputLabels().get(iIdx) + ", " + xpp.getOutputLabels().get(oIdx)
 										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
 							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
@@ -1426,7 +1426,7 @@ public class XPPMatrixCorrectionTest {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1438,7 +1438,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputTags()) {
+				for (final Object tag : xpp.getOutputLabels()) {
 					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
@@ -1454,7 +1454,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
@@ -1567,7 +1567,7 @@ public class XPPMatrixCorrectionTest {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
-		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
+		final LabeledMultivariateJacobian jac = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
 		System.out.println("Trimmed Timing (7) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -1612,7 +1612,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
@@ -1624,7 +1624,7 @@ public class XPPMatrixCorrectionTest {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1633,7 +1633,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
 						"Trimmed Delta Timing (7) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1641,7 +1641,7 @@ public class XPPMatrixCorrectionTest {
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
 							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
 									* Math.abs(jac.getEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+								System.out.println(xpp.getInputLabels().get(iIdx) + ", " + xpp.getOutputLabels().get(oIdx)
 										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
 							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
@@ -1674,7 +1674,7 @@ public class XPPMatrixCorrectionTest {
 				r.add(res, Mode.NORMAL);
 
 				Table tk = new Table();
-				for (final Object tag : xpp.getOutputTags())
+				for (final Object tag : xpp.getOutputLabels())
 					if (tag instanceof KRatioTag) {
 						tk.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 								MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
@@ -1837,7 +1837,7 @@ public class XPPMatrixCorrectionTest {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValues inputs = xpp.buildInput();
 		final long start = System.currentTimeMillis();
-		final NamedMultivariateJacobian jac = new NamedMultivariateJacobian(xpp, inputs.getValues());
+		final LabeledMultivariateJacobian jac = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 		final UncertainValues results = UncertainValues.propagate(jac, inputs).sort();
 		System.out.println("Trimmed Timing (8) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -1882,7 +1882,7 @@ public class XPPMatrixCorrectionTest {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputTags()) {
+				for (final Object outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof MatrixCorrectionTag) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
@@ -1894,7 +1894,7 @@ public class XPPMatrixCorrectionTest {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1903,7 +1903,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final NamedMultivariateJacobian djac = NamedMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs, DELTA_JAC);
 				System.out.println(
 						"Trimmed Delta Timing (8) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1911,7 +1911,7 @@ public class XPPMatrixCorrectionTest {
 						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
 							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > 0.01
 									* Math.abs(jac.getEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputTags().get(iIdx) + ", " + xpp.getOutputTags().get(oIdx)
+								System.out.println(xpp.getInputLabels().get(iIdx) + ", " + xpp.getOutputLabels().get(oIdx)
 										+ "=[ " + jac.getEntry(oIdx, iIdx) + " ?=? " + djac.getEntry(oIdx, iIdx) + "]");
 							assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 									.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
@@ -1945,7 +1945,7 @@ public class XPPMatrixCorrectionTest {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getTags()) {
+				for (final Object tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1957,7 +1957,7 @@ public class XPPMatrixCorrectionTest {
 				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputTags()) {
+				for (final Object tag : xpp.getOutputLabels()) {
 					if (tag instanceof MatrixCorrectionTag) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
@@ -1973,7 +1973,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputTags())
+					for (final Object tag : xpp.getOutputLabels())
 						if (tag instanceof MatrixCorrectionTag) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //

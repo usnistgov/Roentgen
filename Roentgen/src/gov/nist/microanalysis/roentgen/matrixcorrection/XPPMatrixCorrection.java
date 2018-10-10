@@ -21,13 +21,12 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
-import gov.nist.microanalysis.roentgen.math.uncertainty.INamedMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.MatrixCorrectionModel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobian;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunctionBuilder;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunctionBuilder;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag.Method;
@@ -52,7 +51,7 @@ import joinery.DataFrame;
  * <p>
  *
  * <p>
- * Since it is derived from {@link NamedMultivariateJacobianFunction}, it
+ * Since it is derived from {@link LabeledMultivariateJacobianFunction}, it
  * computes not only the value (ie. the k-ratio) but also sensitivity matrix
  * (Jacobian) that maps uncertainty in the input parameters into uncertainty in
  * the output parameters.
@@ -73,7 +72,7 @@ import joinery.DataFrame;
  *
  * @author Nicholas
  */
-public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamedMultivariateFunction, IToHTML {
+public class XPPMatrixCorrection extends MatrixCorrectionModel implements ILabeledMultivariateFunction, IToHTML {
 
 	// The nominal value of the unknown.
 	private final MatrixCorrectionDatum mUnknown;
@@ -93,14 +92,14 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		SurfaceRoughness
 	};
 
-	private static class ElementTag extends BaseTag<Element, Object, Object> {
+	private static class ElementTag extends BaseLabel<Element, Object, Object> {
 
 		private ElementTag(final String name, final Element obj) {
 			super(name, obj);
 		}
 	}
 
-	public static class MatrixCorrectionDatumTag extends BaseTag<MatrixCorrectionDatum, Object, Object> {
+	public static class MatrixCorrectionDatumTag extends BaseLabel<MatrixCorrectionDatum, Object, Object> {
 		public MatrixCorrectionDatumTag(final String name, final MatrixCorrectionDatum mcd) {
 			super(name, mcd);
 		}
@@ -116,13 +115,13 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		return new RoughnessTag(mcd);
 	}
 
-	public static class CompositionTag extends BaseTag<Composition, Object, Object> {
+	public static class CompositionTag extends BaseLabel<Composition, Object, Object> {
 		public CompositionTag(final String name, final Composition mcd) {
 			super(name, mcd);
 		}
 	}
 
-	public static class ZAFTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, CharacteristicXRay> {
+	public static class ZAFTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, CharacteristicXRay> {
 
 		private ZAFTag(final String name, final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
 				final CharacteristicXRay cxr) {
@@ -130,7 +129,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		}
 	}
 
-	private static class MatrixCorrectionDatumTag2<H> extends BaseTag<MatrixCorrectionDatum, H, Object> {
+	private static class MatrixCorrectionDatumTag2<H> extends BaseLabel<MatrixCorrectionDatum, H, Object> {
 
 		private MatrixCorrectionDatumTag2(final String name, final MatrixCorrectionDatum mcd, final H obj2) {
 			super(name, mcd, obj2);
@@ -181,7 +180,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		return tagCharacterisitic("Z", mcd, cxr);
 	}
 
-	public static class XRayWeightTag extends BaseTag<CharacteristicXRay, Object, Object> {
+	public static class XRayWeightTag extends BaseLabel<CharacteristicXRay, Object, Object> {
 
 		public XRayWeightTag(final CharacteristicXRay cxr) {
 			super("W", cxr);
@@ -220,7 +219,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	}
 
 	private static class StepMJZBarb // C1
-			extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+			extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final Composition mComposition;
 
@@ -368,7 +367,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	}
 
 	private static class StepQlaE0OneOverS // C1
-			extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+			extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mDatum;
 		private final AtomicShell mShell;
@@ -546,7 +545,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		}
 	}
 
-	private static class StepRphi0 extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+	private static class StepRphi0 extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mDatum;
 		private final AtomicShell mShell;
@@ -675,7 +674,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 
 	}
 
-	private static class StepFRbar extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+	private static class StepFRbar extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mDatum;
 		private final AtomicShell mShell;
@@ -829,7 +828,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 
 	}
 
-	private static class StepP extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+	private static class StepP extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mDatum;
 		private final AtomicShell mShell;
@@ -1003,7 +1002,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	}
 
 	private static class Stepa // C1
-			extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+			extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mDatum;
 		private final AtomicShell mShell;
@@ -1099,7 +1098,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	};
 
 	static private class StepEps // C1
-			extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+			extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private static final double MIN_EPS = 1.0e-6;
 
@@ -1183,7 +1182,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	}
 
 	private static class StepAB // C1
-			extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+			extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mDatum;
 		private final AtomicShell mShell;
@@ -1287,11 +1286,11 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	}
 
 	private static class StepAaBb extends SerialNamedMultivariateJacobianFunction
-			implements INamedMultivariateFunction {
+			implements ILabeledMultivariateFunction {
 
-		private static List<NamedMultivariateJacobianFunction> buildSteps(final MatrixCorrectionDatum datum,
+		private static List<LabeledMultivariateJacobianFunction> buildSteps(final MatrixCorrectionDatum datum,
 				final AtomicShell shell, final Set<Variates> variates) {
-			final List<NamedMultivariateJacobianFunction> res = new ArrayList<>();
+			final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
 			res.add(new StepRphi0(datum, shell, variates));
 			res.add(new StepFRbar(datum, shell, variates));
 			res.add(new StepP(datum, shell, variates));
@@ -1313,7 +1312,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 
 	}
 
-	private static class StepChi extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction { // C1
+	private static class StepChi extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction { // C1
 
 		private final MatrixCorrectionDatum mDatum;
 		private final CharacteristicXRay mXRay;
@@ -1406,7 +1405,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 
 	}
 
-	private static class StepFx extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+	private static class StepFx extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		public static List<? extends Object> buildInputs(final MatrixCorrectionDatum datum,
 				final CharacteristicXRay cxr, final Set<Variates> variates) {
@@ -1517,7 +1516,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 
 	}
 
-	private static class StepZA extends NamedMultivariateJacobianFunction implements INamedMultivariateFunction {
+	private static class StepZA extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mUnknown;
 		private final MatrixCorrectionDatum mStandard;
@@ -1690,8 +1689,8 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	 *
 	 */
 	private static class StepCombine //
-			extends NamedMultivariateJacobianFunction //
-			implements INamedMultivariateFunction {
+			extends LabeledMultivariateJacobianFunction //
+			implements ILabeledMultivariateFunction {
 
 		private static List<? extends Object> buildInputTags(final MatrixCorrectionDatum unk, //
 				final MatrixCorrectionDatum std, //
@@ -1735,7 +1734,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 
 			for (int row = 0; row < getOutputDimension(); ++row) {
-				final Object tag = getOutputTags().get(row);
+				final Object tag = getOutputLabels().get(row);
 				if (tag instanceof MatrixCorrectionTag) {
 					final MatrixCorrectionTag mct = (MatrixCorrectionTag) tag;
 					final List<CharacteristicXRay> lcrs = new ArrayList<>(
@@ -1785,7 +1784,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		public RealVector optimized(final RealVector point) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			for (int row = 0; row < getOutputDimension(); ++row) {
-				final Object tag = getOutputTags().get(row);
+				final Object tag = getOutputLabels().get(row);
 				if (tag instanceof MatrixCorrectionTag) {
 					final MatrixCorrectionTag mct = (MatrixCorrectionTag) tag;
 					final List<CharacteristicXRay> lcrs = new ArrayList<>(
@@ -1840,38 +1839,38 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	 * @author nritchie
 	 */
 	private static final class StepXPP extends SerialNamedMultivariateJacobianFunction
-			implements INamedMultivariateFunction {
+			implements ILabeledMultivariateFunction {
 
-		private static List<NamedMultivariateJacobianFunction> buildSteps(final MatrixCorrectionDatum datum,
+		private static List<LabeledMultivariateJacobianFunction> buildSteps(final MatrixCorrectionDatum datum,
 				final CharacteristicXRaySet exrs, final Set<Variates> variates) throws ArgumentException {
-			final List<NamedMultivariateJacobianFunction> res = new ArrayList<>();
+			final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
 			res.add(new StepMJZBarb(datum.getComposition(), variates, datum.isStandard()));
 			final Set<AtomicShell> shells = new HashSet<>();
 			for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
 				shells.add(cxr.getInner());
 			{
-				final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+				final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 				for (final AtomicShell shell : shells)
 					step.add(new StepQlaE0OneOverS(datum, shell, variates));
-				res.add(NamedMultivariateJacobianFunctionBuilder.join("QlaOoS", step));
+				res.add(LabeledMultivariateJacobianFunctionBuilder.join("QlaOoS", step));
 			}
 			{
-				final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+				final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 				for (final AtomicShell shell : shells)
 					step.add(new StepAaBb(datum, shell, variates));
-				res.add(NamedMultivariateJacobianFunctionBuilder.join("AaBb", step));
+				res.add(LabeledMultivariateJacobianFunctionBuilder.join("AaBb", step));
 			}
 			{
-				final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+				final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 				for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
 					step.add(new StepChi(datum, cxr, variates));
-				res.add(NamedMultivariateJacobianFunctionBuilder.join("Chi", step));
+				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Chi", step));
 			}
 			{
-				final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+				final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 				for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
 					step.add(new StepFx(datum, cxr, variates));
-				res.add(NamedMultivariateJacobianFunctionBuilder.join("Fx", step));
+				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Fx", step));
 			}
 			return res;
 		}
@@ -1913,38 +1912,38 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 	 * @return List&lt;NamedMultivariateJacobianFunction&gt;
 	 * @throws ArgumentException
 	 */
-	private static List<NamedMultivariateJacobianFunction> buildSteps( //
+	private static List<LabeledMultivariateJacobianFunction> buildSteps( //
 			final MatrixCorrectionDatum unk, //
 			final Map<ElementXRaySet, MatrixCorrectionDatum> stds, //
 			final Set<Variates> variates) throws ArgumentException {
-		final List<NamedMultivariateJacobianFunction> res = new ArrayList<>();
+		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
 		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> cstds = convert(stds);
 		{
-			final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+			final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
 			for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : cstds.entrySet()) {
 				step.add(new StepXPP(me.getKey(), me.getValue(), variates));
 				cxrs.addAll(me.getValue());
 			}
 			step.add(new StepXPP(unk, cxrs, variates));
-			res.add(NamedMultivariateJacobianFunctionBuilder.join("XPP", step));
+			res.add(LabeledMultivariateJacobianFunctionBuilder.join("XPP", step));
 		}
 		{
-			final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+			final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 			for (final Map.Entry<MatrixCorrectionDatum, CharacteristicXRaySet> me : cstds.entrySet())
 				for (final CharacteristicXRay cxr : me.getValue().getSetOfCharacteristicXRay())
 					step.add(new StepZA(unk, me.getKey(), cxr, variates));
-			res.add(NamedMultivariateJacobianFunctionBuilder.join("ZA", step));
+			res.add(LabeledMultivariateJacobianFunctionBuilder.join("ZA", step));
 		}
 		{
-			final List<NamedMultivariateJacobianFunction> step = new ArrayList<>();
+			final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 			for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
 				final ElementXRaySet exrs = me.getKey();
 				if (exrs.size() > 1)
 					step.add(new StepCombine(unk, me.getValue(), exrs, variates));
 			}
 			if (step.size() > 0)
-				res.add(NamedMultivariateJacobianFunctionBuilder.join("Combine", step));
+				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Combine", step));
 		}
 		return res;
 	}
@@ -2187,7 +2186,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		for (final MatrixCorrectionDatum std : stds)
 			if (mVariates.contains(Variates.StandardComposition))
 				variables.add(std.getComposition().asMassFraction());
-		return UncertainValues.build(getInputTags(), variables.toArray(new UncertainValues[variables.size()]));
+		return UncertainValues.build(getInputLabels(), variables.toArray(new UncertainValues[variables.size()]));
 	}
 
 	/**
@@ -2303,7 +2302,7 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		if (constants.size() > 0) {
 			final Map<Object, Double> mod = new HashMap<>();
 			for (final UncertainValues uv : constants)
-				for (final Object tag : uv.getTags())
+				for (final Object tag : uv.getLabels())
 					mod.put(tag, uv.getEntry(tag));
 			initializeConstants(mod);
 		}
@@ -2345,28 +2344,28 @@ public class XPPMatrixCorrection extends MatrixCorrectionModel implements INamed
 		return new UncertainValues(tags, vals, var);
 	}
 
-	public static NamedMultivariateJacobianFunction extractUnknown(//
-			final NamedMultivariateJacobian jac, //
+	public static LabeledMultivariateJacobianFunction extractUnknown(//
+			final LabeledMultivariateJacobian jac, //
 			final Composition unknown //
 	) throws ArgumentException {
 		final List<Object> inpOut = new ArrayList<>();
 		final Composition mf = unknown.asMassFraction();
-		for (final Object mft : mf.getTags()) {
+		for (final Object mft : mf.getLabels()) {
 			assert mft instanceof MassFractionTag;
 			inpOut.add(mft);
 		}
 		return jac.extract(inpOut, inpOut);
 	}
 
-	public static NamedMultivariateJacobianFunction extractRemainder( //
-			final NamedMultivariateJacobian jac, //
+	public static LabeledMultivariateJacobianFunction extractRemainder( //
+			final LabeledMultivariateJacobian jac, //
 			final Composition unknown //
 	) throws ArgumentException {
 		final Composition mf = unknown.asMassFraction();
-		final List<Object> outTags = new ArrayList<>(jac.getOutputTags());
-		outTags.removeAll(mf.getTags());
-		final List<Object> inTags = new ArrayList<>(jac.getInputTags());
-		inTags.removeAll(mf.getTags());
+		final List<Object> outTags = new ArrayList<>(jac.getOutputLabels());
+		outTags.removeAll(mf.getLabels());
+		final List<Object> inTags = new ArrayList<>(jac.getInputLabels());
+		inTags.removeAll(mf.getLabels());
 		return jac.extract(inTags, outTags);
 	}
 

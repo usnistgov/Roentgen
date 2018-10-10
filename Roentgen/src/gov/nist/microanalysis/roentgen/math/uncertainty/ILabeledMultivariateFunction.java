@@ -3,9 +3,9 @@ package gov.nist.microanalysis.roentgen.math.uncertainty;
 import org.apache.commons.math3.linear.RealVector;
 
 /**
- * Meant as a complement to NamedMultivariateJacobianFunction. When implemented
+ * Meant as a complement to LabeledMultivariateJacobianFunction. When implemented
  * should compute identically the same value as first return value from
- * {@link INamedMultivariateFunction}.value(...). This acts as an optimization
+ * {@link ILabeledMultivariateFunction}.value(...). This acts as an optimization
  * for those cases in which the Jacobian is not required as would be the case
  * when evaluating the function to implement an approximate derivative or
  * a Monte Carlo evaluation.
@@ -13,7 +13,7 @@ import org.apache.commons.math3.linear.RealVector;
  * @author nicholas
  *
  */
-public interface INamedMultivariateFunction {
+public interface ILabeledMultivariateFunction {
 
 	/**
 	 * Evaluate a multivariate function at the point specified. Return the output

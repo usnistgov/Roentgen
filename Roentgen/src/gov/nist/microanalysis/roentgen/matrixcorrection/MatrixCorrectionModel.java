@@ -1,12 +1,11 @@
-package gov.nist.microanalysis.roentgen.math.uncertainty;
+package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.List;
 import java.util.Map;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag;
-import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionTag;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -33,14 +32,14 @@ abstract public class MatrixCorrectionModel extends SerialNamedMultivariateJacob
 			String name, //
 			MatrixCorrectionDatum unk, //
 			Map<ElementXRaySet, MatrixCorrectionDatum> stds, //
-			List<NamedMultivariateJacobianFunction> steps //
+			List<LabeledMultivariateJacobianFunction> steps //
 	) throws ArgumentException {
 		super(name, steps);
 		mUnknown = unk;
 		mStandards = stds;
 		// Validate the inputs...
-		final List<? extends Object> outputTags = getOutputTags();
-		final List<? extends Object> inputTags = getInputTags();
+		final List<? extends Object> outputTags = getOutputLabels();
+		final List<? extends Object> inputTags = getInputLabels();
 		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
 			MatrixCorrectionTag mct = new MatrixCorrectionTag(unk, me.getValue(), me.getKey());
 			if (!outputTags.contains(mct))

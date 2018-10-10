@@ -6,19 +6,19 @@ import com.google.common.base.Objects;
 
 /**
  * <p>
- * The BaseTag class makes it easy to construct tags for use with
- * {@link NamedMultivariateJacobianFunction} and {@link UncertainValues} class
+ * The BaseLabel class makes it easy to construct labels for use with
+ * {@link LabeledMultivariateJacobianFunction} and {@link UncertainValues} class
  * instances.
  * </p>
  * <p>
- * Tags need to be derived from a class that implements hashCode() and equals().
+ * Labels need to be derived from a class that implements hashCode() and equals().
  * This class meets those requirements so long as the Object arguments also
  * implement hashCode() and equals().
  * </p>
  *
  * @author Nicholas
  */
-public class BaseTag<H, I, J> //
+public class BaseLabel<H, I, J> //
 		implements IToHTML {
 
 	final String mName;
@@ -29,7 +29,7 @@ public class BaseTag<H, I, J> //
 	final transient int mHashCode;
 
 	/**
-	 * Creates a BaseTag object with an name from three objects. The objects must
+	 * Creates a BaseLabel object with an name from three objects. The objects must
 	 * implement hashCode() and equals().
 	 *
 	 * @param name
@@ -37,7 +37,7 @@ public class BaseTag<H, I, J> //
 	 * @param obj2
 	 * @param obj3
 	 */
-	protected BaseTag(final String name, final H obj1, final I obj2, final J obj3) {
+	protected BaseLabel(final String name, final H obj1, final I obj2, final J obj3) {
 		mName = name;
 		assert obj1 != null;
 		mObject1 = obj1;
@@ -50,25 +50,25 @@ public class BaseTag<H, I, J> //
 	}
 
 	/**
-	 * Creates a BaseTag object with an name from two objects. The objects must
+	 * Creates a BaseLabel object with an name from two objects. The objects must
 	 * implement hashCode() and equals().
 	 *
 	 * @param name
 	 * @param obj1
 	 * @param obj2
 	 */
-	protected BaseTag(final String name, final H obj1, final I obj2) {
+	protected BaseLabel(final String name, final H obj1, final I obj2) {
 		this(name, obj1, obj2, null);
 	}
 
 	/**
-	 * Creates a BaseTag object with an name from one object. The object must
+	 * Creates a BaseLabel object with an name from one object. The object must
 	 * implement hashCode() and equals().
 	 *
 	 * @param name
 	 * @param obj
 	 */
-	protected BaseTag(final String name, final H obj) {
+	protected BaseLabel(final String name, final H obj) {
 		this(name, obj, null, null);
 	}
 
@@ -97,7 +97,7 @@ public class BaseTag<H, I, J> //
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		final BaseTag<?, ?, ?> other = (BaseTag<?, ?, ?>) obj;
+		final BaseLabel<?, ?, ?> other = (BaseLabel<?, ?, ?>) obj;
 		return Objects.equal(mName, other.mName) && //
 				Objects.equal(mObject1, other.mObject1) && //
 				Objects.equal(mObject2, other.mObject2) && //

@@ -16,8 +16,8 @@ import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobian;
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import junit.framework.TestCase;
 
@@ -51,7 +51,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction
       "F2_1"
    });
 
-   private final NamedMultivariateJacobianFunction mStep1 = new NamedMultivariateJacobianFunction(mInputs, mOut1) {
+   private final LabeledMultivariateJacobianFunction mStep1 = new LabeledMultivariateJacobianFunction(mInputs, mOut1) {
 
       @Override
       public Pair<RealVector, RealMatrix> value(final RealVector point) {
@@ -84,7 +84,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction
       }
    };
 
-   private final NamedMultivariateJacobianFunction mStep2 = new NamedMultivariateJacobianFunction(mInputs2, mOut2) {
+   private final LabeledMultivariateJacobianFunction mStep2 = new LabeledMultivariateJacobianFunction(mInputs2, mOut2) {
 
       @Override
       public Pair<RealVector, RealMatrix> value(final RealVector point) {
@@ -169,7 +169,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction
       rep.addHeader("Inputs");
       rep.add(mInput0);
       rep.addHeader("Jacobian");
-      rep.add(new NamedMultivariateJacobian(mStep1, mValues0));
+      rep.add(new LabeledMultivariateJacobian(mStep1, mValues0));
       rep.addHeader("Outputs 1");
       rep.add(uv);
       rep.inBrowser(Mode.NORMAL);
@@ -202,7 +202,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction
 
    public void test2()
          throws IOException, ArgumentException {
-      final NamedMultivariateJacobianFunction[] steps = new NamedMultivariateJacobianFunction[] {
+      final LabeledMultivariateJacobianFunction[] steps = new LabeledMultivariateJacobianFunction[] {
          mStep1,
          mStep2
       };
@@ -212,7 +212,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction
       rep.addHeader("Inputs");
       rep.add(mInput1);
       rep.addHeader("Jacobian");
-      rep.add(NamedMultivariateJacobian.compute(msnmjf, mValues0));
+      rep.add(LabeledMultivariateJacobian.compute(msnmjf, mValues0));
       rep.addHeader("Outputs 1 and 2");
       rep.add(uv);
       rep.addHeader("MC Outputs 1 and 2");

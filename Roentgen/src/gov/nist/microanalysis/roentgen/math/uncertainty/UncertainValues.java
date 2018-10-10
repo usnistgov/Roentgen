@@ -44,10 +44,10 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * class.
  * </p>
  * <p>
- * To facilicate bookkeeping, the variables within the object are labeled with
- * Object derived tags. Make sure that all the classes implementing labels
+ * To facilitate bookkeeping, the variables within the object are labeled with
+ * Object derived labels. Make sure that all the classes implementing labels
  * implement hashCode() and equals() as the labels are stored in hash maps. The
- * entries in the values vector and covariance matrix can be indexed by tag or
+ * entries in the values vector and covariance matrix can be indexed by label or
  * by integer index.
  * </p>
  * <p>
@@ -65,7 +65,7 @@ public class UncertainValues //
 
 	private static final double MAX_CORR = 1.00000001;
 	private final RealVector mValues;
-	private final List<Object> mTags;
+	private final List<Object> mLabels;
 	private final RealMatrix mCovariance;
 
 	private final Map<Object, Integer> mIndex;
@@ -112,64 +112,64 @@ public class UncertainValues //
 	}
 
 	/**
-	 * Constructs a UncertainValues object based on the specified tags, values and
+	 * Constructs a UncertainValues object based on the specified labels, values and
 	 * covariance matrix.
 	 *
-	 * @param tags  List&lt;Object&gt; A list of objects implementing hashCode() and
+	 * @param labels  List&lt;Object&gt; A list of objects implementing hashCode() and
 	 *              equals().
 	 * @param vals  {@link RealVector}
 	 * @param covar {@link RealMatrix}
 	 */
 	public UncertainValues( //
-			final List<? extends Object> tags, //
+			final List<? extends Object> labels, //
 			final RealVector vals, //
 			final RealMatrix covar //
 	) {
-		if (vals.getDimension() != tags.size())
-			throw new DimensionMismatchException(covar.getRowDimension(), tags.size());
-		if (covar.getRowDimension() != tags.size())
-			throw new DimensionMismatchException(covar.getRowDimension(), tags.size());
-		if (covar.getColumnDimension() != tags.size())
-			throw new DimensionMismatchException(covar.getColumnDimension(), tags.size());
-		mTags = Collections.unmodifiableList(tags);
+		if (vals.getDimension() != labels.size())
+			throw new DimensionMismatchException(covar.getRowDimension(), labels.size());
+		if (covar.getRowDimension() != labels.size())
+			throw new DimensionMismatchException(covar.getRowDimension(), labels.size());
+		if (covar.getColumnDimension() != labels.size())
+			throw new DimensionMismatchException(covar.getColumnDimension(), labels.size());
+		mLabels = Collections.unmodifiableList(labels);
 		final HashMap<Object, Integer> index = new HashMap<>();
-		for (int i = 0; i < mTags.size(); ++i)
-			index.put(mTags.get(i), Integer.valueOf(i));
+		for (int i = 0; i < mLabels.size(); ++i)
+			index.put(mLabels.get(i), Integer.valueOf(i));
 		mIndex = Collections.unmodifiableMap(index);
 		mValues = vals;
-		validateCovariance(mTags.size(), covar, Math.max(mValues.getMaxValue(), -mValues.getMinValue()));
+		validateCovariance(mLabels.size(), covar, Math.max(mValues.getMaxValue(), -mValues.getMinValue()));
 		mCovariance = covar;
 	}
 
 	/**
-	 * Constructs a UncertainValues object based on the specified tags with zero
+	 * Constructs a UncertainValues object based on the specified labels with zero
 	 * values and NaN covariances.
 	 *
-	 * @param tags List&lt;Object&gt; A list of objects implementing hashCode() and
+	 * @param labels List&lt;Object&gt; A list of objects implementing hashCode() and
 	 *             equals().
 	 */
 	public UncertainValues(//
-			final List<? extends Object> tags //
+			final List<? extends Object> labels //
 	) {
-		this(tags, new ArrayRealVector(tags.size()), new Array2DRowRealMatrix(tags.size(), tags.size()));
+		this(labels, new ArrayRealVector(labels.size()), new Array2DRowRealMatrix(labels.size(), labels.size()));
 		mValues.set(Double.NaN);
 	}
 
 	/**
-	 * Constructs a UncertainValues object based on the specified tags, values and
+	 * Constructs a UncertainValues object based on the specified labels, values and
 	 * variances array. "Heteroskedastic-case"
 	 *
-	 * @param tags      List&lt;Object&gt; A list of objects implementing hashCode()
+	 * @param labels      List&lt;Object&gt; A list of objects implementing hashCode()
 	 *                  and equals().
 	 * @param vals      {@link RealVector}
 	 * @param variances {@link RealVector} covariances are zero.
 	 */
 	public UncertainValues( //
-			final List<? extends Object> tags, //
+			final List<? extends Object> labels, //
 			final RealVector vals, //
 			final RealVector variances //
 	) {
-		this(tags, vals, MatrixUtils.createRealDiagonalMatrix(variances.toArray()));
+		this(labels, vals, MatrixUtils.createRealDiagonalMatrix(variances.toArray()));
 	}
 
 	private static final RealVector extractValues(final Map<? extends Object, UncertainValue> vals) {
@@ -199,58 +199,75 @@ public class UncertainValues //
 	}
 
 	/**
-	 * Constructs a UncertainValues object based on the specified tags, values and
+	 * Constructs a UncertainValues object based on the specified labels, values and
 	 * variances. "Homoskedastic-case"
 	 *
-	 * @param tags     List&lt;Object&gt; A list of objects implementing hashCode()
+	 * @param labels     List&lt;Object&gt; A list of objects implementing hashCode()
 	 *                 and equals().
 	 * @param vals     {@link RealVector}
 	 * @param variance double (common to all vals)
 	 */
-	public UncertainValues(final List<? extends Object> tags, final RealVector vals, final double variance) {
-		this(tags, vals, MatrixUtils.createRealIdentityMatrix(tags.size()).scalarMultiply(variance));
+	public UncertainValues(final List<? extends Object> labels, final RealVector vals, final double variance) {
+		this(labels, vals, MatrixUtils.createRealIdentityMatrix(labels.size()).scalarMultiply(variance));
 	}
 
-	public static UncertainValues build(final List<? extends Object> tags, final UncertainValues... uvs)
+	/**
+	 * Builds an {@link UncertainValues} object representing the specified labeled quantities
+	 * as extracted from the list of {@link UncertainValues} objects.
+	 * 
+	 * @param labels
+	 * @param uvs
+	 * @return {@link UncertainValues}
+	 * @throws ArgumentException
+	 */
+	public static UncertainValues build(final List<? extends Object> labels, final UncertainValues... uvs)
 			throws ArgumentException {
-		// Test that each requested tag is defined once and only once.
-		for (final Object tag : tags) {
+		// Test that each requested label is defined once and only once.
+		for (final Object label : labels) {
 			int count = 0;
 			for (final UncertainValues uv : uvs)
-				if (uv.hasEntry(tag))
+				if (uv.hasEntry(label))
 					count++;
 			if (count < 1)
-				throw new ArgumentException("The tag " + tag + " is not defined in one of the input UncertainValues.");
+				throw new ArgumentException("The label " + label + " is not defined in one of the input UncertainValues.");
 			if (count > 1)
 				throw new ArgumentException(
-						"The tag " + tag + " is muliply defined in one of the input UncertainValues.");
+						"The label " + label + " is muliply defined in one of the input UncertainValues.");
 		}
-		final UncertainValues res = new UncertainValues(tags);
+		final UncertainValues res = new UncertainValues(labels);
 		for (final UncertainValues uv : uvs)
-			for (final Object tag1 : tags)
-				if (uv.hasEntry(tag1)) {
-					res.set(tag1, uv.getEntry(tag1), uv.getVariance(tag1));
-					for (final Object tag2 : uv.getTags())
-						if (res.hasEntry(tag2)) {
-							final double cv = uv.getCovariance(tag1, tag2);
+			for (final Object label1 : labels)
+				if (uv.hasEntry(label1)) {
+					res.set(label1, uv.getEntry(label1), uv.getVariance(label1));
+					for (final Object label2 : uv.getLabels())
+						if (res.hasEntry(label2)) {
+							final double cv = uv.getCovariance(label1, label2);
 							if (cv != 0.0)
-								res.setCovariance(tag1, tag2, cv);
+								res.setCovariance(label1, label2, cv);
 						}
 				}
 		return res;
 	}
 
+	/**
+	 * Combines a disjoint set of {@link UncertainValues} into a single one.
+	 * (Disjoint meaning not sharing a common label.)
+	 * 
+	 * @param uvs
+	 * @return {@link UncertainValues}
+	 * @throws ArgumentException
+	 */
 	public static UncertainValues combine(final UncertainValues... uvs) throws ArgumentException {
-		// Test that each requested tag is defined once and only once.
-		final List<Object> tags = new ArrayList<>();
+		// Test that each requested label is defined once and only once.
+		final List<Object> labels = new ArrayList<>();
 		for (final UncertainValues uv : uvs) {
-			for (final Object tag : uv.getTags())
-				if (tags.contains(tag))
-					throw new ArgumentException("The tag " + tag + " is duplicated in UncertainValues.combine(...)");
+			for (final Object label : uv.getLabels())
+				if (labels.contains(label))
+					throw new ArgumentException("The label " + label + " is duplicated in UncertainValues.combine(...)");
 				else
-					tags.add(tag);
+					labels.add(label);
 		}
-		final UncertainValues res = new UncertainValues(tags);
+		final UncertainValues res = new UncertainValues(labels);
 		int r0 = 0;
 		for (final UncertainValues uv : uvs) {
 			int dr = 0;
@@ -266,16 +283,16 @@ public class UncertainValues //
 
 	/**
 	 * Return an {@link UncertainValues} object with the same dimension and values
-	 * as input except all the covariances except those associated with tag are
+	 * as input except all the covariances except those associated with label are
 	 * zeroed.
 	 *
-	 * @param tag
+	 * @param label
 	 * @param input
 	 * @return {@link UncertainValues}
 	 */
-	public static UncertainValues zeroBut(final Object tag, final UncertainValues input) {
-		final UncertainValues res = new UncertainValues(input.getTags(), input.getValues(), 0.0);
-		final int idx = input.indexOf(tag);
+	public static UncertainValues zeroBut(final Object label, final UncertainValues input) {
+		final UncertainValues res = new UncertainValues(input.getLabels(), input.getValues(), 0.0);
+		final int idx = input.indexOf(label);
 		for (int i = 0; i < res.getDimension(); ++i) {
 			res.mCovariance.setEntry(i, idx, input.getCovariance(i, idx));
 			res.mCovariance.setEntry(idx, i, input.getCovariance(idx, i));
@@ -293,13 +310,13 @@ public class UncertainValues //
 	 * @return UncertainValues
 	 */
 	public static UncertainValues propagate( //
-			final NamedMultivariateJacobianFunction nmjf, //
+			final LabeledMultivariateJacobianFunction nmjf, //
 			final UncertainValues input //
 	) {
-		assert nmjf.getInputTags().equals(input.getTags());
+		assert nmjf.getInputLabels().equals(input.getLabels());
 		final Pair<RealVector, RealMatrix> eval = nmjf.evaluate(input.getValues());
 		final RealMatrix jac = eval.getSecond();
-		return new UncertainValues(nmjf.getOutputTags(), eval.getFirst(),
+		return new UncertainValues(nmjf.getOutputLabels(), eval.getFirst(),
 				jac.multiply(input.getCovariances().multiply(jac.transpose())));
 	}
 
@@ -309,7 +326,7 @@ public class UncertainValues //
 		for (int rc = 0; rc < vals.getDimension(); ++rc)
 			if (cov.getEntry(rc, rc) < minCov.getEntry(rc))
 				cov.setEntry(rc, rc, minCov.getEntry(rc));
-		return new UncertainValues(vals.getTags(), vals.getValues(), cov);
+		return new UncertainValues(vals.getLabels(), vals.getValues(), cov);
 	}
 
 	/**
@@ -322,47 +339,25 @@ public class UncertainValues //
 	 * @return UncertainValues
 	 */
 	public static UncertainValues propagateMC(//
-			final NamedMultivariateJacobianFunction nmjf, //
+			final LabeledMultivariateJacobianFunction nmjf, //
 			final UncertainValues vals, //
 			final int nEvals //
 	) {
-		final MultivariateNormalDistribution mnd = new MultivariateNormalDistribution(vals.mValues.toArray(),
-				vals.mCovariance.getData());
-		final List<RealVector> evals = new ArrayList<>();
-		for (int eval = 0; eval < nEvals; ++eval) {
-			final RealVector pt = MatrixUtils.createRealVector(mnd.sample());
-			evals.add(nmjf.evaluate(pt).getFirst());
-		}
-		final int len = nmjf.getOutputDimension();
-		final RealVector sum = new ArrayRealVector(len);
-		for (final RealVector eval : evals)
-			sum.combineToSelf(1.0, 1.0, eval);
-		final RealVector avg = sum.mapDivide(evals.size());
-		final RealMatrix cov = MatrixUtils.createRealMatrix(len, len);
-		for (int r = 0; r < len; r++)
-			for (int c = r; c < len; c++) {
-				double tmp = 0.0;
-				for (final RealVector eval : evals)
-					tmp += (eval.getEntry(r) - avg.getEntry(r)) * (eval.getEntry(c) - avg.getEntry(c));
-				tmp /= evals.size();
-				cov.setEntry(r, c, tmp);
-				cov.setEntry(c, r, tmp);
-			}
-		return new UncertainValues(nmjf.getOutputTags(), avg, cov);
-	}
+		MCPropagator mcp = new MCPropagator(nmjf, vals);
+		return mcp.compute(nEvals);	}
 
 	/**
 	 * Extract an array of values from this UncertainValue object for the specified
-	 * list of tags in the order specified by the tag list.
+	 * list of labels in the order specified by the label list.
 	 *
-	 * @param tags List&lt;? extends Object&gt;
+	 * @param labels List&lt;? extends Object&gt;
 	 * @return RealVector
 	 */
-	public RealVector extractValues(final List<? extends Object> tags) {
-		final RealVector res = new ArrayRealVector(tags.size());
+	public RealVector extractValues(final List<? extends Object> labels) {
+		final RealVector res = new ArrayRealVector(labels.size());
 		int i = 0;
-		for (final Object tag : tags) {
-			res.setEntry(i, getEntry(tag));
+		for (final Object label : labels) {
+			res.setEntry(i, getEntry(label));
 			++i;
 		}
 		return res;
@@ -370,18 +365,18 @@ public class UncertainValues //
 
 	/**
 	 * Extract an array of values from this UncertainValue object for the specified
-	 * list of tags in the order specified by the tag list.
+	 * list of labels in the order specified by the label list.
 	 *
-	 * @param tags List&lt;? extends Object&gt;
+	 * @param labels List&lt;? extends Object&gt;
 	 * @return RealVector
 	 */
-	public RealMatrix extractCovariances(final List<? extends Object> tags) {
-		final RealMatrix res = MatrixUtils.createRealMatrix(tags.size(), tags.size());
-		for (int r = 0; r < tags.size(); ++r) {
-			int ridx = indexOf(tags.get(r));
+	public RealMatrix extractCovariances(final List<? extends Object> labels) {
+		final RealMatrix res = MatrixUtils.createRealMatrix(labels.size(), labels.size());
+		for (int r = 0; r < labels.size(); ++r) {
+			int ridx = indexOf(labels.get(r));
 			res.setEntry(r, r, getCovariance(r, r));
-			for (int c = r+1; c < tags.size(); ++c) {
-				int cidx = indexOf(tags.get(c));
+			for (int c = r+1; c < labels.size(); ++c) {
+				int cidx = indexOf(labels.get(c));
 				final double cv = getCovariance(ridx, cidx);
 				res.setEntry(r, c, cv);
 				res.setEntry(c, r, cv);
@@ -402,15 +397,15 @@ public class UncertainValues //
 
 	/**
 	 * Returns a {@link RealVector} containing the values associated with this
-	 * object in the order specified by the List tags.
+	 * object in the order specified by the List labels.
 	 *
-	 * @param tags
+	 * @param labels
 	 * @return {@link RealVector}
 	 */
-	final public RealVector getValues(final List<? extends Object> tags) {
-		final RealVector res = new ArrayRealVector(tags.size());
+	final public RealVector getValues(final List<? extends Object> labels) {
+		final RealVector res = new ArrayRealVector(labels.size());
 		for (int i = 0; i < res.getDimension(); ++i)
-			res.setEntry(i, mValues.getEntry(indexOf(tags.get(i))));
+			res.setEntry(i, mValues.getEntry(indexOf(labels.get(i))));
 		return res;
 	}
 
@@ -420,135 +415,135 @@ public class UncertainValues //
 
 	/**
 	 * Extracts a subset of the {@link UncertainValues} uvs associated with the
-	 * specified tags into a new {@link UncertainValues} object. All tags must
+	 * specified labels into a new {@link UncertainValues} object. All labels must
 	 * exists in uvs.
 	 *
-	 * @param tags
+	 * @param labels
 	 * @param uvs
 	 * @return UncertainValues
 	 */
-	public static UncertainValues extract(final List<? extends Object> tags, final UncertainValues uvs) {
-		final RealVector vals = new ArrayRealVector(tags.size());
-		final RealMatrix cov = MatrixUtils.createRealMatrix(tags.size(), tags.size());
-		for (int ri = 0; ri < tags.size(); ++ri) {
-			final int r = uvs.indexOf(tags.get(ri));
+	public static UncertainValues extract(final List<? extends Object> labels, final UncertainValues uvs) {
+		final RealVector vals = new ArrayRealVector(labels.size());
+		final RealMatrix cov = MatrixUtils.createRealMatrix(labels.size(), labels.size());
+		for (int ri = 0; ri < labels.size(); ++ri) {
+			final int r = uvs.indexOf(labels.get(ri));
 			vals.setEntry(ri, uvs.getEntry(r));
 			cov.setEntry(ri, ri, uvs.getCovariance(r, r));
-			for (int ci = r + 1; ci < tags.size(); ++ci) {
-				final int c = uvs.indexOf(tags.get(ci));
+			for (int ci = r + 1; ci < labels.size(); ++ci) {
+				final int c = uvs.indexOf(labels.get(ci));
 				final double cc = uvs.getCovariance(r, c);
 				cov.setEntry(ri, ci, cc);
 				cov.setEntry(ci, ri, cc);
 			}
 		}
-		return new UncertainValues(tags, vals, cov);
+		return new UncertainValues(labels, vals, cov);
 
 	}
 
 	/**
-	 * Returns an ordered list of the Object tags associated with the values and
+	 * Returns an ordered list of the Object labels associated with the values and
 	 * covariances in this object.
 	 *
 	 * @return List&lt;Object&gt;
 	 */
-	final public List<Object> getTags() {
-		return mTags;
+	final public List<Object> getLabels() {
+		return mLabels;
 	}
 
 	/**
-	 * Is there a value and covariances associated with the specified tag?
+	 * Is there a value and covariances associated with the specified label?
 	 *
-	 * @param tag
+	 * @param label
 	 * @return boolean
 	 */
-	final public boolean hasEntry(final Object tag) {
-		return mTags.contains(tag);
+	final public boolean hasEntry(final Object label) {
+		return mLabels.contains(label);
 	}
 
 	/**
-	 * Returns the tag at the p-th entry in the values vector and in the p-th row
+	 * Returns the label at the p-th entry in the values vector and in the p-th row
 	 * and column in the covariance matrix.
 	 *
 	 * @param p
 	 * @return Object
 	 */
-	final public Object getTag(final int p) {
-		return mTags.get(p);
+	final public Object getLabel(final int p) {
+		return mLabels.get(p);
 	}
 
 	/**
-	 * Returns the index associated with the specified tag or -1 if not found.
+	 * Returns the index associated with the specified label or -1 if not found.
 	 *
 	 * @param p
 	 * @return Object
 	 */
-	final public int indexOf(final Object tag) {
-		return mIndex.getOrDefault(tag, Integer.valueOf(-1));
+	final public int indexOf(final Object label) {
+		return mIndex.getOrDefault(label, Integer.valueOf(-1));
 	}
 
 	/**
-	 * Returns the value associated with the entry associated with tag.
+	 * Returns the value associated with the entry associated with label.
 	 *
-	 * @param tag Object
+	 * @param label Object
 	 * @return double
 	 */
-	final public double getEntry(final Object tag) {
-		final int p = indexOf(tag);
-		assert p >= 0 : "Tag " + tag.toString() + " missing.";
+	final public double getEntry(final Object label) {
+		final int p = indexOf(label);
+		assert p >= 0 : "Label " + label.toString() + " missing.";
 		return mValues.getEntry(p);
 	}
 
 	/**
-	 * Returns the value associated with the entry associated with tag if the tag is
+	 * Returns the value associated with the entry associated with label if the label is
 	 * associated with a value or returns defVal otherwise. Useful for a quantity
 	 * that may or may not have an associated uncertainty.
 	 *
-	 * @param tag
+	 * @param label
 	 * @param defVal
 	 * @return double
 	 */
-	final public double getEntryWithDefault(final Object tag, final double defVal) {
-		final int p = indexOf(tag);
+	final public double getEntryWithDefault(final Object label, final double defVal) {
+		final int p = indexOf(label);
 		return p >= 0 ? mValues.getEntry(p) : defVal;
 	}
 
 	/**
-	 * Returns an UncertainValue for the quantity assoicated with the specified tag.
+	 * Returns an UncertainValue for the quantity assoicated with the specified label.
 	 * The value is the same as getEntry(...) and the uncertainty is the on-diagonal
 	 * covariance matrix entry associated with that entry.
 	 *
-	 * @param tag
+	 * @param label
 	 * @return UncertanValue
 	 */
-	final public UncertainValue getUncertainValue(final Object tag) {
-		final int p = indexOf(tag);
-		return new UncertainValue(getEntry(p), tag, Math.sqrt(mCovariance.getEntry(p, p)));
+	final public UncertainValue getUncertainValue(final Object label) {
+		final int p = indexOf(label);
+		return new UncertainValue(getEntry(p), label, Math.sqrt(mCovariance.getEntry(p, p)));
 	}
 
 	/**
-	 * Returns an UncertainValue for the quantity assoicated with the specified tag
+	 * Returns an UncertainValue for the quantity assoicated with the specified label
 	 * (if defined). The value is the same as getEntry(...) and the uncertainty is
 	 * the on-diagonal covariance matrix entry associated with that entry. If the
-	 * tag isn't defined, then the value defVal will be returned.
+	 * label isn't defined, then the value defVal will be returned.
 	 *
-	 * @param tag
+	 * @param label
 	 * @param defVal
 	 * @return UncertanValue
 	 */
-	final public UncertainValue getUncertainValueWithDefault(final Object tag, final UncertainValue defVal) {
-		final int p = indexOf(tag);
-		return p >= 0 ? new UncertainValue(getEntry(p), tag, mCovariance.getEntry(p, p)) : defVal;
+	final public UncertainValue getUncertainValueWithDefault(final Object label, final UncertainValue defVal) {
+		final int p = indexOf(label);
+		return p >= 0 ? new UncertainValue(getEntry(p), label, mCovariance.getEntry(p, p)) : defVal;
 
 	}
 
 	/**
-	 * Returns the number of tags which is equivalent to the number of values and
+	 * Returns the number of labels which is equivalent to the number of values and
 	 * row/columns in the covariance matrix.
 	 *
 	 * @return int
 	 */
 	final public int getDimension() {
-		return mTags.size();
+		return mLabels.size();
 	}
 
 	final public double getEntry(final int p) {
@@ -556,13 +551,13 @@ public class UncertainValues //
 	}
 
 	/**
-	 * Returns the variance associated with the specific tag
+	 * Returns the variance associated with the specific label
 	 *
-	 * @param tag Object
-	 * @return double The variance associated with tag
+	 * @param label Object
+	 * @return double The variance associated with label
 	 */
-	public double getVariance(final Object tag) {
-		final int p = indexOf(tag);
+	public double getVariance(final Object label) {
+		final int p = indexOf(label);
 		return mCovariance.getEntry(p, p);
 	}
 
@@ -570,20 +565,20 @@ public class UncertainValues //
 	 * Returns the variance associated with the specific index
 	 *
 	 * @param idx int
-	 * @return double The variance associated with tag
+	 * @return double The variance associated with label
 	 */
 	public double getVariance(final int idx) {
 		return mCovariance.getEntry(idx, idx);
 	}
 
 	/**
-	 * Returns the uncertainty associated with the specific tag
+	 * Returns the uncertainty associated with the specific label
 	 *
-	 * @param tag Object
-	 * @return double The uncertainty associated with tag or 0.0 if tag unknown
+	 * @param label Object
+	 * @return double The uncertainty associated with label or 0.0 if label unknown
 	 */
-	public double getUncertainty(final Object tag) {
-		final int p = indexOf(tag);
+	public double getUncertainty(final Object label) {
+		final int p = indexOf(label);
 		return p != -1 ? Math.sqrt(mCovariance.getEntry(p, p)) : 0.0;
 	}
 
@@ -598,15 +593,15 @@ public class UncertainValues //
 	}
 
 	/**
-	 * Returns the covariance associated with the specific tags
+	 * Returns the covariance associated with the specific labels
 	 *
-	 * @param tag1 Object
-	 * @param tag2 Object
-	 * @return double The covariance associated with tags tag1 and tag2 or 0 if one
-	 *         or both tags unknown
+	 * @param label1 Object
+	 * @param label2 Object
+	 * @return double The covariance associated with labels label1 and label2 or 0 if one
+	 *         or both labels unknown
 	 */
-	public double getCovariance(final Object tag1, final Object tag2) {
-		final int p1 = indexOf(tag1), p2 = indexOf(tag2);
+	public double getCovariance(final Object label1, final Object label2) {
+		final int p1 = indexOf(label1), p2 = indexOf(label2);
 		// assert mCovariance.getEntry(p1, p2) == mCovariance.getEntry(p2, p1) :
 		// mCovariance.getEntry(p1, p2) + "!="
 		// + mCovariance.getEntry(p2, p1);
@@ -636,26 +631,26 @@ public class UncertainValues //
 	}
 
 	/**
-	 * Returns a map of the variance and covariances relative to the specified tag.
+	 * Returns a map of the variance and covariances relative to the specified label.
 	 *
-	 * @param tag
+	 * @param label
 	 * @return Map&lt;Object, Double&gt;
 	 */
-	public Map<Object, Double> getCovariances(final Object tag) {
+	public Map<Object, Double> getCovariances(final Object label) {
 		final Map<Object, Double> res = new HashMap<>();
-		final int p = indexOf(tag);
+		final int p = indexOf(label);
 		if (p != -1) {
-			for (int i = 0; i < mTags.size(); ++i)
+			for (int i = 0; i < mLabels.size(); ++i)
 				if (mCovariance.getEntry(p, i) != 0.0)
-					res.put(mTags.get(i), mCovariance.getEntry(p, i));
+					res.put(mLabels.get(i), mCovariance.getEntry(p, i));
 		}
 		return res;
 	}
 
 	public Map<Object, Double> getValueMap() {
 		final Map<Object, Double> res = new HashMap<>();
-		for (final Object tag : getTags())
-			res.put(tag, getEntry(tag));
+		for (final Object label : getLabels())
+			res.put(label, getEntry(label));
 		return res;
 	}
 
@@ -663,11 +658,11 @@ public class UncertainValues //
 	 * Returns the value and the associated uncertainty as an {@link UncertainValue}
 	 * object.
 	 *
-	 * @param tag
+	 * @param label
 	 * @return {@link UncertainValue}
 	 */
-	public UncertainValue getValue(final Object tag) {
-		return new UncertainValue(getEntry(tag), tag, Math.sqrt(getVariance(tag)));
+	public UncertainValue getValue(final Object label) {
+		return new UncertainValue(getEntry(label), label, Math.sqrt(getVariance(label)));
 	}
 
 	public String toCSV() {
@@ -675,13 +670,13 @@ public class UncertainValues //
 		sb.append("\"Name\",\"Value\"");
 		for (int c = 0; c < mCovariance.getColumnDimension(); ++c) {
 			sb.append(",\"");
-			sb.append(mTags.get(c));
+			sb.append(mLabels.get(c));
 			sb.append("\"");
 		}
 		sb.append("\n");
 		for (int r = 0; r < mValues.getDimension(); ++r) {
 			sb.append("\"");
-			sb.append(mTags.get(r));
+			sb.append(mLabels.get(r));
 			sb.append("\",");
 			sb.append(mValues.getEntry(r));
 			for (int c = 0; c < mCovariance.getColumnDimension(); ++c) {
@@ -715,10 +710,10 @@ public class UncertainValues //
 			final Table table = new Table();
 			final List<Item> header = new ArrayList<>();
 			final List<Item> vals = new ArrayList<>();
-			for (final Object rowTag : mTags) {
-				header.add(Table.th(HTML.toHTML(rowTag, Mode.TERSE)));
+			for (final Object rowLabel : mLabels) {
+				header.add(Table.th(HTML.toHTML(rowLabel, Mode.TERSE)));
 				vals.add(Table
-						.tdc(nf.formatHTML(getEntry(rowTag)) + "&pm;" + nf.formatHTML(Math.sqrt(getVariance(rowTag)))));
+						.tdc(nf.formatHTML(getEntry(rowLabel)) + "&pm;" + nf.formatHTML(Math.sqrt(getVariance(rowLabel)))));
 			}
 			table.addRow(header);
 			table.addRow(vals);
@@ -732,26 +727,26 @@ public class UncertainValues //
 			all.add(Table.td("Name"));
 			all.add(Table.tdc("Quantity"));
 			all.add(Table.td());
-			for (final Object colTag : mTags)
-				all.add(Table.tdc(HTML.toHTML(colTag, Mode.TERSE)));
+			for (final Object colLabel : mLabels)
+				all.add(Table.tdc(HTML.toHTML(colLabel, Mode.TERSE)));
 			vals.addRow(all);
 			final BasicNumberFormat bnf2 = new BasicNumberFormat("0.00");
-			for (int r = 0; r < mTags.size(); ++r) {
-				final Object rowTag = mTags.get(r);
+			for (int r = 0; r < mLabels.size(); ++r) {
+				final Object rowLabel = mLabels.get(r);
 				final List<Item> row = new ArrayList<>();
-				row.add(Table.td(HTML.toHTML(rowTag, Mode.TERSE)));
-				row.add(Table.tdc(nf.formatHTML(getEntry(rowTag))));
-				if (r == (mTags.size() - 1) / 2)
+				row.add(Table.td(HTML.toHTML(rowLabel, Mode.TERSE)));
+				row.add(Table.tdc(nf.formatHTML(getEntry(rowLabel))));
+				if (r == (mLabels.size() - 1) / 2)
 					row.add(Table.tdc("&nbsp;&nbsp;&plusmn;&nbsp;&nbsp;"));
 				else
 					row.add(Table.td());
-				for (final Object colTag : mTags) {
-					final double c = getCovariance(rowTag, colTag);
-					if ((rowTag == colTag) || (mode != Mode.VERBOSE))
+				for (final Object colLabel : mLabels) {
+					final double c = getCovariance(rowLabel, colLabel);
+					if ((rowLabel == colLabel) || (mode != Mode.VERBOSE))
 						row.add(Table.tdc((c > 0.0 ? "" : Transforms.NON_BREAKING_DASH) + "("
 								+ nf.formatHTML(Math.sqrt(Math.abs(c))) + ")<sup>2</sup>"));
 					else {
-						final double cv = Math.sqrt(getVariance(rowTag) * getVariance(colTag));
+						final double cv = Math.sqrt(getVariance(rowLabel) * getVariance(colLabel));
 						final double cc = cv > 0.0 ? c / cv : 0.0;
 						// Compute the corrolatation coefficient
 						// assert (cc >= -MAX_CORR) && (cc <= MAX_CORR) : cc;
@@ -823,7 +818,7 @@ public class UncertainValues //
 			throw new DimensionMismatchException(uvs2.getDimension(), uvs1.getDimension());
 		final int dim = uvs1.getDimension();
 		for (int i = 0; i < dim; ++i)
-			assert uvs1.getTag(i) == uvs2.getTag(i) : uvs1.getTag(i) + "!=" + uvs2.getTag(i);
+			assert uvs1.getLabel(i) == uvs2.getLabel(i) : uvs1.getLabel(i) + "!=" + uvs2.getLabel(i);
 		final Array2DRowRealMatrix sc = new Array2DRowRealMatrix(dim, dim);
 		for (int r = 0; r < dim; ++r) {
 			final double rr = (uvs1.getCovariance(r, r) - uvs2.getCovariance(r, r))
@@ -858,10 +853,10 @@ public class UncertainValues //
 
 	public boolean equals(final UncertainValues uv2, final double tol) {
 		for (int r = 0; r < this.getDimension(); ++r) {
-			if (Math.abs(getEntry(r) - uv2.getEntry(mTags.get(r))) > tol)
+			if (Math.abs(getEntry(r) - uv2.getEntry(mLabels.get(r))) > tol)
 				return false;
 			for (int c = r; c < this.getDimension(); ++c)
-				if (Math.abs(getCovariance(r, c) - uv2.getCovariance(mTags.get(r), mTags.get(c))) > tol)
+				if (Math.abs(getCovariance(r, c) - uv2.getCovariance(mLabels.get(r), mLabels.get(c))) > tol)
 					return false;
 		}
 		return true;
@@ -869,7 +864,7 @@ public class UncertainValues //
 
 	/**
 	 * <p>
-	 * Copies those entries tagged in <i>from</i> that are also tagged in <i>to</i>.
+	 * Copies those entries labeled in <i>from</i> that are also labeled in <i>to</i>.
 	 * Useful for replicating the variances and covariances in <i>from</i> in
 	 * <i>to</i>.
 	 * </p>
@@ -881,15 +876,15 @@ public class UncertainValues //
 	 * @param to
 	 */
 	public static void copy(final UncertainValues from, final UncertainValues to) {
-		final List<? extends Object> fromTags = from.getTags();
+		final List<? extends Object> fromLabels = from.getLabels();
 		final Map<Object, Integer> toMap = new HashMap<>();
 		final Map<Object, Integer> fromMap = new HashMap<>();
-		for (int i = 0; i < fromTags.size(); ++i) {
-			final Object tag = fromTags.get(i);
-			final int p = to.indexOf(tag);
+		for (int i = 0; i < fromLabels.size(); ++i) {
+			final Object label = fromLabels.get(i);
+			final int p = to.indexOf(label);
 			if (p >= 0) {
-				toMap.put(tag, Integer.valueOf(p));
-				fromMap.put(tag, i);
+				toMap.put(label, Integer.valueOf(p));
+				fromMap.put(label, i);
 			}
 		}
 		for (final Map.Entry<Object, Integer> me1 : toMap.entrySet()) {
@@ -903,14 +898,14 @@ public class UncertainValues //
 	}
 
 	/**
-	 * Initializes the value and variance associated with the specified tag.
+	 * Initializes the value and variance associated with the specified label.
 	 *
-	 * @param tag
+	 * @param label
 	 * @param val
 	 * @param var
 	 */
-	public void set(final Object tag, final double val, final double var) {
-		final int p = indexOf(tag);
+	public void set(final Object label, final double val, final double var) {
+		final int p = indexOf(label);
 		mValues.setEntry(p, val);
 		mCovariance.setEntry(p, p, var);
 	}
@@ -919,24 +914,24 @@ public class UncertainValues //
 	 * Sets the covariance value associated with the specified values (both i,j and
 	 * j,i)
 	 *
-	 * @param tag1
-	 * @param tag2
+	 * @param label1
+	 * @param label2
 	 * @param cov
 	 */
-	public void setCovariance(final Object tag1, final Object tag2, final double cov) {
-		final int p1 = indexOf(tag1), p2 = indexOf(tag2);
+	public void setCovariance(final Object label1, final Object label2, final double cov) {
+		final int p1 = indexOf(label1), p2 = indexOf(label2);
 		mCovariance.setEntry(p1, p2, cov);
 		mCovariance.setEntry(p2, p1, cov);
 	}
 
 	/**
-	 * Initializes the specified value and variance for the specified tag.
+	 * Initializes the specified value and variance for the specified label.
 	 *
-	 * @param tag
+	 * @param label
 	 * @param uv  (uses the doubleValue() and variance())
 	 */
-	public void set(final Object tag, final UncertainValue uv) {
-		final int p = indexOf(tag);
+	public void set(final Object label, final UncertainValue uv) {
+		final int p = indexOf(label);
 		mValues.setEntry(p, uv.doubleValue());
 		mCovariance.setEntry(p, p, uv.variance());
 	}
@@ -963,7 +958,7 @@ public class UncertainValues //
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(mValues, mTags, mCovariance);
+		return Objects.hashCode(mValues, mLabels, mCovariance);
 	}
 
 	@Override
@@ -976,32 +971,32 @@ public class UncertainValues //
 			return false;
 		final UncertainValues other = (UncertainValues) obj;
 		return Objects.equal(mCovariance, other.mCovariance) && //
-				Objects.equal(mTags, other.mTags) && //
+				Objects.equal(mLabels, other.mLabels) && //
 				Objects.equal(mValues, other.mValues);
 	}
 
 	/**
-	 * Build a new UncertainValues from this one in which the tags have been sorted
+	 * Build a new UncertainValues from this one in which the labels have been sorted
 	 * into an order determined by the specified {@link Comparator}.
 	 *
 	 * @param compare
 	 * @return {@link UncertainValues} A new instance with the same data reordered.
 	 */
 	public UncertainValues sort(final Comparator<Object> compare) {
-		final List<Object> tags = new ArrayList<>(mTags);
-		tags.sort(compare);
-		final UncertainValues res = new UncertainValues(tags);
-		for (int r = 0; r < mTags.size(); ++r) {
-			res.mValues.setEntry(res.indexOf(mTags.get(r)), mValues.getEntry(r));
-			for (int c = 0; c < mTags.size(); ++c)
-				res.setCovariance(mTags.get(r), mTags.get(c), mCovariance.getEntry(r, c));
+		final List<Object> labels = new ArrayList<>(mLabels);
+		labels.sort(compare);
+		final UncertainValues res = new UncertainValues(labels);
+		for (int r = 0; r < mLabels.size(); ++r) {
+			res.mValues.setEntry(res.indexOf(mLabels.get(r)), mValues.getEntry(r));
+			for (int c = 0; c < mLabels.size(); ++c)
+				res.setCovariance(mLabels.get(r), mLabels.get(c), mCovariance.getEntry(r, c));
 		}
 		return res;
 	}
 
 	/**
-	 * Build a new UncertainValues from this one in which the tags have been sorted
-	 * into alphabetical order by tag.toString().
+	 * Build a new UncertainValues from this one in which the labels have been sorted
+	 * into alphabetical order by label.toString().
 	 *
 	 * @return {@link UncertainValues} A new instance with the same data reordered.
 	 */

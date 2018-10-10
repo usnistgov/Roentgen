@@ -9,7 +9,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.NamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import junit.framework.TestCase;
 
 /**
@@ -27,7 +27,7 @@ public class TestNamedMultivariateJacobianFuntion
    public void test1() {
       final List<Object> funcs = Arrays.asList("f1", "f2", "f3");
       final List<Object> vars = Arrays.asList("x0", "x1", "x2", "x3", "x4");
-      final NamedMultivariateJacobianFunction nmvf = new NamedMultivariateJacobianFunction(vars, funcs) {
+      final LabeledMultivariateJacobianFunction nmvf = new LabeledMultivariateJacobianFunction(vars, funcs) {
 
          public double f1(final RealVector point) {
             final double x0 = point.getEntry(0);

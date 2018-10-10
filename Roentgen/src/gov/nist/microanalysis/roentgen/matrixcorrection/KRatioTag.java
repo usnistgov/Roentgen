@@ -3,7 +3,7 @@ package gov.nist.microanalysis.roentgen.matrixcorrection;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseTag;
+import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
@@ -27,7 +27,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @version $Rev: 312 $
  */
 
-public class KRatioTag extends BaseTag<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet>
+public class KRatioTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet>
 		implements IToHTML, Comparable<KRatioTag> {
 
 	public enum Method {

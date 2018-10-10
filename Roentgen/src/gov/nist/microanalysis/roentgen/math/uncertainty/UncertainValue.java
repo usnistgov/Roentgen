@@ -24,9 +24,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 /**
  * <p>
  * The UncertainValue class implements a class for handling values with zero or
- * more component normally distributed uncertainties. The class implements a
- * number of static methods for performing basic mathematical operations on
- * numbers while propagating the component uncertainties.
+ * more component normally distributed uncertainties.
  * </p>
  * <p>
  * Each uncertain value is represented by a value and a series of named
@@ -53,7 +51,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * &lt;/UncertainValue&gt;</br>
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2017
+ * Copyright Nicholas W. M. Ritchie 2014-2018
  * </p>
  *
  * @author nritchie
@@ -67,19 +65,19 @@ final public class UncertainValue //
 	private static final long serialVersionUID = 119495064970078787L;
 
 	/**
-	 * The value
+	 * The one sigma standard deviation value associated with a specific label
 	 */
 	@XStreamAlias("sigma")
 	// XML looks like <sigma name="dx">0.1</sigma>
 	private class Sigma {
 		@XStreamAsAttribute
-		@XStreamAlias("name")
-		private final Object mName;
+		@XStreamAlias("label")
+		private final Object mLabel;
 		@XStreamAlias("value")
 		private final double mValue;
 
 		private Sigma(final Object name, final double val) {
-			mName = name;
+			mLabel = name;
 			mValue = Math.abs(val);
 		}
 	}
@@ -230,7 +228,7 @@ final public class UncertainValue //
 
 	private int indexOf(final Object name) {
 		for (int i = 0; i < mSigmas.size(); ++i)
-			if (mSigmas.get(i).mName.equals(name))
+			if (mSigmas.get(i).mLabel.equals(name))
 				return i;
 		return -1;
 	}
@@ -303,7 +301,7 @@ final public class UncertainValue //
 			sb.append("\u00B1");
 			sb.append(nf.format(sigma.mValue));
 			sb.append("(");
-			sb.append(sigma.mName);
+			sb.append(sigma.mLabel);
 			sb.append(")");
 		}
 		return sb.toString();
@@ -349,14 +347,14 @@ final public class UncertainValue //
 	public Map<Object, Double> getComponents() {
 		final Map<Object, Double> res = new HashMap<>();
 		for (final Sigma s : mSigmas)
-			res.put(s.mName, s.mValue);
+			res.put(s.mLabel, s.mValue);
 		return Collections.unmodifiableMap(res);
 	}
 
 	public Set<Object> getComponentNames() {
 		final Set<Object> res = new HashSet<>();
 		for (final Sigma s : mSigmas)
-			res.add(s.mName);
+			res.add(s.mLabel);
 		return Collections.unmodifiableSet(res);
 	}
 
@@ -537,7 +535,7 @@ final public class UncertainValue //
 				for (final Sigma sigma : sigmas) {
 					if (!first)
 						sb.append(",");
-					sb.append(HTML.toHTML(sigma.mName, Mode.TERSE));
+					sb.append(HTML.toHTML(sigma.mLabel, Mode.TERSE));
 					sb.append(":");
 					sb.append(bnf.formatHTML(sigma.mValue));
 					first = false;
@@ -565,7 +563,7 @@ final public class UncertainValue //
 				});
 				for (final Sigma sigma : sigmas) {
 					sb.append("<tr>");
-					sb.append("<td>U(" + HTML.toHTML(sigma.mName, Mode.TERSE) + ")</td>");
+					sb.append("<td>U(" + HTML.toHTML(sigma.mLabel, Mode.TERSE) + ")</td>");
 					sb.append("<td>" + bnf.formatHTML(sigma.mValue) + "</td>");
 					sb.append("<td>&nbsp;&nbsp;" + pct.formatHTML(100.0 * sigma.mValue / mValue) + " %</td>");
 					sb.append("</tr>");
