@@ -2,6 +2,7 @@ package com.duckandcover.scripting;
 
 import java.awt.BorderLayout;
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -277,7 +278,11 @@ public class JPythonPanel
        * Map.Entry<String, String> me : c.entrySet())
        * Roentgen.getLogger().info(me.getKey() + " = " + me.getValue());
        */
-      jSplitPane.setTopComponent(new JScrollPane(jEditorPane_Python));
+      final JScrollPane jScrollPane = new JScrollPane(jEditorPane_Python);
+      Dimension minSize=jScrollPane.getMinimumSize();
+      minSize.height*=4;
+      jScrollPane.setMinimumSize(minSize);
+      jSplitPane.setTopComponent(jScrollPane);
       jEditorPane_Python.setContentType("text/python");
       jEditorPane_Python.addComponentListener(new ComponentAdapter() {
          @Override
