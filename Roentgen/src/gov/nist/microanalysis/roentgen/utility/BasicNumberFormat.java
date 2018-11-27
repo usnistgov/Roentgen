@@ -87,14 +87,14 @@ public class BasicNumberFormat
       return format(d);
    }
 
-   public void setSmallNumberFormat(final double thresh, final DecimalFormat df) {
+   public static void setSmallNumberFormat(final double thresh, final DecimalFormat df) {
       mSmallExpThresh = thresh;
       mSmallExpFormat = df;
    }
 
-   public void setLargeNumberFormat(final double thresh, final DecimalFormat df) {
-      mSmallExpThresh = thresh;
-      mSmallExpFormat = df;
+   public static void setLargeNumberFormat(final double thresh, final DecimalFormat df) {
+      mLargeExpThresh = thresh;
+      mLargeExpFormat = df;
    }
 
    public String formatHTML(final Vector3D vec) {

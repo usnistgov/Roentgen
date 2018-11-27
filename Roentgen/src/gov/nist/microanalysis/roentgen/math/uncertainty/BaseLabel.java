@@ -1,8 +1,9 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
+import java.util.Objects;
+
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
-import com.google.common.base.Objects;
 
 /**
  * <p>
@@ -37,7 +38,7 @@ public class BaseLabel<H, I, J> //
 	 * @param obj2
 	 * @param obj3
 	 */
-	protected BaseLabel(final String name, final H obj1, final I obj2, final J obj3) {
+	public BaseLabel(final String name, final H obj1, final I obj2, final J obj3) {
 		mName = name;
 		assert obj1 != null;
 		mObject1 = obj1;
@@ -45,7 +46,7 @@ public class BaseLabel<H, I, J> //
 		assert !((obj2 == null) && (obj3 != null));
 		mObject3 = obj3;
 		// Calculate this once to speed access
-		mHashCode = Objects.hashCode(mName, mObject1, mObject2, mObject3);
+		mHashCode = Objects.hash(mName, mObject1, mObject2, mObject3);
 
 	}
 
@@ -57,7 +58,7 @@ public class BaseLabel<H, I, J> //
 	 * @param obj1
 	 * @param obj2
 	 */
-	protected BaseLabel(final String name, final H obj1, final I obj2) {
+	public BaseLabel(final String name, final H obj1, final I obj2) {
 		this(name, obj1, obj2, null);
 	}
 
@@ -68,7 +69,7 @@ public class BaseLabel<H, I, J> //
 	 * @param name
 	 * @param obj
 	 */
-	protected BaseLabel(final String name, final H obj) {
+	public BaseLabel(final String name, final H obj) {
 		this(name, obj, null, null);
 	}
 
@@ -98,10 +99,10 @@ public class BaseLabel<H, I, J> //
 		if (getClass() != obj.getClass())
 			return false;
 		final BaseLabel<?, ?, ?> other = (BaseLabel<?, ?, ?>) obj;
-		return Objects.equal(mName, other.mName) && //
-				Objects.equal(mObject1, other.mObject1) && //
-				Objects.equal(mObject2, other.mObject2) && //
-				Objects.equal(mObject3, other.mObject3);
+		return Objects.equals(mName, other.mName) && //
+				Objects.equals(mObject1, other.mObject1) && //
+				Objects.equals(mObject2, other.mObject2) && //
+				Objects.equals(mObject3, other.mObject3);
 	}
 
 	@Override

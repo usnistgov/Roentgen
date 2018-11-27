@@ -20,17 +20,17 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionTag;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag.Method;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
@@ -118,12 +118,12 @@ public class KRatioCorrectionModelTest {
 
 			Map<Object, UncertainValue> mouv = new HashMap<>();
 
-			mouv.put(new KRatioTag(unkMcd, stdK411Mcd, siTr, Method.Measured), new UncertainValue(0.794983));
-			mouv.put(new KRatioTag(unkMcd, stdK411Mcd, feTr, Method.Measured), new UncertainValue(0.687101));
-			mouv.put(new KRatioTag(unkMcd, stdK411Mcd, mgTr, Method.Measured), new UncertainValue(1.364719));
-			mouv.put(new KRatioTag(unkMcd, stdK411Mcd, caTr, Method.Measured), new UncertainValue(0.980070));
-			mouv.put(new KRatioTag(unkMcd, stdK411Mcd, oTr, Method.Measured), new UncertainValue(1.011527));
-			mouv.put(new KRatioTag(unkMcd, stdAlMcd, alTr, Method.Measured), new UncertainValue(0.032001));
+			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, siTr, Method.Measured), new UncertainValue(0.794983));
+			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, feTr, Method.Measured), new UncertainValue(0.687101));
+			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, mgTr, Method.Measured), new UncertainValue(1.364719));
+			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, caTr, Method.Measured), new UncertainValue(0.980070));
+			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, oTr, Method.Measured), new UncertainValue(1.011527));
+			mouv.put(new KRatioLabel(unkMcd, stdAlMcd, alTr, Method.Measured), new UncertainValue(0.032001));
 
 			mouv.put(Composition.buildMassFractionTag(std0, Element.Silicon),
 					new UncertainValue(0.25190067871134, 0.00448737523776));
@@ -137,12 +137,12 @@ public class KRatioCorrectionModelTest {
 					new UncertainValue(0.42346095279459, 0.00693579374492));
 			mouv.put(Composition.buildMassFractionTag(std1, Element.Aluminum), new UncertainValue(1.0, 0.001));
 
-			mouv.put(new MatrixCorrectionTag(unkMcd, stdK411Mcd, siTr), new UncertainValue(0.9519));
-			mouv.put(new MatrixCorrectionTag(unkMcd, stdK411Mcd, feTr), new UncertainValue(0.9948));
-			mouv.put(new MatrixCorrectionTag(unkMcd, stdK411Mcd, mgTr), new UncertainValue(1.0357));
-			mouv.put(new MatrixCorrectionTag(unkMcd, stdK411Mcd, caTr), new UncertainValue(0.9942));
-			mouv.put(new MatrixCorrectionTag(unkMcd, stdK411Mcd, oTr), new UncertainValue(1.0023));
-			mouv.put(new MatrixCorrectionTag(unkMcd, stdAlMcd, alTr), new UncertainValue(0.6523));
+			mouv.put(new MatrixCorrectionLabel(unkMcd, stdK411Mcd, siTr), new UncertainValue(0.9519));
+			mouv.put(new MatrixCorrectionLabel(unkMcd, stdK411Mcd, feTr), new UncertainValue(0.9948));
+			mouv.put(new MatrixCorrectionLabel(unkMcd, stdK411Mcd, mgTr), new UncertainValue(1.0357));
+			mouv.put(new MatrixCorrectionLabel(unkMcd, stdK411Mcd, caTr), new UncertainValue(0.9942));
+			mouv.put(new MatrixCorrectionLabel(unkMcd, stdK411Mcd, oTr), new UncertainValue(1.0023));
+			mouv.put(new MatrixCorrectionLabel(unkMcd, stdAlMcd, alTr), new UncertainValue(0.6523));
 
 			UncertainValues uvs = UncertainValues.extract(krcm.getInputLabels(), new UncertainValues(mouv));
 
@@ -233,28 +233,28 @@ public class KRatioCorrectionModelTest {
 		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
 		stds.put(zrTrs, std3Mcd);
 
-		final List<KRatioTag> lkr = new ArrayList<>();
+		final List<KRatioLabel> lkr = new ArrayList<>();
 		final RealVector kvals = new ArrayRealVector(7);
 		final RealVector kvars = new ArrayRealVector(7);
-		lkr.add(new KRatioTag(unkMcd, std0Mcd, mgTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std0Mcd, mgTrs, Method.Measured));
 		kvals.setEntry(0, 0.066685);
 		kvars.setEntry(0, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std1Mcd, baTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std1Mcd, baTrs, Method.Measured));
 		kvals.setEntry(1, 0.800181);
 		kvars.setEntry(1, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std1Mcd, tiTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std1Mcd, tiTrs, Method.Measured));
 		kvals.setEntry(2, 0.511920);
 		kvars.setEntry(2, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std1Mcd, siTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std1Mcd, siTrs, Method.Measured));
 		kvals.setEntry(3, 0.914851);
 		kvars.setEntry(3, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std1Mcd, oTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std1Mcd, oTrs, Method.Measured));
 		kvals.setEntry(4, 0.991157);
 		kvars.setEntry(4, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std2Mcd, znTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std2Mcd, znTrs, Method.Measured));
 		kvals.setEntry(5, 0.035440);
 		kvars.setEntry(5, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std3Mcd, zrTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std3Mcd, zrTrs, Method.Measured));
 		kvals.setEntry(6, 0.051319);
 		kvars.setEntry(6, Math.pow(0.001, 2.0));
 		UncertainValues kuv = new UncertainValues(lkr, kvals, kvars);
@@ -263,7 +263,7 @@ public class KRatioCorrectionModelTest {
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.defaultVariates());
 		steps.add(xpp);
 		steps.add(new KRatioCorrectionModel(unkMcd, stds));
-		SerialNamedMultivariateJacobianFunction ms = new SerialNamedMultivariateJacobianFunction("k-ratio",
+		SerialLabeledMultivariateJacobianFunction ms = new SerialLabeledMultivariateJacobianFunction("k-ratio",
 				steps);
 		UncertainValues msInp = UncertainValues.build(ms.getInputLabels(), xpp.buildInput(), kuv);
 
@@ -369,28 +369,28 @@ public class KRatioCorrectionModelTest {
 		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
 		stds.put(zrTrs, std3Mcd);
 
-		final List<KRatioTag> lkr = new ArrayList<>();
+		final List<KRatioLabel> lkr = new ArrayList<>();
 		final RealVector kvals = new ArrayRealVector(7);
 		final RealVector kvars = new ArrayRealVector(7);
-		lkr.add(new KRatioTag(unkMcd, std0Mcd, mgTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std0Mcd, mgTrs, Method.Measured));
 		kvals.setEntry(0, 0.036570);
 		kvars.setEntry(0, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std1Mcd, baTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std1Mcd, baTrs, Method.Measured));
 		kvals.setEntry(1, 0.508579);
 		kvars.setEntry(1, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std2Mcd, znTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std2Mcd, znTrs, Method.Measured));
 		kvals.setEntry(2, 0.035440);
 		kvars.setEntry(2, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std3Mcd, zrTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std3Mcd, zrTrs, Method.Measured));
 		kvals.setEntry(3, 0.051319);
 		kvars.setEntry(3, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std4Mcd, siTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std4Mcd, siTrs, Method.Measured));
 		kvals.setEntry(4, 0.364811);
 		kvars.setEntry(4, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std4Mcd, oTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std4Mcd, oTrs, Method.Measured));
 		kvals.setEntry(5, 0.571425);
 		kvars.setEntry(5, Math.pow(0.001, 2.0));
-		lkr.add(new KRatioTag(unkMcd, std5Mcd, tiTrs, Method.Measured));
+		lkr.add(new KRatioLabel(unkMcd, std5Mcd, tiTrs, Method.Measured));
 		kvals.setEntry(6, 0.055222);
 		kvars.setEntry(6, Math.pow(0.001, 2.0));
 
@@ -400,7 +400,7 @@ public class KRatioCorrectionModelTest {
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
 		steps.add(xpp);
 		steps.add(new KRatioCorrectionModel(unkMcd, stds));
-		SerialNamedMultivariateJacobianFunction ms = new SerialNamedMultivariateJacobianFunction("k-ratio",
+		SerialLabeledMultivariateJacobianFunction ms = new SerialLabeledMultivariateJacobianFunction("k-ratio",
 				steps);
 		UncertainValues msInp = UncertainValues.build(ms.getInputLabels(), xpp.buildInput(), kuv);
 

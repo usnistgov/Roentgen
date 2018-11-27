@@ -20,6 +20,8 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
+
 /**
  * <p>
  * The Jacobian is a matrix consisting of n partial derivatives associated with
@@ -40,7 +42,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 	/**
 	 * Seems to produce a 10 % - 20 % improvement in overall evaluation speed.
-	 * 
+	 *
 	 * @author nicholas
 	 *
 	 * @param <H> H must implement hashCode() and equals()
@@ -51,7 +53,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 		private final Map<H, Integer> mIndex;
 
-		private FastIndex(List<H> list) {
+		private FastIndex(final List<H> list) {
 			super(list);
 			mIndex = new HashMap<>();
 			for (int i = 0; i < list.size(); ++i)
@@ -59,8 +61,9 @@ abstract public class LabeledMultivariateJacobianFunction //
 		}
 
 		@Override
-		public int indexOf(Object h) {
+		public int indexOf(final Object h) {
 			final Integer res = mIndex.get(h);
+			assert (res == null) || (get(res.intValue()).equals(h));
 			return res == null ? -1 : res.intValue();
 		}
 	}
@@ -237,8 +240,8 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * {@link ILabeledMultivariateFunction} is available then this is called.
 	 * Otherwise value(...) is called and only the {@link RealVector} value portion
 	 * is returned.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param inp Evaluation point
 	 * @return {@link RealVector} The result values
 	 */
@@ -253,24 +256,31 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * Returns a Map of the labels associated with output values expressed as
 	 * {@link UncertainValue} objects. Equivalent to
 	 * <code>getOutputValues(uvs, 1.0e-6)</code>
-	 * 
+	 *
 	 * @param uvs Input {@link UncertainValues}
 	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
+	 * @throws ArgumentException
 	 */
-	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValues uvs) {
+	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValues uvs)
+			throws ArgumentException {
 		return getOutputValues(uvs, 1.0e-6);
 	}
 
 	/**
 	 * Returns a Map of the labels associated with output values expressed as
 	 * {@link UncertainValue} objects.
-	 * 
+	 *
 	 * @param uvs Input {@link UncertainValues}
 	 * @param tol Tolerance relative to value
 	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
+	 * @throws ArgumentException
 	 */
-	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValues uvs, double tol) {
-		final Pair<RealVector, RealMatrix> pvm = evaluate(uvs.getValues());
+	public HashMap<? extends Object, UncertainValue> getOutputValues( //
+			final UncertainValues uvs, //
+			final double tol//
+	) throws ArgumentException {
+		final UncertainValues ordered = UncertainValues.build(this.getInputLabels(), uvs);
+		final Pair<RealVector, RealMatrix> pvm = evaluate(ordered.getValues());
 		final RealVector vals = pvm.getFirst();
 		final RealMatrix jac = pvm.getSecond();
 		final HashMap<Object, UncertainValue> res = new HashMap<>();
@@ -280,7 +290,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 			res.put(outLabels.get(i), new UncertainValue(vals.getEntry(i)));
 		for (int inIdx = 0; inIdx < inLabels.size(); ++inIdx) {
 			final Object inLabel = inLabels.get(inIdx);
-			final UncertainValues uvsLabel = UncertainValues.zeroBut(inLabel, uvs);
+			final UncertainValues uvsLabel = UncertainValues.zeroBut(inLabel, ordered);
 			final RealMatrix covLabel = jac.multiply(uvsLabel.getCovariances()).multiply(jac.transpose());
 			for (int outIdx = 0; outIdx < outLabels.size(); ++outIdx) {
 				final UncertainValue val = res.get(outLabels.get(outIdx));
@@ -295,7 +305,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	/**
 	 * Implements a {@link LabeledMultivariateJacobianFunction} that normalizes the
 	 * values in the inLabels and returns them as the outLabels.
-	 * 
+	 *
 	 * @param inLabels
 	 * @param outLabels
 	 * @return {@link LabeledMultivariateJacobianFunction}
@@ -331,7 +341,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	/**
 	 * Implements a {@link LabeledMultivariateJacobianFunction} that sum the values
 	 * in the inLabels and returns them as the outLabel.
-	 * 
+	 *
 	 * @param inLabels
 	 * @param outLabels
 	 * @return {@link LabeledMultivariateJacobianFunction}
@@ -359,7 +369,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	/**
 	 * Implements a linear function of the inLabels quantities which is returned as
 	 * outLabel.
-	 * 
+	 *
 	 * @param inLabels Labels for the input values
 	 * @param coeffs   A vector of linear parameters of length inLabels.size()
 	 * @param outLabel The label for the output value.
@@ -386,7 +396,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * value <code>vals.getEntry(i)</code> is <code>list.get(i)</code>. Checks first
 	 * to see is the label is being used as an input variable and won't define it as
 	 * a constant if it is an input item.
-	 * 
+	 *
 	 * @param list
 	 * @param vals
 	 */
@@ -398,7 +408,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 	/**
 	 * Initializes the constant labels with the associated values.
-	 * 
+	 *
 	 * @param mod Map&lt;Object,Double&gt; where Object is a label
 	 */
 	public void initializeConstants(final Map<Object, Double> mod) {
@@ -407,7 +417,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 	/**
 	 * Returns the constant value associated with <code>label</code>.
-	 * 
+	 *
 	 * @param label
 	 * @return double
 	 */
@@ -419,7 +429,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 	/**
 	 * Check whether <code>label</code> is defined as a constant value.
-	 * 
+	 *
 	 * @param label A label
 	 * @return true if <code>label</code> is initialized as a constant, false
 	 *         otherwise.
@@ -453,7 +463,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	/**
 	 * Returns an unmodifiable view of the map of labels and the associated constant
 	 * values.
-	 * 
+	 *
 	 * @return Map<Object, Double>
 	 */
 	public Map<Object, Double> getConstants() {
@@ -490,7 +500,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 			return HTML.escape(toString());
 		default:
 		case VERBOSE: {
-			Table t = new Table();
+			final Table t = new Table();
 			t.addRow(Table.th(HTML.escape(toString()), 2));
 			{
 				final StringBuffer sb = new StringBuffer();

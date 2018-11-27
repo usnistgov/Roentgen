@@ -137,8 +137,27 @@ public class HTML {
          return HTML.error("NULL");
       if(obj instanceof IToHTML)
          return ((IToHTML) obj).toHTML(mode);
-      else
-         return HTML.escape(obj.toString());
+      return HTML.escape(obj.toString());
+   }
+   
+   
+   /**
+    * Converts any object to HTML using the IToHTML interface when available or
+    * escaped toString() otherwise.
+    *
+    * @param obj
+    * @param mode
+    * @return String in HTML
+ * @throws IOException 
+    */
+   public static String toHTMLExt(final Object obj, final Mode mode, File base, String dir) throws IOException {
+      if(obj == null)
+         return HTML.error("NULL");
+      if(obj instanceof IToHTMLExt)
+    	  return ((IToHTMLExt)obj).toHTML(mode, base, dir);
+      if(obj instanceof IToHTML)
+         return ((IToHTML) obj).toHTML(mode);
+      return HTML.escape(obj.toString());
    }
 
    /**

@@ -5,7 +5,7 @@ import java.util.Map;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -13,17 +13,18 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
 
 /**
  * A matrix correction model is a model that computes the values associated with
- * {@link MatrixCorrectionTag} for a set of {@link ElementXRaySet} objects
+ * {@link MatrixCorrectionLabel} for a set of {@link ElementXRaySet} objects
  * associated with {@link MatrixCorrectionDatum}s associated with Standards
  * relative to a {@link MatrixCorrectionDatum} associated with an unknown.
  * 
- * A matrix correction model may also calculate values for {@link KRatioTag} and
- * other related tags.
+ * A matrix correction model may also calculate values for {@link KRatioLabel}
+ * and other related tags.
  * 
  * @author nicholas
  *
  */
-abstract public class MatrixCorrectionModel extends SerialNamedMultivariateJacobianFunction {
+abstract public class MatrixCorrectionModel //
+		extends SerialLabeledMultivariateJacobianFunction {
 
 	protected final MatrixCorrectionDatum mUnknown;
 	protected final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;
@@ -41,13 +42,13 @@ abstract public class MatrixCorrectionModel extends SerialNamedMultivariateJacob
 		final List<? extends Object> outputTags = getOutputLabels();
 		final List<? extends Object> inputTags = getInputLabels();
 		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			MatrixCorrectionTag mct = new MatrixCorrectionTag(unk, me.getValue(), me.getKey());
+			MatrixCorrectionLabel mct = new MatrixCorrectionLabel(unk, me.getValue(), me.getKey());
 			if (!outputTags.contains(mct))
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
 		}
 		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
 			final MatrixCorrectionDatum std = me.getValue();
-			MatrixCorrectionTag mct = new MatrixCorrectionTag(unk, std, me.getKey());
+			MatrixCorrectionLabel mct = new MatrixCorrectionLabel(unk, std, me.getKey());
 			if (!outputTags.contains(mct))
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
 			for (Element elm : std.getComposition().getElementSet()) {

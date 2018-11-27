@@ -117,11 +117,11 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 
 		private final OnPeakIntensityTag mOnPeakI;
 		private final OnPeakLiveTimeTag mOnPeakLT;
-		private final ProbeCurrentTag mProbeCurrent;
+		private final ProbeCurrentLabel mProbeCurrent;
 		private final Model mModel;
 		private final CharacteristicXRay mXRay;
 
-		OnPeakPacket(Model model, CharacteristicXRay cxr, double lPos, int rep, ProbeCurrentTag pcTag,
+		OnPeakPacket(Model model, CharacteristicXRay cxr, double lPos, int rep, ProbeCurrentLabel pcTag,
 				List<BackgroundPacket> backs) {
 			assert model == Model.TwoPoint;
 			assert backs.size() == 2;
@@ -214,7 +214,7 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 		for (OnPeakPacket opp : mMeasurements) {
 			final OnPeakIntensityTag opi = opp.mOnPeakI;
 			final OnPeakLiveTimeTag opl = opp.mOnPeakLT;
-			final ProbeCurrentTag oppc = opp.mProbeCurrent;
+			final ProbeCurrentLabel oppc = opp.mProbeCurrent;
 			final List<BackgroundPacket> backs = opi.mBackgrounds;
 			final Model model = opp.mModel;
 			if (model == Model.TwoPoint) {

@@ -43,7 +43,7 @@ public class AtomicShell
 
    /**
     * Chantler edge-energies are consistent with the MACs in the Chantler based
-    * implementation of {@link MassAbsorptionCoefficient}. The alternative is
+    * implementation of {@link ElementalMAC}. The alternative is
     * ENDF6 edge energies which is consistent with the ENDF6 database used for
     * relaxation rates. It is probably better to use Chantler.
     */

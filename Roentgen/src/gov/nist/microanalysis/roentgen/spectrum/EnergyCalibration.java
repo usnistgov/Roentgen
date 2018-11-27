@@ -302,9 +302,9 @@ abstract public class EnergyCalibration
 
       @Override
       public String toHTML(final Mode terse) {
-         final Number a = mParameters[2];
-         final Number b = mParameters[1];
-         final Number c = mParameters[3];
+         final Number a = mParameters[1];
+         final Number b = mParameters[0];
+         final Number c = mParameters[2];
          final BasicNumberFormat bnf = new BasicNumberFormat();
          return bnf.formatHTML(a) + "&middot;i + " + bnf.formatHTML(b) + "&middot;i" + HTML.sup("1/2") + " "
                + bnf.formatHTML(c);

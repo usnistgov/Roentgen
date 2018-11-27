@@ -270,6 +270,7 @@ public class ScriptingWorker extends SwingWorker<Object, ScriptOutput> {
 					publish(new ScriptOutput.ExecFileCommand(++mCmdIndex, pyPath, dupName));
 					final long ctm = System.currentTimeMillis();
 					try {
+						mScripter.exec("globals()['__file__'] ='"+pyPath+"'");
 						mScripter.set(TERMINATED, Boolean.FALSE);
 						mScripter.push("execfile('" + pyPath + "')");
 						if (mScripter.get(TERMINATED).__nonzero__())
@@ -278,6 +279,7 @@ public class ScriptingWorker extends SwingWorker<Object, ScriptOutput> {
 					} catch (final Throwable e) {
 						publish(new ScriptOutput.Error(e.toString()));
 					}
+					mScripter.exec("del globals()['__file__']");
 					final long elapse = System.currentTimeMillis() - ctm;
 					if (elapse > (10 * 1000)) // 10 s
 						publish(new ScriptOutput.HTML(

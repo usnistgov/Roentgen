@@ -28,7 +28,8 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @author nicholas
  *
  */
-public class MatrixCorrectionDatum implements IToHTML {
+public class MatrixCorrectionDatum //
+		implements IToHTML {
 
 	// Either mComposition or mElements is defined (never both!)
 	private final Optional<Composition> mComposition;
@@ -74,7 +75,7 @@ public class MatrixCorrectionDatum implements IToHTML {
 			UncertainValue takeOffAngle, //
 			double roughness //
 	) {
-		mComposition = Optional.of(comp);
+		mComposition = Optional.of(comp.asMassFraction());
 		mElements = Optional.empty();
 		mIsStandard = isStandard;
 		mBeamEnergy = beamEnergy;
@@ -170,7 +171,7 @@ public class MatrixCorrectionDatum implements IToHTML {
 			t.addRow(Table.td("Composition"), Table.td(getNameAsHTML(Mode.VERBOSE)));
 			t.addRow(Table.td("Is standard?"), Table.td(Boolean.toString(isStandard())));
 			t.addRow(Table.td("Beam Energy"), Table.td(bnf.formatHTML(mBeamEnergy)));
-			t.addRow(Table.td("Composition"), Table.td(bnf.formatHTML(mTakeOffAngle)));
+			t.addRow(Table.td("Take-off angle"), Table.td(bnf.formatHTML(mTakeOffAngle.multiply(180.0/Math.PI))+"&deg;"));
 			if (mRoughness.isPresent())
 				t.addRow(Table.td("Roughness"), Table.td(bnf.formatHTML(mRoughness.get().doubleValue())));
 			return t.toHTML(mode);

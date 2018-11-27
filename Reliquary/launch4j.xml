@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>true</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>reliquary.jar</jar>
+  <outfile>C:\Users\nicho\git\Roentgen\Reliquary\Reliquary.exe</outfile>
+  <errTitle>Reliquary requires a recent version of the Java Runtime Environment.</errTitle>
+  <cmdLine></cmdLine>
+  <chdir></chdir>
+  <priority>normal</priority>
+  <downloadUrl>http://java.com/download</downloadUrl>
+  <supportUrl></supportUrl>
+  <stayAlive>false</stayAlive>
+  <restartOnCrash>false</restartOnCrash>
+  <manifest></manifest>
+  <icon>C:\Users\nicho\git\Roentgen\Reliquary\reliquary32.ico</icon>
+  <classPath>
+    <mainClass>com.duckandcover.Reliquary</mainClass>
+    <cp>jython-standalone-2.7.1.jar</cp>
+    <cp>xstream-1.4.10.jar</cp>
+    <cp>jgoodies-forms-1.8.0.jar</cp>
+    <cp>jgoodies-common-1.8.0.jar</cp>
+    <cp>jsyntaxpane-1.0.0.jar</cp>
+    <cp>log4j-api-2.8.2.jar</cp>
+    <cp>log4j-core-2.10.0.jar</cp>
+    <cp>commons-text-1.1.jar</cp>
+    <cp>commons-lang3-3.5.jar</cp>
+  </classPath>
+  <jre>
+    <path></path>
+    <bundledJre64Bit>false</bundledJre64Bit>
+    <bundledJreAsFallback>false</bundledJreAsFallback>
+    <minVersion>1.8.0</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <runtimeBits>64/32</runtimeBits>
+    <initialHeapPercent>10</initialHeapPercent>
+    <maxHeapPercent>50</maxHeapPercent>
+  </jre>
+  <versionInfo>
+    <fileVersion>0.0.0.1</fileVersion>
+    <txtFileVersion>0.0.0.1</txtFileVersion>
+    <fileDescription>Reliquary - Jython Scripting Container</fileDescription>
+    <copyright>2018</copyright>
+    <productVersion>0.0.0.1</productVersion>
+    <txtProductVersion>0.0.0.1</txtProductVersion>
+    <productName>Reliquary</productName>
+    <companyName>Duck-and-Cover</companyName>
+    <internalName>Reliquary</internalName>
+    <originalFilename>Reliquary.exe</originalFilename>
+    <trademarks></trademarks>
+    <language>ENGLISH_US</language>
+  </versionInfo>
+</launch4jConfig>

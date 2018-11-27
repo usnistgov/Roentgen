@@ -28,11 +28,11 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.MCPropagator;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionTag;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag.Method;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection.Variates;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -295,7 +295,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("U(Delta)"));
 					BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionTag) {
+						if (tag instanceof MatrixCorrectionLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
@@ -305,7 +305,7 @@ public class XPPMatrixCorrectionTest {
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 						}
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof KRatioTag) {
+						if (tag instanceof KRatioLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
@@ -420,7 +420,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionTag) {
+					if (outTag instanceof MatrixCorrectionLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -496,7 +496,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionTag) {
+					if (tag instanceof MatrixCorrectionLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -513,7 +513,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionTag) {
+						if (tag instanceof MatrixCorrectionLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -622,7 +622,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionTag) {
+					if (outTag instanceof MatrixCorrectionLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -704,7 +704,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionTag) {
+					if (tag instanceof MatrixCorrectionLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -721,7 +721,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionTag) {
+						if (tag instanceof MatrixCorrectionLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -860,7 +860,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionTag) {
+					if (outTag instanceof MatrixCorrectionLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -935,7 +935,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionTag) {
+					if (tag instanceof MatrixCorrectionLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -952,7 +952,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionTag) {
+						if (tag instanceof MatrixCorrectionLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1109,7 +1109,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionTag) {
+					if (outTag instanceof MatrixCorrectionLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1184,7 +1184,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionTag) {
+					if (tag instanceof MatrixCorrectionLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -1200,7 +1200,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionTag) {
+						if (tag instanceof MatrixCorrectionLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1364,7 +1364,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionTag) {
+					if (outTag instanceof MatrixCorrectionLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1439,7 +1439,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionTag) {
+					if (tag instanceof MatrixCorrectionLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -1455,7 +1455,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionTag) {
+						if (tag instanceof MatrixCorrectionLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1559,7 +1559,7 @@ public class XPPMatrixCorrectionTest {
 				outputs.add(XPPMatrixCorrection.aTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(meStd, cxr));
-				outputs.add(new KRatioTag(unkMcd, meStd, cxr, Method.Calculated));
+				outputs.add(new KRatioLabel(unkMcd, meStd, cxr, Method.Calculated));
 			}
 		}
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.allVariates());
@@ -1613,7 +1613,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionTag) {
+					if (outTag instanceof MatrixCorrectionLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1675,7 +1675,7 @@ public class XPPMatrixCorrectionTest {
 
 				Table tk = new Table();
 				for (final Object tag : xpp.getOutputLabels())
-					if (tag instanceof KRatioTag) {
+					if (tag instanceof KRatioLabel) {
 						tk.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 								MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
 								MathUtilities.td(results.getUncertainty(tag), bnf2),
@@ -1830,7 +1830,7 @@ public class XPPMatrixCorrectionTest {
 		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
 			final MatrixCorrectionDatum meStd = me.getValue();
 			final ElementXRaySet exrs = me.getKey();
-			outputs.add(new MatrixCorrectionTag(unkMcd, meStd, exrs));
+			outputs.add(new MatrixCorrectionLabel(unkMcd, meStd, exrs));
 		}
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.defaultVariates());
 		xpp.trimOutputs(outputs);
@@ -1883,7 +1883,7 @@ public class XPPMatrixCorrectionTest {
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionTag) {
+					if (outTag instanceof MatrixCorrectionLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1958,7 +1958,7 @@ public class XPPMatrixCorrectionTest {
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionTag) {
+					if (tag instanceof MatrixCorrectionLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -1974,7 +1974,7 @@ public class XPPMatrixCorrectionTest {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionTag) {
+						if (tag instanceof MatrixCorrectionLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -2066,7 +2066,7 @@ public class XPPMatrixCorrectionTest {
 		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
 			final MatrixCorrectionDatum meStd = me.getValue();
 			final ElementXRaySet exrs = me.getKey();
-			outputs.add(new MatrixCorrectionTag(unkMcd, meStd, exrs));
+			outputs.add(new MatrixCorrectionLabel(unkMcd, meStd, exrs));
 		}
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds, XPPMatrixCorrection.minimalVariates());
 		final UncertainValues results = UncertainValues.propagate(xpp, xpp.buildInput());

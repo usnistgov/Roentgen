@@ -11,13 +11,13 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @author nicho
  *
  */
-public class MatrixCorrectionTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> {
+public class MatrixCorrectionLabel extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> {
 
-	public MatrixCorrectionTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet exrs) {
+	public MatrixCorrectionLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet exrs) {
 		super("ZAF", unk, std, exrs);
 	}
 	
-	public MatrixCorrectionTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay cxr) {
+	public MatrixCorrectionLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay cxr) {
 		super("ZAF", unk, std, new ElementXRaySet(cxr));
 	}
 	

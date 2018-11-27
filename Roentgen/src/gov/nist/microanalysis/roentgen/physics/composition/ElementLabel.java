@@ -15,7 +15,7 @@ import gov.nist.microanalysis.roentgen.physics.Element;
  * @author Nicholas
  * @version 1.0
  */
-public class ElementTag
+public class ElementLabel
    implements
    IToHTML {
 
@@ -26,14 +26,14 @@ public class ElementTag
    /**
     * Constructs a ElementTag
     */
-   protected ElementTag(final Element elm, final String prefix) {
+   protected ElementLabel(final Element elm, final String prefix) {
       this(elm, prefix, null);
    }
 
    /**
     * Constructs a ElementTag
     */
-   protected ElementTag(final Element elm, final String prefix, final Composition src) {
+   protected ElementLabel(final Element elm, final String prefix, final Composition src) {
       mElement = elm;
       mPrefix = prefix;
       mSource = src;
@@ -51,7 +51,7 @@ public class ElementTag
       mSource = src;
    }
 
-   public int compareTo(final ElementTag et) {
+   public int compareTo(final ElementLabel et) {
       int r = mPrefix.compareTo(et.mPrefix);
       if((r == 0) && (mSource != et.mSource))
          r = mSource.toString().compareTo(et.mSource.toString());
@@ -71,7 +71,7 @@ public class ElementTag
          return false;
       if(getClass() != obj.getClass())
          return false;
-      final ElementTag other = (ElementTag) obj;
+      final ElementLabel other = (ElementLabel) obj;
       if(!mElement.equals(other.mElement))
          return false;
       if(!mPrefix.equals(other.mPrefix))

@@ -35,7 +35,7 @@ public class AdaptiveTophatFilter
       super(nChannels, ec, ls);
    }
 
-   public void setUseFastExtent(final boolean fast) {
+   public static void setUseFastExtent(final boolean fast) {
       FAST_EXTENT = fast;
    }
 

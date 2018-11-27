@@ -4,7 +4,7 @@ import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.MassAbsorptionCoefficient;
+import gov.nist.microanalysis.roentgen.physics.ElementalMAC;
 
 /**
  * <p>
@@ -27,7 +27,7 @@ public class EfficencyCalibration {
 
    public static EfficencyCalibration siliconDetector(final double thickness, final XRayWindow window) {
       final Element si = Element.Silicon;
-      final MassAbsorptionCoefficient mac = MassAbsorptionCoefficient.instance();
+      final ElementalMAC mac = new ElementalMAC();
 
       return null;
 

@@ -15,19 +15,20 @@ import org.junit.Test;
 import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
-import gov.nist.microanalysis.roentgen.physics.ComputeMACs;
+import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.MassAbsorptionCoefficient;
+import gov.nist.microanalysis.roentgen.physics.ElementalMAC;
 import gov.nist.microanalysis.roentgen.physics.XRay;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
  * <p>
- * Tests for the {@link MassAbsorptionCoefficient} class
+ * Tests for the {@link ElementalMAC} class
  * </p>
  * <p>
  * Copyright Nicholas W. M. Ritchie 2014-2016
@@ -49,7 +50,7 @@ public class TestMassAbsorptionCoefficient {
    }
 
    public void testMac(final Element mat, final Element elm, final XRayTransition tr, final double mac, final double uMac) {
-      final MassAbsorptionCoefficient alg = MassAbsorptionCoefficient.instance();
+      final ElementalMAC alg = new ElementalMAC();
       final XRay xr = CharacteristicXRay.find(CharacteristicXRay.forElement(elm), tr);
       assertEquals(xr != null, true);
       assertEquals(UncertainValue.mean(alg.compute(mat, xr)), mac, 0.1);
@@ -74,7 +75,7 @@ public class TestMassAbsorptionCoefficient {
 
    @Test
    public void testIsAvailable() {
-      final MassAbsorptionCoefficient alg = MassAbsorptionCoefficient.instance();
+      final ElementalMAC alg = new ElementalMAC();
       for(final Element elm : Element.range(Element.Hydrogen, Element.Uranium)) {
          assertEquals(alg.isAvailable(elm, new XRay(100.0)), true);
          assertEquals(alg.isAvailable(elm, new XRay(100.0e3)), true);
@@ -84,7 +85,7 @@ public class TestMassAbsorptionCoefficient {
 
    @Test
    public void testMultiMaterial()
-         throws ParseException, IOException {
+         throws ParseException, IOException, ArgumentException {
       final Composition mf1 = Composition.parse("Fe2O3").asMassFraction();
       final Composition mf2 = Composition.parse("FeO2").asMassFraction();
       final Composition mf3 = Composition.parse("FeO").asMassFraction();
@@ -100,7 +101,7 @@ public class TestMassAbsorptionCoefficient {
          mf6
       };
       final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Iron, XRayTransition.LA1);
-      final Pair<UncertainValues, ComputeMACs> pr = ComputeMACs.buildCompute(Arrays.asList(mfs), cxr);
+      final Pair<UncertainValues, MaterialMACFunction> pr = MaterialMACFunction.buildCompute(Arrays.asList(mfs), cxr);
       final UncertainValues uv = UncertainValues.propagate(pr.getSecond(), pr.getFirst());
       final RealVector minCov = new ArrayRealVector(pr.getFirst().getDimension());
       minCov.set(1.0);

@@ -38,7 +38,8 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @author nritchie
  * @version $Rev: 307 $
  */
-public class XRaySet implements Iterable<XRay> {
+public class XRaySet //
+		implements Iterable<XRay>, Cloneable, Comparable<XRaySet> {
 
 	/**
 	 * <p>
@@ -170,7 +171,9 @@ public class XRaySet implements Iterable<XRay> {
 			Interval res = null;
 			for (final XRay tr : mSet) {
 				final double energy = tr.getEnergy();
-				if (res.checkPoint(energy, 0.0) != Location.INSIDE)
+				if (res == null)
+					res = new Interval(energy, energy);
+				else if (res.checkPoint(energy, 0.0) != Location.INSIDE)
 					res = new Interval(Math.min(res.getInf(), energy), Math.max(res.getSup(), energy));
 			}
 			return res;
@@ -329,7 +332,8 @@ public class XRaySet implements Iterable<XRay> {
 	 * @author nritchie
 	 * @version $Rev: 307 $
 	 */
-	public static class CharacteristicXRaySet extends XRaySet {
+	public static class CharacteristicXRaySet //
+			extends XRaySet {
 		private static class IsCharacteristic implements IMemberTest {
 
 			@Override
@@ -356,6 +360,15 @@ public class XRaySet implements Iterable<XRay> {
 			res.add(cxr);
 			return res;
 		}
+		
+		
+		public static CharacteristicXRaySet build(Collection<CharacteristicXRay> cxrs) {
+			final CharacteristicXRaySet res = new CharacteristicXRaySet();
+			for(CharacteristicXRay cxr : cxrs)
+				res.add(cxr);
+			return res;
+		}
+
 
 		/**
 		 * Returns a set containing all Element objects for which a CharacteristicXRay
@@ -466,7 +479,14 @@ public class XRaySet implements Iterable<XRay> {
 				weight += ((CharacteristicXRay) xr).getWeight();
 			return weight;
 		}
-
+		
+		@Override
+		public int compareTo(XRaySet xrs) {
+			if(xrs instanceof CharacteristicXRaySet) {
+				return super.compareTo(xrs);
+			} else
+				return -1;
+		}
 	}
 
 	/**
@@ -481,7 +501,9 @@ public class XRaySet implements Iterable<XRay> {
 	 * @author nritchie
 	 * @version $Rev: 307 $
 	 */
-	public static class ElementXRaySet extends CharacteristicXRaySet implements IToHTML {
+	public static class ElementXRaySet //
+			extends CharacteristicXRaySet //
+			implements IToHTML {
 
 		private final Element mElement;
 
@@ -547,7 +569,7 @@ public class XRaySet implements Iterable<XRay> {
 			mElement = cxr.getElement();
 			add(cxr);
 		}
-		
+
 		public static ElementXRaySet singleton(Element elm, XRayTransition tr) {
 			return new ElementXRaySet(CharacteristicXRay.create(elm, tr));
 		}
@@ -777,6 +799,17 @@ public class XRaySet implements Iterable<XRay> {
 				return t.toHTML(Mode.VERBOSE);
 			}
 		}
+
+		@Override
+		public int compareTo(XRaySet o) {
+			if (o instanceof ElementXRaySet) {
+				ElementXRaySet exrs = (ElementXRaySet) o;
+				if (!mElement.equals(exrs.mElement))
+					return mElement.compareTo(exrs.mElement);
+				return super.compareTo(o);
+			} else
+				return -1;
+		}
 	}
 
 	/**
@@ -871,5 +904,4 @@ public class XRaySet implements Iterable<XRay> {
 	public Iterator<XRay> iterator() {
 		return mSet.iterator();
 	}
-
 }

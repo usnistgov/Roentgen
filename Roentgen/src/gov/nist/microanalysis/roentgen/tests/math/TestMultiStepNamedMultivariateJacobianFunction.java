@@ -15,7 +15,7 @@ import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
@@ -164,7 +164,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction
 
    public void test1()
          throws IOException {
-      final UncertainValues uv = UncertainValues.propagate(mStep1, mInput0);
+      final UncertainValues uv = UncertainValues.propagateOrdered(mStep1, mInput0);
       final Report rep = new Report("Step 1");
       rep.addHeader("Inputs");
       rep.add(mInput0);
@@ -206,7 +206,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction
          mStep1,
          mStep2
       };
-      final SerialNamedMultivariateJacobianFunction msnmjf = new SerialNamedMultivariateJacobianFunction("Test1", Arrays.asList(steps));
+      final SerialLabeledMultivariateJacobianFunction msnmjf = new SerialLabeledMultivariateJacobianFunction("Test1", Arrays.asList(steps));
       final UncertainValues uv = UncertainValues.propagate(msnmjf, mInput1);
       final Report rep = new Report("Step 1 and 2");
       rep.addHeader("Inputs");

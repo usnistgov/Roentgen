@@ -599,7 +599,7 @@ public class Composition extends UncertainValues {
 			return new Composition(Representation.MassFraction, mHTML, getElementList(), getValues(), getCovariances());
 		case Stoichiometry:
 		case AtomFraction: {
-			final UncertainValues mf = UncertainValues.propagate(new AtomFractionToMassFraction(this), this);
+			final UncertainValues mf = UncertainValues.propagateOrdered(new AtomFractionToMassFraction(this), this);
 			return new Composition(Representation.MassFraction, mHTML, elms, mf.getValues(), mf.getCovariances());
 		}
 		default:
@@ -619,7 +619,7 @@ public class Composition extends UncertainValues {
 		final List<Element> elms = getElementList();
 		switch (mRepresentation) {
 		case MassFraction: {
-			final UncertainValues mf = UncertainValues.propagate(LabeledMultivariateJacobianFunction
+			final UncertainValues mf = UncertainValues.propagateOrdered(LabeledMultivariateJacobianFunction
 					.normalize(getLabels(), buildTags(mHTML, elms, Representation.NormalizedMassFraction)), this);
 			return new Composition(Representation.NormalizedMassFraction, mHTML, elms, mf.getValues(),
 					mf.getCovariances());
@@ -628,7 +628,7 @@ public class Composition extends UncertainValues {
 			return this;
 		case AtomFraction:
 		case Stoichiometry: {
-			final UncertainValues mf = UncertainValues.propagate(new AtomFractionToMassFraction(this), this);
+			final UncertainValues mf = UncertainValues.propagateOrdered(new AtomFractionToMassFraction(this), this);
 			return new Composition(Representation.NormalizedMassFraction, mHTML, elms, mf.getValues(),
 					mf.getCovariances());
 		}
@@ -651,14 +651,14 @@ public class Composition extends UncertainValues {
 		switch (mRepresentation) {
 		case NormalizedMassFraction:
 		case MassFraction: {
-			final UncertainValues mf = UncertainValues.propagate(new MassFractionToAtomFraction(getLabels(),
+			final UncertainValues mf = UncertainValues.propagateOrdered(new MassFractionToAtomFraction(getLabels(),
 					buildTags(mHTML, elms, Representation.NormalizedMassFraction)), this);
 			return new Composition(Representation.AtomFraction, mHTML, elms, mf.getValues(), mf.getCovariances());
 		}
 		case AtomFraction:
 			return this;
 		case Stoichiometry: {
-			final UncertainValues mf = UncertainValues.propagate(LabeledMultivariateJacobianFunction
+			final UncertainValues mf = UncertainValues.propagateOrdered(LabeledMultivariateJacobianFunction
 					.normalize(getLabels(), buildTags(mHTML, elms, Representation.AtomFraction)), this);
 			return new Composition(Representation.AtomFraction, mHTML, elms, mf.getValues(), mf.getCovariances());
 		}
@@ -688,7 +688,7 @@ public class Composition extends UncertainValues {
 	}
 
 	public UncertainValues getAnalyticalTotal() {
-		return UncertainValues.propagate(LabeledMultivariateJacobianFunction.sum(getLabels(), new TotalTag(this)),
+		return UncertainValues.propagateOrdered(LabeledMultivariateJacobianFunction.sum(getLabels(), new TotalTag(this)),
 				this);
 	}
 
@@ -712,7 +712,7 @@ public class Composition extends UncertainValues {
 		final double[] z = new double[tags.size()];
 		for (int i = 0; i < z.length; ++i)
 			z[i] = ((ElementTag) tags.get(i)).getElement().getAtomicNumber();
-		return UncertainValues.propagate(
+		return UncertainValues.propagateOrdered(
 				LabeledMultivariateJacobianFunction.linear(tags, MatrixUtils.createRealVector(z), buildMeanZTag(this)),
 				this);
 	}

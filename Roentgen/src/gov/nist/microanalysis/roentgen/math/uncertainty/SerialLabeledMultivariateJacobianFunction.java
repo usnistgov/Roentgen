@@ -25,7 +25,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * <p>
  * Turns a calculation based on a sequential set of
  * {@link LabeledMultivariateJacobianFunction} steps into a single
- * {@link SerialNamedMultivariateJacobianFunction}.
+ * {@link SerialLabeledMultivariateJacobianFunction}.
  * </p>
  * <p>
  * Starting with mStep.get(0), the {@link LabeledMultivariateJacobianFunction}
@@ -44,7 +44,8 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  * @author Nicholas
  */
-public class SerialNamedMultivariateJacobianFunction extends LabeledMultivariateJacobianFunction //
+public class SerialLabeledMultivariateJacobianFunction //
+		extends LabeledMultivariateJacobianFunction //
 		implements ILabeledMultivariateFunction, IToHTML {
 
 	/**
@@ -118,7 +119,7 @@ public class SerialNamedMultivariateJacobianFunction extends LabeledMultivariate
 	 * @param steps
 	 * @throws ArgumentException
 	 */
-	public SerialNamedMultivariateJacobianFunction(final String name,
+	public SerialLabeledMultivariateJacobianFunction(final String name,
 			final List<LabeledMultivariateJacobianFunction> steps) throws ArgumentException {
 		super(computeInputs(steps), computeOutputs(steps));
 		mName = name;

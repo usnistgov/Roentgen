@@ -17,7 +17,7 @@ import org.apache.commons.math3.optim.ConvergenceChecker;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.SerialNamedMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.TrimmedNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
@@ -57,9 +57,9 @@ public class KRatioIteration {
 		final Map<Element, Number> men = new HashMap<>();
 		MatrixCorrectionDatum unk = null;
 		for (final Map.Entry<Object, Double> me : krm.entrySet()) {
-			assert me.getKey() instanceof KRatioTag;
-			if (me.getKey() instanceof KRatioTag) {
-				final KRatioTag tag = (KRatioTag) me.getKey();
+			assert me.getKey() instanceof KRatioLabel;
+			if (me.getKey() instanceof KRatioLabel) {
+				final KRatioLabel tag = (KRatioLabel) me.getKey();
 				assert tag.isMeasured();
 				final ElementXRaySet xrs = tag.getXRaySet();
 				final Composition std = tag.getStandard().getComposition();
@@ -99,8 +99,8 @@ public class KRatioIteration {
 		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		steps.add(xpp);
 		steps.add(hModel);
-		final SerialNamedMultivariateJacobianFunction model = //
-				new SerialNamedMultivariateJacobianFunction("K-ratio iteration", steps);
+		final SerialLabeledMultivariateJacobianFunction model = //
+				new SerialLabeledMultivariateJacobianFunction("K-ratio iteration", steps);
 		// Figure out which elements are in the unknown
 		final List<MassFractionTag> compInp = new ArrayList<>();
 		final List<Element> elms = new ArrayList<>();

@@ -27,8 +27,8 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @version $Rev: 312 $
  */
 
-public class KRatioTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet>
-		implements IToHTML, Comparable<KRatioTag> {
+public class KRatioLabel extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet>
+		implements IToHTML, Comparable<KRatioLabel> {
 
 	public enum Method {
 		Measured, Calculated
@@ -36,14 +36,14 @@ public class KRatioTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrection
 
 	private final Method mMethod;
 
-	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans,
+	public KRatioLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans,
 			Method meth) {
 		super("k", unk, std, trans);
 		assert trans.size() >= 1;
 		mMethod = meth;
 	}
 
-	public KRatioTag(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans,
+	public KRatioLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans,
 			Method meth) {
 		super("k", unk, std, new ElementXRaySet(trans));
 		mMethod = meth;
@@ -86,7 +86,7 @@ public class KRatioTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrection
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		KRatioTag other = (KRatioTag) obj;
+		KRatioLabel other = (KRatioLabel) obj;
 		return mMethod == other.mMethod;
 	}
 
@@ -111,7 +111,7 @@ public class KRatioTag extends BaseLabel<MatrixCorrectionDatum, MatrixCorrection
 	}
 
 	@Override
-	public int compareTo(final KRatioTag o) {
+	public int compareTo(final KRatioLabel o) {
 		int c = getObject3().getElement().compareTo(o.getObject3().getElement());
 		if (c == 0) {
 			final Principle tp = getObject3().getBrightest().getFamily(),

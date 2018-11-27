@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
 <jardesc>
     <jar path="Reliquary/build/reliquary.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/Reliquary/reliquary.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
@@ -14,7 +14,6 @@
         <folder path="/Reliquary/target"/>
         <file path="/Reliquary/.project"/>
         <file path="/Reliquary/pom.xml"/>
-        <folder path="/Reliquary/bin"/>
         <javaElement handleIdentifier="=Reliquary/src"/>
         <javaElement handleIdentifier="=Reliquary/resources"/>
         <file path="/Reliquary/.classpath"/>

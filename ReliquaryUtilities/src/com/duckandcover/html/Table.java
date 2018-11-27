@@ -330,6 +330,11 @@ public class Table
    public static Item tdc(final IToHTML html) {
       return new TD(html, 1, 1, true);
    }
+   
+   public static Item td(Object key) {
+		return td(HTML.toHTML(key, Mode.NORMAL));
+	}
+
 
    /**
     * This function implements rowspan and colspan.

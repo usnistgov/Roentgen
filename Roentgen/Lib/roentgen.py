@@ -1,18 +1,20 @@
 import sys
 
-import java.lang as jl
+import java.lang as _jl
+import java.util as _ju
 import gov.nist.microanalysis.roentgen.physics as _rp
 import gov.nist.microanalysis.roentgen.physics.composition as _rpc
+import gov.nist.microanalysis.roentgen.math.uncertainty as _runc
+
 import org.apache.commons.math3.linear as _ml3
 
 print "Loading roentgen.py"
 
 def element(elm):
-    from gov.nist.microanalysis.roentgen.physics import Element
     if isinstance(elm, Element):
         return elm
     else:
-        return Element.parse(elm)
+        return _rp.Element.parse(elm)
     
 def family(fam):
     """family(fam)
@@ -40,7 +42,12 @@ def massFraction(name, elms):
     vars = _ml3.ArrayRealVector(len(elms))
     for i, (elm, v) in enumerate(elms.iteritems()):
         ell.append(_rp.Element.parse(elm))
-        if isinstance(v, tuple) or isinstance(v, list):
+        if isinstance(v, float):
+            vals.setEntry(i, v)
+        elif isinstance(v, _runc.UncertainValue):
+            vals.setEntry(i,v.doubleValue())
+            vars.setEntry(i,v.variance())
+        elif isinstance(v, tuple) or isinstance(v, list):
             vals.setEntry(i, v[0])
             if len(v)>1:
                 vars.setEntry(i, v[1]*v[1])
@@ -55,18 +62,42 @@ def material(chemForm):
     return _rpc.Composition.parse(chemForm)
 
 def transition(trStr):
-    from gov.nist.microanalysis.roentgen.physics import CharacteristicXRay
-    return CharacteristicXRay.parse(trStr)
-    
+    if isinstance(trStr, _rp.CharacteristicXRay):
+        return trStr
+    else:
+        return _rp.CharacteristicXRay.parse(trStr)
+
+def transitionSet(trs):
+    """transitionSet(trs)
+    Converts trs into an ElementXRaySet associated with the element elm.
+    Example: transitionSet(( "Fe K-L3","Fe K-L2" )) 
+    Example: transitionSet(( "Fe K-L3","Ni K-L2" ))"""
+    elm=None
+    sameElm=True
+    if isinstance(trs, ( list, tuple ) ):
+        tmp = []
+        for tr in trs:
+            cxr=transition(tr)
+            tmp.append(cxr)
+            elm = (cxr.getElement() if not elm else elm)
+            if elm<>cxr.getElement():
+                sameElm = False
+        if sameElm:
+            return _rp.XRaySet.ElementXRaySet(tmp)
+        else:
+            return _rp.XRaySet.CharacteristicXRaySet.build(tmp)
+    else:
+        return _rp.XRaySet.ElementXRaySet(transition(trs))
 
 def transitions(elm, fam, minWeight=0.001):
     """transitions(elm,fam,[minWeight=0.001])
     Returns a ElementXRaySet containing the transitions associated with the specified element and family.
     Ex: transitions("Fe","K")"""
-    from gov.nist.microanalysis.roentgen.physics import XRaySet
-    elm = element(elm)
-    fam = family(fam)
-    return XRaySet.build(elm, fam, minWeight)
+    return _rp.XRaySet.build(element(elm), family(fam), minWeight)
 
+def uv(val, unc=0.0):
+    """uv(x,dx) or uv(x,[0.0])
+    Build an uncertain value x plus/minus dx"""
+    return _runc.UncertainValue(val, unc)
 
 print "Roentgen scripting initialized..."

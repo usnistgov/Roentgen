@@ -17,6 +17,7 @@ import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -306,7 +307,7 @@ public class CompositionTest2 {
    }
 
    @Test
-   public void testAtomicFractionMC() {
+   public void testAtomicFractionMC() throws ArgumentException {
       final Map<Element, Number> atFracs = new HashMap<>();
       atFracs.put(Element.Oxygen, new UncertainValue(0.593981, "dO", 0.05));
       atFracs.put(Element.Magnesium, new UncertainValue(0.106595, "dMg", 0.005));

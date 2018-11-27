@@ -42,13 +42,13 @@ public class FractionalFactorialDesign
       final int[][] res = new int[nMeas][mK];
       int runLen = 1;
       for(int factor = 0; factor < mK - mLDesign.length; ++factor) {
-         for(final int j = 0; j < nMeas;)
+         for(int j = 0; j < nMeas;++j)
             res[j][factor] = -1 + 2 * ((j / (runLen * 2)) % 2);
          runLen *= 2;
       }
       for(int kp = 0; kp < mLDesign.length; ++kp) {
          final int factor = kp + mK - mLDesign.length;
-         for(final int j = 0; j < nMeas;) {
+         for(int j = 0; j < nMeas;++j) {
             int val = 1;
             for(final int kk : mLDesign[kp])
                val *= res[j][kk];
@@ -75,7 +75,7 @@ public class FractionalFactorialDesign
                   row.add(Table.th("X<sub>" + factor + "</sub>"));
                t.addRow(row);
             }
-            for(final int j = 0; j < nMeas;) {
+            for(int j = 0; j < nMeas;++j) {
                final List<Item> row = new ArrayList<>();
                row.add(Table.th(Integer.toString(j)));
                for(int factor = 0; factor < mK; ++factor)

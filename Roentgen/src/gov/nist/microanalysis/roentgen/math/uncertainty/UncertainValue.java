@@ -90,7 +90,7 @@ final public class UncertainValue //
 	 */
 	@XStreamImplicit
 	@XStreamAlias("sigmas")
-	private final List<Sigma> mSigmas = new ArrayList<>();;
+	private final List<Sigma> mSigmas = new ArrayList<>();
 
 	public static final UncertainValue ONE = new UncertainValue(1.0);
 	public static final UncertainValue ZERO = new UncertainValue(0.0);
@@ -487,7 +487,33 @@ final public class UncertainValue //
 		if (getClass() != obj.getClass())
 			return false;
 		final UncertainValue other = (UncertainValue) obj;
-		return mSigmas.equals(other.mSigmas) && (mValue == other.mValue);
+		return mSigmas.equals(other.mSigmas) && (Double.compare(mValue, other.mValue) == 0);
+	}
+
+	/**
+	 * Returns a new {@link UncertainValue} which is the product of this and k.
+	 * 
+	 * @param k
+	 * @return {@link UncertainValue}
+	 */
+	public UncertainValue multiply(double k) {
+		final List<Sigma> sigmas = new ArrayList<>();
+		for (Sigma ss : mSigmas)
+			sigmas.add(new Sigma(ss.mLabel, k * ss.mValue));
+		return new UncertainValue(k * mValue.doubleValue(), sigmas);
+	}
+
+	/**
+	 * Returns a new {@link UncertainValue} which is the this divide by k.
+	 * 
+	 * @param k
+	 * @return {@link UncertainValue}
+	 */
+	public UncertainValue divide(double k) {
+		final List<Sigma> sigmas = new ArrayList<>();
+		for (Sigma ss : mSigmas)
+			sigmas.add(new Sigma(ss.mLabel, ss.mValue / k));
+		return new UncertainValue(mValue.doubleValue() / k, sigmas);
 	}
 
 	/**
@@ -517,14 +543,14 @@ final public class UncertainValue //
 	public String toHTML(final Mode mode, final BasicNumberFormat bnf) {
 		switch (mode) {
 		case TERSE: {
-			return bnf.formatHTML(mValue) + "&nbsp;&pm;&nbsp;" + bnf.formatHTML(uncertainty());
+			return bnf.formatHTML(mValue) + "&nbsp;&#177;&nbsp;" + bnf.formatHTML(uncertainty());
 		}
 		case NORMAL: {
 			final StringBuffer sb = new StringBuffer();
 			sb.append(bnf.formatHTML(mValue));
 			if (!mSigmas.isEmpty()) {
 				boolean first = true;
-				sb.append("&pm;(");
+				sb.append("&#177;(");
 				List<Sigma> sigmas = new ArrayList<>(mSigmas);
 				sigmas.sort(new Comparator<Sigma>() {
 					@Override
@@ -552,7 +578,7 @@ final public class UncertainValue //
 			sb.append(bnf.formatHTML(mValue));
 			sb.append("</td>");
 			if (!mSigmas.isEmpty()) {
-				sb.append("<td>&pm;</td>");
+				sb.append("<td>&#177;</td>");
 				sb.append("<td><table class=\"matrix\">");
 				List<Sigma> sigmas = new ArrayList<>(mSigmas);
 				sigmas.sort(new Comparator<Sigma>() {

@@ -41,7 +41,7 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
  * This class wraps a set of {@link LabeledMultivariateJacobianFunction} that
  * could be calculated in parallel. The output from one is not used as input to
  * another. This class is different from
- * {@link SerialNamedMultivariateJacobianFunction} which implements a sequential
+ * {@link SerialLabeledMultivariateJacobianFunction} which implements a sequential
  * set of steps in which the output from earlier steps can become input to
  * subsequent steps.
  * </p>

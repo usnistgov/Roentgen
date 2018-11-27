@@ -75,7 +75,7 @@ public class TestEDSFittingFilter {
       System.out.println(agf.extent(2000, 1.0e-4));
       System.out.println(agf.extent(10000, 1.0e-4));
 
-      agf.setUseFastExtent(true);
+      AdaptiveTophatFilter.setUseFastExtent(true);
       System.out.println("Fast = True");
       System.out.println("Mg = " + agf.extents(Element.Magnesium, 20.0e3, 1.0e-4).toString());
       System.out.println("Cu = " + agf.extents(Element.Copper, 20.0e3, 1.0e-4).toString());
@@ -83,7 +83,7 @@ public class TestEDSFittingFilter {
       System.out.println("Ag = " + agf.extents(Element.Silver, 20.0e3, 1.0e-4).toString());
       System.out.println("Au = " + agf.extents(Element.Gold, 20.0e3, 1.0e-4).toString());
       System.out.println("Pb = " + agf.extents(Element.Lead, 20.0e3, 1.0e-4).toString());
-      agf.setUseFastExtent(false);
+      AdaptiveTophatFilter.setUseFastExtent(false);
       System.out.println("Fast = False");
       System.out.println("Mg = " + agf.extents(Element.Magnesium, 20.0e3, 1.0e-4).toString());
       System.out.println("Cu = " + agf.extents(Element.Copper, 20.0e3, 1.0e-4).toString());

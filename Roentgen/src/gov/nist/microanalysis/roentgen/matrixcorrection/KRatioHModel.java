@@ -12,7 +12,7 @@ import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioTag.Method;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -37,10 +37,10 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 	) {
 		List<Object> res = new ArrayList<>();
 		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			res.add(new KRatioTag(unk, me.getValue(), me.getKey(), Method.Measured));
+			res.add(new KRatioLabel(unk, me.getValue(), me.getKey(), Method.Measured));
 			res.add(Composition.buildMassFractionTag(unk.getComposition(), me.getKey().getElement()));
 			res.add(Composition.buildMassFractionTag(me.getValue().getComposition(), me.getKey().getElement()));
-			res.add(new MatrixCorrectionTag(unk, me.getValue(), me.getKey()));
+			res.add(new MatrixCorrectionLabel(unk, me.getValue(), me.getKey()));
 		}
 		return res;
 	}
@@ -61,11 +61,11 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 		RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : mStandards.entrySet()) {
 			final Composition unk = mUnknown.getComposition();
-			final KRatioTag kMeasTag = new KRatioTag(mUnknown, me.getValue(), me.getKey(), Method.Measured);
+			final KRatioLabel kMeasTag = new KRatioLabel(mUnknown, me.getValue(), me.getKey(), Method.Measured);
 			final Element elm = me.getKey().getElement();
 			final Object mfUnkTag = Composition.buildMassFractionTag(unk, elm);
 			final Object mfStdTag = Composition.buildMassFractionTag(me.getValue().getComposition(), elm);
-			final Object zafTag = new MatrixCorrectionTag(mUnknown, me.getValue(), me.getKey());
+			final Object zafTag = new MatrixCorrectionLabel(mUnknown, me.getValue(), me.getKey());
 			final Object hTag = new ImplicitMeasurementModel.HLabel(Composition.buildMassFractionTag(unk, elm));
 			final int iKMeas = inputIndex(kMeasTag);
 			final int iMFUnk = inputIndex(mfUnkTag);

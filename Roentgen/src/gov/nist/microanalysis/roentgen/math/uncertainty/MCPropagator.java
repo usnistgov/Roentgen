@@ -201,11 +201,13 @@ public class MCPropagator {
 	 * 
 	 * 
 	 * @param nmvjf  {@link LabeledMultivariateJacobianFunction}
-	 * @param inputs The input values and associated covariance matrix
+	 * @param inputs The input values and associated covariance matrix in the same
+	 *               order as the nmvjf input labels.
 	 */
 	public MCPropagator(final LabeledMultivariateJacobianFunction nmvjf, final UncertainValues uv) {
 		this(nmvjf, uv, buildNone(uv.getDimension()),
 				new SafeMultivariateNormalDistribution(uv.getValues(), uv.getCovariances()));
+		assert nmvjf.getInputLabels().equals(uv.getLabels());
 	}
 
 	/**
