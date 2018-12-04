@@ -1867,8 +1867,7 @@ public class XPPMatrixCorrection //
 			final Map<ElementXRaySet, MatrixCorrectionDatum> mem //
 	) {
 		final Map<MatrixCorrectionDatum, CharacteristicXRaySet> res = new HashMap<>();
-		final Set<MatrixCorrectionDatum> stds = new HashSet<>(mem.values());
-		for (final MatrixCorrectionDatum std : stds) {
+		for (final MatrixCorrectionDatum std : mem.values()) {
 			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
 			for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : mem.entrySet())
 				if (me.getValue().equals(std))

@@ -23,7 +23,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.Represent
 /**
  * Compute the material mass absorption coefficient given the elemental mass
  * absorption coefficients.
- * 
+ *
  * @author nicholas
  *
  */
@@ -71,7 +71,7 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 	final static public Pair<UncertainValues, MaterialMACFunction> buildCompute(final List<Composition> materials,
 			final XRay xray) {
 		final List<Composition> mfs = new ArrayList<>();
-		for (Composition comp : materials)
+		for (final Composition comp : materials)
 			mfs.add(comp.asMassFraction());
 		final MaterialMACFunction cmac = new MaterialMACFunction(mfs, xray);
 		// Builds an input uncertainty matrix directly
@@ -90,74 +90,177 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 		return Pair.create(uvs, cmac);
 	}
 
+	interface DecorrelationFunction {
+
+		public double compute(AtomicShell edgeEnergy, XRay xray);
+
+	}
+
+	public static class DefaultDecorrelationFunction implements DecorrelationFunction {
+
+		private final double mAbove;
+		private final double mBelow;
+
+		public DefaultDecorrelationFunction(final double above, final double below) {
+			mAbove = above;
+			mBelow = Math.abs(below);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see gov.nist.microanalysis.roentgen.physics.MaterialMACFunction.
+		 * DecorrelationFunction#compute(double, double)
+		 */
+		@Override
+		public double compute(final AtomicShell shell, final XRay xray) {
+			final double MIN_VAL = 0.1;
+			double res = 1.0;
+			final double delta = xray.getEnergy() - shell.getEdgeEnergy();
+			if ((delta > -3.0 * mBelow) && (delta < mAbove)) {
+				if (delta > 0.0) // xrayE above edge
+					res = MIN_VAL + (1.0 - MIN_VAL) * delta / Math.abs(mAbove);
+				else // xrayE below edge
+					res = 1.0 - (1.0 - MIN_VAL) * Math.exp(-0.5 * Math.pow(delta / mBelow, 2));
+			}
+			assert res >= MIN_VAL : res;
+			assert res <= 1.0 : res;
+			return Math.max(0.0, Math.min(1.0, res * res));
+		}
+	}
+	
+	public static class TotalDecorrelationFunction implements DecorrelationFunction {
+
+		private final double mAbove;
+		private final double mBelow;
+
+		public TotalDecorrelationFunction(final double above, final double below) {
+			mAbove = above;
+			mBelow = Math.abs(below);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see gov.nist.microanalysis.roentgen.physics.MaterialMACFunction.
+		 * DecorrelationFunction#compute(double, double)
+		 */
+		@Override
+		public double compute(final AtomicShell shell, final XRay xray) {
+			double res = 1.0;
+			final double delta = xray.getEnergy() - shell.getEdgeEnergy();
+			if ((delta > -2.0 * mBelow) && (delta < mAbove))
+				res = 0.0;		
+			return Math.max(0.0, Math.min(1.0, res * res));
+		}
+	}
+
+	
+	
+
 	/**
-	 * 
+	 *
+	 * <p>
 	 * This function checks the MatrialMAC values to reduce the correlation between
 	 * materials that 1) share a common element; and 2) the edge of which is close
 	 * in energy to the X-ray energy.
-	 * 
-	 * 
+	 * </p>
+	 *
+	 * <p>
+	 * The algorithm considers all the edges associated with all the elements in the
+	 * material to determine how close the x-ray energy is to an edge and then
+	 * compute a
+	 *
+	 *
 	 * @param uvs   An UncertainValues containing more than one MaterialMAC tag
-	 * @param xray  X-ray line
 	 * @param above Range above edge to decorrelate (nominally 400 eV)
 	 * @param below Range below edge to decorrelate (nominally 5 eV)
 	 * @return
 	 */
 	static public UncertainValues decorrelate( //
-			UncertainValues uvs, //
-			final XRay xray, //
-			final double above, //
-			final double below) {
-		final List<? extends Object> labels = uvs.getLabels();
-		final double xrayE = xray.getEnergy();
-		for (Object label : labels) {
-			double mult = 1.0;
-			if (label instanceof MaterialMAC) {
-				final MaterialMAC mm1 = (MaterialMAC) label;
-				for (Element elm : mm1.getComposition().getElementSet()) {
-					for (final AtomicShell sh : AtomicShell.forElement(elm)) {
-						final double ee = sh.getEdgeEnergy();
-						final double delta = xrayE - ee;
-						if (delta > 0.0) {
-							// xrayE above edge
-							final double tmp = delta > Math.abs(above) ? 1.0 : 0.1 + 0.9 * delta / Math.abs(above);
-							if (tmp < mult)
-								mult = tmp;
-						} else {
-							// xrayE below edge
-							final double tmp = delta < -3.0 * Math.abs(below) ? 1.0
-									: 1.0 - 0.9 * Math.exp(-0.5 * Math.pow(delta / below, 2));
-							if (tmp < mult)
-								mult = tmp;
-						}
-					}
-					if (mult < 1.0) {
-						assert (mult >= 0.0) && (mult < 1.0);
-						boolean past = false;
-						for (Object label2 : labels) {
-							if (label2 == label) {
-								past = true;
-								continue;
-							}
-							if (past && (label2 instanceof MaterialMAC)) {
-								MaterialMAC mm2 = (MaterialMAC) label2;
-								if (mm2.getComposition().getElementSet().contains(elm)) {
-									final double cov = mult * mult * uvs.getCovariance(label, label2);
-									uvs.setCovariance(label2, label, cov);
-								}
-							}
-						}
-					}
-				}
-
-			}
-		}
-		return uvs;
+			final UncertainValues uvs, //
+			final double above, final double below) {
+		return decorrelate(uvs, new DefaultDecorrelationFunction(above, below));
+	}
+	
+	
+	/**
+	 *
+	 * <p>
+	 * This function checks the MatrialMAC values to reduce the correlation between
+	 * materials that 1) share a common element; and 2) the edge of which is close
+	 * in energy to the X-ray energy.
+	 * </p>
+	 *
+	 * <p>
+	 * The algorithm considers all the edges associated with all the elements in the
+	 * material to determine how close the x-ray energy is to an edge and then
+	 * compute a
+	 *
+	 *
+	 * @param uvs   An UncertainValues containing more than one MaterialMAC tag
+	 * @param above Range above edge to decorrelate (nominally 400 eV)
+	 * @param below Range below edge to decorrelate (nominally 5 eV)
+	 * @return
+	 */
+	static public UncertainValues decorrelate2( //
+			final UncertainValues uvs, //
+			final double above, final double below) {
+		return decorrelate(uvs, new TotalDecorrelationFunction(above, below));
 	}
 
-	final static public UncertainValues compute(List<Composition> materials, final XRay xray) //
+	/**
+	 *
+	 * <p>
+	 * This function checks the MatrialMAC values to reduce the correlation between
+	 * materials that 1) share a common element; and 2) the edge of which is close
+	 * in energy to the X-ray energy.
+	 * </p>
+	 *
+	 * <p>
+	 * The algorithm considers all the edges associated with all the elements in the
+	 * material to determine how close the x-ray energy is to an edge and then
+	 * computes a Decorrelation function to determine how much to reduce the
+	 * correlation.
+	 * </p>
+	 *
+	 *
+	 * @param uvs   An UncertainValues containing more than one MaterialMAC tag
+	 * @param xray  X-ray line
+	 * @param decor DecorrelationFunction
+	 * @return A new UncertainValues object
+	 */
+	public static UncertainValues decorrelate( //
+			final UncertainValues uvs,
+			final DecorrelationFunction decor) {
+		final UncertainValues res = uvs.copy();
+		final List<? extends Object> labels = res.getLabels();
+		final int labelCx = labels.size();
+		for (int i = 0; i < labelCx; ++i) {
+			final Object labeli = labels.get(i);
+			if (labeli instanceof MaterialMAC) {
+				double mult = 1.0;
+				final MaterialMAC mmi = (MaterialMAC) labeli;
+				for (final Element elm : mmi.getComposition().getElementSet()) {
+					for (final AtomicShell sh : AtomicShell.forElement(elm))
+						mult = Math.min(mult, decor.compute(sh, mmi.getXRay()));
+					assert (mult >= 0.0) && (mult <= 1.0) : mult;
+					if (mult < 1.0)
+						for (int j = i + 1; j < labelCx; ++j)
+							if (labels.get(j) instanceof MaterialMAC) {
+								final MaterialMAC mmj = (MaterialMAC) labels.get(j);
+								if (mmj.getComposition().contains(elm))
+									res.setCovariance(i, j, mult * res.getCovariance(i, j));
+							}
+				}
+			}
+		}
+		return res;
+	}
+
+	final static public UncertainValues compute(final List<Composition> materials, final XRay xray) //
 			throws ArgumentException {
-		Pair<UncertainValues, MaterialMACFunction> tmp = buildCompute(materials, xray);
+		final Pair<UncertainValues, MaterialMACFunction> tmp = buildCompute(materials, xray);
 		return UncertainValues.propagate(tmp.getValue(), tmp.getFirst());
 	}
 
@@ -215,7 +318,7 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 	}
 
 	@Override
-	public RealVector optimized(RealVector point) {
+	public RealVector optimized(final RealVector point) {
 		final RealVector res = new ArrayRealVector(getOutputDimension());
 		final List<? extends Object> macTags = getOutputLabels();
 		final List<? extends Object> inp = getInputLabels();

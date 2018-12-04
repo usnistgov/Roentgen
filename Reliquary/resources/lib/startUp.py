@@ -51,21 +51,21 @@ def terseFunc(obj, dest=None):
     return _dach.HTML.toHTML(obj, hTerse)
     
 def terse(obj, dest=None):
-    if isinstance(obj, ju.Collection):
+    if isinstance(obj, _ju.Collection):
         for item in obj:
             terse(item, dest)
     else:
         report(terseFunc(obj), dest)
 
 def normal(obj, dest=None):
-    if isinstance(obj, ju.Collection):
+    if isinstance(obj, _ju.Collection):
         for item in obj:
             normal(item, dest)
     else:
         report(normalFunc(obj), dest)
 
 def verbose(obj, dest=None):
-    if isinstance(obj, ju.Collection):
+    if isinstance(obj, _ju.Collection):
         for item in obj:
             verbose(item, dest)
     else:

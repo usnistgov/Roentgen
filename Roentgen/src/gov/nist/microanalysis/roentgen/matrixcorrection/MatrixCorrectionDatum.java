@@ -75,7 +75,28 @@ public class MatrixCorrectionDatum //
 			UncertainValue takeOffAngle, //
 			double roughness //
 	) {
-		mComposition = Optional.of(comp.asMassFraction());
+		mComposition = comp != null ? Optional.of(comp.asMassFraction()) : Optional.empty();
+		mElements = Optional.empty();
+		mIsStandard = isStandard;
+		mBeamEnergy = beamEnergy;
+		mTakeOffAngle = takeOffAngle;
+		mRoughness = Double.isNaN(roughness) ? Optional.empty() : Optional.of(Double.valueOf(roughness));
+	}
+
+	/**
+	 * @param comp
+	 * @param isStandard
+	 * @param beamEnergy   keV
+	 * @param takeOffAngle degrees
+	 * @param roughness    in mass thickness cm * g/cm^3 or g/cm^2
+	 */
+	public MatrixCorrectionDatum(//
+			boolean isStandard, //
+			UncertainValue beamEnergy, //
+			UncertainValue takeOffAngle, //
+			double roughness //
+	) {
+		mComposition = Optional.empty();
 		mElements = Optional.empty();
 		mIsStandard = isStandard;
 		mBeamEnergy = beamEnergy;
@@ -171,7 +192,8 @@ public class MatrixCorrectionDatum //
 			t.addRow(Table.td("Composition"), Table.td(getNameAsHTML(Mode.VERBOSE)));
 			t.addRow(Table.td("Is standard?"), Table.td(Boolean.toString(isStandard())));
 			t.addRow(Table.td("Beam Energy"), Table.td(bnf.formatHTML(mBeamEnergy)));
-			t.addRow(Table.td("Take-off angle"), Table.td(bnf.formatHTML(mTakeOffAngle.multiply(180.0/Math.PI))+"&deg;"));
+			t.addRow(Table.td("Take-off angle"),
+					Table.td(bnf.formatHTML(mTakeOffAngle.multiply(180.0 / Math.PI)) + "&deg;"));
 			if (mRoughness.isPresent())
 				t.addRow(Table.td("Roughness"), Table.td(bnf.formatHTML(mRoughness.get().doubleValue())));
 			return t.toHTML(mode);
@@ -180,6 +202,10 @@ public class MatrixCorrectionDatum //
 
 	public String toString() {
 		DecimalFormat df = new DecimalFormat("0.0");
-		return mComposition.toString() + " at " + df.format(mBeamEnergy.doubleValue()) + " keV";
+		if (mComposition.isPresent())
+			return mComposition.get().toString() + " at " + df.format(mBeamEnergy.doubleValue()) + " keV";
+		else
+			return "Unknown at " + df.format(mBeamEnergy.doubleValue()) + " keV";
+
 	}
 }

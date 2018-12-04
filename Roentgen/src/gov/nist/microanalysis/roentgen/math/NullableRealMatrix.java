@@ -71,7 +71,7 @@ public class NullableRealMatrix extends AbstractRealMatrix {
 
 	@Override
 	public RealMatrix copy() {
-		return new NullableRealMatrix(mRowDim, mColDim, mMatrix);
+		return new NullableRealMatrix(mRowDim, mColDim, mMatrix.copy());
 	}
 
 	@Override

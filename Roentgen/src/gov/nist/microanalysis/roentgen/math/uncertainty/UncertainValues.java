@@ -507,7 +507,7 @@ public class UncertainValues //
 	 * extracted.
 	 *
 	 * @param labels
-	 * @param inputs   A list containing an arbitrary number of
+	 * @param inputs A list containing an arbitrary number of
 	 *               {@link UncertainValues} objects
 	 * @return UncertainValues
 	 */
@@ -788,14 +788,13 @@ public class UncertainValues //
 			res.put(label, getEntry(label));
 		return res;
 	}
-	
-	public Map<Object, UncertainValue> getUncertainValueMap(){
+
+	public Map<Object, UncertainValue> getUncertainValueMap() {
 		final Map<Object, UncertainValue> res = new HashMap<>();
 		for (final Object label : getLabels())
 			res.put(label, getUncertainValue(label));
 		return res;
 	}
-	
 
 	/**
 	 * Returns the value and the associated uncertainty as an {@link UncertainValue}
@@ -863,18 +862,19 @@ public class UncertainValues //
 			return table.toHTML(Mode.NORMAL);
 		}
 		case NORMAL: {
-			Map<Object,UncertainValue> tmp = getUncertainValueMap();
-			Table t=new Table();
-			Map<String, Object> tagMap=new TreeMap<>();
-			for(Object tag : tmp.keySet())
+			Map<Object, UncertainValue> tmp = getUncertainValueMap();
+			Table t = new Table();
+			Map<String, Object> tagMap = new TreeMap<>();
+			for (Object tag : tmp.keySet())
 				tagMap.put(tag.toString(), tag);
-			t.addRow(Table.th("Label"),Table.th("Value"),Table.th("Uncertainty"),Table.th("Fractional"));
+			t.addRow(Table.th("Label"), Table.th("Value"), Table.th("Uncertainty"), Table.th("Fractional"));
 			DecimalFormat df = new DecimalFormat("0.0%");
-			for(Map.Entry<String, Object> me : tagMap.entrySet()) {
+			for (Map.Entry<String, Object> me : tagMap.entrySet()) {
 				final UncertainValue uv = tmp.get(me.getValue());
-				t.addRow(Table.td(HTML.toHTML(me.getKey(), Mode.TERSE)), Table.td(uv.doubleValue()), Table.td(uv.uncertainty()), Table.td(df.format(uv.fractionalUncertainty())));
+				t.addRow(Table.td(HTML.toHTML(me.getKey(), Mode.TERSE)), Table.td(uv.doubleValue()),
+						Table.td(uv.uncertainty()), Table.td(df.format(uv.fractionalUncertainty())));
 			}
-				return t.toHTML(Mode.NORMAL);
+			return t.toHTML(Mode.NORMAL);
 		}
 		case VERBOSE:
 		default: {
@@ -1081,6 +1081,19 @@ public class UncertainValues //
 	}
 
 	/**
+	 * Sets the covariance value associated with the specified values (both i,j and
+	 * j,i)
+	 *
+	 * @param p1
+	 * @param p2
+	 * @param cov
+	 */
+	public void setCovariance(final int p1, final int p2, final double cov) {
+		mCovariance.setEntry(p1, p2, cov);
+		mCovariance.setEntry(p2, p1, cov);
+	}
+
+	/**
 	 * Initializes the specified value and variance for the specified label.
 	 *
 	 * @param label
@@ -1166,4 +1179,7 @@ public class UncertainValues //
 		});
 	}
 
+	public UncertainValues copy() {
+		return new UncertainValues(getLabels(), mValues.copy(), mCovariance.copy());
+	}
 }

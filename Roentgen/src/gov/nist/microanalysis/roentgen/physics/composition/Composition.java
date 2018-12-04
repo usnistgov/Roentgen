@@ -47,7 +47,8 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @version 1.0
  */
 
-public class Composition extends UncertainValues {
+public class Composition //
+		extends UncertainValues {
 
 	public enum Representation {
 		MassFraction, NormalizedMassFraction, AtomFraction, Stoichiometry,
@@ -124,6 +125,10 @@ public class Composition extends UncertainValues {
 
 	public static List<Object> buildTags(final Composition comp, final Representation mode) {
 		return buildTags(comp.mHTML, comp.getElementList(), mode);
+	}
+	
+	public static List<Object> massFractionTags(final Composition comp){
+		return buildTags(comp,Representation.MassFraction);
 	}
 
 	private static List<Object> buildTags(final String html, final List<Element> elms, final Representation mode) {
@@ -688,8 +693,8 @@ public class Composition extends UncertainValues {
 	}
 
 	public UncertainValues getAnalyticalTotal() {
-		return UncertainValues.propagateOrdered(LabeledMultivariateJacobianFunction.sum(getLabels(), new TotalTag(this)),
-				this);
+		return UncertainValues
+				.propagateOrdered(LabeledMultivariateJacobianFunction.sum(getLabels(), new TotalTag(this)), this);
 	}
 
 	public static class MeanZTag extends BaseLabel<Composition, Object, Object> {

@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.physics;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -190,6 +191,110 @@ public class ElementalMAC {
 				}
 		}
 		return limit(err);
+	}
+
+	/**
+	 * @param el The Element
+	 * @param eV The energy in eV
+	 * @return double
+	 */
+	public String fractionalUncertaintySource(final Element el, final double eV) {
+		String result = "None";
+		DecimalFormat df = new DecimalFormat("0.0%");
+		double err = 0.0;
+		if (eV < 200.0) {
+			result = "eV < 200.0"; // 100-200%
+			err=1.5;
+		} else if (eV < 500) {
+			result = "eV < 500";
+			err = 0.5 + (((1.0 - 0.5) * (eV - 200)) / (500.0 - 200.0)); // 50-100%
+		} else if (eV < 1000) {
+			result = "eV < 1000";
+			err = 0.05 + (((0.20 - 0.05) * (eV - 500)) / (1000.0 - 500.0));
+		}
+		for (final AtomicShell sh : AtomicShell.forElement(el)) {
+			final double ee = sh.getEdgeEnergy();
+			final double delta = (eV - ee) / eV;
+			if ((Math.abs(delta) < 0.001) || (Math.abs(eV - ee) < 5.0)) { // Near edges (within 0.1%)
+				if(err<0.5) {
+					result = "Near " + sh.toString() + " edge (within 0.1%)";
+					err=0.5;
+				}
+			} else
+				switch (sh.getShell()) {
+				case K:
+					if (Math.abs(delta) < 0.1) {
+						if(err<0.15) {
+							result = "Near " + sh.toString() + " edge (delta < 0.1)";
+							err = 0.15; // 10-20%
+						}
+					} else if ((eV > ee) && (eV < (1.1 * ee))) {
+						if(err<0.03) {
+							result = "Near " + sh.toString() + " edge ((eV > ee) && (eV < (1.1 * ee))";
+							err=0.03;
+						}
+					}else {
+						if(err<0.01) {
+							result = "Above " + sh.toString();
+							err=0.01;
+						}
+					}
+					break;
+				case L1:
+				case M1:
+				case M2:
+				case M3:
+				case N1: // Special case for N shells added by
+					// NWMR
+				case N3:
+				case N4:
+				case N5:
+					if (Math.abs(delta) < 0.15) {
+						if(err<0.225) {
+							result = "Math.abs(delta) < 0.15 " + sh.toString();
+							err=0.225;
+						}
+					} else if ((delta > 0) && (delta < 0.4)) {
+						if(err<0.04) {
+							result = "(delta > 0) && (delta < 0.4) " + sh.toString();
+							err=0.04;
+						}
+					} else {
+						if(err<0.01) {
+							result = "Above " + sh.toString();
+							err=0.01;
+						}
+					}
+					break;
+				case L2:
+				case L3:
+				case M4:
+				case M5:
+				case N6: // Special case for N shells added
+					// by NWMR
+				case N7:
+					if (Math.abs(delta) < 0.15) {
+						if(err<0.3) {
+							result = "Math.abs(delta) < 0.15 " + sh.toString();
+							err=0.3;
+						}
+					} else if ((delta > 0.0) && (delta < 0.40)) {
+						if(err<0.04) {
+							result = "(delta > 0) && (delta < 0.4) " + sh.toString();
+							err=0.04;
+						}
+					} else {
+						if(err<0.01) {
+							result = "Above " + sh.toString();
+							err=0.01;
+						}
+					}
+					break;
+				default:
+					break;
+				}
+		}
+		return result + " -> "+df.format(limit(err));
 	}
 
 	/**

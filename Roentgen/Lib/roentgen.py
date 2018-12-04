@@ -5,13 +5,14 @@ import java.util as _ju
 import gov.nist.microanalysis.roentgen.physics as _rp
 import gov.nist.microanalysis.roentgen.physics.composition as _rpc
 import gov.nist.microanalysis.roentgen.math.uncertainty as _runc
+import gov.nist.microanalysis.roentgen.matrixcorrection as _rmc
 
 import org.apache.commons.math3.linear as _ml3
 
 print "Loading roentgen.py"
 
 def element(elm):
-    if isinstance(elm, Element):
+    if isinstance(elm, _rp.Element):
         return elm
     else:
         return _rp.Element.parse(elm)
@@ -19,17 +20,16 @@ def element(elm):
 def family(fam):
     """family(fam)
     Returns the Shell.Principle object associated with the specified family - 'K', 'L', 'M' or 'N' """
-    from gov.nist.microanalysis.roentgen.physics import Shell
-    if isinstance(fam, Shell.Principle):
+    if isinstance(fam, _rp.Shell.Principle):
         return fam
     elif fam=="K":
-        return Shell.Principle.K
+        return _rp.Shell.Principle.K
     elif fam=="L":
-        return Shell.Principle.L
+        return _rp.Shell.Principle.L
     elif fam=="M":
-        return Shell.Principle.M
+        return _rp.Shell.Principle.M
     elif fam=="N":
-        return Shell.Principle.N
+        return _rp.Shell.Principle.N
     else:
         return None
 
@@ -59,7 +59,52 @@ def massFraction(name, elms):
 def material(chemForm):
     """material(chemForm)
     Create a Composition object representing the chemical formula in chemForm"""    
-    return _rpc.Composition.parse(chemForm)
+    if isinstance(chemForm,_rpc.Composition):
+        return chemForm
+    else:
+        return _rpc.Composition.parse(chemForm)
+
+
+def mcd(mat, std, e0, toa, roughness=0.0):
+    """mcd(mat, std, e0, toa, roughness=0.0):
+    Create a MatrixCorrectionDatum to represent
+    mat: the material
+    std=[True,False]: is standard
+    e0: beam energy in keV
+    toa: take-off angle in degrees
+    roughness: in mass thickness g/cm^2"""
+    if isinstance(e0, tuple):
+        e0= ( uv(e0[0],e0[1]) if len(e0)>1 else uv(e0[0]))
+    if isinstance(e0, float):
+        e0 = uv(e0)
+    if isinstance(toa, tuple):
+        toa = (uv(toa[0], toa[1]) if len(toa)>1 else uv(toa[0]))
+    if isinstance(toa, float):
+        toa = uv(toa)
+    return _rmc.MatrixCorrectionDatum(material(mat), True, e0, toa.multiply(_jl.Math.PI/180.), roughness)
+
+def xpp(unk, stds):
+    """xpp(unk, stds)
+    Returns an initialized LabeledMultivariateJacobianFunction for evaluating the XPP matrix correction model relative
+    to the MatrixCorrectionDatum objects in unk and stds.
+    unk: a MatrixCorrectionDatum object
+    stds: A dictionary of ElementXRaySet to a tuple of ( MatrixCorrectionDatum, UncertainValue(k-ratio) ) object"""
+    steps = ju.ArrayList()
+    stdMcds, krs = _ju.HashMap(), _ju.HashMap()
+    for xrts, ( mcd, kr) in stds.iteritems():
+        if isinstance(kr, tuple):
+            kr=uv(*kr)
+        stdMcds.put(xrts, mcd)
+        krs.put( _rmc.KRatioLabel(unk, mcd, xrts, _rmc.KRatioLabel.Method.Measured) , kr)
+    xpp = _rmc.XPPMatrixCorrection(unkMcd, stdMcds)
+    steps.add(xpp)
+    steps.add(_rmc.KRatioCorrectionModel(unkMcd, stdMcds))
+    res = _runc.SerialLabeledMultivariateJacobianFunction("Full K-ratio correction", steps)
+    res.initializeConstants(unk.getComposition().getValueMap())
+    xppInputs = xpp.buildInput()
+    fullInputs = runc.UncertainValues.combine(xppInputs, _runc.UncertainValues(krs))
+    return (res, fullInputs)
+
 
 def transition(trStr):
     if isinstance(trStr, _rp.CharacteristicXRay):

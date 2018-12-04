@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * <p>
  * Provides a mechanism to combine objects implementing IToHTML and IToHTMLExt
@@ -75,11 +74,11 @@ public class Report implements IToHTMLExt {
 	}
 
 	public void add(final Map<Object, Object> map, final IToHTML.Mode keyMode, final IToHTML.Mode valueMode) {
-	   Table t = new Table();
-	   for(Map.Entry<Object, Object> me: map.entrySet())
-		   t.addRow(Table.td(HTML.toHTML(me.getKey(), keyMode)), Table.td(HTML.toHTML(me.getValue(), valueMode)));
-		   add(t);
-   }
+		Table t = new Table();
+		for (Map.Entry<Object, Object> me : map.entrySet())
+			t.addRow(Table.td(HTML.toHTML(me.getKey(), keyMode)), Table.td(HTML.toHTML(me.getValue(), valueMode)));
+		add(t);
+	}
 
 	/**
 	 * Adds a block of text. Special characters are escaped to make the text HTML
