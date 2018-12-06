@@ -73,9 +73,9 @@ public class Report implements IToHTMLExt {
 		add(Transforms.scrollPane(new Image(img, caption)));
 	}
 
-	public void add(final Map<Object, Object> map, final IToHTML.Mode keyMode, final IToHTML.Mode valueMode) {
+	public void add(final Map<? extends Object, ? extends Object> map, final IToHTML.Mode keyMode, final IToHTML.Mode valueMode) {
 		Table t = new Table();
-		for (Map.Entry<Object, Object> me : map.entrySet())
+		for (Map.Entry<? extends Object, ? extends Object> me : map.entrySet())
 			t.addRow(Table.td(HTML.toHTML(me.getKey(), keyMode)), Table.td(HTML.toHTML(me.getValue(), valueMode)));
 		add(t);
 	}

@@ -27,7 +27,8 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  * @version $Rev: 312 $
  */
 
-public class KRatioLabel extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet>
+public class KRatioLabel//
+		extends BaseLabel<UnknownMatrixCorrectionDatum, StandardMatrixCorrectionDatum, ElementXRaySet> //
 		implements IToHTML, Comparable<KRatioLabel> {
 
 	public enum Method {
@@ -36,41 +37,41 @@ public class KRatioLabel extends BaseLabel<MatrixCorrectionDatum, MatrixCorrecti
 
 	private final Method mMethod;
 
-	public KRatioLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet trans,
+	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final ElementXRaySet trans,
 			Method meth) {
 		super("k", unk, std, trans);
 		assert trans.size() >= 1;
 		mMethod = meth;
 	}
 
-	public KRatioLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay trans,
+	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final CharacteristicXRay trans,
 			Method meth) {
 		super("k", unk, std, new ElementXRaySet(trans));
 		mMethod = meth;
 	}
-	
-	public MatrixCorrectionDatum getUnknown() {
+
+	public UnknownMatrixCorrectionDatum getUnknown() {
 		return getObject1();
 	}
 
-	public MatrixCorrectionDatum getStandard() {
+	public StandardMatrixCorrectionDatum getStandard() {
 		return getObject2();
 	}
-	
+
 	public ElementXRaySet getXRaySet() {
 		return getObject3();
 	}
-	
+
 	public Method getMethod() {
 		return mMethod;
 	}
 
 	public boolean isMeasured() {
-		return mMethod==Method.Measured;
+		return mMethod == Method.Measured;
 	}
 
 	public boolean isCalcualted() {
-		return mMethod==Method.Calculated;
+		return mMethod == Method.Calculated;
 	}
 
 	@Override

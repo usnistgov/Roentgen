@@ -177,7 +177,7 @@ public class UncertainValues //
 		this(labels, vals, MatrixUtils.createRealDiagonalMatrix(variances.toArray()));
 	}
 
-	private static final RealVector extractValues(final Map<? extends Object, UncertainValue> vals) {
+	private static final RealVector extractValues(final Map<? extends Object, Number> vals) {
 		final double[] d = new double[vals.size()];
 		int i = 0;
 		for (final Object key : vals.keySet()) {
@@ -187,18 +187,20 @@ public class UncertainValues //
 		return new ArrayRealVector(d);
 	}
 
-	private static final RealVector extractVariances(final Map<? extends Object, UncertainValue> vals) {
+	private static final RealVector extractVariances(final Map<? extends Object, Number> vals) {
 		final double[] d = new double[vals.size()];
 		int i = 0;
 		for (final Object key : vals.keySet()) {
-			d[i] = vals.get(key).variance();
+			Number val = vals.get(key);
+			if(val instanceof UncertainValue)
+				d[i] = ((UncertainValue)val).variance();
 			++i;
 		}
 		return new ArrayRealVector(d);
 	}
 
 	public UncertainValues(//
-			final Map<? extends Object, UncertainValue> vals //
+			final Map<? extends Object, Number> vals //
 	) {
 		this(Arrays.asList(vals.keySet().toArray()), extractValues(vals), extractVariances(vals));
 	}
@@ -442,6 +444,23 @@ public class UncertainValues //
 		}
 		return res;
 	}
+	
+	/**
+	 * Extracts all labels assignable as cls
+	 * @param <T>
+	 * 
+	 * @param cls<T> The class type
+	 * @return List&lt;T&gt;
+	 */
+	public <T> List<T> extractTypeOfLabel(Class<T> cls){
+		List<T> res = new ArrayList<>();
+		for(Object tag : mLabels)
+			if(cls.isInstance(tag))
+				res.add(cls.cast(tag));
+		return res;
+	}
+	
+	
 
 	/**
 	 * Returns a {@link RealVector} containing the values associated with this

@@ -1,7 +1,9 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
@@ -23,54 +25,60 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  * @author nicholas
  *
  */
-abstract public class MatrixCorrectionModel //
+abstract public class MatrixCorrectionModel2 //
 		extends SerialLabeledMultivariateJacobianFunction {
 
-	protected final UnknownMatrixCorrectionDatum mUnknown;
-	protected final Map<ElementXRaySet, StandardMatrixCorrectionDatum> mStandards;
+	protected final Set<KRatioLabel> mKRatios;
 
-	public MatrixCorrectionModel(//
+	public MatrixCorrectionModel2(//
 			String name, //
-			UnknownMatrixCorrectionDatum unk, //
-			Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds, //
+			Set<KRatioLabel> kratios, //
 			List<LabeledMultivariateJacobianFunction> steps //
 	) throws ArgumentException {
 		super(name, steps);
-		mUnknown = unk;
-		mStandards = stds;
+		mKRatios = kratios;
 		// Validate the inputs...
 		final List<? extends Object> outputTags = getOutputLabels();
 		final List<? extends Object> inputTags = getInputLabels();
-		for (Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
-			MatrixCorrectionLabel mct = new MatrixCorrectionLabel(unk, me.getValue(), me.getKey());
+		for(KRatioLabel krl : mKRatios){
+			MatrixCorrectionLabel mct = new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet());
 			if (!outputTags.contains(mct))
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
-		}
-		for (Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
-			final StandardMatrixCorrectionDatum std = me.getValue();
-			MatrixCorrectionLabel mct = new MatrixCorrectionLabel(unk, std, me.getKey());
-			if (!outputTags.contains(mct))
-				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
-			for (Element elm : std.getComposition().getElementSet()) {
-				MassFractionTag mft = Composition.buildMassFractionTag(std.getComposition(), elm);
+			final Composition stdComp = krl.getStandard().getComposition();
+			for (Element elm : stdComp.getElementSet()) {
+				MassFractionTag mft = Composition.buildMassFractionTag(stdComp, elm);
+				if (!inputTags.contains(mft))
+					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
+			}
+			final Composition unkComp = krl.getUnknown().getComposition();
+			for (Element elm : unkComp.getElementSet()) {
+				MassFractionTag mft = Composition.buildMassFractionTag(unkComp, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
 		}
-		for (Element elm : unk.getElementSet()) {
-			MassFractionTag mft = Composition.buildMassFractionTag(unk.getEstimate(), elm);
-			if (!inputTags.contains(mft))
-				throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
-		}
-
 	}
 
-	public MatrixCorrectionDatum getUnknown() {
-		return mUnknown;
+	public Set<KRatioLabel> getKRatios() {
+		return Collections.unmodifiableSet(mKRatios);
 	}
 
-	public Map<ElementXRaySet, StandardMatrixCorrectionDatum> getStandards() {
-		return mStandards;
+	public Set<KRatioLabel> getKRatios(Element elm) {
+		Set<KRatioLabel> res = new HashSet<>();
+		for(KRatioLabel krl : mKRatios)
+			if(krl.getXRaySet().getElement().equals(elm))
+				res.add(krl);
+		return Collections.unmodifiableSet(res);
 	}
+	
+	public Set<Element> getElementSet() {
+		Set<Element> res = new HashSet<>();
+		for(KRatioLabel krl : mKRatios)
+			res.add(krl.getXRaySet().getElement());
+		return Collections.unmodifiableSet(res);
+	}
+	
 
+	
+	
 }

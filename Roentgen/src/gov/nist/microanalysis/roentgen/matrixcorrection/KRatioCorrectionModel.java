@@ -29,16 +29,16 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 	}
 
 	public KRatioCorrectionModel(//
-			final MatrixCorrectionDatum unk, //
-			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
+			final UnknownMatrixCorrectionDatum unk, //
+			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
 	) {
 		super(new KRatioHModel(unk, stds), buildOutputs(unk.getComposition()));
 	}
 	
 	
 	static public LabeledMultivariateJacobianFunction buildXPPModel( //
-			final MatrixCorrectionDatum unk, //
-			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
+			final UnknownMatrixCorrectionDatum unk, //
+			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
 	) throws ArgumentException {
 		List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		steps.add(new XPPMatrixCorrection(unk, stds));

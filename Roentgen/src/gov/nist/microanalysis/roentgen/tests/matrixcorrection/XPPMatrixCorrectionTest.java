@@ -31,6 +31,8 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection.Variates;
@@ -74,19 +76,19 @@ public class XPPMatrixCorrectionTest {
 		final RealVector varsS = new ArrayRealVector(new double[] { 2.0e-6, 0.9e-6 });
 		final Composition std = Composition.massFraction("SiO<sub>2</sub>", elmsS, valsS, varsS);
 
-		MatrixCorrectionDatum stdMcd = new MatrixCorrectionDatum( //
-				std, true, //
+		StandardMatrixCorrectionDatum stdMcd = new StandardMatrixCorrectionDatum( //
+				std, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1)), stdMcd);
 		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1)), stdMcd);
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds);
@@ -374,19 +376,19 @@ public class XPPMatrixCorrectionTest {
 				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
 				: Composition.massFraction("K412", buildK412());
 
-		MatrixCorrectionDatum stdMcd = new MatrixCorrectionDatum( //
-				std, true, //
+		StandardMatrixCorrectionDatum stdMcd = new StandardMatrixCorrectionDatum( //
+				std, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1)), stdMcd);
 		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1)), stdMcd);
 		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Iron, XRayTransition.LA1)), stdMcd);
@@ -557,14 +559,14 @@ public class XPPMatrixCorrectionTest {
 				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
 				: Composition.massFraction("K412", buildK412());
 
-		MatrixCorrectionDatum stdMcd = new MatrixCorrectionDatum( //
-				std, true, //
+		StandardMatrixCorrectionDatum stdMcd = new StandardMatrixCorrectionDatum( //
+				std, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
@@ -582,14 +584,14 @@ public class XPPMatrixCorrectionTest {
 		// stds.put(ElementXRaySet.singleton((Element.Oxygen,
 		// XRayTransition.KA1));
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1)), stdMcd);
 		stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2)), stdMcd);
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, stds);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
@@ -769,25 +771,25 @@ public class XPPMatrixCorrectionTest {
 				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
 				: Composition.massFraction("K412", buildK412());
 
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				std0, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		{
 			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1)), std0Mcd);
 			stds.put(new ElementXRaySet(CharacteristicXRay.create(Element.Iron, XRayTransition.KA1)), std0Mcd);
@@ -801,8 +803,8 @@ public class XPPMatrixCorrectionTest {
 		}
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
@@ -999,43 +1001,43 @@ public class XPPMatrixCorrectionTest {
 				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
 				: Composition.massFraction("K412", buildK412());
 
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				std0,  //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				std2, true, //
+		StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				std2, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				std3, true, //
+		StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum( //
+				std3,  //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
-				std4, true, //
+		StandardMatrixCorrectionDatum std4Mcd = new StandardMatrixCorrectionDatum( //
+				std4, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, true, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		stds.put(ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1), std0Mcd);
 		stds.put(ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1), std0Mcd);
 		stds.put(ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1), std1Mcd);
@@ -1050,8 +1052,8 @@ public class XPPMatrixCorrectionTest {
 		stds.put(ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1), std4Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
@@ -1249,43 +1251,43 @@ public class XPPMatrixCorrectionTest {
 				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
 				: Composition.massFraction("K412", buildK412());
 
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				std0, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1,  //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				std2, true, //
+		StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				std2, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				std3, true, //
+		StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum( //
+				std3, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
-				std4, true, //
+		StandardMatrixCorrectionDatum std4Mcd = new StandardMatrixCorrectionDatum( //
+				std4, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		stds.put(ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1), std0Mcd);
 		stds.put(ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1), std0Mcd);
 
@@ -1301,8 +1303,8 @@ public class XPPMatrixCorrectionTest {
 		stds.put(ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1), std4Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
@@ -1507,37 +1509,37 @@ public class XPPMatrixCorrectionTest {
 		final Composition std3 = Composition.parse("Zr");
 
 		// Mg
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				std0, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.2));
 		// Ba, Ti, Si, O
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.6));
 		// Zn
-		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				std2, true, //
+		StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				std2, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 7.14));
 		// Zr
-		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				std3, true, //
+		StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum( //
+				std3, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 5.62));
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.5));
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		// Mg
 		stds.put(ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1), std0Mcd);
 		// Ba, Ti, Si, O
@@ -1551,8 +1553,8 @@ public class XPPMatrixCorrectionTest {
 		stds.put(ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1), std3Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.zTag(unkMcd, meStd, cxr));
@@ -1655,8 +1657,8 @@ public class XPPMatrixCorrectionTest {
 				res.addRow(Table.th("Line"), Table.th("ZA"), Table.th("Z"), Table.th("A"));
 				BasicNumberFormat bnf2 = new BasicNumberFormat("0.000");
 
-				for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-					final MatrixCorrectionDatum meStd = me.getValue();
+				for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+					final StandardMatrixCorrectionDatum meStd = me.getValue();
 					for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 						Object zaTag = XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr);
 						Object zTag = XPPMatrixCorrection.zTag(unkMcd, meStd, cxr);
@@ -1685,8 +1687,8 @@ public class XPPMatrixCorrectionTest {
 				r.addHeader("K-ratio");
 				r.add(tk, Mode.NORMAL);
 
-				for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-					final MatrixCorrectionDatum meStd = me.getValue();
+				for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+					final StandardMatrixCorrectionDatum meStd = me.getValue();
 					for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 						Object zaTag = XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr);
 						Object fUnkTag = XPPMatrixCorrection.tagFxF(unkMcd, cxr);
@@ -1777,43 +1779,43 @@ public class XPPMatrixCorrectionTest {
 				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
 				: Composition.massFraction("K412", buildK412());
 
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				std0, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				std2, true, //
+		StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				std2, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				std3, true, //
+		StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum( //
+				std3, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+		);
+		
+		StandardMatrixCorrectionDatum std4Mcd = new StandardMatrixCorrectionDatum( //
+				std4, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
-				std4, true, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, true, //
-				new UncertainValue(15.0, 0.12), //
-				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
-		);
-
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		stds.put(ElementXRaySet.build(Element.Silicon, Principle.K, 0.001), std0Mcd);
 		stds.put(ElementXRaySet.build(Element.Oxygen, Principle.K, 0.001), std0Mcd);
 		stds.put(ElementXRaySet.build(Element.Aluminum, Principle.K, 0.001), std1Mcd);
@@ -1827,8 +1829,8 @@ public class XPPMatrixCorrectionTest {
 		stds.put(ElementXRaySet.build(Element.Iron, Principle.L, 0.001), std4Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			final ElementXRaySet exrs = me.getKey();
 			outputs.add(new MatrixCorrectionLabel(unkMcd, meStd, exrs));
 		}
@@ -2013,43 +2015,43 @@ public class XPPMatrixCorrectionTest {
 				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)))
 				: Composition.massFraction("K412", buildK412());
 
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				std0, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				std2, true, //
+		StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				std2, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				std3, true, //
+		StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum( //
+				std3, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
-				std4, true, //
+		StandardMatrixCorrectionDatum std4Mcd = new StandardMatrixCorrectionDatum( //
+				std4, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, true, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		stds.put(ElementXRaySet.build(Element.Silicon, Principle.K, 0.001), std0Mcd);
 		stds.put(ElementXRaySet.build(Element.Oxygen, Principle.K, 0.001), std0Mcd);
 		stds.put(ElementXRaySet.build(Element.Aluminum, Principle.K, 0.001), std1Mcd);
@@ -2063,8 +2065,8 @@ public class XPPMatrixCorrectionTest {
 		stds.put(ElementXRaySet.build(Element.Iron, Principle.L, 0.001), std4Mcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			final ElementXRaySet exrs = me.getKey();
 			outputs.add(new MatrixCorrectionLabel(unkMcd, meStd, exrs));
 		}

@@ -2,6 +2,7 @@ package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,12 +38,13 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  */
 public class KRatioIteration {
 
-	private final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;
-
-	public KRatioIteration(//
-			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
-	) {
-		mStandards = stds;
+	
+	public KRatioIteration(	) {
+	}
+	
+	
+	public double computeEstimate(double kr, Element elm, Composition std) {
+		return kr*std.getEntry(Composition.buildMassFractionTag(std, elm));
 	}
 
 	/**
@@ -50,9 +52,19 @@ public class KRatioIteration {
 	 * {@link MatrixCorrectionDatum} from the data.
 	 *
 	 * @param kratios
-	 * @return {@link MatrixCorrectionDatum}
+	 * @return {@link Composition}
 	 */
-	public MatrixCorrectionDatum computeEstimate(final UncertainValues kratios, double e0, double takeOffAngle) {
+	public Composition computeEstimate(final UncertainValues kratios, double e0, double takeOffAngle) {
+		
+		List<KRatioLabel> krls = kratios.extractTypeOfLabel(KRatioLabel.class);
+		for(KRatioLabel krl : krls) {
+			MatrixCorrectionDatum mcd = krl.getUnknown();
+			MatrixCorrectionDatum mcd = k
+			
+		}
+		
+		
+		
 		final Map<Object, Double> krm = kratios.getValueMap();
 		final Map<Element, Number> men = new HashMap<>();
 		MatrixCorrectionDatum unk = null;
@@ -71,10 +83,7 @@ public class KRatioIteration {
 					unk=tag.getUnknown();
 			}
 		}
-		final Composition comp = Composition.massFraction("Estimate", men);
-		
-		
-		return new MatrixCorrectionDatum(comp, false, new UncertainValue(e0), new UncertainValue(takeOffAngle));
+		return Composition.massFraction("Estimate", men);
 	}
 
 	/**
@@ -86,10 +95,13 @@ public class KRatioIteration {
 	 * @return Composition
 	 * @throws ArgumentException
 	 */
-	public Composition optimize(final UncertainValues kratios, final double e0, final double takeOffAngle) //
+	public Composition optimize(final UncertainValues kratios) //
 			throws ArgumentException {
-
-		final MatrixCorrectionDatum unkMcd = computeEstimate(kratios, e0, takeOffAngle);
+		final Composition unkMcd = computeEstimate(kratios);
+		Set<Element> elms = new HashSet<>();		
+		for(KRatioLabel krl : kratios.extractTypeOfLabel(KRatioLabel.class))
+			elms.add(krl.getXRaySet().getElement());
+		MatrixCorrectionDatum unk = new MatrixCorrectionDatum(elms, beamEnergy, takeOffAngle)
 
 		final Set<Variates> minVariates = XPPMatrixCorrection.minimalVariates();
 		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, mStandards, minVariates);

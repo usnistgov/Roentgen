@@ -14,6 +14,7 @@ import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.Globals;
 import gov.nist.microanalysis.roentgen.math.Utility;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
@@ -104,6 +105,26 @@ public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay
 			System.exit(1);
 		}
 		return 0.0;
+	}
+
+	/**
+	 * Returns the relative line weight (overvoltage = 2.5) for this line relative
+	 * to the other lines in the same family with estimated uncertainty.
+	 *
+	 * @return {@link UncertainValue}
+	 */
+	public UncertainValue getWeightUV() {
+		final double w = getWeight();
+		double dw;
+		if (w > 0.5)
+			dw = 0.05 * w;
+		else if (w > 0.1)
+			dw = 0.1 * w;
+		else if (w > 0.01)
+			dw = 0.2 * w;
+		else
+			dw = 0.5 * w;
+		return new UncertainValue(w, dw);
 	}
 
 	/**
@@ -252,21 +273,23 @@ public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay
 		default:
 		case TERSE:
 			return mElement.getAbbrev() + "&nbsp;" + mTransition.toHTML();
-		case NORMAL:	{		
+		case NORMAL: {
 			final Table t = new Table();
-			BasicNumberFormat bnf = new BasicNumberFormat("#,##0.0");
-			t.addRow(Table.td(toHTML(Mode.TERSE)+"&nbsp;("+ getTransition().toSeigbahn()+")"), Table.td(bnf.formatHTML(getEnergy()) + " eV"));
+			final BasicNumberFormat bnf = new BasicNumberFormat("#,##0.0");
+			t.addRow(Table.td(toHTML(Mode.TERSE) + "&nbsp;(" + getTransition().toSeigbahn() + ")"),
+					Table.td(bnf.formatHTML(getEnergy()) + " eV"));
 			return t.toHTML(Mode.VERBOSE);
 		}
 		case VERBOSE: {
 			final Table t = new Table();
-			BasicNumberFormat bnf = new BasicNumberFormat("#,##0.0");
-			t.addRow(Table.th("Name"), Table.th("Seigbahn"), Table.th("Inner"), Table.th("Outer"), Table.th("Weight"), Table.th("Energy"));
+			final BasicNumberFormat bnf = new BasicNumberFormat("#,##0.0");
+			t.addRow(Table.th("Name"), Table.th("Seigbahn"), Table.th("Inner"), Table.th("Outer"), Table.th("Weight"),
+					Table.th("Energy"));
 			t.addRow(Table.td(toHTML(Mode.TERSE)), //
 					Table.td(mElement.getAbbrev() + " " + getTransition().toSeigbahn()), //
 					Table.td(getInner().toHTML(Mode.TERSE)), //
 					Table.td(getOuter().toHTML(Mode.TERSE)), //
-					Table.td(bnf.formatHTML(getWeight()*100.0)+" %"), //
+					Table.td(bnf.formatHTML(getWeight() * 100.0) + " %"), //
 					Table.td(bnf.formatHTML(getEnergy()) + " eV"));
 			return t.toHTML(Mode.VERBOSE);
 		}
@@ -298,9 +321,9 @@ public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay
 	}
 
 	@Override
-	public int compareTo(XRay xr) {
+	public int compareTo(final XRay xr) {
 		if (xr instanceof CharacteristicXRay) {
-			CharacteristicXRay cxr = (CharacteristicXRay) xr;
+			final CharacteristicXRay cxr = (CharacteristicXRay) xr;
 			int res = mElement.compareTo(cxr.mElement);
 			if (res == 0)
 				res = mTransition.compareTo(cxr.mTransition);

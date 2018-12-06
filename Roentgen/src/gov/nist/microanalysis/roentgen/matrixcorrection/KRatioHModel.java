@@ -19,8 +19,8 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 class KRatioHModel extends LabeledMultivariateJacobianFunction {
 
-	private final MatrixCorrectionDatum mUnknown;
-	private final Map<ElementXRaySet, MatrixCorrectionDatum> mStandards;
+	private final UnknownMatrixCorrectionDatum mUnknown;
+	private final Map<ElementXRaySet, StandardMatrixCorrectionDatum> mStandards;
 	
 	static List<? extends Object> buildOutputs(//
 			Composition unk //
@@ -32,11 +32,11 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 	}
 
 	static List<? extends Object> buildInputs(//
-			final MatrixCorrectionDatum unk, //
-			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
+			final UnknownMatrixCorrectionDatum unk, //
+			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
 	) {
 		List<Object> res = new ArrayList<>();
-		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
+		for (Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
 			res.add(new KRatioLabel(unk, me.getValue(), me.getKey(), Method.Measured));
 			res.add(Composition.buildMassFractionTag(unk.getComposition(), me.getKey().getElement()));
 			res.add(Composition.buildMassFractionTag(me.getValue().getComposition(), me.getKey().getElement()));
@@ -47,8 +47,8 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 	
 
 	public KRatioHModel(//
-			final MatrixCorrectionDatum unk, //
-			final Map<ElementXRaySet, MatrixCorrectionDatum> stds //
+			final UnknownMatrixCorrectionDatum unk, //
+			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
 	) {
 		super(buildInputs(unk, stds), KRatioCorrectionModel.buildHLabels(buildOutputs(unk.getComposition())));
 		mUnknown = unk;
@@ -59,7 +59,7 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 	public Pair<RealVector, RealMatrix> value(RealVector point) {
 		RealVector rv = new ArrayRealVector(getOutputDimension());
 		RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
-		for (Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : mStandards.entrySet()) {
+		for (Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : mStandards.entrySet()) {
 			final Composition unk = mUnknown.getComposition();
 			final KRatioLabel kMeasTag = new KRatioLabel(mUnknown, me.getValue(), me.getKey(), Method.Measured);
 			final Element elm = me.getKey().getElement();

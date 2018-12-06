@@ -8,25 +8,25 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 
 /**
- * @author nicho
+ * @author nicholas
  *
  */
-public class MatrixCorrectionLabel extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, ElementXRaySet> {
+public class MatrixCorrectionLabel extends BaseLabel<UnknownMatrixCorrectionDatum, StandardMatrixCorrectionDatum, ElementXRaySet> {
 
-	public MatrixCorrectionLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final ElementXRaySet exrs) {
+	public MatrixCorrectionLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final ElementXRaySet exrs) {
 		super("ZAF", unk, std, exrs);
 	}
 	
-	public MatrixCorrectionLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay cxr) {
+	public MatrixCorrectionLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final CharacteristicXRay cxr) {
 		super("ZAF", unk, std, new ElementXRaySet(cxr));
 	}
 	
 	
-	public MatrixCorrectionDatum getUnknown() {
+	public UnknownMatrixCorrectionDatum getUnknown() {
 		return getObject1();
 	}
 	
-	public MatrixCorrectionDatum getStandard() {
+	public StandardMatrixCorrectionDatum getStandard() {
 		return getObject2();
 	}
 

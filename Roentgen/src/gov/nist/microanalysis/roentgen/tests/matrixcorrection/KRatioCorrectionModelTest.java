@@ -29,6 +29,8 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
@@ -55,27 +57,27 @@ public class KRatioCorrectionModelTest {
 
 		final Composition unk = Composition.massFraction("K412", XPPMatrixCorrectionTest.buildK412());
 
-		MatrixCorrectionDatum stdK411Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum stdK411Mcd = new StandardMatrixCorrectionDatum( //
+				std0, 
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), //
 						Math.toRadians(0.9)) //
 		);
 
-		MatrixCorrectionDatum stdAlMcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum stdAlMcd = new StandardMatrixCorrectionDatum( //
+				std1, 
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), //
 						Math.toRadians(0.7)) //
 		);
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, 
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
 		);
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		final ElementXRaySet feTr = ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1);
 		final ElementXRaySet mgTr = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		final ElementXRaySet caTr = ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1);
@@ -91,8 +93,8 @@ public class KRatioCorrectionModelTest {
 		stds.put(alTr, stdAlMcd);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final Map.Entry<ElementXRaySet, MatrixCorrectionDatum> me : stds.entrySet()) {
-			final MatrixCorrectionDatum meStd = me.getValue();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+			final StandardMatrixCorrectionDatum meStd = me.getValue();
 			for (final CharacteristicXRay cxr : me.getKey().getSetOfCharacteristicXRay()) {
 				outputs.add(XPPMatrixCorrection.zafTag(unkMcd, meStd, cxr));
 				outputs.add(XPPMatrixCorrection.tagFxF(unkMcd, cxr));
@@ -116,7 +118,7 @@ public class KRatioCorrectionModelTest {
 		try {
 			r.add(krcm, Mode.VERBOSE);
 
-			Map<Object, UncertainValue> mouv = new HashMap<>();
+			Map<Object, Number> mouv = new HashMap<>();
 
 			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, siTr, Method.Measured), new UncertainValue(0.794983));
 			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, feTr, Method.Measured), new UncertainValue(0.687101));
@@ -183,37 +185,37 @@ public class KRatioCorrectionModelTest {
 		final Composition std3 = Composition.parse("Zr");
 
 		// Mg
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				std0, true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				std0, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.2));
 		// Ba, Ti, Si, O
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				std1, true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.6));
 		// Zn
-		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				std2, true, //
+		StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				std2, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 7.14));
 		// Zr
-		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				std3, true, //
+		StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum( //
+				std3, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 5.62));
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.5));
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		// Mg
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		stds.put(mgTrs, std0Mcd);
@@ -302,51 +304,51 @@ public class KRatioCorrectionModelTest {
 		final Composition unk = Composition.massFraction("K240", buildK240());
 
 		// Mg
-		MatrixCorrectionDatum std0Mcd = new MatrixCorrectionDatum( //
-				Composition.parse("MgO"), true, //
+		StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
+				Composition.parse("MgO"), //
 				new UncertainValue(14.8, 0.2), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.6));
 		// Ba
-		MatrixCorrectionDatum std1Mcd = new MatrixCorrectionDatum( //
-				Composition.parse("BaSi2O5"), true, //
+		StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				Composition.parse("BaSi2O5"), //
 				new UncertainValue(14.9, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.74));
 		// Zn
-		MatrixCorrectionDatum std2Mcd = new MatrixCorrectionDatum( //
-				Composition.parse("Zn"), true, //
+		StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				Composition.parse("Zn"), //
 				new UncertainValue(15.0, 0.05), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
 				MatrixCorrectionDatum.roughness(10.0, 7.14));
 
 		// Zr
-		MatrixCorrectionDatum std3Mcd = new MatrixCorrectionDatum( //
-				Composition.parse("Zr"), true, //
+		StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum( //
+				Composition.parse("Zr"), //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 6.52));
 		// Si, O
-		MatrixCorrectionDatum std4Mcd = new MatrixCorrectionDatum( //
-				Composition.parse("SiO2"), true, //
+		StandardMatrixCorrectionDatum std4Mcd = new StandardMatrixCorrectionDatum( //
+				Composition.parse("SiO2"), //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 2.65));
 
 		// Ti
-		MatrixCorrectionDatum std5Mcd = new MatrixCorrectionDatum( //
-				Composition.parse("Ti"), true, //
+		StandardMatrixCorrectionDatum std5Mcd = new StandardMatrixCorrectionDatum( //
+				Composition.parse("Ti"), //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 4.5));
 
-		MatrixCorrectionDatum unkMcd = new MatrixCorrectionDatum( //
-				unk, false, //
+		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.5));
 
-		final Map<ElementXRaySet, MatrixCorrectionDatum> stds = new HashMap<>();
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds = new HashMap<>();
 		// Mg
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		stds.put(mgTrs, std0Mcd);

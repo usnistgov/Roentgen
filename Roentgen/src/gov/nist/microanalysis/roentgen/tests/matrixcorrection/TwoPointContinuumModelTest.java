@@ -22,6 +22,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.ModelLabels;
+import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.TwoPointContinuumModel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -38,7 +39,7 @@ public class TwoPointContinuumModelTest {
 	public void test1() throws ArgumentException, ParseException, IOException {
 		Composition comp = Composition.parse("SiO2");
 
-		MatrixCorrectionDatum mcd = new MatrixCorrectionDatum(comp, true, new UncertainValue(20.0, 0.1),
+		MatrixCorrectionDatum mcd = new StandardMatrixCorrectionDatum(comp, new UncertainValue(20.0, 0.1),
 				new UncertainValue(40.0, 0.2));
 		CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 		RealVector vals = new ArrayRealVector(12);
