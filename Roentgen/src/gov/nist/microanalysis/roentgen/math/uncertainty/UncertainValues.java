@@ -156,7 +156,7 @@ public class UncertainValues //
 	public UncertainValues(//
 			final List<? extends Object> labels //
 	) {
-		this(labels, new ArrayRealVector(labels.size()), new Array2DRowRealMatrix(labels.size(), labels.size()));
+		this(labels, new ArrayRealVector(labels.size()), NullableRealMatrix.build(labels.size(), labels.size()));
 		mValues.set(Double.NaN);
 	}
 
@@ -192,8 +192,8 @@ public class UncertainValues //
 		int i = 0;
 		for (final Object key : vals.keySet()) {
 			Number val = vals.get(key);
-			if(val instanceof UncertainValue)
-				d[i] = ((UncertainValue)val).variance();
+			if (val instanceof UncertainValue)
+				d[i] = ((UncertainValue) val).variance();
 			++i;
 		}
 		return new ArrayRealVector(d);
@@ -444,23 +444,22 @@ public class UncertainValues //
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Extracts all labels assignable as cls
+	 * 
 	 * @param <T>
 	 * 
 	 * @param cls<T> The class type
 	 * @return List&lt;T&gt;
 	 */
-	public <T> List<T> extractTypeOfLabel(Class<T> cls){
+	public <T> List<T> extractTypeOfLabel(Class<T> cls) {
 		List<T> res = new ArrayList<>();
-		for(Object tag : mLabels)
-			if(cls.isInstance(tag))
+		for (Object tag : mLabels)
+			if (cls.isInstance(tag))
 				res.add(cls.cast(tag));
 		return res;
 	}
-	
-	
 
 	/**
 	 * Returns a {@link RealVector} containing the values associated with this
@@ -941,7 +940,7 @@ public class UncertainValues //
 	}
 
 	public BufferedImage asCovarianceBitmap(final int dim, final IValueToColor sigma, final IValueToColor corr) {
-		final RealMatrix sc = new NullableRealMatrix(getDimension(), getDimension());
+		final RealMatrix sc = NullableRealMatrix.build(getDimension(), getDimension());
 		for (int r = 0; r < getDimension(); ++r) {
 			sc.setEntry(r, r, Math.sqrt(mCovariance.getEntry(r, r)) / mValues.getEntry(r));
 			for (int c = r + 1; c < getDimension(); ++c) {

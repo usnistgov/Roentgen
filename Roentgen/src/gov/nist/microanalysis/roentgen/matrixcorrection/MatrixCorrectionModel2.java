@@ -22,7 +22,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  * A matrix correction model may also calculate values for {@link KRatioLabel}
  * and other related tags.
  * 
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 abstract public class MatrixCorrectionModel2 //

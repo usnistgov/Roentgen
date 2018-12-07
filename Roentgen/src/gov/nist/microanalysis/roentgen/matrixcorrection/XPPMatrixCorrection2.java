@@ -21,6 +21,7 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
@@ -84,8 +85,6 @@ public class XPPMatrixCorrection2 //
 		extends MatrixCorrectionModel2 //
 		implements ILabeledMultivariateFunction, IToHTML {
 
-	// The standard values
-	private final Set<KRatioLabel> mKRatios;
 	// The types of variables to compute Jacobian elements.
 	private final Set<Variates> mVariates = new HashSet<>();
 
@@ -1349,7 +1348,7 @@ public class XPPMatrixCorrection2 //
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
 			final Object toaT = takeOffAngleTag(mDatum);
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
-			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+			final RealMatrix rm = NullableRealMatrix.build(getOutputDimension(), getInputDimension());
 
 			final int ochi = outputIndex(tagChi(mDatum, mXRay));
 			checkIndices(ochi);
@@ -1672,7 +1671,7 @@ public class XPPMatrixCorrection2 //
 	 * element (MatrixCorrectionTag)
 	 * </ol>
 	 *
-	 * @author nicholas
+	 * @author Nicholas W. M. Ritchie
 	 *
 	 */
 	private static class StepCombine //
@@ -2003,7 +2002,6 @@ public class XPPMatrixCorrection2 //
 			final Set<Variates> variates //
 	) throws ArgumentException {
 		super("XPP Matrix Correction", kratios, buildSteps(kratios, variates));
-		mKRatios = kratios;
 		mVariates.addAll(variates);
 		initializeConstants();
 	}
@@ -2099,103 +2097,92 @@ public class XPPMatrixCorrection2 //
 	 */
 	public UncertainValues buildInput() //
 			throws ArgumentException {
-		final Set<MatrixCorrectionDatum> all = new HashSet<>();
-		for (KRatioLabel krl : mKRatios) {
-			all.add(krl.getStandard());
-			all.add(krl.getUnknown());
-		}
-		final List<UncertainValues> variables = new ArrayList<>();
-		final Set<Element> elms = new TreeSet<>();
-		for (final MatrixCorrectionDatum mcd : all)
-			elms.addAll(mcd.getComposition().getElementSet());
+		return UncertainValues.extract(getInputLabels(), buildParameters(true));
+	}
 
-		final UncertainValues mip = buildMeanIonizationPotentials(elms);
-		if (mVariates.contains(Variates.MeanIonizationPotential))
-			variables.add(mip);
-		if (mVariates.contains(Variates.MassAbsorptionCofficient))
-			variables.add(getMaterialMACs());
-		if (mVariates.contains(Variates.BeamEnergy)) {
-			final List<Object> tags = new ArrayList<>();
-			for (final MatrixCorrectionDatum mcd : all)
-				tags.add(beamEnergyTag(mcd));
-			final RealVector vals = new ArrayRealVector(tags.size());
-			final RealVector vars = new ArrayRealVector(tags.size());
-			int idx = 1;
-			for (final MatrixCorrectionDatum mcd : all) {
-				vals.setEntry(idx, mcd.getBeamEnergy().doubleValue());
-				vars.setEntry(idx, mcd.getBeamEnergy().variance());
-				++idx;
-			}
-			final UncertainValues uvs = new UncertainValues(tags, vals, vars);
-			variables.add(uvs);
+	/**
+	 * Initialize the parameters that are being held constant.
+	 *
+	 * @param unk  MatrixCorrectionDatum associated with the unknown
+	 * @param stds Set&lt;MatrixCorrectionDatum&gt; A set of
+	 *             {@link MatrixCorrectionDatum} associated with the standards
+	 * @throws ArgumentException
+	 */
+	private void initializeConstants() //
+			throws ArgumentException {
+		final UncertainValues constants = buildParameters(false);
+		if (constants.getDimension() > 0) {
+			final Map<Object, Double> mod = new HashMap<>();
+			for (final Object tag : constants.getLabels())
+				mod.put(tag, constants.getEntry(tag));
+			initializeConstants(mod);
 		}
-		if (mVariates.contains(Variates.TakeOffAngle)) {
-			final List<Object> tags = new ArrayList<>();
-			for (final MatrixCorrectionDatum mcd : all)
-				tags.add(takeOffAngleTag(mcd));
-			final RealVector vals = new ArrayRealVector(tags.size());
-			final RealVector vars = new ArrayRealVector(tags.size());
-			int idx = 1;
-			for (final MatrixCorrectionDatum mcd : all) {
-				vals.setEntry(idx, mcd.getTakeOffAngle().doubleValue());
-				vars.setEntry(idx, mcd.getTakeOffAngle().variance());
-				++idx;
+	}
+
+	/**
+	 * Many of the input parameters are computed or tabulated. Some are input as
+	 * experimental conditions like beam energy.
+	 *
+	 * @param withUnc true to return parameters with uncertainties or false for
+	 *                those without
+	 * @return UncertainValues object containing either the variable quantities or
+	 *         the constant quantities
+	 * @throws ArgumentException
+	 */
+	private UncertainValues buildParameters(boolean withUnc) //
+			throws ArgumentException {
+		final List<UncertainValues> results = new ArrayList<>();
+		if (mVariates.contains(Variates.MeanIonizationPotential) == withUnc)
+			results.add(buildMeanIonizationPotentials());
+		if (mVariates.contains(Variates.MassAbsorptionCofficient) == withUnc)
+			results.add(getMaterialMACs());
+		if (mVariates.contains(Variates.BeamEnergy) == withUnc) {
+			Map<Object, Number> vals = new HashMap<>();
+			for (final KRatioLabel krl : mKRatios) {
+				vals.put(beamEnergyTag(krl.getUnknown()), krl.getUnknown().getBeamEnergy());
+				vals.put(beamEnergyTag(krl.getStandard()), krl.getStandard().getBeamEnergy());
 			}
-			final UncertainValues uvs = new UncertainValues(tags, vals, vars);
-			variables.add(uvs);
+			results.add(new UncertainValues(vals));
 		}
-		if (mVariates.contains(Variates.SurfaceRoughness)) {
-			final List<Object> tags = new ArrayList<>();
-			for (final MatrixCorrectionDatum mcd : all)
-				tags.add(tagRoughness(mcd));
-			final RealVector vals = new ArrayRealVector(tags.size());
-			final RealVector vars = new ArrayRealVector(tags.size());
-			int idx = 1;
-			for (final MatrixCorrectionDatum mcd : all) {
-				vals.setEntry(idx, 0.0);
-				vars.setEntry(idx, Math.pow(mcd.getRoughness(), 2.0));
-				++idx;
+		if (mVariates.contains(Variates.TakeOffAngle) == withUnc) {
+			Map<Object, Number> vals = new HashMap<>();
+			for (final KRatioLabel krl : mKRatios) {
+				vals.put(takeOffAngleTag(krl.getUnknown()), krl.getUnknown().getTakeOffAngle());
+				vals.put(takeOffAngleTag(krl.getStandard()), krl.getStandard().getTakeOffAngle());
 			}
-			final UncertainValues uvs = new UncertainValues(tags, vals, vars);
-			variables.add(uvs);
+			results.add(new UncertainValues(vals));
 		}
-		if (mVariates.contains(Variates.WeightsOfLines)) {
-			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
+		if (mVariates.contains(Variates.SurfaceRoughness) == withUnc) {
+			Map<Object, Number> vals = new HashMap<>();
+			for (final KRatioLabel krl : mKRatios) {
+				vals.put(tagRoughness(krl.getUnknown()), new UncertainValue(0.0, krl.getUnknown().getRoughness()));
+				vals.put(tagRoughness(krl.getStandard()), new UncertainValue(0.0, krl.getStandard().getRoughness()));
+			}
+			results.add(new UncertainValues(vals));
+		}
+		if (mVariates.contains(Variates.WeightsOfLines) == withUnc) {
+			final CharacteristicXRaySet allCxr = new CharacteristicXRaySet();
 			for (final KRatioLabel krl : mKRatios)
-				if (krl.getXRaySet().size() > 1)
-					cxrs.addAll(krl.getXRaySet());
-			final int sz = all.size();
+				allCxr.addAll(krl.getXRaySet());
+			final int sz = allCxr.size();
 			if (sz > 0) {
-				final List<Object> tags = new ArrayList<>();
-				final RealVector vals = new ArrayRealVector(sz);
-				final RealVector vars = new ArrayRealVector(sz);
-				int i = 0;
-				for (final CharacteristicXRay cxr : cxrs.getSetOfCharacteristicXRay()) {
-					tags.add(new XRayWeightTag(cxr));
-					final double w = cxr.getWeight();
-					assert w > 0.0 : cxr;
-					vals.setEntry(i, w);
-					if (w > 0.5)
-						vars.setEntry(i, Math.pow(0.05 * w, 2.0));
-					else if (w > 0.1)
-						vars.setEntry(i, Math.pow(0.1 * w, 2.0));
-					else if (w > 0.01)
-						vars.setEntry(i, Math.pow(0.2 * w, 2.0));
-					else
-						vars.setEntry(i, Math.pow(0.5 * w, 2.0));
-					++i;
-				}
-				final UncertainValues uvs = new UncertainValues(tags, vals, vars);
-				variables.add(uvs);
+				final Map<Object, Number> weightT = new HashMap<>();
+				for (final CharacteristicXRay cxr : allCxr.getSetOfCharacteristicXRay())
+					weightT.put(new XRayWeightTag(cxr), cxr.getWeightUV());
+				final UncertainValues uvs = new UncertainValues(weightT);
+				results.add(uvs);
 			}
 		}
-		for (final MatrixCorrectionDatum mcd : all) {
-			if (mVariates.contains(Variates.StandardComposition) && (mcd instanceof StandardMatrixCorrectionDatum))
-				variables.add(mcd.getComposition());
-			if (mVariates.contains(Variates.UnknownComposition) && (mcd instanceof UnknownMatrixCorrectionDatum))
-				variables.add(mcd.getComposition());
+		// Make sure that there are no replicated Compositions
+		Set<Composition> allComps = new HashSet<>();
+		for (final KRatioLabel krl : mKRatios) {
+			if (mVariates.contains(Variates.StandardComposition) == withUnc)
+				allComps.add(krl.getStandard().getComposition());
+			if (mVariates.contains(Variates.UnknownComposition) == withUnc)
+				allComps.add(krl.getUnknown().getComposition());
 		}
-		return UncertainValues.build(getInputLabels(), variables.toArray(new UncertainValues[variables.size()]));
+		results.addAll(allComps);
+		return UncertainValues.combine(results.toArray(new UncertainValues[results.size()]));
 	}
 
 	public Set<Element> getElements() {
@@ -2265,89 +2252,12 @@ public class XPPMatrixCorrection2 //
 		return UncertainValues.propagate(all, UncertainValues.combine(inputs));
 	}
 
-	/**
-	 * Initialize the parameters that are being held constant.
-	 *
-	 * @param unk  MatrixCorrectionDatum associated with the unknown
-	 * @param stds Set&lt;MatrixCorrectionDatum&gt; A set of
-	 *             {@link MatrixCorrectionDatum} associated with the standards
-	 * @throws ArgumentException
-	 */
-	private void initializeConstants() //
-			throws ArgumentException {
-		final List<UncertainValues> constants = new ArrayList<>();
-		final Set<Element> elms = getElements();
-		if (!mVariates.contains(Variates.MeanIonizationPotential)) {
-			final UncertainValues mip = buildMeanIonizationPotentials(elms);
-			constants.add(mip);
+	private UncertainValues buildMeanIonizationPotentials() {
+		final Set<Element> elms = new HashSet<>();
+		for (final KRatioLabel krl : mKRatios) {
+			elms.addAll(krl.getStandard().getComposition().getElementSet());
+			elms.addAll(krl.getUnknown().getComposition().getElementSet());
 		}
-		if (!mVariates.contains(Variates.MassAbsorptionCofficient))
-			constants.add(getMaterialMACs());
-		if (!mVariates.contains(Variates.BeamEnergy)) {
-			final Map<Object, Number> beT = new HashMap<>();
-			for(final KRatioLabel krl : mKRatios) {
-				beT.put(beamEnergyTag(krl.getStandard()), krl.getStandard().getBeamEnergy());
-				beT.put(beamEnergyTag(krl.getUnknown()),krl.getUnknown().getBeamEnergy());
-			}
-			final UncertainValues uvs = new UncertainValues(beT);
-			constants.add(uvs);
-		}
-		if (!mVariates.contains(Variates.TakeOffAngle)) {
-			final Map<Object, Number> toaT = new HashMap<>();
-			for(final KRatioLabel krl : mKRatios) {
-				toaT.put(takeOffAngleTag(krl.getStandard()), krl.getStandard().getTakeOffAngle());
-				toaT.put(takeOffAngleTag(krl.getUnknown()),krl.getUnknown().getTakeOffAngle());
-			}
-			final UncertainValues uvs = new UncertainValues(toaT);
-			constants.add(uvs);
-		}
-		if (!mVariates.contains(Variates.SurfaceRoughness)) {
-			final Map<Object, Number> roughT = new HashMap<>();
-			for(final KRatioLabel krl : mKRatios) {
-				roughT.put(tagRoughness(krl.getStandard()), new UncertainValue(0, krl.getStandard().getRoughness()));
-				roughT.put(tagRoughness(krl.getUnknown()), new UncertainValue(0, krl.getUnknown().getRoughness()));
-			}
-			final UncertainValues uvs = new UncertainValues(roughT);
-			constants.add(uvs);
-		}
-		if (!mVariates.contains(Variates.WeightsOfLines)) {
-			final CharacteristicXRaySet all = new CharacteristicXRaySet();
-			for(final KRatioLabel krl : mKRatios)
-				all.addAll(krl.getXRaySet());
-			final int sz = all.size();
-			if (sz > 0) {
-				final Map<Object, Number> weightT = new HashMap<>();
-				for (final CharacteristicXRay cxr : all.getSetOfCharacteristicXRay())
-					weightT.put(new XRayWeightTag(cxr), cxr.getWeightUV());
-				final UncertainValues uvs = new UncertainValues(weightT);
-				constants.add(uvs);
-			}
-		}
-		{
-			Set<Composition> done = new HashSet<>();
-			for(final KRatioLabel krl : mKRatios) {
-				if (!mVariates.contains(Variates.UnknownComposition))
-					if(!done.contains(krl.getUnknown().getComposition())) {
-					constants.add(krl.getUnknown().getComposition());
-					done.add(krl.getUnknown().getComposition());
-					}
-				if (!mVariates.contains(Variates.StandardComposition))
-					if(!done.contains(krl.getStandard().getComposition())) {
-						constants.add(krl.getStandard().getComposition());
-						done.add(krl.getStandard().getComposition());
-					}
-			}
-		}
-		if (constants.size() > 0) {
-			final Map<Object, Double> mod = new HashMap<>();
-			for (final UncertainValues uv : constants)
-				for (final Object tag : uv.getLabels())
-					mod.put(tag, uv.getEntry(tag));
-			initializeConstants(mod);
-		}
-	}
-
-	private UncertainValues buildMeanIonizationPotentials(final Set<Element> elms) {
 		final RealVector vals = new ArrayRealVector(elms.size());
 		final RealVector var = new ArrayRealVector(vals.getDimension());
 		final List<Object> tags = new ArrayList<>();
@@ -2407,7 +2317,7 @@ public class XPPMatrixCorrection2 //
 				vals.add(rhoZ);
 			res.add("rhoZ", vals);
 		}
-		for(final KRatioLabel krl : mKRatios) {
+		for (final KRatioLabel krl : mKRatios) {
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				if (cxr.getWeight() > minWeight) {
 					{
@@ -2468,6 +2378,6 @@ public class XPPMatrixCorrection2 //
 
 	@Override
 	public String toString() {
-		return "XPPMatrixCorrection";
+		return "XPPMatrixCorrection2";
 	}
 }

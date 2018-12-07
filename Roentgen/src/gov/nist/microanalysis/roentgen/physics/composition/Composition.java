@@ -510,7 +510,7 @@ public class Composition //
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
 			final RealVector vals = new ArrayRealVector(getOutputDimension());
-			final RealMatrix jac = new NullableRealMatrix(getInputDimension(), getOutputDimension());
+			final RealMatrix jac = NullableRealMatrix.build(getInputDimension(), getOutputDimension());
 			for (int i = 0; i < getInputDimension(); ++i) {
 				final AtomTypeTag aft = (AtomTypeTag) getInputLabels().get(i);
 				vals.setEntry(i, massFraction(aft, point));
@@ -574,7 +574,7 @@ public class Composition //
 			if (point.getDimension() != getInputDimension())
 				throw new DimensionMismatchException(point.getDimension(), getInputDimension());
 			final RealVector vals = new ArrayRealVector(point.getDimension());
-			final RealMatrix jac = new NullableRealMatrix(point.getDimension(), point.getDimension());
+			final RealMatrix jac = NullableRealMatrix.build(point.getDimension(), point.getDimension());
 			final List<? extends Object> elms = getInputLabels();
 			for (int i = 0; i < elms.size(); ++i) {
 				vals.setEntry(i, atomFraction(i, point));

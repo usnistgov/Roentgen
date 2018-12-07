@@ -1,5 +1,7 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
+import java.util.Set;
+
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
@@ -7,6 +9,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
+import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
  * <p>
@@ -37,15 +40,15 @@ public class KRatioLabel//
 
 	private final Method mMethod;
 
-	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final ElementXRaySet trans,
-			Method meth) {
+	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+			final ElementXRaySet trans, Method meth) {
 		super("k", unk, std, trans);
 		assert trans.size() >= 1;
 		mMethod = meth;
 	}
 
-	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final CharacteristicXRay trans,
-			Method meth) {
+	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+			final CharacteristicXRay trans, Method meth) {
 		super("k", unk, std, new ElementXRaySet(trans));
 		mMethod = meth;
 	}
@@ -76,7 +79,17 @@ public class KRatioLabel//
 
 	@Override
 	public int hashCode() {
-		return 31 * super.hashCode() + mMethod.hashCode();
+		return super.hashCode() + 31 * mMethod.hashCode();
+	}
+
+	static public boolean areAllSameUnknown(Set<KRatioLabel> krs) {
+		Composition unk = null;
+		for (KRatioLabel krl : krs)
+			if (unk == null)
+				unk = krl.getUnknown().getComposition();
+			else if (!krl.getUnknown().getComposition().equals(unk))
+				return false;
+		return true;
 	}
 
 	@Override

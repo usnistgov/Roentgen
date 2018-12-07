@@ -8,7 +8,7 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 
 /**
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class MatrixCorrectionLabel extends BaseLabel<UnknownMatrixCorrectionDatum, StandardMatrixCorrectionDatum, ElementXRaySet> {

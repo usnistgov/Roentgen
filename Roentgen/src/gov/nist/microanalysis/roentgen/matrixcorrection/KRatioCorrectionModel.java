@@ -14,7 +14,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class KRatioCorrectionModel extends ImplicitMeasurementModel {

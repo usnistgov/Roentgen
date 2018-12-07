@@ -1,18 +1,12 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
-import java.text.DecimalFormat;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import com.duckandcover.html.IToHTML;
-import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
  * A package describing a set of arguments to the matrix correction algorithm.
@@ -25,7 +19,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * <li>True unknowns - with only an Element set</li>
  * </ol>
  * 
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public abstract class MatrixCorrectionDatum //

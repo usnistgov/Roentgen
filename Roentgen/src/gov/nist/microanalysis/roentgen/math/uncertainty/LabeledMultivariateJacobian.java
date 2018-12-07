@@ -95,7 +95,7 @@ public class LabeledMultivariateJacobian //
 			final double sc //
 	) {
 		assert uv.getDimension() == nmjf.getInputDimension();
-		final RealMatrix rm = new NullableRealMatrix(nmjf.getOutputDimension(), nmjf.getInputDimension());
+		final RealMatrix rm = NullableRealMatrix.build(nmjf.getOutputDimension(), nmjf.getInputDimension());
 		final RealVector inp = new ArrayRealVector(uv.getValues());
 		final RealVector vals = nmjf.compute(inp);
 		for (int c = 0; c < nmjf.getInputDimension(); ++c) {

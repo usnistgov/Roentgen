@@ -239,9 +239,9 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			final int oDim = output.size();
 			assert oDim > 0 : "Output dimensions is zero in " + toString();
 			final int iDim = getInputDimension();
-			assert iDim > 0 : "Input dimensions is zero in " + toString();
+			// assert iDim > 0 : "Input dimensions is zero in " + toString();
 			final RealVector vals = new ArrayRealVector(oDim);
-			final RealMatrix cov = new NullableRealMatrix(oDim, iDim);
+			final RealMatrix cov = NullableRealMatrix.build(oDim, iDim);
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				final RealVector funcPoint = func.extractArgument(this, point);
 				Map<Object, Double> consts = new HashMap<>(getConstants());
@@ -301,6 +301,10 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		public String toHTML(final Mode mode) {
 			return LabeledMultivariateJacobianFunctionBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(),
 					mode);
+		}
+		
+		public String toString() {
+			return mName;
 		}
 
 	}

@@ -10,7 +10,7 @@ import org.apache.commons.math3.linear.RealVector;
  * when evaluating the function to implement an approximate derivative or
  * a Monte Carlo evaluation.
  * 
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public interface ILabeledMultivariateFunction {

@@ -1,21 +1,41 @@
-/**
- * 
- */
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.text.DecimalFormat;
+import java.util.Objects;
 
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
- * @author nicho
+ * A MatrixCorrectionDatum associated with a Standard (specifies the
+ * Composition).  Used by MatrixCorrection algorithms as input.
+ * 
+ * @author Nicholas W. M. Ritchie
  *
  */
-public class StandardMatrixCorrectionDatum extends MatrixCorrectionDatum {
+public class StandardMatrixCorrectionDatum //
+		extends MatrixCorrectionDatum {
+
+	@Override
+	public int hashCode() {
+		return super.hashCode() ^ mComposition.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		StandardMatrixCorrectionDatum other = (StandardMatrixCorrectionDatum) obj;
+		return Objects.equals(mComposition, other.mComposition);
+	}
 
 	private final Composition mComposition;
 
@@ -25,7 +45,7 @@ public class StandardMatrixCorrectionDatum extends MatrixCorrectionDatum {
 	 */
 	public StandardMatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle) {
 		super(beamEnergy, takeOffAngle);
-		mComposition = comp;
+		mComposition = comp.asMassFraction();
 	}
 
 	/**
@@ -33,16 +53,17 @@ public class StandardMatrixCorrectionDatum extends MatrixCorrectionDatum {
 	 * @param takeOffAngle
 	 * @param roughness
 	 */
-	public StandardMatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle, double roughness) {
+	public StandardMatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle,
+			double roughness) {
 		super(beamEnergy, takeOffAngle, roughness);
-		mComposition=comp;
+		mComposition = comp.asMassFraction();
 	}
 
 	public Composition getComposition() {
+		assert mComposition.getNativeRepresentation() == Representation.MassFraction;
 		return mComposition;
 	}
-	
-	
+
 	@Override
 	public String toHTML(Mode mode) {
 		BasicNumberFormat bnf = new BasicNumberFormat("0.0");
@@ -65,7 +86,4 @@ public class StandardMatrixCorrectionDatum extends MatrixCorrectionDatum {
 		DecimalFormat df = new DecimalFormat("0.0");
 		return mComposition.toString() + " at " + df.format(mBeamEnergy.doubleValue()) + " keV";
 	}
-
-	
-	
 }

@@ -10,16 +10,39 @@ import org.apache.commons.math3.linear.RealMatrix;
  * Creates a matrix in which one or both of the dimensions can be zero.
  * 
  * 
- * @author nicho
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class NullableRealMatrix extends AbstractRealMatrix {
 
+	
+	public static RealMatrix build(int rows, int cols) {
+		if((rows==0)||(cols==0))
+			return new NullableRealMatrix(rows, cols);
+		else
+			return MatrixUtils.createRealMatrix(rows, cols);
+	}
+	
+	public static RealMatrix build(RealMatrix rm) {
+		if((rm.getRowDimension()==0)||(rm.getColumnDimension()==0))
+			return new NullableRealMatrix(rm);
+		else
+			return rm.copy();
+	}
+	
+	
+	public static RealMatrix build(double[][] vals) {
+		if((vals.length==0)||(vals[0].length==0))
+			return new NullableRealMatrix(vals);
+		else
+			return MatrixUtils.createRealMatrix(vals);
+	}
+	
 	final int mRowDim;
 	final int mColDim;
 	final RealMatrix mMatrix;
 
-	public NullableRealMatrix(int rows, int cols) {
+	private NullableRealMatrix(int rows, int cols) {
 		assert rows >= 0;
 		assert cols >= 0;
 		mRowDim = Math.max(0, rows);
@@ -30,7 +53,7 @@ public class NullableRealMatrix extends AbstractRealMatrix {
 			mMatrix = null;
 	}
 
-	public NullableRealMatrix(RealMatrix rm) {
+	private NullableRealMatrix(RealMatrix rm) {
 		mRowDim = rm.getRowDimension();
 		mColDim = rm.getColumnDimension();
 		if ((mRowDim > 0) && (mColDim > 0))
@@ -39,7 +62,7 @@ public class NullableRealMatrix extends AbstractRealMatrix {
 			mMatrix = null;
 	}
 
-	public NullableRealMatrix(double[][] vals) {
+	private NullableRealMatrix(double[][] vals) {
 		mRowDim = vals.length;
 		mColDim = vals.length > 0 ? vals[0].length : 0;
 		if ((mRowDim > 0) && (mColDim > 0))

@@ -24,7 +24,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.Represent
  * Compute the material mass absorption coefficient given the elemental mass
  * absorption coefficients.
  *
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class MaterialMACFunction extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
@@ -291,7 +291,7 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector res = new ArrayRealVector(getOutputDimension());
-		final RealMatrix cov = new NullableRealMatrix(getOutputDimension(), getInputDimension());
+		final RealMatrix cov = NullableRealMatrix.build(getOutputDimension(), getInputDimension());
 		final List<? extends Object> macTags = getOutputLabels();
 		final List<? extends Object> inp = getInputLabels();
 		for (int matMacIdx = 0; matMacIdx < macTags.size(); ++matMacIdx) {

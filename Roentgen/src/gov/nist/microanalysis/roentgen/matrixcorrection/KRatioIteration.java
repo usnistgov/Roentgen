@@ -20,9 +20,8 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.TrimmedNamedMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection.Variates;
+import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection2.Variates;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -33,20 +32,19 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  * measured k-ratio values.
  *
  *
- * @author Nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class KRatioIteration {
 
+	private final Set<KRatioLabel> mKRatios;
 	
-	public KRatioIteration(	) {
-	}
-	
-	
-	public double computeEstimate(double kr, Element elm, Composition std) {
-		return kr*std.getEntry(Composition.buildMassFractionTag(std, elm));
-	}
+	public KRatioIteration(Set<KRatioLabel> skrl) {
+		assert KRatioLabel.areAllSameUnknown(skrl);
+		mKRatios = new HashSet<>(skrl);
 
+	}
+	
 	/**
 	 * Calculate the first estimate of the composition and build a
 	 * {@link MatrixCorrectionDatum} from the data.
@@ -54,20 +52,9 @@ public class KRatioIteration {
 	 * @param kratios
 	 * @return {@link Composition}
 	 */
-	public Composition computeEstimate(final UncertainValues kratios, double e0, double takeOffAngle) {
-		
-		List<KRatioLabel> krls = kratios.extractTypeOfLabel(KRatioLabel.class);
-		for(KRatioLabel krl : krls) {
-			MatrixCorrectionDatum mcd = krl.getUnknown();
-			MatrixCorrectionDatum mcd = k
-			
-		}
-		
-		
-		
+	public Composition computeEstimate(final UncertainValues kratios) {
 		final Map<Object, Double> krm = kratios.getValueMap();
 		final Map<Element, Number> men = new HashMap<>();
-		MatrixCorrectionDatum unk = null;
 		for (final Map.Entry<Object, Double> me : krm.entrySet()) {
 			assert me.getKey() instanceof KRatioLabel;
 			if (me.getKey() instanceof KRatioLabel) {
@@ -78,12 +65,9 @@ public class KRatioIteration {
 				final double cStd = std.getEntry(Composition.buildMassFractionTag(std, xrs.getElement()));
 				final double kR = me.getValue().doubleValue();
 				men.put(xrs.getElement(), kR * cStd);
-				assert (unk==null) || (unk==tag.getUnknown());
-				if(unk==null)
-					unk=tag.getUnknown();
 			}
 		}
-		return Composition.massFraction("Estimate", men);
+		return Composition.massFraction("Estimate[0]", men);
 	}
 
 	/**
@@ -97,15 +81,14 @@ public class KRatioIteration {
 	 */
 	public Composition optimize(final UncertainValues kratios) //
 			throws ArgumentException {
-		final Composition unkMcd = computeEstimate(kratios);
+		final Composition unk = computeEstimate(kratios);
 		Set<Element> elms = new HashSet<>();		
 		for(KRatioLabel krl : kratios.extractTypeOfLabel(KRatioLabel.class))
 			elms.add(krl.getXRaySet().getElement());
-		MatrixCorrectionDatum unk = new MatrixCorrectionDatum(elms, beamEnergy, takeOffAngle)
 
-		final Set<Variates> minVariates = XPPMatrixCorrection.minimalVariates();
-		final XPPMatrixCorrection xpp = new XPPMatrixCorrection(unkMcd, mStandards, minVariates);
-		final KRatioHModel hModel = new KRatioHModel(unkMcd, mStandards);
+		final Set<Variates> minVariates = XPPMatrixCorrection2.minimalVariates();
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(mKRatios, minVariates);
+		final KRatioHModel2 hModel = new KRatioHModel2(mKRatios);
 
 		// Build the full model with xpp and hModel
 		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
@@ -115,10 +98,8 @@ public class KRatioIteration {
 				new SerialLabeledMultivariateJacobianFunction("K-ratio iteration", steps);
 		// Figure out which elements are in the unknown
 		final List<MassFractionTag> compInp = new ArrayList<>();
-		final List<Element> elms = new ArrayList<>();
-		for (final Element elm : unkMcd.getComposition().getElementSet()) {
-			compInp.add(Composition.buildMassFractionTag(unkMcd.getComposition(), elm));
-			elms.add(elm);
+		for (final Element elm : unk.getElementSet()) {
+			compInp.add(Composition.buildMassFractionTag(unk, elm));
 		}
 		// Trim the inputs down to only the elements in the unknown...
 		final TrimmedNamedMultivariateJacobianFunction trimmed = //
@@ -137,11 +118,11 @@ public class KRatioIteration {
 		final LeastSquaresProblem lsm = LeastSquaresFactory.create( //
 				trimmed, // The trimmed model
 				new ArrayRealVector(trOutTags.size()), // Goal of zero
-				unkMcd.getComposition().extractValues(trimmed.getInputLabels()), // Starting estimate
+				unk.extractValues(trimmed.getInputLabels()), // Starting estimate
 				checker, 100, 100);
 		final LevenbergMarquardtOptimizer lmo = new LevenbergMarquardtOptimizer();
 		final Optimum res = lmo.optimize(lsm);
-		return Composition.massFraction("Quant", elms, res.getPoint(), res.getCovariances(1.0e-10));
+		return Composition.massFraction("Quant", new ArrayList<>(elms), res.getPoint(), res.getCovariances(1.0e-10));
 	}
 
 }

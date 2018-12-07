@@ -22,7 +22,7 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
  * background) WDS measurement.
  * 
  * 
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class TwoPointContinuumModel extends SerialLabeledMultivariateJacobianFunction {

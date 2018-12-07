@@ -43,7 +43,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	/**
 	 * Seems to produce a 10 % - 20 % improvement in overall evaluation speed.
 	 *
-	 * @author nicholas
+	 * @author Nicholas W. M. Ritchie
 	 *
 	 * @param <H> H must implement hashCode() and equals()
 	 */
@@ -455,7 +455,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 			// assert !isConstant(label);
 			return point.getEntry(p);
 		} else {
-			assert isConstant(label) : "Can't find the constant " + label;
+			assert isConstant(label) : "Can't find the constant " + label + " in " + toString();
 			return getConstant(label);
 		}
 	}

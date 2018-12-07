@@ -1672,7 +1672,7 @@ public class XPPMatrixCorrection //
 	 * element (MatrixCorrectionTag)
 	 * </ol>
 	 *
-	 * @author nicholas
+	 * @author Nicholas W. M. Ritchie
 	 *
 	 */
 	private static class StepCombine //

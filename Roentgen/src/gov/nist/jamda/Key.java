@@ -1,7 +1,7 @@
 package gov.nist.jamda;
 
 /**
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class Key<H> {

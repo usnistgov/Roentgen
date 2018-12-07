@@ -66,7 +66,7 @@ public class XPPMatrixCorrectionTest {
 	 */
 	@Test
 	public void testXPP1() throws ArgumentException, ParseException, IOException {
-		// final Composition unk = Composition.parse("Al2SiO5").asMassFraction();
+		// final Composition unk = Composition.parse("Al2SiO5");
 		final List<Element> elmsU = Arrays.asList(Element.Aluminum, Element.Silicon, Element.Oxygen);
 		final RealVector valsU = new ArrayRealVector(new double[] { 0.3330, 0.1733, 0.4937 });
 		final RealVector varsU = new ArrayRealVector(new double[] { 1.0e-6, 0.4e-6, 4.0e-6 });
@@ -548,7 +548,7 @@ public class XPPMatrixCorrectionTest {
 	public void testXPP3() throws ArgumentException, ParseException, IOException {
 		// K411 and K412 as in SP 260-74
 
-		final Composition std = Composition.parse("Mg").asMassFraction();
+		final Composition std = Composition.parse("Mg");
 
 		final boolean combined = false;
 		final Composition unk = combined ? Composition.combine("K412", //

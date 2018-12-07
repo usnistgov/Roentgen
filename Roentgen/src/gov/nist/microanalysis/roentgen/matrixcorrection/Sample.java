@@ -12,7 +12,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 
 /**
- * @author Nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class Sample implements IToHTML {	

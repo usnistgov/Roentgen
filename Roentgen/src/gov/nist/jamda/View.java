@@ -11,7 +11,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 /**
  * Implements a 2D window onto a HyperSheet
  * 
- * @author nicho
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class View implements IToHTML, IToHTMLExt {

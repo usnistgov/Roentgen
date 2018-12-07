@@ -1,6 +1,3 @@
-/**
- * 
- */
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
@@ -8,7 +5,7 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 
 /**
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  * @param <H>
  *
  */

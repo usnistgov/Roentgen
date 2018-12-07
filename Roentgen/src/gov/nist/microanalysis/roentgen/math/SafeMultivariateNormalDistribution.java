@@ -30,7 +30,7 @@ import org.apache.commons.math3.random.RandomGeneratorFactory;
  * explicitly returning the mean value when the variance is zero and by breaking
  * the problem up into a number of smaller pieces based on mutual correlation.
  * 
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class SafeMultivariateNormalDistribution extends AbstractMultivariateRealDistribution {

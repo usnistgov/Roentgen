@@ -53,7 +53,7 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
  * </p>
  * <p>
  *
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  * @version 1.0
  */
 public class IonizationCrossSection //
