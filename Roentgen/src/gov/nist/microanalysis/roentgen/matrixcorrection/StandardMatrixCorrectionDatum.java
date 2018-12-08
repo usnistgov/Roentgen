@@ -12,8 +12,8 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
  * A MatrixCorrectionDatum associated with a Standard (specifies the
- * Composition).  Used by MatrixCorrection algorithms as input.
- * 
+ * Composition). Used by MatrixCorrection algorithms as input.
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -26,14 +26,14 @@ public class StandardMatrixCorrectionDatum //
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		StandardMatrixCorrectionDatum other = (StandardMatrixCorrectionDatum) obj;
+		final StandardMatrixCorrectionDatum other = (StandardMatrixCorrectionDatum) obj;
 		return Objects.equals(mComposition, other.mComposition);
 	}
 
@@ -43,7 +43,8 @@ public class StandardMatrixCorrectionDatum //
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 */
-	public StandardMatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle) {
+	public StandardMatrixCorrectionDatum(final Composition comp, final UncertainValue beamEnergy,
+			final UncertainValue takeOffAngle) {
 		super(beamEnergy, takeOffAngle);
 		mComposition = comp.asMassFraction();
 	}
@@ -53,24 +54,25 @@ public class StandardMatrixCorrectionDatum //
 	 * @param takeOffAngle
 	 * @param roughness
 	 */
-	public StandardMatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle,
-			double roughness) {
+	public StandardMatrixCorrectionDatum(final Composition comp, final UncertainValue beamEnergy,
+			final UncertainValue takeOffAngle, final double roughness) {
 		super(beamEnergy, takeOffAngle, roughness);
 		mComposition = comp.asMassFraction();
 	}
 
+	@Override
 	public Composition getComposition() {
 		assert mComposition.getNativeRepresentation() == Representation.MassFraction;
 		return mComposition;
 	}
 
 	@Override
-	public String toHTML(Mode mode) {
-		BasicNumberFormat bnf = new BasicNumberFormat("0.0");
+	public String toHTML(final Mode mode) {
+		final BasicNumberFormat bnf = new BasicNumberFormat("0.0");
 		if (mode != Mode.VERBOSE)
 			return mComposition.toHTML(Mode.TERSE) + " at " + bnf.formatHTML(mBeamEnergy.doubleValue()) + " keV";
 		else {
-			Table t = new Table();
+			final Table t = new Table();
 			t.addRow(Table.td("Composition"), Table.td(mComposition.toHTML(Mode.VERBOSE)));
 			t.addRow(Table.td("Is standard?"), Table.td("True"));
 			t.addRow(Table.td("Beam Energy"), Table.td(bnf.formatHTML(mBeamEnergy)));
@@ -82,8 +84,9 @@ public class StandardMatrixCorrectionDatum //
 		}
 	}
 
+	@Override
 	public String toString() {
-		DecimalFormat df = new DecimalFormat("0.0");
+		final DecimalFormat df = new DecimalFormat("0.0");
 		return mComposition.toString() + " at " + df.format(mBeamEnergy.doubleValue()) + " keV";
 	}
 }

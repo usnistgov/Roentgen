@@ -142,7 +142,7 @@ public class UncertainValues //
 		mCovariance = covar;
 	}
 
-	public UncertainValues(Object[] labels, double[] vals, double[] cov) {
+	public UncertainValues(final Object[] labels, final double[] vals, final double[] cov) {
 		this(Arrays.asList(labels), new ArrayRealVector(vals), new ArrayRealVector(cov));
 	}
 
@@ -191,7 +191,7 @@ public class UncertainValues //
 		final double[] d = new double[vals.size()];
 		int i = 0;
 		for (final Object key : vals.keySet()) {
-			Number val = vals.get(key);
+			final Number val = vals.get(key);
 			if (val instanceof UncertainValue)
 				d[i] = ((UncertainValue) val).variance();
 			++i;
@@ -221,7 +221,7 @@ public class UncertainValues //
 	/**
 	 * Builds an {@link UncertainValues} object representing the specified labeled
 	 * quantities as extracted from the list of {@link UncertainValues} objects.
-	 * 
+	 *
 	 * @param labels
 	 * @param uvs
 	 * @return {@link UncertainValues}
@@ -260,7 +260,7 @@ public class UncertainValues //
 	/**
 	 * Combines a disjoint set of {@link UncertainValues} into a single one.
 	 * (Disjoint meaning not sharing a common label.)
-	 * 
+	 *
 	 * @param uvs
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
@@ -273,12 +273,12 @@ public class UncertainValues //
 	/**
 	 * Combines a disjoint set of {@link UncertainValues} into a single one.
 	 * (Disjoint meaning not sharing a common label.)
-	 * 
+	 *
 	 * @param uvs List&lt;UncertainValues&gt;
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	public static UncertainValues combine(List<UncertainValues> uvs) //
+	public static UncertainValues combine(final List<UncertainValues> uvs) //
 			throws ArgumentException {
 		// Test that each requested label is defined once and only once.
 		final List<Object> labels = new ArrayList<>();
@@ -402,7 +402,7 @@ public class UncertainValues //
 			final UncertainValues ordered) {
 		assert ordered.getLabels()
 				.equals(nmjf.getInputLabels()) : "The input values are not ordered the same as the nmjf input labels.";
-		MCPropagator mcp = new MCPropagator(nmjf, ordered);
+		final MCPropagator mcp = new MCPropagator(nmjf, ordered);
 		return mcp.compute(nEvals);
 	}
 
@@ -433,10 +433,10 @@ public class UncertainValues //
 	public RealMatrix extractCovariances(final List<? extends Object> labels) {
 		final RealMatrix res = MatrixUtils.createRealMatrix(labels.size(), labels.size());
 		for (int r = 0; r < labels.size(); ++r) {
-			int ridx = indexOf(labels.get(r));
+			final int ridx = indexOf(labels.get(r));
 			res.setEntry(r, r, getCovariance(r, r));
 			for (int c = r + 1; c < labels.size(); ++c) {
-				int cidx = indexOf(labels.get(c));
+				final int cidx = indexOf(labels.get(c));
 				final double cv = getCovariance(ridx, cidx);
 				res.setEntry(r, c, cv);
 				res.setEntry(c, r, cv);
@@ -447,15 +447,15 @@ public class UncertainValues //
 
 	/**
 	 * Extracts all labels assignable as cls
-	 * 
+	 *
 	 * @param <T>
-	 * 
+	 *
 	 * @param cls<T> The class type
 	 * @return List&lt;T&gt;
 	 */
-	public <T> List<T> extractTypeOfLabel(Class<T> cls) {
-		List<T> res = new ArrayList<>();
-		for (Object tag : mLabels)
+	public <T> List<T> extractTypeOfLabel(final Class<T> cls) {
+		final List<T> res = new ArrayList<>();
+		for (final Object tag : mLabels)
 			if (cls.isInstance(tag))
 				res.add(cls.cast(tag));
 		return res;
@@ -534,7 +534,7 @@ public class UncertainValues //
 		final RealMatrix cov = MatrixUtils.createRealMatrix(labels.size(), labels.size());
 		for (int ri = 0; ri < labels.size(); ++ri) {
 			boolean found = false;
-			for (UncertainValues uvs : inputs) {
+			for (final UncertainValues uvs : inputs) {
 				final int r = uvs.indexOf(labels.get(ri));
 				if (r >= 0) {
 					found = true;
@@ -559,7 +559,7 @@ public class UncertainValues //
 	 * Returns an UncertainValues object with the labels in the order specified by
 	 * the argument. If this is already in this order, this is returned; otherwise a
 	 * new {@link UncertainValues} object is created.
-	 * 
+	 *
 	 * @param labels
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
@@ -573,14 +573,14 @@ public class UncertainValues //
 			if (eq)
 				return this;
 		}
-		int[] idx = new int[labels.size()];
+		final int[] idx = new int[labels.size()];
 		for (int i = 0; i < idx.length; ++i) {
 			idx[i] = indexOf(labels.get(i));
 			if (idx[i] < 0)
 				throw new ArgumentException(
 						"The labels " + labels.get(i) + " was not present in the source UncertainValues object.");
 		}
-		UncertainValues res = new UncertainValues(labels);
+		final UncertainValues res = new UncertainValues(labels);
 		for (int r = 0; r < idx.length; ++r) {
 			res.mValues.setEntry(r, mValues.getEntry(idx[r]));
 			for (int c = r; c < idx.length; ++c) {
@@ -880,14 +880,14 @@ public class UncertainValues //
 			return table.toHTML(Mode.NORMAL);
 		}
 		case NORMAL: {
-			Map<Object, UncertainValue> tmp = getUncertainValueMap();
-			Table t = new Table();
-			Map<String, Object> tagMap = new TreeMap<>();
-			for (Object tag : tmp.keySet())
+			final Map<Object, UncertainValue> tmp = getUncertainValueMap();
+			final Table t = new Table();
+			final Map<String, Object> tagMap = new TreeMap<>();
+			for (final Object tag : tmp.keySet())
 				tagMap.put(tag.toString(), tag);
 			t.addRow(Table.th("Label"), Table.th("Value"), Table.th("Uncertainty"), Table.th("Fractional"));
-			DecimalFormat df = new DecimalFormat("0.0%");
-			for (Map.Entry<String, Object> me : tagMap.entrySet()) {
+			final DecimalFormat df = new DecimalFormat("0.0%");
+			for (final Map.Entry<String, Object> me : tagMap.entrySet()) {
 				final UncertainValue uv = tmp.get(me.getValue());
 				t.addRow(Table.td(HTML.toHTML(me.getKey(), Mode.TERSE)), Table.td(uv.doubleValue()),
 						Table.td(uv.uncertainty()), Table.td(df.format(uv.fractionalUncertainty())));

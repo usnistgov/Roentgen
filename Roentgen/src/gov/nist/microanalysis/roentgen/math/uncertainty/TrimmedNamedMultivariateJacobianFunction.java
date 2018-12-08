@@ -7,13 +7,14 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
+
 import gov.nist.microanalysis.roentgen.ArgumentException;
 
 /**
  * This class serves to reduce the number of input and output variables when the
  * Jacobian associated with a fraction of the input variables and output
  * variables is required.
- * 
+ *
  * @author Nicholas
  *
  */
@@ -23,15 +24,17 @@ public class TrimmedNamedMultivariateJacobianFunction //
 	private final LabeledMultivariateJacobianFunction mBase;
 
 	/**
-	 * @param base The base {@link LabeledMultivariateJacobianFunction}
-	 * @param inputLabels The input labels for the {@link TrimmedNamedMultivariateJacobianFunction}
-	 * @param outputLabels The output labels for the {@link TrimmedNamedMultivariateJacobianFunction}
+	 * @param base         The base {@link LabeledMultivariateJacobianFunction}
+	 * @param inputLabels  The input labels for the
+	 *                     {@link TrimmedNamedMultivariateJacobianFunction}
+	 * @param outputLabels The output labels for the
+	 *                     {@link TrimmedNamedMultivariateJacobianFunction}
 	 * @throws ArgumentException
 	 */
 	public TrimmedNamedMultivariateJacobianFunction(//
-			LabeledMultivariateJacobianFunction base, //
-			List<? extends Object> inputLabels, //
-			List<? extends Object> outputLabels //
+			final LabeledMultivariateJacobianFunction base, //
+			final List<? extends Object> inputLabels, //
+			final List<? extends Object> outputLabels //
 	) throws ArgumentException {
 		super(inputLabels, outputLabels);
 		assert base.getInputLabels().containsAll(inputLabels);
@@ -44,26 +47,26 @@ public class TrimmedNamedMultivariateJacobianFunction //
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(RealVector point) {
-		List<? extends Object> baseInputs = mBase.getInputLabels();
-		RealVector basePoint = new ArrayRealVector(baseInputs.size());
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		final List<? extends Object> baseInputs = mBase.getInputLabels();
+		final RealVector basePoint = new ArrayRealVector(baseInputs.size());
 		for (int i = 0; i < baseInputs.size(); ++i) {
-			int idx = inputIndex(baseInputs.get(i));
+			final int idx = inputIndex(baseInputs.get(i));
 			assert !((idx == -1) && (!getConstants().containsKey(baseInputs.get(i))));
 			final double value = idx != -1 ? point.getEntry(idx) : getConstant(baseInputs.get(i));
 			basePoint.setEntry(i, value);
 		}
-		Pair<RealVector, RealMatrix> tmp = mBase.value(point);
-		List<? extends Object> outLabels = getOutputLabels();
-		int[] outIdx = new int[outLabels.size()];
+		final Pair<RealVector, RealMatrix> tmp = mBase.value(point);
+		final List<? extends Object> outLabels = getOutputLabels();
+		final int[] outIdx = new int[outLabels.size()];
 		for (int i = 0; i < outIdx.length; ++i)
 			outIdx[i] = outputIndex(outLabels.get(i));
-		List<? extends Object> inLabels = getInputLabels();
-		int[] inIdx = new int[inLabels.size()];
+		final List<? extends Object> inLabels = getInputLabels();
+		final int[] inIdx = new int[inLabels.size()];
 		for (int i = 0; i < inIdx.length; ++i)
 			inIdx[i] = inputIndex(inLabels.get(i));
-		RealVector rv = new ArrayRealVector(outIdx.length);
-		RealMatrix rm = MatrixUtils.createRealMatrix(outIdx.length, inIdx.length);
+		final RealVector rv = new ArrayRealVector(outIdx.length);
+		final RealMatrix rm = MatrixUtils.createRealMatrix(outIdx.length, inIdx.length);
 		for (int r = 0; r < outIdx.length; ++r) {
 			rv.setEntry(r, tmp.getFirst().getEntry(outIdx[r]));
 			for (int c = 0; c < inIdx.length; ++c)

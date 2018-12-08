@@ -21,8 +21,8 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
+import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
@@ -52,25 +52,25 @@ public class KRatioIterationTest {
 
 		final UncertainValue beamEnergy = new UncertainValue(15.0, 0.1);
 		final UncertainValue takeOffAngle = new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9));
-		StandardMatrixCorrectionDatum mcd_sio2 = new StandardMatrixCorrectionDatum( //
+		final StandardMatrixCorrectionDatum mcd_sio2 = new StandardMatrixCorrectionDatum( //
 				Composition.parse("SiO2"), beamEnergy, takeOffAngle);
-		StandardMatrixCorrectionDatum mcd_mg = new StandardMatrixCorrectionDatum( //
+		final StandardMatrixCorrectionDatum mcd_mg = new StandardMatrixCorrectionDatum( //
 				Composition.pureElement(Element.Magnesium), beamEnergy, takeOffAngle);
-		StandardMatrixCorrectionDatum mcd_ti = new StandardMatrixCorrectionDatum( //
+		final StandardMatrixCorrectionDatum mcd_ti = new StandardMatrixCorrectionDatum( //
 				Composition.pureElement(Element.Titanium), beamEnergy, takeOffAngle);
-		StandardMatrixCorrectionDatum mcd_zn = new StandardMatrixCorrectionDatum( //
+		final StandardMatrixCorrectionDatum mcd_zn = new StandardMatrixCorrectionDatum( //
 				Composition.pureElement(Element.Zinc), beamEnergy, takeOffAngle);
-		StandardMatrixCorrectionDatum mcd_zr = new StandardMatrixCorrectionDatum( //
+		final StandardMatrixCorrectionDatum mcd_zr = new StandardMatrixCorrectionDatum( //
 				Composition.pureElement(Element.Zirconium), beamEnergy, takeOffAngle);
-		StandardMatrixCorrectionDatum mcd_baf2 = new StandardMatrixCorrectionDatum( //
+		final StandardMatrixCorrectionDatum mcd_baf2 = new StandardMatrixCorrectionDatum( //
 				Composition.parse("BaF2"), beamEnergy, takeOffAngle);
 
 		final Set<KRatioLabel> skrl = new HashSet<>();
 
-		Set<Element> elms = new HashSet<>(Arrays.asList(Element.Oxygen, Element.Silicon, Element.Titanium, Element.Zinc,
-				Element.Zirconium, Element.Barium));
+		final Set<Element> elms = new HashSet<>(Arrays.asList(Element.Oxygen, Element.Silicon, Element.Titanium,
+				Element.Zinc, Element.Zirconium, Element.Barium));
 
-		UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(elms, beamEnergy, takeOffAngle);
+		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(elms, beamEnergy, takeOffAngle);
 
 		skrl.add(new KRatioLabel(unkMcd, mcd_sio2, ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1),
 				Method.Measured));
@@ -87,9 +87,9 @@ public class KRatioIterationTest {
 		skrl.add(new KRatioLabel(unkMcd, mcd_baf2, ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1),
 				Method.Measured));
 
-		KRatioIteration kri = new KRatioIteration(skrl);
+		final KRatioIteration kri = new KRatioIteration(skrl);
 
-		Map<Object, Number> vals = new HashMap<>();
+		final Map<Object, Number> vals = new HashMap<>();
 		vals.put(new KRatioLabel(unkMcd, mcd_sio2, ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1),
 				KRatioLabel.Method.Measured), 0.571425);
 		vals.put(new KRatioLabel(unkMcd, mcd_mg, ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1),
@@ -105,11 +105,11 @@ public class KRatioIterationTest {
 		vals.put(new KRatioLabel(unkMcd, mcd_baf2, ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1),
 				KRatioLabel.Method.Measured), 0.283990);
 
-		UncertainValues kratios = new UncertainValues(vals);
+		final UncertainValues kratios = new UncertainValues(vals);
 
-		Composition res = kri.optimize(kratios);
+		final Composition res = kri.optimize(kratios);
 
-		Report rep = new Report("K240 Iteration");
+		final Report rep = new Report("K240 Iteration");
 		rep.addSubHeader("Unknown");
 		rep.add(unkMcd);
 		rep.addSubHeader("K-ratios");

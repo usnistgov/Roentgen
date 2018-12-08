@@ -25,11 +25,11 @@ import org.apache.commons.math3.random.RandomGeneratorFactory;
  * <li>Address the occasional NaN returned by
  * {@link MultivariateNormalDistribution}
  * </ol>
- * 
+ *
  * The SafeMultivariateNormalDistribution class addresses these points by
  * explicitly returning the mean value when the variance is zero and by breaking
  * the problem up into a number of smaller pieces based on mutual correlation.
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -45,26 +45,26 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 		this(vals, cov, 1.0e-9);
 	}
 
-	public SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov, double tol) {
+	public SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov, final double tol) {
 		super(RandomGeneratorFactory.createRandomGenerator(new Random()), vals.getDimension());
 		mMean = vals.toArray();
-		int dim = vals.getDimension();
+		final int dim = vals.getDimension();
 		assert cov.getRowDimension() == dim;
 		assert cov.getColumnDimension() == dim;
-		List<TreeSet<Integer>> correl = new ArrayList<>();
+		final List<TreeSet<Integer>> correl = new ArrayList<>();
 		for (int r = 0; r < dim; ++r) {
 			for (int c = r + 1; c < dim; ++c) {
 				if (Math.abs(cov.getEntry(r, c)) > tol * Math.sqrt(cov.getEntry(r, r) * cov.getEntry(c, c))) {
-					Integer rr = Integer.valueOf(r);
+					final Integer rr = Integer.valueOf(r);
 					boolean done = false;
-					for (TreeSet<Integer> rows : correl)
+					for (final TreeSet<Integer> rows : correl)
 						if (rows.contains(rr)) {
 							rows.add(Integer.valueOf(c));
 							done = true;
 							break;
 						}
 					if (!done) {
-						TreeSet<Integer> row = new TreeSet<>();
+						final TreeSet<Integer> row = new TreeSet<>();
 						row.add(rr);
 						row.add(Integer.valueOf(c));
 						correl.add(row);
@@ -83,19 +83,19 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 		}
 		mDistribution = new MultivariateNormalDistribution[correl.size()];
 		for (int j = 0; j < correl.size(); ++j) {
-			TreeSet<Integer> itemJ = correl.get(j);
+			final TreeSet<Integer> itemJ = correl.get(j);
 			// Build one MvND per itemJ
 			final int dimJ = itemJ.size();
 			assert dimJ > 1;
 			final double[] means = new double[dimJ];
 			final double[][] covariances = new double[dimJ][dimJ];
 			int i = 0;
-			for (int row : itemJ) {
+			for (final int row : itemJ) {
 				mDistIndex[row] = j;
 				mInnerIndex[row] = i;
 				means[i] = vals.getEntry(row);
 				int k = 0;
-				for (int col : itemJ) {
+				for (final int col : itemJ) {
 					covariances[i][k] = cov.getEntry(row, col);
 					++k;
 				}
@@ -112,7 +112,7 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 
 	/*
 	 * Not yet tested... (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.apache.commons.math3.distribution.MultivariateRealDistribution#density(
 	 * double[])

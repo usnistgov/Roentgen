@@ -29,45 +29,45 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  */
 public class PhysicalObject {
 
-   @XStreamAlias("physicalObjectID")
-   private final UUID mUUID;
-   @XStreamAlias("physicalObjectName")
-   private final String mFriendlyName;
+	@XStreamAlias("physicalObjectID")
+	private final UUID mUUID;
+	@XStreamAlias("physicalObjectName")
+	private final String mFriendlyName;
 
-   protected PhysicalObject(final String name) {
-      mUUID = UUID.randomUUID();
-      mFriendlyName = name;
-   }
+	protected PhysicalObject(final String name) {
+		mUUID = UUID.randomUUID();
+		mFriendlyName = name;
+	}
 
-   public UUID getUUID() {
-      return mUUID;
-   }
+	public UUID getUUID() {
+		return mUUID;
+	}
 
-   @Override
-   public String toString() {
-      return mFriendlyName;
-   }
+	@Override
+	public String toString() {
+		return mFriendlyName;
+	}
 
-   /**
-    * @see java.lang.Object#hashCode()
-    */
-   @Override
-   public int hashCode() {
-      return Objects.hashCode(mUUID, mFriendlyName);
-   }
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(mUUID, mFriendlyName);
+	}
 
-   /**
-    * @see java.lang.Object#equals(java.lang.Object)
-    */
-   @Override
-   public boolean equals(final Object obj) {
-      if(this == obj)
-         return true;
-      if(obj == null)
-         return false;
-      if(!(obj instanceof PhysicalObject))
-         return false;
-      return mUUID.equals(((PhysicalObject) obj).mUUID);
-   }
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof PhysicalObject))
+			return false;
+		return mUUID.equals(((PhysicalObject) obj).mUUID);
+	}
 
 }

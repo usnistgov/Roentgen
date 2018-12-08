@@ -94,7 +94,7 @@ public class ElementalMAC {
 
 	}
 
-	private double limit(double frac) {
+	private double limit(final double frac) {
 		return frac < mLimit ? frac : mLimit;
 	}
 
@@ -124,7 +124,7 @@ public class ElementalMAC {
 		mLimit = 2.0;
 	}
 
-	public ElementalMAC(double limit) {
+	public ElementalMAC(final double limit) {
 		mLimit = Math.max(0.0, limit);
 	}
 
@@ -200,11 +200,11 @@ public class ElementalMAC {
 	 */
 	public String fractionalUncertaintySource(final Element el, final double eV) {
 		String result = "None";
-		DecimalFormat df = new DecimalFormat("0.0%");
+		final DecimalFormat df = new DecimalFormat("0.0%");
 		double err = 0.0;
 		if (eV < 200.0) {
 			result = "eV < 200.0"; // 100-200%
-			err=1.5;
+			err = 1.5;
 		} else if (eV < 500) {
 			result = "eV < 500";
 			err = 0.5 + (((1.0 - 0.5) * (eV - 200)) / (500.0 - 200.0)); // 50-100%
@@ -216,27 +216,27 @@ public class ElementalMAC {
 			final double ee = sh.getEdgeEnergy();
 			final double delta = (eV - ee) / eV;
 			if ((Math.abs(delta) < 0.001) || (Math.abs(eV - ee) < 5.0)) { // Near edges (within 0.1%)
-				if(err<0.5) {
+				if (err < 0.5) {
 					result = "Near " + sh.toString() + " edge (within 0.1%)";
-					err=0.5;
+					err = 0.5;
 				}
 			} else
 				switch (sh.getShell()) {
 				case K:
 					if (Math.abs(delta) < 0.1) {
-						if(err<0.15) {
+						if (err < 0.15) {
 							result = "Near " + sh.toString() + " edge (delta < 0.1)";
 							err = 0.15; // 10-20%
 						}
 					} else if ((eV > ee) && (eV < (1.1 * ee))) {
-						if(err<0.03) {
+						if (err < 0.03) {
 							result = "Near " + sh.toString() + " edge ((eV > ee) && (eV < (1.1 * ee))";
-							err=0.03;
+							err = 0.03;
 						}
-					}else {
-						if(err<0.01) {
+					} else {
+						if (err < 0.01) {
 							result = "Above " + sh.toString();
-							err=0.01;
+							err = 0.01;
 						}
 					}
 					break;
@@ -250,19 +250,19 @@ public class ElementalMAC {
 				case N4:
 				case N5:
 					if (Math.abs(delta) < 0.15) {
-						if(err<0.225) {
+						if (err < 0.225) {
 							result = "Math.abs(delta) < 0.15 " + sh.toString();
-							err=0.225;
+							err = 0.225;
 						}
 					} else if ((delta > 0) && (delta < 0.4)) {
-						if(err<0.04) {
+						if (err < 0.04) {
 							result = "(delta > 0) && (delta < 0.4) " + sh.toString();
-							err=0.04;
+							err = 0.04;
 						}
 					} else {
-						if(err<0.01) {
+						if (err < 0.01) {
 							result = "Above " + sh.toString();
-							err=0.01;
+							err = 0.01;
 						}
 					}
 					break;
@@ -274,19 +274,19 @@ public class ElementalMAC {
 					// by NWMR
 				case N7:
 					if (Math.abs(delta) < 0.15) {
-						if(err<0.3) {
+						if (err < 0.3) {
 							result = "Math.abs(delta) < 0.15 " + sh.toString();
-							err=0.3;
+							err = 0.3;
 						}
 					} else if ((delta > 0.0) && (delta < 0.40)) {
-						if(err<0.04) {
+						if (err < 0.04) {
 							result = "(delta > 0) && (delta < 0.4) " + sh.toString();
-							err=0.04;
+							err = 0.04;
 						}
 					} else {
-						if(err<0.01) {
+						if (err < 0.01) {
 							result = "Above " + sh.toString();
-							err=0.01;
+							err = 0.01;
 						}
 					}
 					break;
@@ -294,7 +294,7 @@ public class ElementalMAC {
 					break;
 				}
 		}
-		return result + " -> "+df.format(limit(err));
+		return result + " -> " + df.format(limit(err));
 	}
 
 	/**
@@ -423,18 +423,18 @@ public class ElementalMAC {
 
 	/**
 	 * Set a maximum limit for the fractional uncertainty. Default = 0.9 or 90%.
-	 * 
+	 *
 	 * @param limit
 	 */
-	public void setLimit(double limit) {
+	public void setLimit(final double limit) {
 		mLimit = Math.max(0.0, limit);
 	}
 
 	/**
 	 * Returns the largest fractional uncertainty that the function
 	 * fractionalUncertainty(...) will return.
-	 * 
-	 * 
+	 *
+	 *
 	 * @return limit
 	 */
 	public double getLimit() {

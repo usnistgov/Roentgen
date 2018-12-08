@@ -36,16 +36,16 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
  * {@link LabeledMultivariateJacobianFunction}s may return the same output
  * label.
  * </p>
- * 
+ *
  * <p>
  * This class wraps a set of {@link LabeledMultivariateJacobianFunction} that
  * could be calculated in parallel. The output from one is not used as input to
  * another. This class is different from
- * {@link SerialLabeledMultivariateJacobianFunction} which implements a sequential
- * set of steps in which the output from earlier steps can become input to
- * subsequent steps.
+ * {@link SerialLabeledMultivariateJacobianFunction} which implements a
+ * sequential set of steps in which the output from earlier steps can become
+ * input to subsequent steps.
  * </p>
- * 
+ *
  *
  * @author Nicholas
  */
@@ -104,7 +104,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 
 	/**
 	 * Constructs the builder.
-	 * 
+	 *
 	 * @param name The name of the resulting function.
 	 * @throws ArgumentException
 	 */
@@ -116,7 +116,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 
 	/**
 	 * Constructs the builder.
-	 * 
+	 *
 	 * @param name  The name of the resulting function.
 	 * @param funcs A list of {@link LabeledMultivariateJacobianFunction} instances
 	 *              that are combined.
@@ -133,7 +133,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 
 	/**
 	 * Add an additional {@link LabeledMultivariateJacobianFunction} to the builder.
-	 * 
+	 *
 	 * @param func
 	 * @return {@link LabeledMultivariateJacobianFunctionBuilder}
 	 * @throws ArgumentException
@@ -152,7 +152,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 	 * Static means to build the combination
 	 * {@link LabeledMultivariateJacobianFunction} from a list of constituent
 	 * {@link LabeledMultivariateJacobianFunction} instances.
-	 * 
+	 *
 	 * @param name  A name for the resulting
 	 *              {@link LabeledMultivariateJacobianFunction}
 	 * @param funcs A list of constituent
@@ -185,9 +185,9 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 	}
 
 	/**
-	 * Returns a list of input labelsthat is constructed from specified
-	 * constituent {@link LabeledMultivariateJacobianFunction} instances.
-	 * 
+	 * Returns a list of input labelsthat is constructed from specified constituent
+	 * {@link LabeledMultivariateJacobianFunction} instances.
+	 *
 	 * @return List&lt;? extends Object&gt;
 	 */
 	public List<? extends Object> getInputLabels() {
@@ -197,7 +197,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 	/**
 	 * Returns a list of output labels that is constructed from specified
 	 * constituent {@link LabeledMultivariateJacobianFunction} instances.
-	 * 
+	 *
 	 * @return List&lt;? extends Object&gt;
 	 */
 	public List<? extends Object> getOutputLabels() {
@@ -244,10 +244,10 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			final RealMatrix cov = NullableRealMatrix.build(oDim, iDim);
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				final RealVector funcPoint = func.extractArgument(this, point);
-				Map<Object, Double> consts = new HashMap<>(getConstants());
+				final Map<Object, Double> consts = new HashMap<>(getConstants());
 				if (func instanceof ImplicitMeasurementModel) {
 					final List<? extends Object> fOut = func.getOutputLabels();
-					for (Object tag : fOut)
+					for (final Object tag : fOut)
 						consts.put(tag, getValue(tag, point));
 				}
 				func.initializeConstants(consts);
@@ -302,7 +302,8 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			return LabeledMultivariateJacobianFunctionBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(),
 					mode);
 		}
-		
+
+		@Override
 		public String toString() {
 			return mName;
 		}
@@ -317,21 +318,22 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		private final List<LabeledMultivariateJacobianFunction> mFuncs;
 		private final String mName;
 
-		private static List<Object> buildInputs(List<LabeledMultivariateJacobianFunction> steps) {
-			Set<Object> res = new HashSet<>();
-			for (LabeledMultivariateJacobianFunction func : steps)
+		private static List<Object> buildInputs(final List<LabeledMultivariateJacobianFunction> steps) {
+			final Set<Object> res = new HashSet<>();
+			for (final LabeledMultivariateJacobianFunction func : steps)
 				res.addAll(func.getInputLabels());
 			return new ArrayList<>(res);
 		}
 
-		private static List<Object> buildOutputs(List<LabeledMultivariateJacobianFunction> steps) {
-			Set<Object> res = new HashSet<>();
-			for (LabeledMultivariateJacobianFunction func : steps)
+		private static List<Object> buildOutputs(final List<LabeledMultivariateJacobianFunction> steps) {
+			final Set<Object> res = new HashSet<>();
+			for (final LabeledMultivariateJacobianFunction func : steps)
 				res.addAll(func.getOutputLabels());
 			return new ArrayList<>(res);
 		}
 
-		public ParallelImplementation(String name, List<LabeledMultivariateJacobianFunction> steps, ForkJoinPool fjp) {
+		public ParallelImplementation(final String name, final List<LabeledMultivariateJacobianFunction> steps,
+				final ForkJoinPool fjp) {
 			super(buildInputs(steps), buildOutputs(steps));
 			mFuncs = new ArrayList<>(steps);
 			mPool = fjp;
@@ -343,7 +345,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			private final RealVector mValues;
 			private final RealMatrix mJacobian;
 
-			Result(LabeledMultivariateJacobianFunction func, RealVector vals, RealMatrix jac) {
+			Result(final LabeledMultivariateJacobianFunction func, final RealVector vals, final RealMatrix jac) {
 				mFunc = func;
 				mValues = vals;
 				mJacobian = jac;
@@ -356,14 +358,14 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			private final LabeledMultivariateJacobianFunction mFunc;
 			private final RealVector mPoint;
 
-			private NMJFValue(LabeledMultivariateJacobianFunction func, RealVector point) {
+			private NMJFValue(final LabeledMultivariateJacobianFunction func, final RealVector point) {
 				mFunc = func;
 				mPoint = point;
 			}
 
 			@Override
 			public Result call() throws Exception {
-				Pair<RealVector, RealMatrix> tmp = mFunc.evaluate(mPoint);
+				final Pair<RealVector, RealMatrix> tmp = mFunc.evaluate(mPoint);
 				return new Result(mFunc, tmp.getFirst(), tmp.getSecond());
 			}
 		}
@@ -373,7 +375,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			private final LabeledMultivariateJacobianFunction mFunc;
 			private final RealVector mPoint;
 
-			private NMJFOptimized(LabeledMultivariateJacobianFunction func, RealVector point) {
+			private NMJFOptimized(final LabeledMultivariateJacobianFunction func, final RealVector point) {
 				mFunc = func;
 				mPoint = point;
 			}
@@ -387,26 +389,26 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see
 		 * org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
 		 * value(org.apache.commons.math3.linear.RealVector)
 		 */
 		@Override
-		public Pair<RealVector, RealMatrix> value(RealVector point) {
-			RealVector rv = new ArrayRealVector(getOutputDimension());
-			RealMatrix rm = new Array2DRowRealMatrix(getOutputDimension(), getInputDimension());
-			List<Callable<Result>> tasks = new ArrayList<>();
-			for (LabeledMultivariateJacobianFunction func : mFuncs) {
+		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+			final RealVector rv = new ArrayRealVector(getOutputDimension());
+			final RealMatrix rm = new Array2DRowRealMatrix(getOutputDimension(), getInputDimension());
+			final List<Callable<Result>> tasks = new ArrayList<>();
+			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				func.initializeConstants(getConstants());
 				tasks.add(new NMJFValue(func, func.extractArgument(this, point)));
 			}
 			final List<Future<Result>> res = mPool.invokeAll(tasks);
-			for (Future<Result> fp : res) {
+			for (final Future<Result> fp : res) {
 				try {
 					final Result tmp = fp.get();
-					List<? extends Object> outLabels = tmp.mFunc.getOutputLabels();
-					List<? extends Object> inLabels = tmp.mFunc.getInputLabels();
+					final List<? extends Object> outLabels = tmp.mFunc.getOutputLabels();
+					final List<? extends Object> inLabels = tmp.mFunc.getInputLabels();
 					final int[] inIdx = new int[inLabels.size()];
 					for (int c = 0; c < inIdx.length; ++c)
 						inIdx[c] = inputIndex(inLabels.get(c));
@@ -425,18 +427,18 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		}
 
 		@Override
-		public RealVector optimized(RealVector point) {
-			RealVector rv = new ArrayRealVector(getOutputDimension());
-			List<Callable<Result>> tasks = new ArrayList<>();
-			for (LabeledMultivariateJacobianFunction func : mFuncs) {
+		public RealVector optimized(final RealVector point) {
+			final RealVector rv = new ArrayRealVector(getOutputDimension());
+			final List<Callable<Result>> tasks = new ArrayList<>();
+			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				func.initializeConstants(getConstants());
 				tasks.add(new NMJFOptimized(func, func.extractArgument(this, point)));
 			}
-			List<Future<Result>> res = mPool.invokeAll(tasks);
-			for (Future<Result> fp : res) {
+			final List<Future<Result>> res = mPool.invokeAll(tasks);
+			for (final Future<Result> fp : res) {
 				try {
 					final Result tmp = fp.get();
-					List<? extends Object> outLabels = tmp.mFunc.getOutputLabels();
+					final List<? extends Object> outLabels = tmp.mFunc.getOutputLabels();
 					for (int r = 0; r < outLabels.size(); ++r)
 						rv.setEntry(outputIndex(outLabels.get(r)), tmp.mValues.getEntry(r));
 				} catch (InterruptedException | ExecutionException e) {
@@ -446,6 +448,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			return rv;
 		}
 
+		@Override
 		public String toString() {
 			return "Parallelized[" + mName + "]";
 		}
@@ -458,10 +461,10 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 	}
 
 	protected static String toHTML(//
-			String name, //
-			List<LabeledMultivariateJacobianFunction> funcs, //
-			List<? extends Object> inpLabels, //
-			List<? extends Object> outLabels, //
+			final String name, //
+			final List<LabeledMultivariateJacobianFunction> funcs, //
+			final List<? extends Object> inpLabels, //
+			final List<? extends Object> outLabels, //
 			final Mode mode) {
 		switch (mode) {
 		case TERSE:
@@ -518,7 +521,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		return res;
 	}
 
-	public LabeledMultivariateJacobianFunction buildParallel(ForkJoinPool pool) {
+	public LabeledMultivariateJacobianFunction buildParallel(final ForkJoinPool pool) {
 		final LabeledMultivariateJacobianFunction res = new ParallelImplementation( //
 				mName, //
 				mFuncs, //

@@ -16,8 +16,8 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 /**
  * Computes an estimated UncertainValues object give a set of samples
  * representing measurements of the values specified in 'tags'
- * 
- * 
+ *
+ *
  * @author Nicholas
  *
  */
@@ -31,10 +31,10 @@ public class EstimateUncertainValues {
 	/**
 	 * Create an object to accumulate samples to estimate an {@link UncertainValues}
 	 * object.
-	 * 
+	 *
 	 * @param tags The names of the parameters
 	 */
-	public EstimateUncertainValues(List<? extends Object> tags) {
+	public EstimateUncertainValues(final List<? extends Object> tags) {
 		mDimension = tags.size();
 		mTags = new ArrayList<>(tags);
 	}
@@ -42,11 +42,11 @@ public class EstimateUncertainValues {
 	/**
 	 * Compute <code>nSamples</code> draws from the specified
 	 * {@link MultivariateRealDistribution} and add them to the list of samples.
-	 * 
+	 *
 	 * @param mvd      {@link MultivariateRealDistribution
 	 * @param nSamples int
 	 */
-	public void add(MultivariateRealDistribution mvd, int nSamples) {
+	public void add(final MultivariateRealDistribution mvd, final int nSamples) {
 		for (int i = 0; i < nSamples; ++i)
 			add(mvd.sample());
 	}
@@ -54,12 +54,12 @@ public class EstimateUncertainValues {
 	/**
 	 * Add a measurement / sample to the data set used to compute the estimated
 	 * uncertainties.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param sample double[]
 	 * @return {@link RealVector} The input vector
 	 */
-	public double[] add(double[] sample) {
+	public double[] add(final double[] sample) {
 		assert sample.length == mDimension;
 		synchronized (mSamples) {
 			mSamples.add(new ArrayRealVector(sample));
@@ -70,12 +70,12 @@ public class EstimateUncertainValues {
 	/**
 	 * Add a measurement / sample to the data set used to compute the estimated
 	 * uncertainties.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param rv {@link RealVector}
 	 * @return {@link RealVector} The input vector
 	 */
-	public RealVector add(RealVector rv) {
+	public RealVector add(final RealVector rv) {
 		assert rv.getDimension() == mDimension;
 		synchronized (mSamples) {
 			mSamples.add(rv);
@@ -86,7 +86,7 @@ public class EstimateUncertainValues {
 	/**
 	 * Estimate the variances and covariances by calculating the expectation values
 	 * given the set of samples.
-	 * 
+	 *
 	 * @return {@link UncertainValues}
 	 */
 	public UncertainValues estimateDistribution() {
@@ -114,7 +114,7 @@ public class EstimateUncertainValues {
 
 	/**
 	 * Returns a list of tag objects.
-	 * 
+	 *
 	 * @return List&lt;? extends Object&gt;
 	 */
 	public List<? extends Object> getTags() {
@@ -124,7 +124,7 @@ public class EstimateUncertainValues {
 	/**
 	 * Number of samples / measurements which will be used to compute the estimated
 	 * uncertain values object.
-	 * 
+	 *
 	 * @return int
 	 */
 	public int getSampleCount() {
@@ -134,7 +134,7 @@ public class EstimateUncertainValues {
 	/**
 	 * Returns an unmodifiable list view of the set of sample points from which the
 	 * estimated uncertainty will be computed.
-	 * 
+	 *
 	 * @return List&lt;RealVector&gt;
 	 */
 	public List<RealVector> getSamples() {
@@ -144,7 +144,7 @@ public class EstimateUncertainValues {
 	/**
 	 * Returns a {@link DescriptiveStatistics} object that provides insight into the
 	 * variable associated with the specified tag.
-	 * 
+	 *
 	 * @param tag
 	 * @return {@link DescriptiveStatistics}
 	 */

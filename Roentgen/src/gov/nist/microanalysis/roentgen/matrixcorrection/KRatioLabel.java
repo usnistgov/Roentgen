@@ -7,6 +7,7 @@ import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
+import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -41,14 +42,14 @@ public class KRatioLabel//
 	private final Method mMethod;
 
 	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-			final ElementXRaySet trans, Method meth) {
+			final ElementXRaySet trans, final Method meth) {
 		super("k", unk, std, trans);
 		assert trans.size() >= 1;
 		mMethod = meth;
 	}
 
 	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-			final CharacteristicXRay trans, Method meth) {
+			final CharacteristicXRay trans, final Method meth) {
 		super("k", unk, std, new ElementXRaySet(trans));
 		mMethod = meth;
 	}
@@ -82,31 +83,47 @@ public class KRatioLabel//
 		return super.hashCode() + 31 * mMethod.hashCode();
 	}
 
-	static public boolean areAllSameUnknown(Set<KRatioLabel> krs) {
+	static public boolean areAllSameUnknownComposition(final Set<KRatioLabel> krs) {
 		Composition unk = null;
-		for (KRatioLabel krl : krs)
-			if (unk == null)
-				unk = krl.getUnknown().getComposition();
-			else if (!krl.getUnknown().getComposition().equals(unk))
+		for (final KRatioLabel krl : krs) {
+			final UnknownMatrixCorrectionDatum tmp = krl.getUnknown();
+			if (!tmp.hasEstimate())
 				return false;
+			if (unk == null)
+				unk = tmp.getComposition();
+			else if (!tmp.getComposition().getValues().equals(unk.getValues()))
+				return false;
+		}
+		return true;
+	}
+
+	static public boolean areAllSameUnknownElements(final Set<KRatioLabel> krs) {
+		Set<Element> elms = null;
+		for (final KRatioLabel krl : krs) {
+			final UnknownMatrixCorrectionDatum tmp = krl.getUnknown();
+			if (elms == null)
+				elms = tmp.getElementSet();
+			else if (!elms.equals(tmp.getElementSet()))
+				return false;
+		}
 		return true;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		KRatioLabel other = (KRatioLabel) obj;
+		final KRatioLabel other = (KRatioLabel) obj;
 		return mMethod == other.mMethod;
 	}
 
 	@Override
 	public String toHTML(final Mode mode) {
-		String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
+		final String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
 		if (mode == Mode.TERSE)
 			return "k<sub>" + getObject3().toHTML(Mode.TERSE) + "," + meth + "</sub>";
 		else if (mode == Mode.NORMAL)

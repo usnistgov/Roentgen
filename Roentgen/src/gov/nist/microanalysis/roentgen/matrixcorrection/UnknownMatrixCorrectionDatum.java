@@ -19,7 +19,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * A MatrixCorrectionDatum associated with an unknown. A list of candidate
  * elements must be provided. A estimated composition can optionally be
  * assigned. Used by MatrixCorrection algorithms as input.
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -32,7 +32,7 @@ public class UnknownMatrixCorrectionDatum //
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -50,7 +50,8 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 */
-	public UnknownMatrixCorrectionDatum(Set<Element> elms, UncertainValue beamEnergy, UncertainValue takeOffAngle) {
+	public UnknownMatrixCorrectionDatum(final Set<Element> elms, final UncertainValue beamEnergy,
+			final UncertainValue takeOffAngle) {
 		super(beamEnergy, takeOffAngle);
 		mElements = elms;
 	}
@@ -59,7 +60,8 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 */
-	public UnknownMatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle) {
+	public UnknownMatrixCorrectionDatum(final Composition comp, final UncertainValue beamEnergy,
+			final UncertainValue takeOffAngle) {
 		this(comp, beamEnergy, takeOffAngle, Double.NaN);
 	}
 
@@ -68,8 +70,8 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param takeOffAngle
 	 * @param roughness
 	 */
-	public UnknownMatrixCorrectionDatum(Set<Element> elms, UncertainValue beamEnergy, UncertainValue takeOffAngle,
-			double roughness) {
+	public UnknownMatrixCorrectionDatum(final Set<Element> elms, final UncertainValue beamEnergy,
+			final UncertainValue takeOffAngle, final double roughness) {
 		super(beamEnergy, takeOffAngle, roughness);
 		mElements = elms;
 	}
@@ -79,8 +81,8 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param takeOffAngle
 	 * @param roughness
 	 */
-	public UnknownMatrixCorrectionDatum(Composition comp, UncertainValue beamEnergy, UncertainValue takeOffAngle,
-			double roughness) {
+	public UnknownMatrixCorrectionDatum(final Composition comp, final UncertainValue beamEnergy,
+			final UncertainValue takeOffAngle, final double roughness) {
 		super(beamEnergy, takeOffAngle, roughness);
 		mElements = comp.getElementSet();
 		mEstimate = Optional.of(comp.asMassFraction());
@@ -90,14 +92,14 @@ public class UnknownMatrixCorrectionDatum //
 		return Collections.unmodifiableSet(mElements);
 	}
 
-	private boolean validate(Composition comp) {
-		for (Element elm : comp.getElementSet())
+	private boolean validate(final Composition comp) {
+		for (final Element elm : comp.getElementSet())
 			if (!mElements.contains(elm))
 				return false;
 		return true;
 	}
 
-	public void setEstimated(Composition comp) {
+	public void setEstimated(final Composition comp) {
 		assert validate(comp);
 		mEstimate = Optional.of(comp.asMassFraction());
 		mElements.clear();
@@ -113,6 +115,7 @@ public class UnknownMatrixCorrectionDatum //
 		return mEstimate.get();
 	}
 
+	@Override
 	public Composition getComposition() {
 		assert mEstimate.isPresent();
 		assert mEstimate.get().getNativeRepresentation() == Representation.MassFraction;
@@ -124,15 +127,15 @@ public class UnknownMatrixCorrectionDatum //
 	}
 
 	@Override
-	public String toHTML(Mode mode) {
-		BasicNumberFormat bnf = new BasicNumberFormat("0.0");
+	public String toHTML(final Mode mode) {
+		final BasicNumberFormat bnf = new BasicNumberFormat("0.0");
 		if (mode != Mode.VERBOSE) {
-			final String elms = getElementSet().stream().map((Element elm) -> elm.getAbbrev())
+			final String elms = getElementSet().stream().map((final Element elm) -> elm.getAbbrev())
 					.collect(Collectors.joining(", "));
 			return "Unknown[" + elms + "] at " + bnf.formatHTML(mBeamEnergy.doubleValue()) + " keV";
 
 		} else {
-			Table t = new Table();
+			final Table t = new Table();
 			t.addRow(Table.td("Elements"), Table.td(mElements.toString()));
 			if (mEstimate.isPresent())
 				t.addRow(Table.td("Estimate"), Table.td(mEstimate.get().toHTML(Mode.NORMAL)));
@@ -146,9 +149,10 @@ public class UnknownMatrixCorrectionDatum //
 		}
 	}
 
+	@Override
 	public String toString() {
-		DecimalFormat df = new DecimalFormat("0.0");
-		final String elms = getElementSet().stream().map((Element elm) -> elm.getAbbrev())
+		final DecimalFormat df = new DecimalFormat("0.0");
+		final String elms = getElementSet().stream().map((final Element elm) -> elm.getAbbrev())
 				.collect(Collectors.joining(", "));
 		return "Unknown[" + elms + "] at " + df.format(mBeamEnergy.doubleValue()) + " keV";
 	}

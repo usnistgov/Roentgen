@@ -492,26 +492,26 @@ final public class UncertainValue //
 
 	/**
 	 * Returns a new {@link UncertainValue} which is the product of this and k.
-	 * 
+	 *
 	 * @param k
 	 * @return {@link UncertainValue}
 	 */
-	public UncertainValue multiply(double k) {
+	public UncertainValue multiply(final double k) {
 		final List<Sigma> sigmas = new ArrayList<>();
-		for (Sigma ss : mSigmas)
+		for (final Sigma ss : mSigmas)
 			sigmas.add(new Sigma(ss.mLabel, k * ss.mValue));
 		return new UncertainValue(k * mValue.doubleValue(), sigmas);
 	}
 
 	/**
 	 * Returns a new {@link UncertainValue} which is the this divide by k.
-	 * 
+	 *
 	 * @param k
 	 * @return {@link UncertainValue}
 	 */
-	public UncertainValue divide(double k) {
+	public UncertainValue divide(final double k) {
 		final List<Sigma> sigmas = new ArrayList<>();
-		for (Sigma ss : mSigmas)
+		for (final Sigma ss : mSigmas)
 			sigmas.add(new Sigma(ss.mLabel, ss.mValue / k));
 		return new UncertainValue(mValue.doubleValue() / k, sigmas);
 	}
@@ -551,10 +551,10 @@ final public class UncertainValue //
 			if (!mSigmas.isEmpty()) {
 				boolean first = true;
 				sb.append("&#177;(");
-				List<Sigma> sigmas = new ArrayList<>(mSigmas);
+				final List<Sigma> sigmas = new ArrayList<>(mSigmas);
 				sigmas.sort(new Comparator<Sigma>() {
 					@Override
-					public int compare(Sigma o1, Sigma o2) {
+					public int compare(final Sigma o1, final Sigma o2) {
 						return -Double.compare(o1.mValue, o2.mValue);
 					}
 				});
@@ -573,17 +573,17 @@ final public class UncertainValue //
 		case VERBOSE:
 		default: {
 			final StringBuffer sb = new StringBuffer();
-			BasicNumberFormat pct = new BasicNumberFormat("0.0");
+			final BasicNumberFormat pct = new BasicNumberFormat("0.0");
 			sb.append("<table><tr><td>");
 			sb.append(bnf.formatHTML(mValue));
 			sb.append("</td>");
 			if (!mSigmas.isEmpty()) {
 				sb.append("<td>&#177;</td>");
 				sb.append("<td><table class=\"matrix\">");
-				List<Sigma> sigmas = new ArrayList<>(mSigmas);
+				final List<Sigma> sigmas = new ArrayList<>(mSigmas);
 				sigmas.sort(new Comparator<Sigma>() {
 					@Override
-					public int compare(Sigma o1, Sigma o2) {
+					public int compare(final Sigma o1, final Sigma o2) {
 						return -Double.compare(o1.mValue, o2.mValue);
 					}
 				});

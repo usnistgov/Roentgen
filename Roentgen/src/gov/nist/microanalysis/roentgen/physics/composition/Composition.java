@@ -126,9 +126,9 @@ public class Composition //
 	public static List<Object> buildTags(final Composition comp, final Representation mode) {
 		return buildTags(comp.mHTML, comp.getElementList(), mode);
 	}
-	
-	public static List<Object> massFractionTags(final Composition comp){
-		return buildTags(comp,Representation.MassFraction);
+
+	public static List<Object> massFractionTags(final Composition comp) {
+		return buildTags(comp, Representation.MassFraction);
 	}
 
 	private static List<Object> buildTags(final String html, final List<Element> elms, final Representation mode) {

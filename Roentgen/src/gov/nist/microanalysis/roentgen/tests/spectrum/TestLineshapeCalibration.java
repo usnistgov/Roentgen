@@ -10,11 +10,11 @@ package gov.nist.microanalysis.roentgen.tests.spectrum;
  */
 public class TestLineshapeCalibration {
 
-   /**
-    * Constructs a TestResolution
-    */
-   public TestLineshapeCalibration() {
-      // TODO Auto-generated constructor stub
-   }
+	/**
+	 * Constructs a TestResolution
+	 */
+	public TestLineshapeCalibration() {
+		// TODO Auto-generated constructor stub
+	}
 
 }

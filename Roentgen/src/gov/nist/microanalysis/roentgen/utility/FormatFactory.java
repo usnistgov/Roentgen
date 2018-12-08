@@ -16,37 +16,37 @@ import java.text.DecimalFormat;
  */
 public class FormatFactory {
 
-   /**
-    * The default NumberFormat instance used to present mass fractions.
-    *
-    * @return NumberFormat
-    */
-   public static BasicNumberFormat getMassFractionNumberFormat() {
-      final BasicNumberFormat res = new BasicNumberFormat("0.0000");
-      BasicNumberFormat.setSmallNumberFormat(1.0e-3, new DecimalFormat("0.00E0"));
-      return res;
-   }
+	/**
+	 * The default NumberFormat instance used to present mass fractions.
+	 *
+	 * @return NumberFormat
+	 */
+	public static BasicNumberFormat getMassFractionNumberFormat() {
+		final BasicNumberFormat res = new BasicNumberFormat("0.0000");
+		BasicNumberFormat.setSmallNumberFormat(1.0e-3, new DecimalFormat("0.00E0"));
+		return res;
+	}
 
-   /**
-    * The default NumberFormat instance used to present mass fractions.
-    *
-    * @return NumberFormat
-    */
-   public static BasicNumberFormat getAtomFractionNumberFormat() {
-      final BasicNumberFormat res = new BasicNumberFormat("0.0000");
-      BasicNumberFormat.setSmallNumberFormat(1.0e-3, new DecimalFormat("0.00E0"));
-      return res;
-   }
+	/**
+	 * The default NumberFormat instance used to present mass fractions.
+	 *
+	 * @return NumberFormat
+	 */
+	public static BasicNumberFormat getAtomFractionNumberFormat() {
+		final BasicNumberFormat res = new BasicNumberFormat("0.0000");
+		BasicNumberFormat.setSmallNumberFormat(1.0e-3, new DecimalFormat("0.00E0"));
+		return res;
+	}
 
-   /**
-    * The default NumberFormat instance used to present k-ratios fractions.
-    *
-    * @return NumberFormat
-    */
-   public static BasicNumberFormat getKRatioNumberFormat() {
-      final BasicNumberFormat res = new BasicNumberFormat("0.0000");
-      BasicNumberFormat.setSmallNumberFormat(1.0e-3, new DecimalFormat("0.00E0"));
-      return res;
-   }
+	/**
+	 * The default NumberFormat instance used to present k-ratios fractions.
+	 *
+	 * @return NumberFormat
+	 */
+	public static BasicNumberFormat getKRatioNumberFormat() {
+		final BasicNumberFormat res = new BasicNumberFormat("0.0000");
+		BasicNumberFormat.setSmallNumberFormat(1.0e-3, new DecimalFormat("0.00E0"));
+		return res;
+	}
 
 }

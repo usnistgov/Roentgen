@@ -15,34 +15,34 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  */
 public class XRayWindow {
 
-   private final PolynomialSplineFunction mTransparency;
+	private final PolynomialSplineFunction mTransparency;
 
-   /**
-    * Constructs an XRayWindow from a set of x,y data points that define the
-    * general outline of the curve. The intermediate values are interpolated
-    * using a spline interpolation algorithm.
-    */
-   private XRayWindow(final double[] xvals, final double[] yvals) {
-      final SplineInterpolator si = new SplineInterpolator();
-      mTransparency = si.interpolate(xvals, yvals);
-   }
+	/**
+	 * Constructs an XRayWindow from a set of x,y data points that define the
+	 * general outline of the curve. The intermediate values are interpolated using
+	 * a spline interpolation algorithm.
+	 */
+	private XRayWindow(final double[] xvals, final double[] yvals) {
+		final SplineInterpolator si = new SplineInterpolator();
+		mTransparency = si.interpolate(xvals, yvals);
+	}
 
-   private XRayWindow(final PolynomialSplineFunction psf) {
-      mTransparency = psf;
-   }
+	private XRayWindow(final PolynomialSplineFunction psf) {
+		mTransparency = psf;
+	}
 
-   public static XRayWindow create(final Composition[] mf, final double[] massThickness) {
+	public static XRayWindow create(final Composition[] mf, final double[] massThickness) {
 
-      return null;
+		return null;
 
-   }
+	}
 
-   public double getTransmission(final double energy) {
-      return mTransparency.value(energy);
-   }
+	public double getTransmission(final double energy) {
+		return mTransparency.value(energy);
+	}
 
-   public double[] getKnots() {
-      return mTransparency.getKnots();
-   }
+	public double[] getKnots() {
+		return mTransparency.getKnots();
+	}
 
 }

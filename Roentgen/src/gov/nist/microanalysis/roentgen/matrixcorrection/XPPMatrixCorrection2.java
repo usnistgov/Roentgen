@@ -72,12 +72,12 @@ import joinery.DataFrame;
  * PAP1991)</li>
  * <li>Surface roughness (user specified)</li>
  * </ul>
- * 
+ *
  * <p>
  * This class calculates XPP assuming that all the data associate with the
  * unknown was collected at the same beam energy.
  * <p>
- * 
+ *
  *
  * @author Nicholas
  */
@@ -1881,11 +1881,11 @@ public class XPPMatrixCorrection2 //
 
 		final Map<UnknownMatrixCorrectionDatum, CharacteristicXRaySet> unks = new HashMap<>();
 		final Map<StandardMatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
-		for (KRatioLabel krl : kratios) {
+		for (final KRatioLabel krl : kratios) {
 			assert krl.getMethod().equals(Method.Measured);
-			UnknownMatrixCorrectionDatum unk = krl.getUnknown();
-			StandardMatrixCorrectionDatum std = krl.getStandard();
-			ElementXRaySet exrs = krl.getXRaySet();
+			final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
+			final StandardMatrixCorrectionDatum std = krl.getStandard();
+			final ElementXRaySet exrs = krl.getXRaySet();
 			if (!unks.containsKey(unk))
 				unks.put(unk, new CharacteristicXRaySet());
 			unks.get(unk).addAll(exrs);
@@ -1906,17 +1906,17 @@ public class XPPMatrixCorrection2 //
 		}
 		{
 			final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
-			for (KRatioLabel krl : kratios)
-				for (CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay())
+			for (final KRatioLabel krl : kratios)
+				for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay())
 					step.add(new StepZA(krl.getUnknown(), krl.getStandard(), cxr, variates));
 			res.add(LabeledMultivariateJacobianFunctionBuilder.join("ZA", step));
 		}
 		{
 			final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
-			for (KRatioLabel krl : kratios) {
-				UnknownMatrixCorrectionDatum unk = krl.getUnknown();
-				StandardMatrixCorrectionDatum std = krl.getStandard();
-				ElementXRaySet exrs = krl.getXRaySet();
+			for (final KRatioLabel krl : kratios) {
+				final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
+				final StandardMatrixCorrectionDatum std = krl.getStandard();
+				final ElementXRaySet exrs = krl.getXRaySet();
 				if (exrs.size() > 1)
 					step.add(new StepCombine(unk, std, exrs, variates));
 			}
@@ -1998,7 +1998,7 @@ public class XPPMatrixCorrection2 //
 	 * @throws ArgumentException
 	 */
 	public XPPMatrixCorrection2(//
-			Set<KRatioLabel> kratios, //
+			final Set<KRatioLabel> kratios, //
 			final Set<Variates> variates //
 	) throws ArgumentException {
 		super("XPP Matrix Correction", kratios, buildSteps(kratios, variates));
@@ -2014,7 +2014,7 @@ public class XPPMatrixCorrection2 //
 	 * @throws ArgumentException
 	 */
 	public XPPMatrixCorrection2( //
-			Set<KRatioLabel> kratios //
+			final Set<KRatioLabel> kratios //
 	) throws ArgumentException {
 		this(kratios, defaultVariates());
 	}
@@ -2057,7 +2057,7 @@ public class XPPMatrixCorrection2 //
 			throws ArgumentException {
 		final Map<CharacteristicXRay, List<Composition>> mclc = new HashMap<>();
 		final Set<Composition> comps = new HashSet<>();
-		for (KRatioLabel krl : mKRatios) {
+		for (final KRatioLabel krl : mKRatios) {
 			final Set<CharacteristicXRay> scxrs = krl.getXRaySet().getSetOfCharacteristicXRay();
 			for (final CharacteristicXRay cxr : scxrs) {
 				List<Composition> lc = mclc.get(cxr);
@@ -2129,7 +2129,7 @@ public class XPPMatrixCorrection2 //
 	 *         the constant quantities
 	 * @throws ArgumentException
 	 */
-	private UncertainValues buildParameters(boolean withUnc) //
+	private UncertainValues buildParameters(final boolean withUnc) //
 			throws ArgumentException {
 		final List<UncertainValues> results = new ArrayList<>();
 		if (mVariates.contains(Variates.MeanIonizationPotential) == withUnc)
@@ -2137,7 +2137,7 @@ public class XPPMatrixCorrection2 //
 		if (mVariates.contains(Variates.MassAbsorptionCofficient) == withUnc)
 			results.add(getMaterialMACs());
 		if (mVariates.contains(Variates.BeamEnergy) == withUnc) {
-			Map<Object, Number> vals = new HashMap<>();
+			final Map<Object, Number> vals = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
 				vals.put(beamEnergyTag(krl.getUnknown()), krl.getUnknown().getBeamEnergy());
 				vals.put(beamEnergyTag(krl.getStandard()), krl.getStandard().getBeamEnergy());
@@ -2145,7 +2145,7 @@ public class XPPMatrixCorrection2 //
 			results.add(new UncertainValues(vals));
 		}
 		if (mVariates.contains(Variates.TakeOffAngle) == withUnc) {
-			Map<Object, Number> vals = new HashMap<>();
+			final Map<Object, Number> vals = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
 				vals.put(takeOffAngleTag(krl.getUnknown()), krl.getUnknown().getTakeOffAngle());
 				vals.put(takeOffAngleTag(krl.getStandard()), krl.getStandard().getTakeOffAngle());
@@ -2153,7 +2153,7 @@ public class XPPMatrixCorrection2 //
 			results.add(new UncertainValues(vals));
 		}
 		if (mVariates.contains(Variates.SurfaceRoughness) == withUnc) {
-			Map<Object, Number> vals = new HashMap<>();
+			final Map<Object, Number> vals = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
 				vals.put(tagRoughness(krl.getUnknown()), new UncertainValue(0.0, krl.getUnknown().getRoughness()));
 				vals.put(tagRoughness(krl.getStandard()), new UncertainValue(0.0, krl.getStandard().getRoughness()));
@@ -2174,7 +2174,7 @@ public class XPPMatrixCorrection2 //
 			}
 		}
 		// Make sure that there are no replicated Compositions
-		Set<Composition> allComps = new HashSet<>();
+		final Set<Composition> allComps = new HashSet<>();
 		for (final KRatioLabel krl : mKRatios) {
 			if (mVariates.contains(Variates.StandardComposition) == withUnc)
 				allComps.add(krl.getStandard().getComposition());
@@ -2187,7 +2187,7 @@ public class XPPMatrixCorrection2 //
 
 	public Set<Element> getElements() {
 		final Set<Element> elms = new TreeSet<>();
-		for (KRatioLabel krl : mKRatios)
+		for (final KRatioLabel krl : mKRatios)
 			elms.add(krl.getXRaySet().getElement());
 		return elms;
 	}
@@ -2225,7 +2225,7 @@ public class XPPMatrixCorrection2 //
 				}
 				allCxr.addAll(krl.getXRaySet().getSetOfCharacteristicXRay());
 			}
-			for (CharacteristicXRay cxr : allCxr) {
+			for (final CharacteristicXRay cxr : allCxr) {
 				final Set<Composition> mats = new HashSet<>();
 				final Set<Element> elms = new HashSet<>();
 				for (final Map.Entry<Composition, CharacteristicXRaySet> me : comps.entrySet())
@@ -2235,7 +2235,7 @@ public class XPPMatrixCorrection2 //
 					}
 				assert mats.size() > 1;
 				funcs.add(new MaterialMACFunction(new ArrayList<>(mats), cxr));
-				for (Element elm : elms)
+				for (final Element elm : elms)
 					elmMacs.add(new ElementalMAC.ElementMAC(elm, cxr));
 			}
 		}
@@ -2247,7 +2247,7 @@ public class XPPMatrixCorrection2 //
 			macInps.set(emac, em.compute(emac.getElement(), emac.getXRay()));
 		final List<UncertainValues> inputs = new ArrayList<>();
 		inputs.add(macInps);
-		for (Composition comp : comps.keySet())
+		for (final Composition comp : comps.keySet())
 			inputs.add(comp);
 		return UncertainValues.propagate(all, UncertainValues.combine(inputs));
 	}

@@ -9,12 +9,12 @@ public class ProbeCurrentLabel extends BaseLabel<Integer, Object, Object> {
 
 	private final Optional<Date> mTimestamp;
 
-	protected ProbeCurrentLabel(int index, Date timestamp) {
+	protected ProbeCurrentLabel(final int index, final Date timestamp) {
 		super("PC<sub>" + index + "</sub>", Integer.valueOf(index));
 		mTimestamp = Optional.of(timestamp);
 	}
 
-	protected ProbeCurrentLabel(int index) {
+	protected ProbeCurrentLabel(final int index) {
 		super("PC<sub>" + index + "</sub>", Integer.valueOf(index));
 		mTimestamp = Optional.empty();
 	}

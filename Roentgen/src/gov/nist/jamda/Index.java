@@ -6,28 +6,29 @@ public class Index implements Comparable<Index> {
 
 	private final int[] mIndices;
 
-	Index(int[] indices) {
+	Index(final int[] indices) {
 		mIndices = indices.clone();
 	}
 
 	public int[] indices() {
 		return mIndices.clone();
 	}
-	
-	public int index(int dim) {
+
+	public int index(final int dim) {
 		return mIndices[dim];
 	}
 
+	@Override
 	public String toString() {
 		return "Index" + Arrays.toString(mIndices);
 	}
-	
+
 	public int size() {
 		return mIndices.length;
 	}
 
 	@Override
-	public int compareTo(Index o) {
+	public int compareTo(final Index o) {
 		assert mIndices.length == o.mIndices.length;
 		int res = 0;
 		for (int i = 0; (res == 0) && (i < mIndices.length); ++i) {
@@ -45,14 +46,14 @@ public class Index implements Comparable<Index> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Index other = (Index) obj;
+		final Index other = (Index) obj;
 		return Arrays.equals(mIndices, other.mIndices);
 	}
 }

@@ -19,47 +19,47 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  */
 public class Property {
 
-   @XStreamAlias("propertyID")
-   private final UUID mUUID;
-   @XStreamAlias("propertyName")
-   private final String mFriendlyName;
+	@XStreamAlias("propertyID")
+	private final UUID mUUID;
+	@XStreamAlias("propertyName")
+	private final String mFriendlyName;
 
-   protected Property(final String name) {
-      mUUID = UUID.randomUUID();
-      mFriendlyName = name;
-   }
+	protected Property(final String name) {
+		mUUID = UUID.randomUUID();
+		mFriendlyName = name;
+	}
 
-   public UUID getUUID() {
-      assert mUUID != null;
-      return mUUID;
-   }
+	public UUID getUUID() {
+		assert mUUID != null;
+		return mUUID;
+	}
 
-   @Override
-   public String toString() {
-      assert mFriendlyName != null;
-      return mFriendlyName;
-   }
+	@Override
+	public String toString() {
+		assert mFriendlyName != null;
+		return mFriendlyName;
+	}
 
-   /**
-    * @see java.lang.Object#hashCode()
-    */
-   @Override
-   public int hashCode() {
-      return Objects.hashCode(mUUID, mFriendlyName);
-   }
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(mUUID, mFriendlyName);
+	}
 
-   /**
-    * @see java.lang.Object#equals(java.lang.Object)
-    */
-   @Override
-   public boolean equals(final Object obj) {
-      if(this == obj)
-         return true;
-      if(obj == null)
-         return false;
-      if(!(obj instanceof Property))
-         return false;
-      return mUUID.equals(((Property) obj).mUUID);
-   }
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof Property))
+			return false;
+		return mUUID.equals(((Property) obj).mUUID);
+	}
 
 }

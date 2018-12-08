@@ -66,7 +66,7 @@ public class LabeledMultivariateJacobian //
 	 * Construct a {@link LabeledMultivariateJacobian} from a
 	 * {@link LabeledMultivariateJacobianFunction} evaluzte at a specific
 	 * {@link RealVector} point.
-	 * 
+	 *
 	 * @param nmjf A {@link LabeledMultivariateJacobianFunction}
 	 * @param pt   The evaluation point
 	 * @return {@link LabeledMultivariateJacobian}
@@ -81,7 +81,7 @@ public class LabeledMultivariateJacobian //
 	/**
 	 * Computes the values and an estimate of the Jacobian using a finite difference
 	 * algorithm.
-	 * 
+	 *
 	 * @param nmjf {@link LabeledMultivariateJacobianFunction}
 	 * @param uv   {@link UncertainValues} representing the point at which to
 	 *             evaluate nmjf
@@ -117,7 +117,7 @@ public class LabeledMultivariateJacobian //
 	 * Construct a {@link LabeledMultivariateJacobian} from a
 	 * {@link LabeledMultivariateJacobianFunction} evaluated at a specific
 	 * {@link RealVector} point.
-	 * 
+	 *
 	 * @param nmjf A {@link LabeledMultivariateJacobianFunction}
 	 * @param pt   The evaluation point
 	 * @return {@link LabeledMultivariateJacobian}
@@ -132,7 +132,7 @@ public class LabeledMultivariateJacobian //
 	/**
 	 * Returns a {@link RealVector} containing the point at which the
 	 * {@link LabeledMultivariateJacobianFunction} was evaluated.
-	 * 
+	 *
 	 * @return
 	 */
 	public RealVector getInputValues() {
@@ -142,8 +142,8 @@ public class LabeledMultivariateJacobian //
 	/**
 	 * Implements the value(...) method in the MultivariateJacobianFunction
 	 * interface.
-	 * 
-	 * 
+	 *
+	 *
 	 * @see org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
 	 *      value(org.apache.commons.math3.linear.RealVector)
 	 */

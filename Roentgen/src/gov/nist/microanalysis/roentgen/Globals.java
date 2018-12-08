@@ -18,31 +18,31 @@ import gov.nist.microanalysis.roentgen.spectrum.SpectrumFileReader;
  */
 public class Globals {
 
-   public static final String LIB_NAME = "Roentgen";
+	public static final String LIB_NAME = "Roentgen";
 
-   private static final SimplyLazy<Logger> LOGGER = new SimplyLazy<Logger>() {
+	private static final SimplyLazy<Logger> LOGGER = new SimplyLazy<Logger>() {
 
-      @Override
-      protected Logger initialize() {
-         final Logger res = LogManager.getLogger("Roentgen library");
-         return res;
-      }
-   };
+		@Override
+		protected Logger initialize() {
+			final Logger res = LogManager.getLogger("Roentgen library");
+			return res;
+		}
+	};
 
-   private final static SimplyLazy<SpectrumFileReader> SPECTRUM_FILE_READER = new SimplyLazy<SpectrumFileReader>() {
-      @Override
-      protected SpectrumFileReader initialize() {
-         final SpectrumFileReader res = new SpectrumFileReader();
-         res.register(new EMSAReader.EMSAFileReaderFactory());
-         return res;
-      }
-   };
+	private final static SimplyLazy<SpectrumFileReader> SPECTRUM_FILE_READER = new SimplyLazy<SpectrumFileReader>() {
+		@Override
+		protected SpectrumFileReader initialize() {
+			final SpectrumFileReader res = new SpectrumFileReader();
+			res.register(new EMSAReader.EMSAFileReaderFactory());
+			return res;
+		}
+	};
 
-   static public Logger getLogger() {
-      return LOGGER.get();
-   }
+	static public Logger getLogger() {
+		return LOGGER.get();
+	}
 
-   static public SpectrumFileReader getSpectrumFileReader() {
-      return SPECTRUM_FILE_READER.get();
-   }
+	static public SpectrumFileReader getSpectrumFileReader() {
+		return SPECTRUM_FILE_READER.get();
+	}
 }

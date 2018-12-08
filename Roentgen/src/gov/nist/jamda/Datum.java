@@ -3,7 +3,7 @@ package gov.nist.jamda;
 public class Datum<H> {
 	private final H mDatum;
 
-	protected Datum(H h) {
+	protected Datum(final H h) {
 		mDatum = h;
 	}
 
@@ -11,16 +11,18 @@ public class Datum<H> {
 		return mDatum;
 	}
 
+	@Override
 	public String toString() {
 		return mDatum != null ? mDatum.toString() : "N/A";
 	}
-	
+
 	public static class NumericDatum extends Datum<Double> {
 
-		protected NumericDatum(double h) {
+		protected NumericDatum(final double h) {
 			super(h);
 		}
 
+		@Override
 		public String toString() {
 			return get().toString();
 		}
@@ -28,11 +30,12 @@ public class Datum<H> {
 
 	public static class TextDatum extends Datum<String> {
 
-		protected TextDatum(String h) {
+		protected TextDatum(final String h) {
 			super(h);
 			assert h != null;
 		}
 
+		@Override
 		public String toString() {
 			return get();
 		}

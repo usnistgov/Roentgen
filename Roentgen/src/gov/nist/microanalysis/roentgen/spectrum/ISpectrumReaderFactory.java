@@ -16,13 +16,13 @@ import javax.swing.filechooser.FileFilter;
  */
 public interface ISpectrumReaderFactory {
 
-   public ISpectrumReader get();
+	public ISpectrumReader get();
 
-   /**
-    * Gets a FileFilter to associate with this spectrum file type.
-    *
-    * @return
-    */
-   public FileFilter getFileFilter();
+	/**
+	 * Gets a FileFilter to associate with this spectrum file type.
+	 *
+	 * @return
+	 */
+	public FileFilter getFileFilter();
 
 }

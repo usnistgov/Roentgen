@@ -408,7 +408,7 @@ public class SerialLabeledMultivariateJacobianFunction //
 
 	/**
 	 * Implements the optimized version of the evaluate function. (non-Javadoc)
-	 * 
+	 *
 	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction#optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override

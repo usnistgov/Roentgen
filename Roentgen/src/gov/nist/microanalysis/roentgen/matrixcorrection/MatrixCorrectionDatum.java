@@ -10,7 +10,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
  * A package describing a set of arguments to the matrix correction algorithm.
- * 
+ *
  * {@link MatrixCorrectionDatum} come in three different flavors:
  * <ol>
  * <li>Standards - with a defined Composition and isStandard()==true</li>
@@ -18,7 +18,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  * isStandard()==false</li>
  * <li>True unknowns - with only an Element set</li>
  * </ol>
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -36,14 +36,14 @@ public abstract class MatrixCorrectionDatum //
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		MatrixCorrectionDatum other = (MatrixCorrectionDatum) obj;
+		final MatrixCorrectionDatum other = (MatrixCorrectionDatum) obj;
 		return Objects.equals(mBeamEnergy, other.mBeamEnergy) && //
 				Objects.equals(mTakeOffAngle, other.mTakeOffAngle) && //
 				Objects.equals(mRoughness, other.mRoughness);
@@ -55,8 +55,8 @@ public abstract class MatrixCorrectionDatum //
 	 * @param roughness    in mass thickness cm * g/cm^3 or g/cm^2
 	 */
 	protected MatrixCorrectionDatum(//
-			UncertainValue beamEnergy, //
-			UncertainValue takeOffAngle //
+			final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle //
 	) {
 		this(beamEnergy, takeOffAngle, Double.NaN);
 	}
@@ -68,10 +68,9 @@ public abstract class MatrixCorrectionDatum //
 	 * @param takeOffAngle degrees
 	 * @param roughness    in mass thickness cm * g/cm^3 or g/cm^2
 	 */
-	protected MatrixCorrectionDatum(
-			UncertainValue beamEnergy, //
-			UncertainValue takeOffAngle, //
-			double roughness //
+	protected MatrixCorrectionDatum(final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle, //
+			final double roughness //
 	) {
 		mBeamEnergy = beamEnergy;
 		mTakeOffAngle = takeOffAngle;
@@ -80,12 +79,12 @@ public abstract class MatrixCorrectionDatum //
 
 	/**
 	 * Helper to simplify computing roughness.
-	 * 
+	 *
 	 * @param dimension In nanometers
 	 * @param density   g/cm<sup>3</sup>
 	 * @return double cm (g/cm<sup>3</sup>)
 	 */
-	static public double roughness(double dimension, double density) {
+	static public double roughness(final double dimension, final double density) {
 		return 1.0e-7 * dimension * density;
 	}
 
@@ -104,11 +103,11 @@ public abstract class MatrixCorrectionDatum //
 	public boolean hasRoughness() {
 		return mRoughness.isPresent();
 	}
-	
+
 	/**
-	 * Returns the Composition of the standard or the estimated Composition of
-	 * the unknown.
-	 * 
+	 * Returns the Composition of the standard or the estimated Composition of the
+	 * unknown.
+	 *
 	 * @return {@link Composition}
 	 */
 	abstract Composition getComposition();

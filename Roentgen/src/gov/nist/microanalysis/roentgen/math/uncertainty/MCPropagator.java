@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.math.uncertainty;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 
+import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
 import org.apache.commons.math3.distribution.MultivariateRealDistribution;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealVector;
@@ -19,7 +20,7 @@ import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
  * {@link MultivariateRealDistribution} object or the default
  * {@link SafeMultivariateNormalDistribution} object provides the random
  * variates.
- * 
+ *
  * @author Nicholas
  */
 public class MCPropagator {
@@ -34,7 +35,7 @@ public class MCPropagator {
 	/**
 	 * An interface for limiting the range of values accessible to a random
 	 * variable.
-	 * 
+	 *
 	 * @author Nicholas
 	 *
 	 */
@@ -43,7 +44,7 @@ public class MCPropagator {
 		/**
 		 * Takes the value <code>val</code> and ensures that it is within the bounds of
 		 * the constraint.
-		 * 
+		 *
 		 * @param val
 		 * @return double val constrained
 		 */
@@ -52,7 +53,7 @@ public class MCPropagator {
 
 	/**
 	 * Unconstrained.
-	 * 
+	 *
 	 * @author Nicholas
 	 *
 	 */
@@ -67,7 +68,7 @@ public class MCPropagator {
 	/**
 	 * Constrains a value to within a [min,max] range. Values less than min are set
 	 * to min and values larger than max are set to max.
-	 * 
+	 *
 	 * @author Nicholas
 	 *
 	 */
@@ -93,16 +94,16 @@ public class MCPropagator {
 		}
 	}
 
-	private static Constraint[] buildNone(int n) {
-		Constraint[] res = new Constraint[n];
+	private static Constraint[] buildNone(final int n) {
+		final Constraint[] res = new Constraint[n];
 		for (int i = 0; i < n; ++i)
 			res[i] = new None();
 		return res;
 	}
 
-	private static Constraint[] buildSigma(double sigma, UncertainValues uv) {
+	private static Constraint[] buildSigma(final double sigma, final UncertainValues uv) {
 		final int n = uv.getDimension();
-		Constraint[] res = new Constraint[n];
+		final Constraint[] res = new Constraint[n];
 		for (int i = 0; i < n; ++i) {
 			final double va = uv.getEntry(i);
 			final double unc = uv.getUncertainty(i);
@@ -132,7 +133,7 @@ public class MCPropagator {
 		private final MCPropagator mMCP;
 		private final int mNEvals;
 
-		private MultiEvaluate(MCPropagator mcp, int nEvals) {
+		private MultiEvaluate(final MCPropagator mcp, final int nEvals) {
 			super();
 			mNEvals = nEvals;
 			mMCP = mcp;
@@ -152,8 +153,8 @@ public class MCPropagator {
 	 * Construct a {@link MCPropagator} to evaluate the specified
 	 * {@link LabeledMultivariateJacobianFunction} at the specified input values
 	 * randomized and constrained.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param nmvjf       {@link LabeledMultivariateJacobianFunction}
 	 * @param inputs      The input values and associated covariance matrix
 	 * @param constraints The constraints to the input values
@@ -163,8 +164,8 @@ public class MCPropagator {
 	private MCPropagator( //
 			final LabeledMultivariateJacobianFunction nmvjf, //
 			final UncertainValues inputs, //
-			Constraint[] constraints, //
-			MultivariateRealDistribution mrd//
+			final Constraint[] constraints, //
+			final MultivariateRealDistribution mrd//
 	) {
 		mFunction = nmvjf;
 		mConstraints = constraints.clone();
@@ -178,8 +179,8 @@ public class MCPropagator {
 	 * Construct a {@link MCPropagator} to evaluate the specified
 	 * {@link LabeledMultivariateJacobianFunction} at the specified input values
 	 * randomized and unconstrained.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param nmvjf  {@link LabeledMultivariateJacobianFunction}
 	 * @param inputs The input values and associated covariance matrix
 	 * @param mrd    A {@link MultivariateRealDistribution} to generate the random
@@ -188,7 +189,7 @@ public class MCPropagator {
 	public MCPropagator( //
 			final LabeledMultivariateJacobianFunction nmvjf, //
 			final UncertainValues uv, //
-			MultivariateRealDistribution mrd //
+			final MultivariateRealDistribution mrd //
 	) {
 		this(nmvjf, uv, buildNone(uv.getDimension()), mrd);
 	}
@@ -198,8 +199,8 @@ public class MCPropagator {
 	 * {@link LabeledMultivariateJacobianFunction} at the specified input values
 	 * randomized using a default {@link MultivariateNormalDistribution} and
 	 * unconstrained.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param nmvjf  {@link LabeledMultivariateJacobianFunction}
 	 * @param inputs The input values and associated covariance matrix in the same
 	 *               order as the nmvjf input labels.
@@ -214,8 +215,8 @@ public class MCPropagator {
 	 * Construct a {@link MCPropagator} to evaluate the specified
 	 * {@link LabeledMultivariateJacobianFunction} at the specified input values
 	 * randomized and constrained.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param nmvjf  {@link LabeledMultivariateJacobianFunction}
 	 * @param inputs The input values and associated covariance matrix
 	 * @param sigma  Constrain the inputs to within sigma of the mean
@@ -226,7 +227,7 @@ public class MCPropagator {
 			final LabeledMultivariateJacobianFunction nmvjf, //
 			final UncertainValues uv, //
 			final double sigma, //
-			MultivariateRealDistribution mrd //
+			final MultivariateRealDistribution mrd //
 	) {
 		this(nmvjf, uv, buildSigma(sigma, uv), mrd);
 	}
@@ -235,8 +236,8 @@ public class MCPropagator {
 	 * Construct a {@link MCPropagator} to evaluate the specified
 	 * {@link LabeledMultivariateJacobianFunction} at the specified input values
 	 * randomized and constrained.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param nmvjf  {@link LabeledMultivariateJacobianFunction}
 	 * @param inputs The input values and associated covariance matrix
 	 * @param sigma  Constrain the inputs to within sigma of the mean
@@ -248,7 +249,7 @@ public class MCPropagator {
 
 	/**
 	 * Specify a {@link Constraint} model for a specific input variable.
-	 * 
+	 *
 	 * @param label
 	 * @param con
 	 */
@@ -261,7 +262,7 @@ public class MCPropagator {
 	 * Evaluates the {@link LabeledMultivariateJacobianFunction} nEvals times and
 	 * computes the average result and the covariance matrix which are returned as
 	 * an {@link UncertainValues} object.
-	 * 
+	 *
 	 * @param nEvals
 	 * @return {@link UncertainValues}
 	 */
@@ -275,12 +276,12 @@ public class MCPropagator {
 	 * Evaluates the {@link LabeledMultivariateJacobianFunction} nEvals times using
 	 * a multi-threaded implementation and computes the average result and the
 	 * covariance matrix which are returned as an {@link UncertainValues} object.
-	 * 
+	 *
 	 * @param nEvals
 	 * @return {@link UncertainValues}
 	 */
 	public UncertainValues computeMT(final int nEvals) {
-		ForkJoinPool fjp = new ForkJoinPool();
+		final ForkJoinPool fjp = new ForkJoinPool();
 		fjp.invoke(new MultiEvaluate(this, nEvals));
 		return mOutputs.estimateDistribution();
 	}
@@ -289,7 +290,7 @@ public class MCPropagator {
 	 * Returns the {@link UncertainValues} object used to seed the
 	 * {@link MultivariateRealDistribution} to provide the randomized arrays of
 	 * input values.
-	 * 
+	 *
 	 * @return {@link UncertainValues}
 	 */
 	public UncertainValues getInputDistribution() {
@@ -300,7 +301,7 @@ public class MCPropagator {
 	 * Computes the UncertainValues object from the randomized distribution of draws
 	 * from the {@link MultivariateRealDistribution} used as the source of
 	 * randomness.
-	 * 
+	 *
 	 * @return UncertainValues
 	 */
 	public UncertainValues estimatedInputDistribution() {
@@ -311,7 +312,7 @@ public class MCPropagator {
 	 * Returns the estimated output set of random values that results from
 	 * evaluating the {@link LabeledMultivariateJacobianFunction} at the randomized
 	 * distribution of values generated by the {@link MultivariateRealDistribution}.
-	 * 
+	 *
 	 * @return UncertainValues
 	 */
 	public UncertainValues estimatedOutputDistribution() {
@@ -321,7 +322,7 @@ public class MCPropagator {
 	/**
 	 * Returns a {@link DescriptiveStatistics} object associated with the specified
 	 * output variable label.
-	 * 
+	 *
 	 * @param label An output variable label
 	 * @return {@link DescriptiveStatistics}
 	 */
@@ -332,7 +333,7 @@ public class MCPropagator {
 	/**
 	 * Returns a {@link DescriptiveStatistics} object associated with the specified
 	 * input variable label.
-	 * 
+	 *
 	 * @param label An input variable label
 	 * @return {@link DescriptiveStatistics}
 	 */

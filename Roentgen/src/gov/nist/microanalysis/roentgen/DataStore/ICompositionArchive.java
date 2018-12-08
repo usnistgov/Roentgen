@@ -19,43 +19,41 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  */
 public interface ICompositionArchive {
 
-   /**
-    * This interface provides a mechanism to look up the definition of a named
-    * Composition in a database or some such. @param name @return A Composition
-    * or null if none defined for this name.
-    *
-    * @throws Exception
-    */
-   public Curated<Composition> findComposition(String name)
-         throws Exception;
+	/**
+	 * This interface provides a mechanism to look up the definition of a named
+	 * Composition in a database or some such. @param name @return A Composition or
+	 * null if none defined for this name.
+	 *
+	 * @throws Exception
+	 */
+	public Curated<Composition> findComposition(String name) throws Exception;
 
-   /**
-    * Searches the database for the Compositions for which mass fractions fall
-    * on the specified intervals.
-    *
-    * @param criteria A map of Element to mass faction Interval
-    * @return All Compositions matching the criteria
-    */
-   public Set<Curated<Composition>> findMatchingComposition(Map<Element, Pair<Double, Double>> criteria)
-         throws Exception;
+	/**
+	 * Searches the database for the Compositions for which mass fractions fall on
+	 * the specified intervals.
+	 *
+	 * @param criteria A map of Element to mass faction Interval
+	 * @return All Compositions matching the criteria
+	 */
+	public Set<Curated<Composition>> findMatchingComposition(Map<Element, Pair<Double, Double>> criteria)
+			throws Exception;
 
-   /**
-    * Contents of database by name
-    *
-    * @throws Exception
-    */
-   public Set<String> getCompositionNames()
-         throws Exception;
+	/**
+	 * Contents of database by name
+	 *
+	 * @throws Exception
+	 */
+	public Set<String> getCompositionNames() throws Exception;
 
-   /**
-    * Add the specified {@link Composition} to the database with the specified
-    * name. If name already has been defined, then the old definition is
-    * overwritten.
-    *
-    * @param name
-    * @param comp
-    * @return Curated&lt;Composition&gt;
-    */
-   public Curated<Composition> add(String name, Composition comp);
+	/**
+	 * Add the specified {@link Composition} to the database with the specified
+	 * name. If name already has been defined, then the old definition is
+	 * overwritten.
+	 *
+	 * @param name
+	 * @param comp
+	 * @return Curated&lt;Composition&gt;
+	 */
+	public Curated<Composition> add(String name, Composition comp);
 
 }

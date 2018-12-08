@@ -21,12 +21,12 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 
 	private final UnknownMatrixCorrectionDatum mUnknown;
 	private final Map<ElementXRaySet, StandardMatrixCorrectionDatum> mStandards;
-	
+
 	static List<? extends Object> buildOutputs(//
-			Composition unk //
+			final Composition unk //
 	) {
-		List<Object> res = new ArrayList<>();
-		for (Element elm : unk.getElementSet())
+		final List<Object> res = new ArrayList<>();
+		for (final Element elm : unk.getElementSet())
 			res.add(Composition.buildMassFractionTag(unk, elm));
 		return res;
 	}
@@ -35,8 +35,8 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 			final UnknownMatrixCorrectionDatum unk, //
 			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
 	) {
-		List<Object> res = new ArrayList<>();
-		for (Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
+		final List<Object> res = new ArrayList<>();
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : stds.entrySet()) {
 			res.add(new KRatioLabel(unk, me.getValue(), me.getKey(), Method.Measured));
 			res.add(Composition.buildMassFractionTag(unk.getComposition(), me.getKey().getElement()));
 			res.add(Composition.buildMassFractionTag(me.getValue().getComposition(), me.getKey().getElement()));
@@ -44,22 +44,21 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 		}
 		return res;
 	}
-	
 
 	public KRatioHModel(//
 			final UnknownMatrixCorrectionDatum unk, //
 			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
 	) {
-		super(buildInputs(unk, stds), KRatioCorrectionModel.buildHLabels(buildOutputs(unk.getComposition())));
+		super(buildInputs(unk, stds), ImplicitMeasurementModel.buildHLabels(buildOutputs(unk.getComposition())));
 		mUnknown = unk;
 		mStandards = stds;
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(RealVector point) {
-		RealVector rv = new ArrayRealVector(getOutputDimension());
-		RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
-		for (Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : mStandards.entrySet()) {
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		final RealVector rv = new ArrayRealVector(getOutputDimension());
+		final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+		for (final Map.Entry<ElementXRaySet, StandardMatrixCorrectionDatum> me : mStandards.entrySet()) {
 			final Composition unk = mUnknown.getComposition();
 			final KRatioLabel kMeasTag = new KRatioLabel(mUnknown, me.getValue(), me.getKey(), Method.Measured);
 			final Element elm = me.getKey().getElement();
@@ -76,12 +75,12 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 			final double cUnk = point.getEntry(iMFUnk);
 			final double cStd = point.getEntry(iMFStd);
 			final double zaf = point.getEntry(iZAF);
-			final double hi = kMeas - (cUnk/cStd)*zaf;
+			final double hi = kMeas - (cUnk / cStd) * zaf;
 			rv.setEntry(oHTag, hi);
 			rm.setEntry(oHTag, iKMeas, 1.0);
-			rm.setEntry(oHTag, iMFUnk, (-1.0/cStd)*zaf);
-			rm.setEntry(oHTag, iMFStd, (cUnk/(cStd*cStd))*zaf);
-			rm.setEntry(oHTag, iZAF, - (cUnk/cStd));
+			rm.setEntry(oHTag, iMFUnk, (-1.0 / cStd) * zaf);
+			rm.setEntry(oHTag, iMFStd, (cUnk / (cStd * cStd)) * zaf);
+			rm.setEntry(oHTag, iZAF, -(cUnk / cStd));
 		}
 		return Pair.create(rv, rm);
 	}

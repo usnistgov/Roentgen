@@ -17,13 +17,14 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class KRatioCorrectionModel extends ImplicitMeasurementModel {
+public class KRatioCorrectionModel //
+		extends ImplicitMeasurementModel {
 
 	static List<? extends Object> buildOutputs(//
-			Composition unk //
+			final Composition unk //
 	) {
-		List<Object> res = new ArrayList<>();
-		for (Element elm : unk.getElementSet())
+		final List<Object> res = new ArrayList<>();
+		for (final Element elm : unk.getElementSet())
 			res.add(Composition.buildMassFractionTag(unk, elm));
 		return res;
 	}
@@ -34,24 +35,24 @@ public class KRatioCorrectionModel extends ImplicitMeasurementModel {
 	) {
 		super(new KRatioHModel(unk, stds), buildOutputs(unk.getComposition()));
 	}
-	
-	
+
 	static public LabeledMultivariateJacobianFunction buildXPPModel( //
 			final UnknownMatrixCorrectionDatum unk, //
 			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
 	) throws ArgumentException {
-		List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
+		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		steps.add(new XPPMatrixCorrection(unk, stds));
 		steps.add(new KRatioCorrectionModel(unk, stds));
 		return new SerialLabeledMultivariateJacobianFunction("Full K-ratio correction", steps);
 	}
-		
 
-	public UncertainValues getInputs(MatrixCorrectionModel mcm, UncertainValues inputs, UncertainValues krs) //
+	public UncertainValues getInputs(final MatrixCorrectionModel mcm, final UncertainValues inputs,
+			final UncertainValues krs) //
 			throws ArgumentException {
 		return UncertainValues.extract(getInputLabels(), UncertainValues.propagate(mcm, inputs), krs, inputs);
 	}
 
+	@Override
 	public String toString() {
 		return "K-implicit model";
 	}

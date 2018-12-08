@@ -221,8 +221,8 @@ public class XRaySet //
 		return res;
 	}
 
-	final public void addAll(XRaySet xrs) {
-		for (XRay xr : xrs.getXRaySet())
+	final public void addAll(final XRaySet xrs) {
+		for (final XRay xr : xrs.getXRaySet())
 			add(xr);
 	}
 
@@ -256,6 +256,7 @@ public class XRaySet //
 		return xrs;
 	}
 
+	@Override
 	public int compareTo(final XRaySet xrs) {
 		final Set<XRay> all = new TreeSet<>();
 		all.addAll(getXRaySet());
@@ -355,20 +356,18 @@ public class XRaySet //
 			super(new IsCharacteristic());
 		}
 
-		public static CharacteristicXRaySet build(CharacteristicXRay cxr) {
+		public static CharacteristicXRaySet build(final CharacteristicXRay cxr) {
 			final CharacteristicXRaySet res = new CharacteristicXRaySet();
 			res.add(cxr);
 			return res;
 		}
-		
-		
-		public static CharacteristicXRaySet build(Collection<CharacteristicXRay> cxrs) {
+
+		public static CharacteristicXRaySet build(final Collection<CharacteristicXRay> cxrs) {
 			final CharacteristicXRaySet res = new CharacteristicXRaySet();
-			for(CharacteristicXRay cxr : cxrs)
+			for (final CharacteristicXRay cxr : cxrs)
 				res.add(cxr);
 			return res;
 		}
-
 
 		/**
 		 * Returns a set containing all Element objects for which a CharacteristicXRay
@@ -411,14 +410,14 @@ public class XRaySet //
 
 		/**
 		 * Returns all the characteristic x-rays associated with the specified element.
-		 * 
+		 *
 		 * @param elm
 		 * @return ElementXRaySet
 		 */
 		public ElementXRaySet getElementXRaySet(final Element elm) {
-			ElementXRaySet res = new ElementXRaySet(elm);
-			for (XRay xr : mSet) {
-				CharacteristicXRay cxr = (CharacteristicXRay) xr;
+			final ElementXRaySet res = new ElementXRaySet(elm);
+			for (final XRay xr : mSet) {
+				final CharacteristicXRay cxr = (CharacteristicXRay) xr;
 				if (cxr.getElement().equals(elm))
 					res.add(cxr);
 			}
@@ -479,10 +478,10 @@ public class XRaySet //
 				weight += ((CharacteristicXRay) xr).getWeight();
 			return weight;
 		}
-		
+
 		@Override
-		public int compareTo(XRaySet xrs) {
-			if(xrs instanceof CharacteristicXRaySet) {
+		public int compareTo(final XRaySet xrs) {
+			if (xrs instanceof CharacteristicXRaySet) {
 				return super.compareTo(xrs);
 			} else
 				return -1;
@@ -570,7 +569,7 @@ public class XRaySet //
 			add(cxr);
 		}
 
-		public static ElementXRaySet singleton(Element elm, XRayTransition tr) {
+		public static ElementXRaySet singleton(final Element elm, final XRayTransition tr) {
 			return new ElementXRaySet(CharacteristicXRay.create(elm, tr));
 		}
 
@@ -801,9 +800,9 @@ public class XRaySet //
 		}
 
 		@Override
-		public int compareTo(XRaySet o) {
+		public int compareTo(final XRaySet o) {
 			if (o instanceof ElementXRaySet) {
-				ElementXRaySet exrs = (ElementXRaySet) o;
+				final ElementXRaySet exrs = (ElementXRaySet) o;
 				if (!mElement.equals(exrs.mElement))
 					return mElement.compareTo(exrs.mElement);
 				return super.compareTo(o);
@@ -814,13 +813,13 @@ public class XRaySet //
 
 	/**
 	 * Build the ElementXRaySet associated with the specified Element.
-	 * 
+	 *
 	 * @param elm The element
 	 * @return ElementXRaySet
 	 */
-	static public ElementXRaySet build(Element elm) {
+	static public ElementXRaySet build(final Element elm) {
 		final ElementXRaySet exrs = new ElementXRaySet(elm);
-		for (CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+		for (final CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
 			exrs.add(cxr);
 		return exrs;
 	}
@@ -828,14 +827,14 @@ public class XRaySet //
 	/**
 	 * Build the ElementXRaySet associated with the specified Element and energy
 	 * interval.
-	 * 
+	 *
 	 * @param elm The element
 	 * @param iv  The interval of edge energies which to include
 	 * @return ElementXRaySet
 	 */
-	static public ElementXRaySet build(Element elm, Interval iv) {
-		ElementXRaySet exrs = new ElementXRaySet(elm);
-		for (CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+	static public ElementXRaySet build(final Element elm, final Interval iv) {
+		final ElementXRaySet exrs = new ElementXRaySet(elm);
+		for (final CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
 			if (iv.checkPoint(cxr.getEdgeEnergy(), 0.0) == Location.INSIDE)
 				exrs.add(cxr);
 		return exrs;
@@ -843,15 +842,15 @@ public class XRaySet //
 
 	/**
 	 * Build the ElementXRaySet associated with the specified Element and Shell(s).
-	 * 
+	 *
 	 * @param elm
 	 * @param shells
 	 * @return ElementXRaySet
 	 */
-	static public ElementXRaySet build(Element elm, Shell[] shells) {
-		ElementXRaySet exrs = new ElementXRaySet(elm);
-		for (CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
-			for (Shell sh : shells)
+	static public ElementXRaySet build(final Element elm, final Shell[] shells) {
+		final ElementXRaySet exrs = new ElementXRaySet(elm);
+		for (final CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+			for (final Shell sh : shells)
 				if (cxr.getInner().getShell() == sh)
 					exrs.add(cxr);
 		return exrs;
@@ -859,14 +858,14 @@ public class XRaySet //
 
 	/**
 	 * Build the ElementXRaySet associated with the specified Element and Shell(s).
-	 * 
+	 *
 	 * @param elm
 	 * @param shells
 	 * @return ElementXRaySet
 	 */
-	static public ElementXRaySet build(Element elm, Principle prin) {
-		ElementXRaySet exrs = new ElementXRaySet(elm);
-		for (CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+	static public ElementXRaySet build(final Element elm, final Principle prin) {
+		final ElementXRaySet exrs = new ElementXRaySet(elm);
+		for (final CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
 			if (cxr.getInner().getShell().getFamily() == prin)
 				exrs.add(cxr);
 		return exrs;
@@ -874,14 +873,14 @@ public class XRaySet //
 
 	/**
 	 * Build the ElementXRaySet associated with the specified Element and Shell(s).
-	 * 
+	 *
 	 * @param elm
 	 * @param shells
 	 * @return ElementXRaySet
 	 */
-	static public ElementXRaySet build(Element elm, Principle prin, double minWeight) {
-		ElementXRaySet exrs = new ElementXRaySet(elm);
-		for (CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
+	static public ElementXRaySet build(final Element elm, final Principle prin, final double minWeight) {
+		final ElementXRaySet exrs = new ElementXRaySet(elm);
+		for (final CharacteristicXRay cxr : CharacteristicXRay.forElement(elm))
 			if ((cxr.getInner().getShell().getFamily() == prin) && (cxr.getWeight() > minWeight))
 				exrs.add(cxr);
 		return exrs;
@@ -889,13 +888,13 @@ public class XRaySet //
 
 	/**
 	 * Merge an array of {@link CharacteristicXRaySet} into a single one.
-	 * 
+	 *
 	 * @param cxrss
 	 * @return A new CharacteristicXRaySet instance.
 	 */
-	static public CharacteristicXRaySet merge(CharacteristicXRaySet... cxrss) {
-		CharacteristicXRaySet res = new CharacteristicXRaySet();
-		for (CharacteristicXRaySet cxrs : cxrss)
+	static public CharacteristicXRaySet merge(final CharacteristicXRaySet... cxrss) {
+		final CharacteristicXRaySet res = new CharacteristicXRaySet();
+		for (final CharacteristicXRaySet cxrs : cxrss)
 			res.addAll(cxrs);
 		return res;
 	}

@@ -71,10 +71,12 @@ import joinery.DataFrame;
  * PAP1991)</li>
  * <li>Surface roughness (user specified)</li>
  * </ul>
- * 
- * <p>This class calculates XPP assuming that all the data associate with 
- * the unknown was collected at the same beam energy.<p>
- * 
+ *
+ * <p>
+ * This class calculates XPP assuming that all the data associate with the
+ * unknown was collected at the same beam energy.
+ * <p>
+ *
  *
  * @author Nicholas
  */
@@ -1538,8 +1540,8 @@ public class XPPMatrixCorrection //
 			return res;
 		}
 
-		public StepZA(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final CharacteristicXRay cxr,
-				final Set<Variates> variates) {
+		public StepZA(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+				final CharacteristicXRay cxr, final Set<Variates> variates) {
 			super(buildInputs(unk, std, cxr, variates), buildOutputs(unk, std, cxr));
 			mUnknown = unk;
 			mStandard = std;
@@ -2273,8 +2275,8 @@ public class XPPMatrixCorrection //
 		final List<UncertainValues> inputs = new ArrayList<>();
 		inputs.add(macInps);
 		inputs.add(mUnknown.getComposition());
-		for (MatrixCorrectionDatum mcd : mStandards.values())
-			if(!inputs.contains(mcd.getComposition()))
+		for (final MatrixCorrectionDatum mcd : mStandards.values())
+			if (!inputs.contains(mcd.getComposition()))
 				inputs.add(mcd.getComposition());
 		return UncertainValues.propagate(all, UncertainValues.combine(inputs));
 	}
@@ -2438,8 +2440,7 @@ public class XPPMatrixCorrection //
 
 	@Override
 	public Map<ElementXRaySet, StandardMatrixCorrectionDatum> getStandards() {
-		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> res = new HashMap<>(
-				mStandards);
+		final Map<ElementXRaySet, StandardMatrixCorrectionDatum> res = new HashMap<>(mStandards);
 		return Collections.unmodifiableMap(res);
 	}
 

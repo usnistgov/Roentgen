@@ -18,24 +18,23 @@ import java.io.InputStream;
  */
 public interface ISpectrumReader {
 
-   /**
-    * Reads the i-th spectrum in the File f
-    *
-    * @param det
-    * @param f
-    * @param i
-    * @return Spectrum
-    * @throws IOException
-    */
-   public EDSSpectrum read(final InputStream f, final int i)
-         throws IOException;
+	/**
+	 * Reads the i-th spectrum in the File f
+	 *
+	 * @param det
+	 * @param f
+	 * @param i
+	 * @return Spectrum
+	 * @throws IOException
+	 */
+	public EDSSpectrum read(final InputStream f, final int i) throws IOException;
 
-   /**
-    * Returns the number of spectra contained within f.
-    *
-    * @param f
-    * @return 0 for none
-    */
-   public int getSpectrumCount(InputStream is);
+	/**
+	 * Returns the number of spectra contained within f.
+	 *
+	 * @param f
+	 * @return 0 for none
+	 */
+	public int getSpectrumCount(InputStream is);
 
 }

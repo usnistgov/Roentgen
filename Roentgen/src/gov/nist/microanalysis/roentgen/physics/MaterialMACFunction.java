@@ -128,7 +128,7 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 			return Math.max(0.0, Math.min(1.0, res * res));
 		}
 	}
-	
+
 	public static class TotalDecorrelationFunction implements DecorrelationFunction {
 
 		private final double mAbove;
@@ -150,13 +150,10 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 			double res = 1.0;
 			final double delta = xray.getEnergy() - shell.getEdgeEnergy();
 			if ((delta > -2.0 * mBelow) && (delta < mAbove))
-				res = 0.0;		
+				res = 0.0;
 			return Math.max(0.0, Math.min(1.0, res * res));
 		}
 	}
-
-	
-	
 
 	/**
 	 *
@@ -182,8 +179,7 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 			final double above, final double below) {
 		return decorrelate(uvs, new DefaultDecorrelationFunction(above, below));
 	}
-	
-	
+
 	/**
 	 *
 	 * <p>
@@ -231,8 +227,7 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 	 * @return A new UncertainValues object
 	 */
 	public static UncertainValues decorrelate( //
-			final UncertainValues uvs,
-			final DecorrelationFunction decor) {
+			final UncertainValues uvs, final DecorrelationFunction decor) {
 		final UncertainValues res = uvs.copy();
 		final List<? extends Object> labels = res.getLabels();
 		final int labelCx = labels.size();

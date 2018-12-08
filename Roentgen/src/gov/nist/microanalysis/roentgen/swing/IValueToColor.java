@@ -9,6 +9,6 @@ import java.awt.Color;
  */
 public interface IValueToColor {
 
-   public Color map(double value);
+	public Color map(double value);
 
 }

@@ -37,6 +37,7 @@ public class ScriptClassLoader extends URLClassLoader {
 		super(extURL(), parent);
 	}
 	
+	@Override
 	public Class<?> findClass(String cls) throws ClassNotFoundException {
 		System.out.println("Finding "+cls);
 		Class<?> res= super.findClass(cls);
@@ -44,6 +45,7 @@ public class ScriptClassLoader extends URLClassLoader {
 		return res;
 	}
 
+	@Override
 	public String toString() {
 		return "ScriptClassLoader[...]";
 	}

@@ -36,7 +36,7 @@ public class DataFrame {
 	private final Dimension[] mDimensions;
 	private Object mDefaultDatum = NULL_DATUM;
 
-	public DataFrame(Dimension<?, ?>... dims) {
+	public DataFrame(final Dimension<?, ?>... dims) {
 		mData = new TreeMap<>();
 		mDimensions = new Dimension[dims.length];
 		for (int i = 0; i < mDimensions.length; ++i)
@@ -61,32 +61,32 @@ public class DataFrame {
 		return mDimensions[dim].findOrAdd(label);
 	}
 
-	public Object[] getLabels(Index idx) {
+	public Object[] getLabels(final Index idx) {
 		return getLabels(idx.indices());
 	}
 
-	private Object[] getLabels(int[] indices) {
-		Object[] res = new Object[indices.length];
+	private Object[] getLabels(final int[] indices) {
+		final Object[] res = new Object[indices.length];
 		for (int i = 0; i < indices.length; ++i)
 			res[i] = mDimensions[i].getLabel(indices[i]);
 		return res;
 	}
 
-	public void put(Object[] labels, IGenerate gen) {
+	public void put(final Object[] labels, final IGenerate gen) {
 		put(find(labels), gen);
 	}
 
-	public void put(Index index, IGenerate gen) {
+	public void put(final Index index, final IGenerate gen) {
 		put(index, gen.value(getLabels(index)));
 	}
 
-	private void generate(int dim, int[] index, int[] lower, int[] upper, IGenerate gen) {
+	private void generate(final int dim, final int[] index, final int[] lower, final int[] upper, final IGenerate gen) {
 		assert dim < lower.length;
-		int[] tmp = lower.clone();
+		final int[] tmp = lower.clone();
 		if (dim == lower.length - 1) {
 			for (int i = lower[dim]; i < upper[dim]; ++i) {
 				tmp[i] = i;
-				Index ti = new Index(tmp);
+				final Index ti = new Index(tmp);
 				put(ti, gen.value(getLabels(ti)));
 			}
 		} else {
@@ -97,15 +97,15 @@ public class DataFrame {
 		}
 	}
 
-	public void put(Extent extent, IGenerate gen) {
-		int[] lower = extent.getLower().indices();
-		int[] upper = extent.getUpper().indices();
+	public void put(final Extent extent, final IGenerate gen) {
+		final int[] lower = extent.getLower().indices();
+		final int[] upper = extent.getUpper().indices();
 		assert lower.length == upper.length;
-		int[] tmp = lower.clone();
+		final int[] tmp = lower.clone();
 		if (lower.length == 1) {
 			for (int i = lower[0]; i < upper[0]; ++i) {
 				tmp[i] = i;
-				Index ti = new Index(tmp);
+				final Index ti = new Index(tmp);
 				put(ti, gen.value(getLabels(ti)));
 			}
 		} else {
@@ -116,11 +116,11 @@ public class DataFrame {
 		}
 	}
 
-	public void put(Extent extent, final Object datum) {
+	public void put(final Extent extent, final Object datum) {
 		put(extent, (labels) -> datum);
 	}
 
-	public void clear(Extent extent) {
+	public void clear(final Extent extent) {
 		put(extent, NULL_DATUM);
 	}
 
@@ -142,7 +142,7 @@ public class DataFrame {
 		mData.put(new Index(idx), datum);
 	}
 
-	public void setDefaultDatum(Object defaultDatum) {
+	public void setDefaultDatum(final Object defaultDatum) {
 		mDefaultDatum = defaultDatum;
 	}
 

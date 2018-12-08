@@ -15,22 +15,22 @@ public class Dimension<I, J> {
 	public Dimension(final I name, final J[] labels) throws ArgumentException {
 		mName = name;
 		mJClass = labels[0].getClass();
-		for(int i=0;i<labels.length;++i)
-			if (!mJClass.isInstance(labels[i]))
-				throw new ArgumentException(labels[i] + " is not derived from " + mJClass);
-		mLabels.addAll(Arrays.asList(labels));
-	}
-	
-	public Dimension(final I name, Class<?> clss, final J[] labels) throws ArgumentException {
-		mName = name;
-		mJClass = clss;
-		for(int i=0;i<labels.length;++i)
-			if (!mJClass.isInstance(labels[i]))
-				throw new ArgumentException(labels[i] + " is not derived from " + mJClass);
+		for (final J label : labels)
+			if (!mJClass.isInstance(label))
+				throw new ArgumentException(label + " is not derived from " + mJClass);
 		mLabels.addAll(Arrays.asList(labels));
 	}
 
-	public Dimension(final I name, Class<?> clss) {
+	public Dimension(final I name, final Class<?> clss, final J[] labels) throws ArgumentException {
+		mName = name;
+		mJClass = clss;
+		for (final J label : labels)
+			if (!mJClass.isInstance(label))
+				throw new ArgumentException(label + " is not derived from " + mJClass);
+		mLabels.addAll(Arrays.asList(labels));
+	}
+
+	public Dimension(final I name, final Class<?> clss) {
 		mName = name;
 		mJClass = clss;
 	}
@@ -49,7 +49,7 @@ public class Dimension<I, J> {
 		return mLabels.indexOf(label);
 	}
 
-	public J getLabel(int i) {
+	public J getLabel(final int i) {
 		return mLabels.get(i);
 	}
 

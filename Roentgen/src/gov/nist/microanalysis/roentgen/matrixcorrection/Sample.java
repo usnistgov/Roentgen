@@ -15,14 +15,12 @@ import gov.nist.microanalysis.roentgen.physics.composition.Layer;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class Sample implements IToHTML {	
-		
+public class Sample implements IToHTML {
+
 	private static int mNextIndex = 0;
-	
+
 	public enum Conductivity {
-		Insulator,
-		Semiconductor,
-		Conductor
+		Insulator, Semiconductor, Conductor
 	};
 
 	private final int mIndex;
@@ -30,21 +28,21 @@ public class Sample implements IToHTML {
 	private final Optional<Layer> mCoating;
 	private final Optional<Composition> mComposition;
 	private final Optional<Conductivity> mConductivity;
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(mCoating, mComposition, mConductivity, mName, mIndex);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Sample other = (Sample) obj;
+		final Sample other = (Sample) obj;
 		return (mIndex == other.mIndex) && //
 				Objects.equals(mCoating, other.mCoating) && //
 				Objects.equals(mComposition, other.mComposition) && //
@@ -52,7 +50,7 @@ public class Sample implements IToHTML {
 				Objects.equals(mConductivity, other.mConductivity);
 	}
 
-	public Sample(String name, Layer coating, Composition comp, Conductivity conduct) {
+	public Sample(final String name, final Layer coating, final Composition comp, final Conductivity conduct) {
 		mIndex = (++mNextIndex);
 		mName = name;
 		mCoating = Optional.ofNullable(coating);
@@ -60,7 +58,7 @@ public class Sample implements IToHTML {
 		mConductivity = Optional.ofNullable(conduct);
 	}
 
-	public boolean isSuitableAsStandard(Element elm) {
+	public boolean isSuitableAsStandard(final Element elm) {
 		return mComposition.isPresent() && mComposition.get().contains(elm);
 	}
 
@@ -75,17 +73,17 @@ public class Sample implements IToHTML {
 	public Layer getCoating() {
 		return mCoating.get();
 	}
-	
-	public Optional<Conductivity> getConductivity(){
+
+	public Optional<Conductivity> getConductivity() {
 		return mConductivity;
 	}
 
 	@Override
-	public String toHTML(Mode mode) {
-		Table t = new Table();
+	public String toHTML(final Mode mode) {
+		final Table t = new Table();
 		t.addRow(Table.th("Index"), Table.td(Integer.toString(mIndex)));
 		t.addRow(Table.th("Name"), Table.td(HTML.escape(mName)));
-		if(mConductivity.isPresent())
+		if (mConductivity.isPresent())
 			t.addRow(Table.th("Conductivity"), Table.td(mConductivity.toString()));
 		else
 			t.addRow(Table.th("Conductivity"), Table.td("Unknown"));

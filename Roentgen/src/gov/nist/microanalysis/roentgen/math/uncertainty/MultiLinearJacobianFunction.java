@@ -11,8 +11,8 @@ import com.duckandcover.lazy.SimplyLazy;
 
 /**
  * <p>
- * A extension of {@link LabeledMultivariateJacobianFunction} for the special case
- * of multiple functions whose outputs are linear combinations of the input
+ * A extension of {@link LabeledMultivariateJacobianFunction} for the special
+ * case of multiple functions whose outputs are linear combinations of the input
  * vector elements.
  * </p>
  *

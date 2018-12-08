@@ -20,54 +20,56 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 class KRatioHModel2 extends LabeledMultivariateJacobianFunction {
 
 	private final Set<KRatioLabel> mKRatios;
-	
+
 	static List<? extends Object> buildOutputs(//
-			Set<KRatioLabel> kratios //
+			final Set<KRatioLabel> kratios //
 	) throws ArgumentException {
 		Composition unk = null;
-		for(final KRatioLabel krl : kratios) {
-			if(unk==null)
-				unk=krl.getUnknown().getComposition();
-			if(!unk.equals(krl.getUnknown().getComposition()))
+		for (final KRatioLabel krl : kratios) {
+			if (unk == null)
+				unk = krl.getUnknown().getComposition();
+			if (!unk.equals(krl.getUnknown().getComposition()))
 				throw new ArgumentException("More than one unknown in KRatioHModel2");
 		}
-		List<Object> res = new ArrayList<>();
-		for (Element elm : unk.getElementSet())
+		final List<Object> res = new ArrayList<>();
+		for (final Element elm : unk.getElementSet())
 			res.add(Composition.buildMassFractionTag(unk, elm));
 		return res;
 	}
 
 	static List<? extends Object> buildInputs(//
-			Set<KRatioLabel> kratios //
+			final Set<KRatioLabel> kratios //
 	) {
-		List<Object> res = new ArrayList<>();
-		for(KRatioLabel krl : kratios) {
+		final List<Object> res = new ArrayList<>();
+		for (final KRatioLabel krl : kratios) {
 			res.add(krl);
 			res.add(Composition.buildMassFractionTag(krl.getUnknown().getComposition(), krl.getXRaySet().getElement()));
-			res.add(Composition.buildMassFractionTag(krl.getStandard().getComposition(), krl.getXRaySet().getElement()));
+			res.add(Composition.buildMassFractionTag(krl.getStandard().getComposition(),
+					krl.getXRaySet().getElement()));
 			res.add(new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet()));
 		}
 		return res;
 	}
-	
 
 	public KRatioHModel2(//
-			Set<KRatioLabel> kratios //
+			final Set<KRatioLabel> kratios //
 	) throws ArgumentException {
-		super(buildInputs(kratios), KRatioCorrectionModel.buildHLabels(buildOutputs(kratios)));
+		super(buildInputs(kratios), ImplicitMeasurementModel.buildHLabels(buildOutputs(kratios)));
 		mKRatios = new HashSet<>(kratios);
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(RealVector point) {
-		RealVector rv = new ArrayRealVector(getOutputDimension());
-		RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
-		for(final KRatioLabel kMeasTag : mKRatios) {
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		final RealVector rv = new ArrayRealVector(getOutputDimension());
+		final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+		for (final KRatioLabel kMeasTag : mKRatios) {
 			final Element elm = kMeasTag.getXRaySet().getElement();
 			final Object mfUnkTag = Composition.buildMassFractionTag(kMeasTag.getUnknown().getComposition(), elm);
 			final Object mfStdTag = Composition.buildMassFractionTag(kMeasTag.getStandard().getComposition(), elm);
-			final Object zafTag = new MatrixCorrectionLabel(kMeasTag.getUnknown(), kMeasTag.getStandard(), kMeasTag.getXRaySet());
-			final Object hTag = new ImplicitMeasurementModel.HLabel(Composition.buildMassFractionTag(kMeasTag.getUnknown().getComposition(), elm));
+			final Object zafTag = new MatrixCorrectionLabel(kMeasTag.getUnknown(), kMeasTag.getStandard(),
+					kMeasTag.getXRaySet());
+			final Object hTag = new ImplicitMeasurementModel.HLabel(
+					Composition.buildMassFractionTag(kMeasTag.getUnknown().getComposition(), elm));
 			final int iKMeas = inputIndex(kMeasTag);
 			final int iMFUnk = inputIndex(mfUnkTag);
 			final int iMFStd = inputIndex(mfStdTag);
@@ -77,12 +79,12 @@ class KRatioHModel2 extends LabeledMultivariateJacobianFunction {
 			final double cUnk = point.getEntry(iMFUnk);
 			final double cStd = point.getEntry(iMFStd);
 			final double zaf = point.getEntry(iZAF);
-			final double hi = kMeas - (cUnk/cStd)*zaf;
+			final double hi = kMeas - (cUnk / cStd) * zaf;
 			rv.setEntry(oHTag, hi);
 			rm.setEntry(oHTag, iKMeas, 1.0);
-			rm.setEntry(oHTag, iMFUnk, (-1.0/cStd)*zaf);
-			rm.setEntry(oHTag, iMFStd, (cUnk/(cStd*cStd))*zaf);
-			rm.setEntry(oHTag, iZAF, - (cUnk/cStd));
+			rm.setEntry(oHTag, iMFUnk, (-1.0 / cStd) * zaf);
+			rm.setEntry(oHTag, iMFStd, (cUnk / (cStd * cStd)) * zaf);
+			rm.setEntry(oHTag, iZAF, -(cUnk / cStd));
 		}
 		return Pair.create(rv, rm);
 	}

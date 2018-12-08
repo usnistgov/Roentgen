@@ -14,16 +14,16 @@ import gov.nist.microanalysis.roentgen.math.IntInterval;
  */
 public class CalibratedReference {
 
-   private final IntInterval mChannels;
+	private final IntInterval mChannels;
 
-   private final RealVector mFiltered;
+	private final RealVector mFiltered;
 
-   /**
-    * Constructs a CalibratedReference
-    */
-   public CalibratedReference(final RealVector filtered, final IntInterval channels) {
-      mChannels = channels;
-      mFiltered = filtered;
-   }
+	/**
+	 * Constructs a CalibratedReference
+	 */
+	public CalibratedReference(final RealVector filtered, final IntInterval channels) {
+		mChannels = channels;
+		mFiltered = filtered;
+	}
 
 }

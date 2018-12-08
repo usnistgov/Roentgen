@@ -22,12 +22,12 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * background measurements to be shared between on-peak measurements. It is
  * designed to serve as the basis for either classic peak + low + high
  * measurements or shared multipoint backgrounds. It also can be used
- * 
+ *
  * simple two-point background corrected intensity measurement. The data points
  * are the pairs of measured intensity and live-times at specific spectrometer
  * positions. One position represents the on-peak position and other two
  * represent the background positions.
- * 
+ *
  * @author Nicholas
  *
  */
@@ -37,33 +37,33 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 		TwoPoint
 	};
 
-	protected static class WDSIntensityTag extends BaseLabel<Double,Integer,Object> {
+	protected static class WDSIntensityTag extends BaseLabel<Double, Integer, Object> {
 
-		protected WDSIntensityTag(String name, double lPos, int rep) {
+		protected WDSIntensityTag(final String name, final double lPos, final int rep) {
 			super(name, Double.valueOf(lPos), Integer.valueOf(rep));
 		}
 
 		public double getL() {
-			return ((Double) getObject1()).doubleValue();
+			return getObject1().doubleValue();
 		}
 
 		public int getRepetition() {
-			return ((Integer) getObject2()).intValue();
+			return getObject2().intValue();
 		}
 	}
 
-	protected static class WDSLiveTimeTag extends BaseLabel<Double,Integer,Object> {
+	protected static class WDSLiveTimeTag extends BaseLabel<Double, Integer, Object> {
 
-		protected WDSLiveTimeTag(String name, double lPos, int rep) {
+		protected WDSLiveTimeTag(final String name, final double lPos, final int rep) {
 			super(name, Double.valueOf(lPos), Integer.valueOf(rep));
 		}
 
 		public double getL() {
-			return ((Double) getObject1()).doubleValue();
+			return getObject1().doubleValue();
 		}
 
 		public int getRepetition() {
-			return ((Integer) getObject2()).intValue();
+			return getObject2().intValue();
 		}
 	}
 
@@ -72,7 +72,8 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 		private final CharacteristicXRay mXRay;
 		private final List<BackgroundPacket> mBackgrounds;
 
-		public OnPeakIntensityTag(CharacteristicXRay cxr, double pos, int rep, List<BackgroundPacket> backgrounds) {
+		public OnPeakIntensityTag(final CharacteristicXRay cxr, final double pos, final int rep,
+				final List<BackgroundPacket> backgrounds) {
 			super("I<sub>" + cxr.toHTML(Mode.TERSE) + "</sub>", pos, rep);
 			mBackgrounds = new ArrayList<>(backgrounds);
 			mXRay = cxr;
@@ -83,7 +84,7 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 
 	public static class BackgroundWDSIntensityTag extends WDSIntensityTag {
 
-		public BackgroundWDSIntensityTag(double lPos, int rep) {
+		public BackgroundWDSIntensityTag(final double lPos, final int rep) {
 			super("I<sub>" + sFormat.format(lPos) + "," + rep + "</sub>", Double.valueOf(lPos), Integer.valueOf(rep));
 		}
 	}
@@ -92,7 +93,7 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 
 		private final CharacteristicXRay mCharacteristic;
 
-		public OnPeakLiveTimeTag(CharacteristicXRay cxr, double lPos, int rep) {
+		public OnPeakLiveTimeTag(final CharacteristicXRay cxr, final double lPos, final int rep) {
 			super("LT<sub>" + cxr.toHTML(Mode.TERSE) + "</sub>", lPos, rep);
 			mCharacteristic = cxr;
 		}
@@ -104,7 +105,7 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 
 	public static class BackgroundLiveTimeTag extends WDSLiveTimeTag {
 
-		public BackgroundLiveTimeTag(double lPos, int rep) {
+		public BackgroundLiveTimeTag(final double lPos, final int rep) {
 			super("LT<sub>" + sFormat.format(lPos) + "," + rep + "</sub>", Double.valueOf(lPos), Integer.valueOf(rep));
 		}
 	}
@@ -121,8 +122,8 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 		private final Model mModel;
 		private final CharacteristicXRay mXRay;
 
-		OnPeakPacket(Model model, CharacteristicXRay cxr, double lPos, int rep, ProbeCurrentLabel pcTag,
-				List<BackgroundPacket> backs) {
+		OnPeakPacket(final Model model, final CharacteristicXRay cxr, final double lPos, final int rep,
+				final ProbeCurrentLabel pcTag, final List<BackgroundPacket> backs) {
 			assert model == Model.TwoPoint;
 			assert backs.size() == 2;
 			mModel = model;
@@ -141,14 +142,14 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(final Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null)
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
-			BackgroundPacket other = (BackgroundPacket) obj;
+			final BackgroundPacket other = (BackgroundPacket) obj;
 			return Objects.equals(mBackI, other.mBackI) && //
 					Objects.equals(mBackLT, other.mBackLT);
 		}
@@ -156,7 +157,7 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 		private final BackgroundWDSIntensityTag mBackI;
 		private final BackgroundLiveTimeTag mBackLT;
 
-		public BackgroundPacket(double lPos, int rep) {
+		public BackgroundPacket(final double lPos, final int rep) {
 			mBackI = new BackgroundWDSIntensityTag(lPos, rep);
 			mBackLT = new BackgroundLiveTimeTag(lPos, rep);
 		}
@@ -165,27 +166,27 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 	/**
 	 * This tag represents a single background corrected and live-time scaled
 	 * mesurement of x-ray intensity.
-	 * 
-	 * 
+	 *
+	 *
 	 * @author Nicholas
 	 *
 	 */
-	public static class CorrectedIntensity extends BaseLabel<CharacteristicXRay,Integer,Object> {
+	public static class CorrectedIntensity extends BaseLabel<CharacteristicXRay, Integer, Object> {
 
-		public CorrectedIntensity(CharacteristicXRay cxr, int rep) {
+		public CorrectedIntensity(final CharacteristicXRay cxr, final int rep) {
 			super("I<sub>BC," + cxr.toHTML(Mode.TERSE) + "</sub>", cxr, Integer.valueOf(rep));
 		}
 	}
 
 	protected final ArrayList<OnPeakPacket> mMeasurements;
 
-	private static List<BaseLabel<?,?,?>> inputTags(List<OnPeakPacket> dataTags) {
-		HashSet<BackgroundPacket> backs = new HashSet<>();
-		ArrayList<BaseLabel<?,?,?>> res = new ArrayList<>();
-		for (OnPeakPacket pack : dataTags) {
+	private static List<BaseLabel<?, ?, ?>> inputTags(final List<OnPeakPacket> dataTags) {
+		final HashSet<BackgroundPacket> backs = new HashSet<>();
+		final ArrayList<BaseLabel<?, ?, ?>> res = new ArrayList<>();
+		for (final OnPeakPacket pack : dataTags) {
 			res.add(pack.mOnPeakI);
 			res.add(pack.mOnPeakLT);
-			for (BackgroundPacket back : pack.mOnPeakI.mBackgrounds)
+			for (final BackgroundPacket back : pack.mOnPeakI.mBackgrounds)
 				if (!backs.contains(back)) {
 					res.add(back.mBackI);
 					res.add(back.mBackLT);
@@ -195,23 +196,23 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 		return res;
 	}
 
-	private static List<BaseLabel<?,?,?>> outputTags(List<OnPeakPacket> dataTags) {
-		ArrayList<BaseLabel<?,?,?>> res = new ArrayList<>();
-		for (OnPeakPacket pack : dataTags)
+	private static List<BaseLabel<?, ?, ?>> outputTags(final List<OnPeakPacket> dataTags) {
+		final ArrayList<BaseLabel<?, ?, ?>> res = new ArrayList<>();
+		for (final OnPeakPacket pack : dataTags)
 			res.add(new CorrectedIntensity(pack.mOnPeakI.mXRay, pack.mOnPeakI.getRepetition()));
 		return res;
 	}
 
-	public WDSMeasurement(ArrayList<OnPeakPacket> dataTags) {
+	public WDSMeasurement(final ArrayList<OnPeakPacket> dataTags) {
 		super(inputTags(dataTags), outputTags(dataTags));
 		mMeasurements = new ArrayList<>(dataTags);
 	}
-	
+
 	@Override
-	public Pair<RealVector, RealMatrix> value(RealVector point) {
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector rvres = new ArrayRealVector(getOutputDimension());
 		final RealMatrix rmres = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
-		for (OnPeakPacket opp : mMeasurements) {
+		for (final OnPeakPacket opp : mMeasurements) {
 			final OnPeakIntensityTag opi = opp.mOnPeakI;
 			final OnPeakLiveTimeTag opl = opp.mOnPeakLT;
 			final ProbeCurrentLabel oppc = opp.mProbeCurrent;
@@ -253,7 +254,7 @@ public class WDSMeasurement extends LabeledMultivariateJacobianFunction {
 
 				final double kk = (vopL - vb0L) / (vb1L - vb0L);
 				final double bci = vinp - kk * (vinb1 - vinb0);
-				CorrectedIntensity ci = new CorrectedIntensity(opp.mXRay, opi.getRepetition());
+				final CorrectedIntensity ci = new CorrectedIntensity(opp.mXRay, opi.getRepetition());
 				final int row = outputIndex(ci);
 				// Background corrected intensity value
 				rvres.setEntry(row, bci);

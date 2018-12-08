@@ -18,10 +18,10 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  * {@link MatrixCorrectionLabel} for a set of {@link ElementXRaySet} objects
  * associated with {@link MatrixCorrectionDatum}s associated with Standards
  * relative to a {@link MatrixCorrectionDatum} associated with an unknown.
- * 
+ *
  * A matrix correction model may also calculate values for {@link KRatioLabel}
  * and other related tags.
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -31,28 +31,29 @@ abstract public class MatrixCorrectionModel2 //
 	protected final Set<KRatioLabel> mKRatios;
 
 	public MatrixCorrectionModel2(//
-			String name, //
-			Set<KRatioLabel> kratios, //
-			List<LabeledMultivariateJacobianFunction> steps //
+			final String name, //
+			final Set<KRatioLabel> kratios, //
+			final List<LabeledMultivariateJacobianFunction> steps //
 	) throws ArgumentException {
 		super(name, steps);
 		mKRatios = kratios;
 		// Validate the inputs...
 		final List<? extends Object> outputTags = getOutputLabels();
 		final List<? extends Object> inputTags = getInputLabels();
-		for(KRatioLabel krl : mKRatios){
-			MatrixCorrectionLabel mct = new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet());
+		for (final KRatioLabel krl : mKRatios) {
+			final MatrixCorrectionLabel mct = new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(),
+					krl.getXRaySet());
 			if (!outputTags.contains(mct))
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
 			final Composition stdComp = krl.getStandard().getComposition();
-			for (Element elm : stdComp.getElementSet()) {
-				MassFractionTag mft = Composition.buildMassFractionTag(stdComp, elm);
+			for (final Element elm : stdComp.getElementSet()) {
+				final MassFractionTag mft = Composition.buildMassFractionTag(stdComp, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
 			final Composition unkComp = krl.getUnknown().getComposition();
-			for (Element elm : unkComp.getElementSet()) {
-				MassFractionTag mft = Composition.buildMassFractionTag(unkComp, elm);
+			for (final Element elm : unkComp.getElementSet()) {
+				final MassFractionTag mft = Composition.buildMassFractionTag(unkComp, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
@@ -63,22 +64,19 @@ abstract public class MatrixCorrectionModel2 //
 		return Collections.unmodifiableSet(mKRatios);
 	}
 
-	public Set<KRatioLabel> getKRatios(Element elm) {
-		Set<KRatioLabel> res = new HashSet<>();
-		for(KRatioLabel krl : mKRatios)
-			if(krl.getXRaySet().getElement().equals(elm))
+	public Set<KRatioLabel> getKRatios(final Element elm) {
+		final Set<KRatioLabel> res = new HashSet<>();
+		for (final KRatioLabel krl : mKRatios)
+			if (krl.getXRaySet().getElement().equals(elm))
 				res.add(krl);
 		return Collections.unmodifiableSet(res);
 	}
-	
+
 	public Set<Element> getElementSet() {
-		Set<Element> res = new HashSet<>();
-		for(KRatioLabel krl : mKRatios)
+		final Set<Element> res = new HashSet<>();
+		for (final KRatioLabel krl : mKRatios)
 			res.add(krl.getXRaySet().getElement());
 		return Collections.unmodifiableSet(res);
 	}
-	
 
-	
-	
 }

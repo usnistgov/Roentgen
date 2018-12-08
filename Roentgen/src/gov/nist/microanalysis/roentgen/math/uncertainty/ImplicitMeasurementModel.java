@@ -42,7 +42,7 @@ public class ImplicitMeasurementModel //
 	/**
 	 * Builds a special set of labels to represent the function
 	 * <b>h</b>(<b>X</b>,<b>Y</b>,<b>Z</b>) = <b>0</b>.
-	 * 
+	 *
 	 * @param outlabels
 	 * @return List&lt;? extends Object&gt;
 	 */

@@ -302,14 +302,14 @@ public class EMSAReader implements ISpectrumReader {
 		try (final InputStreamReader isr = new InputStreamReader(fis, Charset.forName("US-ASCII"))) {
 			try (final BufferedReader br = new BufferedReader(isr)) {
 				String line = br.readLine();
-				if(line!=null)
-					line=line.trim();
+				if (line != null)
+					line = line.trim();
 				while ((line != null) && (line.length() == 0)) {
 					line = br.readLine();
-					if(line!=null)
-						line=line.trim();
+					if (line != null)
+						line = line.trim();
 				}
-		
+
 				final boolean res = (line == null) || line.substring(0, 7).equalsIgnoreCase("#FORMAT");
 				return res;
 			}

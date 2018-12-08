@@ -12,9 +12,9 @@ import com.duckandcover.html.IToHTML;
  * instances.
  * </p>
  * <p>
- * Labels need to be derived from a class that implements hashCode() and equals().
- * This class meets those requirements so long as the Object arguments also
- * implement hashCode() and equals().
+ * Labels need to be derived from a class that implements hashCode() and
+ * equals(). This class meets those requirements so long as the Object arguments
+ * also implement hashCode() and equals().
  * </p>
  *
  * @author Nicholas

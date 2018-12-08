@@ -32,32 +32,32 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
 @XStreamAlias("curated")
 public class Curated<T> {
 
-   @XStreamAlias("address")
-   @XStreamAsAttribute
-   private String mAddress;
+	@XStreamAlias("address")
+	@XStreamAsAttribute
+	private String mAddress;
 
-   @XStreamOmitField
-   private final T mObject;
+	@XStreamOmitField
+	private final T mObject;
 
-   public Curated(final URI uri, final T obj) {
-      this(uri.toString(), obj);
-   }
+	public Curated(final URI uri, final T obj) {
+		this(uri.toString(), obj);
+	}
 
-   public Curated(final String address, final T obj) {
-      mAddress = address;
-      mObject = obj;
-   }
+	public Curated(final String address, final T obj) {
+		mAddress = address;
+		mObject = obj;
+	}
 
-   public T getObject() {
-      return mObject;
-   }
+	public T getObject() {
+		return mObject;
+	}
 
-   public String getLocation() {
-      return mAddress;
-   }
+	public String getLocation() {
+		return mAddress;
+	}
 
-   @Override
-   public String toString() {
-      return "Curated[" + getObject().toString() + "," + getLocation().toString() + "]";
-   }
+	@Override
+	public String toString() {
+		return "Curated[" + getObject().toString() + "," + getLocation().toString() + "]";
+	}
 }
