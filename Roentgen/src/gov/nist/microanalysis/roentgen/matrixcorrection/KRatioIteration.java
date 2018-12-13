@@ -20,7 +20,7 @@ import org.apache.commons.math3.optim.ConvergenceChecker;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.TrimmedNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection2.Variates;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -84,7 +84,7 @@ public class KRatioIteration {
 		final Composition unk = computeEstimate(kratios);
 		final Set<Element> elms = unk.getElementSet();
 		final CompositionFromKRatios2 model = new CompositionFromKRatios2(mKRatios,
-				Collections.singleton(Variates.UnknownComposition));
+				Collections.singleton(MatrixCorrectionModel2.Variates.UnknownComposition));
 		// Figure out which elements are in the unknown
 		final List<MassFractionTag> compInp = new ArrayList<>();
 		for (final Element elm : elms)

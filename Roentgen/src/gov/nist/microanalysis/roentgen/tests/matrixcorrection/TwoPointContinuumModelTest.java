@@ -21,13 +21,13 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.ModelLabels;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.TwoPointContinuumModel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.wds.ModelLabels;
+import gov.nist.microanalysis.roentgen.wds.TwoPointContinuumModel;
 
 public class TwoPointContinuumModelTest {
 

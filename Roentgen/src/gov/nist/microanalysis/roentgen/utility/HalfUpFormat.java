@@ -9,10 +9,10 @@ import java.text.NumberFormat;
  * Deals with the annoying default rounding scheme used by DecimalForamt and
  * implements the NIST suggested space grouping scheme.
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 199 $
  */
 public class HalfUpFormat extends DecimalFormat {

@@ -280,7 +280,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			final List<? extends Object> output = getOutputLabels();
 			final int oDim = output.size();
 			assert oDim > 0 : "Output dimensions is zero in " + toString();
-			final int iDim = getInputDimension();
+			final int iDim = getInputDimension() + getConstantDimension();
 			assert iDim > 0 : "Input dimensions is zero in " + toString();
 			final RealVector vals = new ArrayRealVector(oDim);
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {

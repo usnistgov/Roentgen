@@ -40,6 +40,7 @@ public class StandardMatrixCorrectionDatum //
 	private final Composition mComposition;
 
 	/**
+	 * @param comp
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 */
@@ -50,6 +51,8 @@ public class StandardMatrixCorrectionDatum //
 	}
 
 	/**
+	/**
+	 * @param comp
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 * @param roughness

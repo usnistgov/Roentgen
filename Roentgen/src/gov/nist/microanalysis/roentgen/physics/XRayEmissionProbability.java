@@ -18,6 +18,7 @@ import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.Globals;
 import gov.nist.microanalysis.roentgen.math.Utility;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -39,13 +40,14 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * and then feeds it out on a per atomic shell basis as needed.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
-public class XRayEmissionProbability implements IToHTML {
+public class XRayEmissionProbability //
+		implements IToHTML {
 
 	private static final LazyInitializer<Map<AtomicShell, Map<CharacteristicXRay, Double>>> mData = new LazyInitializer<Map<AtomicShell, Map<CharacteristicXRay, Double>>>() {
 
@@ -131,6 +133,22 @@ public class XRayEmissionProbability implements IToHTML {
 
 	public Map<CharacteristicXRay, Double> getProbabilties() {
 		return mProbabilities;
+	}
+	
+	public double getWeight(final CharacteristicXRay cxr) {
+		return mProbabilities.get(cxr).doubleValue();
+	}
+	
+	public UncertainValue getWeightU(final CharacteristicXRay cxr) {
+		final double w = getWeight(cxr);
+		double dw = Double.NaN;
+		if(w>0.1)
+			dw=w*0.02;
+		else if(w>0.01)
+			dw=w*0.1;
+		else
+			dw=w*0.2;
+		return new UncertainValue(w, dw);
 	}
 
 	public double getFluorescenceYield() {

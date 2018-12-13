@@ -1,6 +1,7 @@
-package gov.nist.microanalysis.roentgen.matrixcorrection;
+package gov.nist.microanalysis.roentgen.wds;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 

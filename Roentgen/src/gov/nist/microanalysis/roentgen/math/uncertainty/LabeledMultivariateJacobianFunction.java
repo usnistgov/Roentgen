@@ -33,7 +33,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * Copyright Nicholas W. M. Ritchie 2014-2017
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
 abstract public class LabeledMultivariateJacobianFunction //
@@ -133,6 +133,10 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 */
 	public int getInputDimension() {
 		return mInputLabels.size();
+	}
+	
+	public int getConstantDimension() {
+		return mConstants.size();
 	}
 
 	/**

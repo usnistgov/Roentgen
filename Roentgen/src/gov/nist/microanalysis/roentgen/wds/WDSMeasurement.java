@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.matrixcorrection;
+package gov.nist.microanalysis.roentgen.wds;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +13,7 @@ import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.matrixcorrection.ProbeCurrentLabel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 

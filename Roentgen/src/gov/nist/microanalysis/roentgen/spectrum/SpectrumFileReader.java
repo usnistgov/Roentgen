@@ -15,10 +15,10 @@ import javax.swing.filechooser.FileFilter;
  * algorithm to read the spectrum out of the file.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 312 $
  */
 public class SpectrumFileReader {

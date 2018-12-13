@@ -16,10 +16,10 @@ import com.google.common.base.Preconditions;
  * A collection of numeric utility functions.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 285 $
  */
 public class Utility {

@@ -40,7 +40,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  * Copyright Nicholas W. M. Ritchie 2014-2017
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 280 $
  */
 public class ElementalMAC {

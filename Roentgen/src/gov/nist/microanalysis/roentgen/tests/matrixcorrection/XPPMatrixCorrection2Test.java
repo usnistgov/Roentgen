@@ -35,8 +35,8 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection2;
-import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection2.Variates;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
@@ -112,37 +112,37 @@ public class XPPMatrixCorrection2Test {
 				r.add(inputs);
 				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
-				final Object tagAu = XPPMatrixCorrection2.tagShell("A", unkMcd, cxr.getInner());
+				final Object tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagAu), 401.654, 0.001);
-				final Object tagau = XPPMatrixCorrection2.tagShell("a", unkMcd, cxr.getInner());
+				final Object tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagau), 11255.385, 0.001);
-				final Object tagBu = XPPMatrixCorrection2.tagShell("B", unkMcd, cxr.getInner());
+				final Object tagBu = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagBu), -529730.331, 0.001);
-				final Object tagbu = XPPMatrixCorrection2.tagShell("b", unkMcd, cxr.getInner());
+				final Object tagbu = MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagbu), 12643.340, 0.001);
-				final Object tagPhi0u = XPPMatrixCorrection2.tagPhi0(unkMcd, cxr.getInner());
+				final Object tagPhi0u = MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagPhi0u), 1.252, 0.001);
 
-				final Object tagAs = XPPMatrixCorrection2.tagShell("A", stdMcd, cxr.getInner());
+				final Object tagAs = MatrixCorrectionModel2.shellLabel("A", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagAs), 396.744, 0.001);
-				final Object tagas = XPPMatrixCorrection2.tagShell("a", stdMcd, cxr.getInner());
+				final Object tagas = MatrixCorrectionModel2.shellLabel("a", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagas), 11382.116, 0.001);
-				final Object tagBs = XPPMatrixCorrection2.tagShell("B", stdMcd, cxr.getInner());
+				final Object tagBs = MatrixCorrectionModel2.shellLabel("B", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagBs), -532506.458, 0.001);
-				final Object tagbs = XPPMatrixCorrection2.tagShell("b", stdMcd, cxr.getInner());
+				final Object tagbs = MatrixCorrectionModel2.shellLabel("b", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagbs), 12795.314, 0.001);
-				final Object tagPhi0s = XPPMatrixCorrection2.tagPhi0(stdMcd, cxr.getInner());
+				final Object tagPhi0s = MatrixCorrectionModel2.phi0Label(stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagPhi0s), 1.254, 0.001);
 
-				final Object tagChiu = XPPMatrixCorrection2.tagChi(unkMcd, cxr);
+				final Object tagChiu = MatrixCorrectionModel2.chiLabel(unkMcd, cxr);
 				assertEquals(results.getEntry(tagChiu), 2542.429, 0.001);
-				final Object tagChis = XPPMatrixCorrection2.tagChi(stdMcd, cxr);
+				final Object tagChis = MatrixCorrectionModel2.chiLabel(stdMcd, cxr);
 				assertEquals(results.getEntry(tagChis), 1038.418, 0.001);
-				final Object tagFChiFu = XPPMatrixCorrection2.tagFxF(unkMcd, cxr);
+				final Object tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
 				assertEquals(results.getEntry(tagFChiFu), 0.635, 0.001);
-				final Object tagFChiFs = XPPMatrixCorrection2.tagFxF(stdMcd, cxr);
+				final Object tagFChiFs = MatrixCorrectionModel2.FxFLabel(stdMcd, cxr);
 				assertEquals(results.getEntry(tagFChiFs), 0.822, 0.001);
-				final Object tagZA = XPPMatrixCorrection2.zafTag(unkMcd, stdMcd, cxr);
+				final Object tagZA = MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr);
 				assertEquals(results.getEntry(tagZA), 0.781, 0.001);
 
 				// Check that INamedMultivariateFunction works...
@@ -217,11 +217,11 @@ public class XPPMatrixCorrection2Test {
 					System.out.println(djac.toCSV());
 				}
 
-				final Object unkCompTag = new XPPMatrixCorrection2.CompositionTag("J", unk);
+				final Object unkCompTag = new MatrixCorrectionModel2.CompositionLabel("J", unk);
 				assertEquals(jac.getEntry(unkCompTag, Composition.buildMassFractionTag(unk, Element.Oxygen)), -0.027565,
 						0.00001);
-				assertEquals(jac.getEntry(unkCompTag, XPPMatrixCorrection2.meanIonizationTag(Element.Oxygen)), 0.609601,
-						0.00001);
+				assertEquals(jac.getEntry(unkCompTag, MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)),
+						0.609601, 0.00001);
 
 				resultsD = UncertainValues.propagate(djac, inputs).sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
@@ -237,31 +237,31 @@ public class XPPMatrixCorrection2Test {
 				r.add(inputs);
 				final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
 
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("A", unkMcd, cxr.getInner())), 2366.373,
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner())), 2366.373,
 						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("a", unkMcd, cxr.getInner())), 11402.291,
-						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("B", unkMcd, cxr.getInner())), -1506725.664,
-						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("b", unkMcd, cxr.getInner())), 12050.502,
-						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagPhi0(unkMcd, cxr.getInner())), 1.258, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner())),
+						11402.291, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner())),
+						-1506725.664, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner())),
+						12050.502, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner())), 1.258, 0.001);
 
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("A", stdMcd, cxr.getInner())), 2307.215,
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", stdMcd, cxr.getInner())), 2307.215,
 						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("a", stdMcd, cxr.getInner())), 11531.967,
-						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("B", stdMcd, cxr.getInner())), -1505332.755,
-						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagShell("b", stdMcd, cxr.getInner())), 12196.382,
-						0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagPhi0(stdMcd, cxr.getInner())), 1.26, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("a", stdMcd, cxr.getInner())),
+						11531.967, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("B", stdMcd, cxr.getInner())),
+						-1505332.755, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("b", stdMcd, cxr.getInner())),
+						12196.382, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.phi0Label(stdMcd, cxr.getInner())), 1.26, 0.001);
 
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagChi(unkMcd, cxr)), 5836.018, 0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagChi(stdMcd, cxr)), 6414.025, 0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagFxF(unkMcd, cxr)), 0.376, 0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.tagFxF(stdMcd, cxr)), 0.353, 0.001);
-				assertEquals(results.getEntry(XPPMatrixCorrection2.zafTag(unkMcd, stdMcd, cxr)), 1.078, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.chiLabel(unkMcd, cxr)), 5836.018, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.chiLabel(stdMcd, cxr)), 6414.025, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr)), 0.376, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.FxFLabel(stdMcd, cxr)), 0.353, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr)), 1.078, 0.001);
 
 				r.addHeader("Analyic Results");
 				r.add(results);
@@ -601,9 +601,9 @@ public class XPPMatrixCorrection2Test {
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection2.zafTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(unkMcd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 			}
 		}
 
@@ -823,9 +823,9 @@ public class XPPMatrixCorrection2Test {
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection2.zafTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(unkMcd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 			}
 		}
 
@@ -869,9 +869,10 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("test4()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				r.add(inputs);
+				r.add(inputs.sort());
+				// r.add(inputs);
 				r.addHeader("Results");
-				r.add(results);
+				r.add(results.sort());
 				r.addHeader("Uncertain Values (relative to inputs)");
 				final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
 				final Table valTable = new Table();
@@ -931,6 +932,7 @@ public class XPPMatrixCorrection2Test {
 
 			}
 			if (MC_ITERATIONS > 0) {
+				inputs.validateCovariance();
 				final MCPropagator mcp = new MCPropagator(xpp, inputs, SIGMA,
 						new SafeMultivariateNormalDistribution(inputs.getValues(), inputs.getCovariances()));
 				final UncertainValues resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
@@ -1085,9 +1087,9 @@ public class XPPMatrixCorrection2Test {
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection2.zafTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(unkMcd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 			}
 		}
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, XPPMatrixCorrection2.defaultVariates());
@@ -1348,15 +1350,15 @@ public class XPPMatrixCorrection2Test {
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection2.zafTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(unkMcd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 			}
 		}
 
-		final Set<XPPMatrixCorrection2.Variates> variates = new HashSet<>();
-		variates.add(Variates.UnknownComposition);
-		variates.add(Variates.StandardComposition);
+		final Set<MatrixCorrectionModel2.Variates> variates = new HashSet<>();
+		variates.add(MatrixCorrectionModel2.Variates.UnknownComposition);
+		variates.add(MatrixCorrectionModel2.Variates.StandardComposition);
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, variates);
 		xpp.trimOutputs(outputs);
 		assertEquals(xpp.getOutputDimension(), outputs.size());
@@ -1607,11 +1609,11 @@ public class XPPMatrixCorrection2Test {
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-				outputs.add(XPPMatrixCorrection2.zafTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection2.zTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection2.aTag(unkMcd, meStd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(unkMcd, cxr));
-				outputs.add(XPPMatrixCorrection2.tagFxF(meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.zLabel(unkMcd, meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.aLabel(unkMcd, meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 				outputs.add(new KRatioLabel(unkMcd, meStd, cxr, Method.Calculated));
 			}
 		}
@@ -1713,9 +1715,9 @@ public class XPPMatrixCorrection2Test {
 				for (final KRatioLabel krl : skrl) {
 					final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-						final Object zaTag = XPPMatrixCorrection2.zafTag(unkMcd, meStd, cxr);
-						final Object zTag = XPPMatrixCorrection2.zTag(unkMcd, meStd, cxr);
-						final Object aTag = XPPMatrixCorrection2.aTag(unkMcd, meStd, cxr);
+						final Object zaTag = MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr);
+						final Object zTag = MatrixCorrectionModel2.zLabel(unkMcd, meStd, cxr);
+						final Object aTag = MatrixCorrectionModel2.aLabel(unkMcd, meStd, cxr);
 						final UncertainValue za = results.getUncertainValue(zaTag);
 						final UncertainValue a = results.getUncertainValue(aTag);
 						final UncertainValue z = results.getUncertainValue(zTag);
@@ -1743,9 +1745,9 @@ public class XPPMatrixCorrection2Test {
 				for (final KRatioLabel krl : skrl) {
 					final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-						final Object zaTag = XPPMatrixCorrection2.zafTag(unkMcd, meStd, cxr);
-						final Object fUnkTag = XPPMatrixCorrection2.tagFxF(unkMcd, cxr);
-						final Object fStdTag = XPPMatrixCorrection2.tagFxF(meStd, cxr);
+						final Object zaTag = MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr);
+						final Object fUnkTag = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
+						final Object fStdTag = MatrixCorrectionModel2.FxFLabel(meStd, cxr);
 						final double za = results.getEntry(zaTag);
 						final double a = results.getEntry(fUnkTag) / results.getEntry(fStdTag);
 						final double z = za / a;
@@ -2138,6 +2140,304 @@ public class XPPMatrixCorrection2Test {
 
 		final DataFrame<Double> df = xpp.computePhiRhoZCurve(results.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
 		df.writeCsv("C:\\Users\\nicho\\OneDrive\\Desktop\\prz412.csv");
+	}
+
+	/**
+	 * Computes Si and O in Al2SiO5 using SiO2
+	 *
+	 * @throws ArgumentException
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@Test
+	public void testXPP10() //
+			throws ArgumentException, ParseException, IOException {
+		// final Composition unk = Composition.parse("Al2SiO5");
+		final List<Element> elmsU = Arrays.asList(Element.Aluminum, Element.Silicon, Element.Oxygen);
+		final RealVector valsU = new ArrayRealVector(new double[] { 0.3330, 0.1733, 0.4937 });
+		final RealVector varsU = new ArrayRealVector(new double[] { 1.0e-6, 0.4e-6, 4.0e-6 });
+		final Composition unk = Composition.massFraction("Al<sub>2</sub>SiO<sub>5</sub>", elmsU, valsU, varsU);
+		final List<Element> elmsS = Arrays.asList(Element.Silicon, Element.Oxygen);
+		final RealVector valsS = new ArrayRealVector(new double[] { 0.4674, 0.5326 });
+		final RealVector varsS = new ArrayRealVector(new double[] { 2.0e-6, 0.9e-6 });
+		final Composition std1 = Composition.massFraction("SiO<sub>2</sub>", elmsS, valsS, varsS);
+		final Composition std2 = Composition.pureElement(Element.Aluminum);
+
+		final StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
+				std1, //
+				new UncertainValue(15.0, 0.1), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)),
+				MatrixCorrectionDatum.roughness(10.0, 2.5)//
+		);
+
+		final StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
+				std2, //
+				new UncertainValue(15.0, 0.1), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
+				MatrixCorrectionDatum.roughness(20.0, 2.5) //
+		);
+
+		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, //
+				new UncertainValue(15.0, 0.12), //
+				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
+				MatrixCorrectionDatum.roughness(20.0, 2.5));
+
+		final ElementXRaySet exrsSi = XRaySet.build(Element.Silicon, Principle.K, 0.01);
+		final KRatioLabel krlSi = new KRatioLabel(unkMcd, std1Mcd, exrsSi, Method.Measured);
+		final ElementXRaySet exrsO = XRaySet.build(Element.Oxygen, Principle.K, 0.01);
+		final KRatioLabel krlO = new KRatioLabel(unkMcd, std1Mcd, exrsO, Method.Measured);
+		final ElementXRaySet exrsAl = XRaySet.build(Element.Aluminum, Principle.K, 0.01);
+		final KRatioLabel krlAl = new KRatioLabel(unkMcd, std2Mcd, exrsAl, Method.Measured);
+
+		final Set<KRatioLabel> skrl = new HashSet<>();
+		skrl.add(krlSi);
+		skrl.add(krlO);
+		skrl.add(krlAl);
+
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, XPPMatrixCorrection2.allVariates());
+		final Report r = new Report("XPP Report - test1");
+		UncertainValues resultsD = null;
+		try {
+			{
+				final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
+				r.addHeader("test1()");
+				r.addHTML(xpp.toHTML(Mode.NORMAL));
+				r.addHeader("Inputs");
+				final UncertainValues inputs = xpp.buildInput();
+				r.add(inputs);
+				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs.getValues());
+				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
+				final Object tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
+				assertEquals(results.getEntry(tagAu), 401.654, 0.001);
+				final Object tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
+				assertEquals(results.getEntry(tagau), 11255.385, 0.001);
+				final Object tagBu = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner());
+				assertEquals(results.getEntry(tagBu), -529730.331, 0.001);
+				final Object tagbu = MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner());
+				assertEquals(results.getEntry(tagbu), 12643.340, 0.001);
+				final Object tagPhi0u = MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner());
+				assertEquals(results.getEntry(tagPhi0u), 1.252, 0.001);
+
+				final Object tagAs = MatrixCorrectionModel2.shellLabel("A", std1Mcd, cxr.getInner());
+				assertEquals(results.getEntry(tagAs), 396.744, 0.001);
+				final Object tagas = MatrixCorrectionModel2.shellLabel("a", std1Mcd, cxr.getInner());
+				assertEquals(results.getEntry(tagas), 11382.116, 0.001);
+				final Object tagBs = MatrixCorrectionModel2.shellLabel("B", std1Mcd, cxr.getInner());
+				assertEquals(results.getEntry(tagBs), -532506.458, 0.001);
+				final Object tagbs = MatrixCorrectionModel2.shellLabel("b", std1Mcd, cxr.getInner());
+				assertEquals(results.getEntry(tagbs), 12795.314, 0.001);
+				final Object tagPhi0s = MatrixCorrectionModel2.phi0Label(std1Mcd, cxr.getInner());
+				assertEquals(results.getEntry(tagPhi0s), 1.254, 0.001);
+
+				final Object tagChiu = MatrixCorrectionModel2.chiLabel(unkMcd, cxr);
+				assertEquals(results.getEntry(tagChiu), 2542.429, 0.001);
+				final Object tagChis = MatrixCorrectionModel2.chiLabel(std1Mcd, cxr);
+				assertEquals(results.getEntry(tagChis), 1038.418, 0.001);
+				final Object tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
+				assertEquals(results.getEntry(tagFChiFu), 0.635, 0.001);
+				final Object tagFChiFs = MatrixCorrectionModel2.FxFLabel(std1Mcd, cxr);
+				assertEquals(results.getEntry(tagFChiFs), 0.822, 0.001);
+				final Object tagZASi = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsSi);
+				assertEquals(results.getEntry(tagZASi), 0.7805, 0.001);
+				final Object tagZAO = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsO);
+				assertEquals(results.getEntry(tagZAO), 1.0784, 0.001);
+				final Object tagZAAl = MatrixCorrectionModel2.zafLabel(unkMcd, std2Mcd, exrsAl);
+				assertEquals(results.getEntry(tagZAAl), 0.800, 0.002);
+
+				// Check that INamedMultivariateFunction works...
+				final RealVector quick = xpp.optimized(inputs.getValues());
+
+				assertEquals(results.getEntry(tagAu), quick.getEntry(xpp.outputIndex(tagAu)), 0.001);
+				assertEquals(results.getEntry(tagau), quick.getEntry(xpp.outputIndex(tagau)), 0.001);
+				assertEquals(results.getEntry(tagBu), quick.getEntry(xpp.outputIndex(tagBu)), 0.001);
+				assertEquals(results.getEntry(tagbu), quick.getEntry(xpp.outputIndex(tagbu)), 0.001);
+				assertEquals(results.getEntry(tagPhi0u), quick.getEntry(xpp.outputIndex(tagPhi0u)), 0.001);
+
+				assertEquals(results.getEntry(tagAs), quick.getEntry(xpp.outputIndex(tagAs)), 0.001);
+				assertEquals(results.getEntry(tagas), quick.getEntry(xpp.outputIndex(tagas)), 0.001);
+				assertEquals(results.getEntry(tagBs), quick.getEntry(xpp.outputIndex(tagBs)), 0.001);
+				assertEquals(results.getEntry(tagbs), quick.getEntry(xpp.outputIndex(tagbs)), 0.001);
+				assertEquals(results.getEntry(tagPhi0s), quick.getEntry(xpp.outputIndex(tagPhi0s)), 0.001);
+
+				assertEquals(results.getEntry(tagChiu), quick.getEntry(xpp.outputIndex(tagChiu)), 0.001);
+				assertEquals(results.getEntry(tagChis), quick.getEntry(xpp.outputIndex(tagChis)), 0.001);
+				assertEquals(results.getEntry(tagFChiFu), quick.getEntry(xpp.outputIndex(tagFChiFu)), 0.001);
+				assertEquals(results.getEntry(tagFChiFs), quick.getEntry(xpp.outputIndex(tagFChiFs)), 0.001);
+				assertEquals(results.getEntry(tagZASi), quick.getEntry(xpp.outputIndex(tagZASi)), 0.001);
+				assertEquals(results.getEntry(tagZAO), quick.getEntry(xpp.outputIndex(tagZAO)), 0.001);
+				assertEquals(results.getEntry(tagZAAl), quick.getEntry(xpp.outputIndex(tagZAAl)), 0.001);
+
+				r.addHeader("Results");
+				r.add(results);
+				r.addHeader("Uncertain Values (relative to inputs)");
+				final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+				final Table valTable = new Table();
+				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
+						Table.td("Value (Verbose)"));
+				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+				for (final Object outTag : xpp.getOutputLabels()) {
+					final UncertainValue uv = outVals.get(outTag);
+					valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
+							Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
+							Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
+				}
+				r.addHTML(valTable.toHTML(Mode.NORMAL));
+
+				r.addHeader("Covariance matrix");
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : results.getLabels()) {
+					if (sb.length() > 0)
+						sb.append(",");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				r.addHTML(HTML.p(sb.toString()));
+
+				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
+
+				final LabeledMultivariateJacobian jac = LabeledMultivariateJacobian.compute(xpp, inputs.getValues());
+				final LabeledMultivariateJacobian djac = LabeledMultivariateJacobian.computeDelta(xpp, inputs,
+						DELTA_JAC);
+				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > //
+							0.01 * Math.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx)))) {
+								System.out.println("J[" + jac.getOutputLabels().get(oIdx) + ","
+										+ jac.getInputLabels().get(iIdx) + "]");
+								assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
+										.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
+							}
+						}
+				if (DUMP) {
+					System.out.println("Results");
+					System.out.println(results.toCSV());
+
+					System.out.println("Jacobian");
+					System.out.println(jac.toCSV());
+					System.out.println("Jacobian(estimated)");
+					System.out.println(djac.toCSV());
+				}
+
+				final Object unkCompTag = new MatrixCorrectionModel2.CompositionLabel("J", unk);
+				assertEquals(jac.getEntry(unkCompTag, Composition.buildMassFractionTag(unk, Element.Oxygen)), -0.027565,
+						0.00001);
+				assertEquals(jac.getEntry(unkCompTag, MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)),
+						0.609601, 0.00001);
+
+				resultsD = UncertainValues.propagate(djac, inputs).sort();
+				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
+				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+
+			}
+			if (MC_ITERATIONS > 0) {
+				final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1);
+				r.addHeader("Monte Carlo Results");
+				r.add(xpp);
+				r.addHeader("Inputs");
+				final UncertainValues inputs = xpp.buildInput();
+				r.add(inputs);
+				final UncertainValues results = UncertainValues.propagate(xpp, inputs).sort();
+
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner())), 2366.373,
+						0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner())),
+						11402.291, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner())),
+						-1506725.664, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner())),
+						12050.502, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner())), 1.258, 0.001);
+
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", std1Mcd, cxr.getInner())),
+						2307.215, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("a", std1Mcd, cxr.getInner())),
+						11531.967, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("B", std1Mcd, cxr.getInner())),
+						-1505332.755, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("b", std1Mcd, cxr.getInner())),
+						12196.382, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.phi0Label(std1Mcd, cxr.getInner())), 1.26, 0.001);
+
+				assertEquals(results.getEntry(MatrixCorrectionModel2.chiLabel(unkMcd, cxr)), 5836.018, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.chiLabel(std1Mcd, cxr)), 6414.025, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr)), 0.376, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.FxFLabel(std1Mcd, cxr)), 0.353, 0.001);
+				assertEquals(results.getEntry(MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsSi)), 0.7805, 0.001);
+
+				r.addHeader("Analyic Results");
+				r.add(results);
+
+				final MCPropagator mcp = new MCPropagator(xpp, inputs, SIGMA,
+						new SafeMultivariateNormalDistribution(inputs.getValues(), inputs.getCovariances()));
+				final UncertainValues resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+
+				if (DUMP) {
+					System.out.println("Monte Carlo Results");
+					System.out.println(resultsMc.toCSV());
+				}
+
+				r.addHeader("MC Results");
+				r.add(resultsMc);
+
+				final StringBuffer sb = new StringBuffer();
+				for (final Object tag : resultsMc.getLabels()) {
+					if (sb.length() > 0)
+						sb.append(",");
+					sb.append(HTML.toHTML(tag, Mode.TERSE));
+				}
+				r.addHTML(HTML.p(sb.toString()));
+				// r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
+
+				r.addSubHeader("Phi0");
+				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+				for (final Object tag : xpp.getOutputLabels()) {
+					r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
+					r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
+				}
+
+				{
+					r.addHeader("Compare MC to Analytical");
+					final Table t = new Table();
+					t.addRow(Table.th("Tag"), //
+							Table.th("V(MonteCarlo)"), //
+							Table.th("U(Monte Carlo)"), //
+							Table.th("V(Analytical)"), //
+							Table.th("U(Analytic)"), //
+							Table.th("V(Delta)"), //
+							Table.th("U(Delta)"));
+					final BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
+					for (final Object tag : xpp.getOutputLabels())
+						if (tag instanceof MatrixCorrectionLabel) {
+							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
+									MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(results.getUncertainty(tag), bnf2),
+									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
+						}
+					for (final Object tag : xpp.getOutputLabels())
+						if (tag instanceof KRatioLabel) {
+							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
+									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
+									MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(results.getUncertainty(tag), bnf2),
+									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
+						}
+					r.add(t);
+				}
+				r.addHeader("Done!");
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
+			throw e;
+		} finally {
+			r.inBrowser(Mode.VERBOSE);
+		}
 	}
 
 }

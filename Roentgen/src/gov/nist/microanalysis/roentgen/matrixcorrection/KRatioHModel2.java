@@ -17,7 +17,8 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
-class KRatioHModel2 extends LabeledMultivariateJacobianFunction {
+class KRatioHModel2 //
+		extends LabeledMultivariateJacobianFunction {
 
 	private final Set<KRatioLabel> mKRatios;
 
@@ -87,5 +88,9 @@ class KRatioHModel2 extends LabeledMultivariateJacobianFunction {
 			rm.setEntry(oHTag, iZAF, -(cUnk / cStd));
 		}
 		return Pair.create(rv, rm);
+	}
+
+	public String toString() {
+		return "K-Ratio H-model";
 	}
 }

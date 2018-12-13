@@ -19,10 +19,10 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
  * dependent upon the magnitude of the number both for small and large numbers.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 303 $
  */
 public class BasicNumberFormat extends DecimalFormat {

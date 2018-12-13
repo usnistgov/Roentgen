@@ -26,10 +26,10 @@ import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
  * shells in a ground state atom.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 285 $
  */
 public class AtomicShell implements Comparable<AtomicShell>, IToHTML {

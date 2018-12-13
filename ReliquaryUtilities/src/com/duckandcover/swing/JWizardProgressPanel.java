@@ -20,7 +20,7 @@ import com.jgoodies.forms.layout.FormLayout;
  * computation is done, the result of type T can be accessed using
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version 1.0
  */
 public class JWizardProgressPanel<W extends Serializable, T>

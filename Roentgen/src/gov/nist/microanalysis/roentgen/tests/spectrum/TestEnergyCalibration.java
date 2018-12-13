@@ -13,10 +13,10 @@ import gov.nist.microanalysis.roentgen.spectrum.EnergyCalibration.Polynomial;
  * Description
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 199 $
  */
 public class TestEnergyCalibration {

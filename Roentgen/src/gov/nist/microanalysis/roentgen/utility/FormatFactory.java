@@ -11,7 +11,7 @@ import java.text.DecimalFormat;
  * Copyright Nicholas W. M. Ritchie 2017
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
 public class FormatFactory {

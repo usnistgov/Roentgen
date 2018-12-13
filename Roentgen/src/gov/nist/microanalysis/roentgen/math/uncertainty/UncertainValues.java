@@ -9,8 +9,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -78,7 +80,7 @@ public class UncertainValues //
 	 * @param m
 	 * @param covar
 	 */
-	public static void validateCovariance(final int m, final RealMatrix covar, final double maxVal) {
+	private static void validateCovariance(final int m, final RealMatrix covar, final double maxVal) {
 		if (covar.getRowDimension() != m)
 			throw new DimensionMismatchException(covar.getRowDimension(), m);
 		if (covar.getColumnDimension() != m)
@@ -99,7 +101,7 @@ public class UncertainValues //
 				final double entryRC = covar.getEntry(r, c);
 				if (Math.abs(entryRC - covar.getEntry(c, r)) > SREPS * Math.abs(entryRC))
 					throw new OutOfRangeException(entryRC, covar.getEntry(c, r), covar.getEntry(c, r));
-				final double max = Math.sqrt(covar.getEntry(c, c) * covar.getEntry(r, r));
+				final double max = Math.sqrt(covar.getEntry(c, c) * covar.getEntry(r, r)) + EPS;
 				final double rr = entryRC / max;
 				if ((rr > MAX_CORR) || (rr < -MAX_CORR)) {
 					if (Math.abs(entryRC) > EPS)
@@ -110,6 +112,16 @@ public class UncertainValues //
 					}
 				}
 			}
+	}
+
+	public void validateCovariance() throws ArgumentException {
+		final Set<Object> labels = new HashSet<>(mLabels);
+		if (labels.size() != mLabels.size())
+			for (Object label : mLabels)
+				if (!labels.contains(label))
+					throw new ArgumentException("The label " + label + " is repeated.");
+		validateCovariance(mLabels.size(), mCovariance, Math.max(mValues.getMaxValue(), -mValues.getMinValue()));
+
 	}
 
 	/**
@@ -132,6 +144,7 @@ public class UncertainValues //
 			throw new DimensionMismatchException(covar.getRowDimension(), labels.size());
 		if (covar.getColumnDimension() != labels.size())
 			throw new DimensionMismatchException(covar.getColumnDimension(), labels.size());
+		assert noReplicateLabels(labels);
 		mLabels = Collections.unmodifiableList(labels);
 		final HashMap<Object, Integer> index = new HashMap<>();
 		for (int i = 0; i < mLabels.size(); ++i)
@@ -218,6 +231,18 @@ public class UncertainValues //
 		this(labels, vals, MatrixUtils.createRealIdentityMatrix(labels.size()).scalarMultiply(variance));
 	}
 
+	private static boolean noReplicateLabels(List<? extends Object> labels) {
+		Set<Object> rep = new HashSet<>();
+		for (Object label : labels) {
+			if (rep.contains(label)) {
+				System.err.println("The label " + label + " is replicated.");
+				return false;
+			}
+			rep.add(label);
+		}
+		return true;
+	}
+
 	/**
 	 * Builds an {@link UncertainValues} object representing the specified labeled
 	 * quantities as extracted from the list of {@link UncertainValues} objects.
@@ -282,14 +307,8 @@ public class UncertainValues //
 			throws ArgumentException {
 		// Test that each requested label is defined once and only once.
 		final List<Object> labels = new ArrayList<>();
-		for (final UncertainValues uv : uvs) {
-			for (final Object label : uv.getLabels())
-				if (labels.contains(label))
-					throw new ArgumentException(
-							"The label " + label + " is duplicated in UncertainValues.combine(...)");
-				else
-					labels.add(label);
-		}
+		for (final UncertainValues uv : uvs)
+			labels.addAll(uv.getLabels());
 		final UncertainValues res = new UncertainValues(labels);
 		int r0 = 0;
 		for (final UncertainValues uv : uvs) {
@@ -1172,11 +1191,14 @@ public class UncertainValues //
 	public UncertainValues sort(final Comparator<Object> compare) {
 		final List<Object> labels = new ArrayList<>(mLabels);
 		labels.sort(compare);
+		final int[] order = new int[labels.size()];
 		final UncertainValues res = new UncertainValues(labels);
+		for (int r = 0; r < labels.size(); ++r)
+			order[r] = indexOf(labels.get(r));
 		for (int r = 0; r < mLabels.size(); ++r) {
-			res.mValues.setEntry(res.indexOf(mLabels.get(r)), mValues.getEntry(r));
+			res.mValues.setEntry(r, mValues.getEntry(order[r]));
 			for (int c = 0; c < mLabels.size(); ++c)
-				res.setCovariance(mLabels.get(r), mLabels.get(c), mCovariance.getEntry(r, c));
+				res.setCovariance(r, c, mCovariance.getEntry(order[r], order[c]));
 		}
 		return res;
 	}

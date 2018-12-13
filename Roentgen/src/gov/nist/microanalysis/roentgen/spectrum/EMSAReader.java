@@ -30,10 +30,10 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
  * A basic file reader for the EMSA/ISO standard spectrum file.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 312 $
  */
 public class EMSAReader implements ISpectrumReader {

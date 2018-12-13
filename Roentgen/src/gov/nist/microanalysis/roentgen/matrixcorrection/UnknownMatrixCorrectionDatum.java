@@ -88,7 +88,7 @@ public class UnknownMatrixCorrectionDatum //
 		mEstimate = Optional.of(comp.asMassFraction());
 	}
 
-	Set<Element> getElementSet() {
+	public Set<Element> getElementSet() {
 		return Collections.unmodifiableSet(mElements);
 	}
 

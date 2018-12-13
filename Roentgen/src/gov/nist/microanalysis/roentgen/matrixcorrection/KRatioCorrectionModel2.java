@@ -2,7 +2,9 @@ package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
@@ -10,42 +12,47 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel;
-import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
  * @author Nicholas W. M. Ritchie
  *
  */
-public class KRatioCorrectionModel //
+public class KRatioCorrectionModel2 //
 		extends ImplicitMeasurementModel {
 
 	static List<? extends Object> buildOutputs(//
-			final Composition unk //
+			Set<KRatioLabel> krs //
 	) {
+		assert KRatioLabel.areAllSameUnknownElements(krs);
+		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
+		Set<Element> elms = unk.getElementSet();
 		final List<Object> res = new ArrayList<>();
-		for (final Element elm : unk.getElementSet())
-			res.add(Composition.buildMassFractionTag(unk, elm));
+		for (final Element elm : elms)
+			res.add(Composition.buildMassFractionTag(unk.getComposition(), elm));
 		return res;
 	}
 
-	public KRatioCorrectionModel(//
-			final UnknownMatrixCorrectionDatum unk, //
-			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
-	) {
-		super(new KRatioHModel(unk, stds), buildOutputs(unk.getComposition()));
+	public KRatioCorrectionModel2(//
+			Set<KRatioLabel> krs //
+	) throws ArgumentException {
+		super(new KRatioHModel2(krs), buildOutputs(krs));
 	}
 
-	static public LabeledMultivariateJacobianFunction buildXPPModel( //
-			final UnknownMatrixCorrectionDatum unk, //
-			final Map<ElementXRaySet, StandardMatrixCorrectionDatum> stds //
+	static public Pair<LabeledMultivariateJacobianFunction,UncertainValues> buildXPPModel( //
+			Set<KRatioLabel> krs,
+			Set<MatrixCorrectionModel2.Variates> variates //
 	) throws ArgumentException {
 		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
-		steps.add(new XPPMatrixCorrection(unk, stds));
-		steps.add(new KRatioCorrectionModel(unk, stds));
-		return new SerialLabeledMultivariateJacobianFunction("Full K-ratio correction", steps);
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(krs, variates);
+		steps.add(xpp);
+		
+		steps.add(new KRatioCorrectionModel2(krs));
+		return Pair.create(new SerialLabeledMultivariateJacobianFunction("Full K-ratio correction", steps),
+				xpp.buildInput());
 	}
 
 	public UncertainValues getInputs(final MatrixCorrectionModel mcm, final UncertainValues inputs,

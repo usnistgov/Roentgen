@@ -15,7 +15,7 @@ import com.duckandcover.html.IToHTML.Mode;
  * Copyright Nicholas W. M. Ritchie 2014-2017
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 303 $
  */
 public class Transforms {

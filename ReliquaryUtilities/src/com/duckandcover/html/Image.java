@@ -12,7 +12,7 @@ import java.io.IOException;
  * Copyright Nicholas W. M. Ritchie 2014-2015
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
 public class Image

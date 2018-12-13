@@ -8,7 +8,8 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.XPPMatrixCorrection2.Variates;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 
 public class CompositionFromKRatios2 //
 		extends SerialLabeledMultivariateJacobianFunction {
@@ -16,7 +17,7 @@ public class CompositionFromKRatios2 //
 	private final XPPMatrixCorrection2 mXPP;
 
 	private static List<LabeledMultivariateJacobianFunction> buildSteps(final Set<KRatioLabel> kratios,
-			final Set<Variates> variates) //
+			final Set<MatrixCorrectionModel2.Variates> variates) //
 			throws ArgumentException {
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, variates);
 		final KRatioHModel2 hModel = new KRatioHModel2(kratios);
@@ -28,7 +29,7 @@ public class CompositionFromKRatios2 //
 		return steps;
 	}
 
-	public CompositionFromKRatios2(final Set<KRatioLabel> kratios, final Set<Variates> variates) //
+	public CompositionFromKRatios2(final Set<KRatioLabel> kratios, final Set<MatrixCorrectionModel2.Variates> variates) //
 			throws ArgumentException {
 		super("Composition From K-Ratios", buildSteps(kratios, variates));
 		mXPP = (XPPMatrixCorrection2) getStep(0);

@@ -6,10 +6,10 @@ package com.duckandcover.html;
  * all objects need to support distinct versions of each mode.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 293 $
  */
 public interface IToHTML {

@@ -17,7 +17,7 @@ import java.util.TreeMap;
  * Copyright Nicholas W. M. Ritchie 2016
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
 public class Table

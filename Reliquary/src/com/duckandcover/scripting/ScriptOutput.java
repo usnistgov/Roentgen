@@ -5,10 +5,10 @@ package com.duckandcover.scripting;
  * Objects representing different types of text output from the ScriptingWorker.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 293 $
  */
 abstract public class ScriptOutput {
@@ -29,10 +29,10 @@ abstract public class ScriptOutput {
      * A command line
      * </p>
      * <p>
-     * Copyright Nicholas W. M. Ritchie 2014-2016
+     * Copyright Nicholas W. M. Ritchie 2014-2019
      * </p>
      *
-     * @author nritchie
+     * @author Nicholas W. M. Ritchie
      * @version $Rev: 293 $
      */
     static public class Command extends ScriptOutput {
@@ -94,10 +94,10 @@ abstract public class ScriptOutput {
      * Output formated as HTML
      * </p>
      * <p>
-     * Copyright Nicholas W. M. Ritchie 2014-2016
+     * Copyright Nicholas W. M. Ritchie 2014-2019
      * </p>
      *
-     * @author nritchie
+     * @author Nicholas W. M. Ritchie
      * @version $Rev: 293 $
      */
 
@@ -118,10 +118,10 @@ abstract public class ScriptOutput {
      * An error message
      * </p>
      * <p>
-     * Copyright Nicholas W. M. Ritchie 2014-2016
+     * Copyright Nicholas W. M. Ritchie 2014-2019
      * </p>
      *
-     * @author nritchie
+     * @author Nicholas W. M. Ritchie
      * @version $Rev: 293 $
      */
     static public class Error extends ScriptOutput {
@@ -141,10 +141,10 @@ abstract public class ScriptOutput {
      * An warning message
      * </p>
      * <p>
-     * Copyright Nicholas W. M. Ritchie 2014-2016
+     * Copyright Nicholas W. M. Ritchie 2014-2019
      * </p>
      *
-     * @author nritchie
+     * @author Nicholas W. M. Ritchie
      * @version $Rev: 293 $
      */
     static public class Warning extends ScriptOutput {
@@ -164,10 +164,10 @@ abstract public class ScriptOutput {
      * Result of a single command line.
      * </p>
      * <p>
-     * Copyright Nicholas W. M. Ritchie 2014-2016
+     * Copyright Nicholas W. M. Ritchie 2014-2019
      * </p>
      *
-     * @author nritchie
+     * @author Nicholas W. M. Ritchie
      * @version $Rev: 293 $
      */
     static public class Result extends ScriptOutput {
@@ -203,10 +203,10 @@ abstract public class ScriptOutput {
      * report to disk.
      * </p>
      * <p>
-     * Copyright Nicholas W. M. Ritchie 2014-2016
+     * Copyright Nicholas W. M. Ritchie 2014-2019
      * </p>
      *
-     * @author nritchie
+     * @author Nicholas W. M. Ritchie
      * @version $Rev: 293 $
      */
     static public class Flush extends ScriptOutput {

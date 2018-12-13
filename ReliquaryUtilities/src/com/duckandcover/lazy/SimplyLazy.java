@@ -32,7 +32,7 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
  * Copyright Nicholas W. M. Ritchie 2014-2017
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 309 $
  */
 public abstract class SimplyLazy<H> {

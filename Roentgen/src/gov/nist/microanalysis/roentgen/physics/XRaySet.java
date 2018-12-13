@@ -32,10 +32,10 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * criteria.
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 307 $
  */
 public class XRaySet //
@@ -47,10 +47,10 @@ public class XRaySet //
 	 * this TransitionSet.
 	 * </p>
 	 * <p>
-	 * Copyright Nicholas W. M. Ritchie 2014-2016
+	 * Copyright Nicholas W. M. Ritchie 2014-2019
 	 * </p>
 	 *
-	 * @author nritchie
+	 * @author Nicholas W. M. Ritchie
 	 * @version $Rev: 307 $
 	 */
 	public interface IMemberTest {
@@ -97,10 +97,10 @@ public class XRaySet //
 	 * result from ionizations in the specified Shell objects.
 	 * </p>
 	 * <p>
-	 * Copyright Nicholas W. M. Ritchie 2014-2016
+	 * Copyright Nicholas W. M. Ritchie 2014-2019
 	 * </p>
 	 *
-	 * @author nritchie
+	 * @author Nicholas W. M. Ritchie
 	 * @version $Rev: 307 $
 	 */
 	public static class FamilyMemberTest implements IMemberTest {
@@ -129,10 +129,10 @@ public class XRaySet //
 	 * eMax?
 	 * </p>
 	 * <p>
-	 * Copyright Nicholas W. M. Ritchie 2014-2016
+	 * Copyright Nicholas W. M. Ritchie 2014-2019
 	 * </p>
 	 *
-	 * @author nritchie
+	 * @author Nicholas W. M. Ritchie
 	 * @version $Rev: 307 $
 	 */
 	public static class EdgeMemberTest implements IMemberTest {
@@ -327,10 +327,10 @@ public class XRaySet //
 	 * A set of CharacteristicXRay objects.
 	 * </p>
 	 * <p>
-	 * Copyright Nicholas W. M. Ritchie 2014-2016
+	 * Copyright Nicholas W. M. Ritchie 2014-2019
 	 * </p>
 	 *
-	 * @author nritchie
+	 * @author Nicholas W. M. Ritchie
 	 * @version $Rev: 307 $
 	 */
 	public static class CharacteristicXRaySet //
@@ -452,6 +452,32 @@ public class XRaySet //
 			return res;
 		}
 
+		/**
+		 * Returns a set containing all AtomicShell objects represented as the inner
+		 * (ionized) shell associated with this set of CharacteristicXRay objects.
+		 * 
+		 * @return Set&lt;AtomicShell&gt;
+		 */
+		public Set<AtomicShell> getSetOfInnerAtomicShells() {
+			final TreeSet<AtomicShell> res = new TreeSet<>();
+			for (final XRay xr : mSet)
+				res.add(((CharacteristicXRay) xr).getInner());
+			return res;
+		}
+
+		/**
+		 * Returns a set containing all AtomicShell objects represented as the outer
+		 * (donor) shell associated with this set of CharacteristicXRay objects.
+		 * 
+		 * @return Set&lt;AtomicShell&gt;
+		 */
+		public Set<AtomicShell> getSetOfOuterAtomicShells() {
+			final TreeSet<AtomicShell> res = new TreeSet<>();
+			for (final XRay xr : mSet)
+				res.add(((CharacteristicXRay) xr).getOuter());
+			return res;
+		}
+
 		public CharacteristicXRay getBrightest() {
 			CharacteristicXRay brightest = null;
 			double weight = -1.0;
@@ -494,10 +520,10 @@ public class XRaySet //
 	 * one and only one Element.
 	 * </p>
 	 * <p>
-	 * Copyright Nicholas W. M. Ritchie 2014-2016
+	 * Copyright Nicholas W. M. Ritchie 2014-2019
 	 * </p>
 	 *
-	 * @author nritchie
+	 * @author Nicholas W. M. Ritchie
 	 * @version $Rev: 307 $
 	 */
 	public static class ElementXRaySet //

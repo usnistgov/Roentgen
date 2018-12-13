@@ -12,10 +12,10 @@ import com.google.common.base.Objects;
  * line. It provides methods for determining the intersection
  * </p>
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2016
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 199 $
  */
 public class IntInterval implements Comparable<IntInterval> {

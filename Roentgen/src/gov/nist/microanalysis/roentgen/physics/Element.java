@@ -16,7 +16,7 @@ import com.duckandcover.html.IToHTML;
  * Copyright Nicholas W. M. Ritchie 2014-2017
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: 285 $
  */
 public enum Element implements IToHTML {

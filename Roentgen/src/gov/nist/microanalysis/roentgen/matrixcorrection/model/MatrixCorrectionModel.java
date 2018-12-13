@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.matrixcorrection;
+package gov.nist.microanalysis.roentgen.matrixcorrection.model;
 
 import java.util.List;
 import java.util.Map;
@@ -6,6 +6,11 @@ import java.util.Map;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;

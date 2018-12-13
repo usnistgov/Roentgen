@@ -52,7 +52,6 @@ public abstract class MatrixCorrectionDatum //
 	/**
 	 * @param beamEnergy   keV
 	 * @param takeOffAngle degrees
-	 * @param roughness    in mass thickness cm * g/cm^3 or g/cm^2
 	 */
 	protected MatrixCorrectionDatum(//
 			final UncertainValue beamEnergy, //
@@ -62,8 +61,6 @@ public abstract class MatrixCorrectionDatum //
 	}
 
 	/**
-	 * @param comp
-	 * @param isStandard
 	 * @param beamEnergy   keV
 	 * @param takeOffAngle degrees
 	 * @param roughness    in mass thickness cm * g/cm^3 or g/cm^2
@@ -110,5 +107,5 @@ public abstract class MatrixCorrectionDatum //
 	 *
 	 * @return {@link Composition}
 	 */
-	abstract Composition getComposition();
+	public abstract Composition getComposition();
 }

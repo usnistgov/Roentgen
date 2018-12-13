@@ -19,7 +19,7 @@ import java.util.Map;
  * Copyright Nicholas W. M. Ritchie 2014-2015
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
 public class Report implements IToHTMLExt {

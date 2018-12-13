@@ -10,7 +10,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
  * Copyright Nicholas W. M. Ritchie 2014-2015
  * </p>
  *
- * @author nritchie
+ * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
 public class BremsstrahlungXRay extends XRay {

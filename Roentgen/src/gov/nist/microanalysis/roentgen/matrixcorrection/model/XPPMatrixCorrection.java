@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.matrixcorrection;
+package gov.nist.microanalysis.roentgen.matrixcorrection.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +29,11 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
@@ -1817,7 +1822,7 @@ public class XPPMatrixCorrection //
 	 * need to build and copy large Jacobian matrices and is thus slightly more
 	 * computationally efficient.
 	 *
-	 * @author nritchie
+	 * @author Nicholas W. M. Ritchie
 	 */
 	private static final class StepXPP extends SerialLabeledMultivariateJacobianFunction
 			implements ILabeledMultivariateFunction {
