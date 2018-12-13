@@ -39,7 +39,7 @@ abstract public class MatrixCorrectionModel2 //
 		extends SerialLabeledMultivariateJacobianFunction {
 
 	private static class ElementLabel extends BaseLabel<Element, Object, Object> {
-	
+
 		private ElementLabel(final String name, final Element obj) {
 			super(name, obj);
 		}
@@ -64,38 +64,38 @@ abstract public class MatrixCorrectionModel2 //
 	}
 
 	private static class MatrixCorrectionDatumTag2<H> extends BaseLabel<MatrixCorrectionDatum, H, Object> {
-	
+
 		MatrixCorrectionDatumTag2(final String name, final MatrixCorrectionDatum mcd, final H obj2) {
 			super(name, mcd, obj2);
 		}
 	}
 
 	public static class ChiLabel extends MatrixCorrectionDatumTag2<CharacteristicXRay> {
-	
+
 		ChiLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 			super("&chi;", mcd, cxr);
 		}
-	
+
 	}
 
 	public static class FofChiLabel extends MatrixCorrectionDatumTag2<CharacteristicXRay> {
-	
+
 		private FofChiLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 			super("F(&chi;)", mcd, cxr);
 		}
-	
+
 	}
 
 	public static class Phi0Label extends MatrixCorrectionDatumTag2<AtomicShell> {
-	
+
 		Phi0Label(final MatrixCorrectionDatum mcd, final AtomicShell shell) {
 			super("&phi;<sub>0</sub>", mcd, shell);
 		}
-	
+
 	}
 
 	public static class ZAFLabel extends BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, CharacteristicXRay> {
-	
+
 		private ZAFLabel(final String name, final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
 				final CharacteristicXRay cxr) {
 			super(name, unk, std, cxr);
@@ -103,14 +103,14 @@ abstract public class MatrixCorrectionModel2 //
 	}
 
 	public static class XRayWeightLabel extends BaseLabel<CharacteristicXRay, Object, Object> {
-	
+
 		public XRayWeightLabel(final CharacteristicXRay cxr) {
 			super("w", cxr);
 		}
 	}
-	
+
 	public static class IonizationExponentLabel extends BaseLabel<AtomicShell, Object, Object> {
-		
+
 		public IonizationExponentLabel(final AtomicShell sh) {
 			super("m", sh);
 		}
@@ -203,7 +203,7 @@ abstract public class MatrixCorrectionModel2 //
 	static public Object FxFLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 		return characterisiticLabel("F(&chi;)/F", mcd, cxr);
 	}
-	
+
 	static public Object atomicNumberLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 		return characterisiticLabel("Z", mcd, cxr);
 	}
@@ -247,9 +247,8 @@ abstract public class MatrixCorrectionModel2 //
 			final CharacteristicXRay cxr) {
 		return new MatrixCorrectionModel2.ZAFLabel("Z", unk, std, cxr);
 	}
-	
 
-	public static UncertainValue computeM(AtomicShell sh) {
+	public static UncertainValue computeM(final AtomicShell sh) {
 		double m, dm;
 		switch (sh.getFamily()) {
 		case K:

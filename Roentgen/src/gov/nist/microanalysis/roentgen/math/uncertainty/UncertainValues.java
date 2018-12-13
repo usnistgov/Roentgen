@@ -117,7 +117,7 @@ public class UncertainValues //
 	public void validateCovariance() throws ArgumentException {
 		final Set<Object> labels = new HashSet<>(mLabels);
 		if (labels.size() != mLabels.size())
-			for (Object label : mLabels)
+			for (final Object label : mLabels)
 				if (!labels.contains(label))
 					throw new ArgumentException("The label " + label + " is repeated.");
 		validateCovariance(mLabels.size(), mCovariance, Math.max(mValues.getMaxValue(), -mValues.getMinValue()));
@@ -231,9 +231,9 @@ public class UncertainValues //
 		this(labels, vals, MatrixUtils.createRealIdentityMatrix(labels.size()).scalarMultiply(variance));
 	}
 
-	private static boolean noReplicateLabels(List<? extends Object> labels) {
-		Set<Object> rep = new HashSet<>();
-		for (Object label : labels) {
+	private static boolean noReplicateLabels(final List<? extends Object> labels) {
+		final Set<Object> rep = new HashSet<>();
+		for (final Object label : labels) {
 			if (rep.contains(label)) {
 				System.err.println("The label " + label + " is replicated.");
 				return false;

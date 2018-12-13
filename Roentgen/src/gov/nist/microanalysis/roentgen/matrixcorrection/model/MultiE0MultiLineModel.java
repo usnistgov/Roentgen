@@ -35,8 +35,8 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 /**
  * Takes the matrix corrections for the individual lines and sums them as
  * appropriate for k-ratios measured from multiple lines simultaneously as is
- * the case in EDS. It also accounts for a difference in beam energy between
- * the standard and the unknown.
+ * the case in EDS. It also accounts for a difference in beam energy between the
+ * standard and the unknown.
  *
  * Takes as inputs
  * <ol>
@@ -393,9 +393,9 @@ class MultiE0MultiLineModel //
 	 * <p>
 	 * Does not build massFractionLabel items
 	 * </p>
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @param variables
 	 * @return {@link UncertainValues}
 	 */

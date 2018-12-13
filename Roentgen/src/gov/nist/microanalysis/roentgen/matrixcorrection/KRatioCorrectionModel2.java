@@ -25,11 +25,11 @@ public class KRatioCorrectionModel2 //
 		extends ImplicitMeasurementModel {
 
 	static List<? extends Object> buildOutputs(//
-			Set<KRatioLabel> krs //
+			final Set<KRatioLabel> krs //
 	) {
 		assert KRatioLabel.areAllSameUnknownElements(krs);
 		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
-		Set<Element> elms = unk.getElementSet();
+		final Set<Element> elms = unk.getElementSet();
 		final List<Object> res = new ArrayList<>();
 		for (final Element elm : elms)
 			res.add(Composition.buildMassFractionTag(unk.getComposition(), elm));
@@ -37,19 +37,18 @@ public class KRatioCorrectionModel2 //
 	}
 
 	public KRatioCorrectionModel2(//
-			Set<KRatioLabel> krs //
+			final Set<KRatioLabel> krs //
 	) throws ArgumentException {
 		super(new KRatioHModel2(krs), buildOutputs(krs));
 	}
 
-	static public Pair<LabeledMultivariateJacobianFunction,UncertainValues> buildXPPModel( //
-			Set<KRatioLabel> krs,
-			Set<MatrixCorrectionModel2.Variates> variates //
+	static public Pair<LabeledMultivariateJacobianFunction, UncertainValues> buildXPPModel( //
+			final Set<KRatioLabel> krs, final Set<MatrixCorrectionModel2.Variates> variates //
 	) throws ArgumentException {
 		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(krs, variates);
 		steps.add(xpp);
-		
+
 		steps.add(new KRatioCorrectionModel2(krs));
 		return Pair.create(new SerialLabeledMultivariateJacobianFunction("Full K-ratio correction", steps),
 				xpp.buildInput());

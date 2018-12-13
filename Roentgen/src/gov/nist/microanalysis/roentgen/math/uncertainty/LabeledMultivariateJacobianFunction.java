@@ -134,7 +134,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	public int getInputDimension() {
 		return mInputLabels.size();
 	}
-	
+
 	public int getConstantDimension() {
 		return mConstants.size();
 	}

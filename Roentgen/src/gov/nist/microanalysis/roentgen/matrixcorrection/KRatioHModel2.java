@@ -90,6 +90,7 @@ class KRatioHModel2 //
 		return Pair.create(rv, rm);
 	}
 
+	@Override
 	public String toString() {
 		return "K-Ratio H-model";
 	}

@@ -32,7 +32,7 @@ public class TestEDSFittingFilter {
 
 	/**
 	 * Constructs a TestEDSFittingFilter
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	@Test

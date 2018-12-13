@@ -134,20 +134,20 @@ public class XRayEmissionProbability //
 	public Map<CharacteristicXRay, Double> getProbabilties() {
 		return mProbabilities;
 	}
-	
+
 	public double getWeight(final CharacteristicXRay cxr) {
 		return mProbabilities.get(cxr).doubleValue();
 	}
-	
+
 	public UncertainValue getWeightU(final CharacteristicXRay cxr) {
 		final double w = getWeight(cxr);
 		double dw = Double.NaN;
-		if(w>0.1)
-			dw=w*0.02;
-		else if(w>0.01)
-			dw=w*0.1;
+		if (w > 0.1)
+			dw = w * 0.02;
+		else if (w > 0.01)
+			dw = w * 0.1;
 		else
-			dw=w*0.2;
+			dw = w * 0.2;
 		return new UncertainValue(w, dw);
 	}
 

@@ -25,11 +25,11 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.CompositionFromKRatios2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
-import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
-import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
@@ -125,7 +125,7 @@ public class KRatioCorrectionModelTest {
 			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, caTr, Method.Measured), new UncertainValue(0.980070));
 			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, oTr, Method.Measured), new UncertainValue(1.011527));
 			mouv.put(new KRatioLabel(unkMcd, stdAlMcd, alTr, Method.Measured), new UncertainValue(0.032001));
-			UncertainValues kuv = new UncertainValues(mouv);
+			final UncertainValues kuv = new UncertainValues(mouv);
 
 			final UncertainValues uvs = UncertainValues.combine(kuv, xppInput);
 			final LabeledMultivariateJacobian nmvj = new LabeledMultivariateJacobian(krcm, uvs.getValues());
@@ -208,12 +208,12 @@ public class KRatioCorrectionModelTest {
 
 		final Pair<LabeledMultivariateJacobianFunction, UncertainValues> pr = KRatioCorrectionModel2
 				.buildXPPModel(lkr.keySet(), XPPMatrixCorrection2.defaultVariates());
-		
+
 		final LabeledMultivariateJacobianFunction krcm = pr.getFirst();
 		final UncertainValues xppInput = pr.getSecond();
-		
+
 		final UncertainValues uvs = UncertainValues.combine(kratios, xppInput);
-		
+
 		final Report report = new Report("K-Ratio (2)");
 		try {
 			report.addHeader("K-ratio Test2");

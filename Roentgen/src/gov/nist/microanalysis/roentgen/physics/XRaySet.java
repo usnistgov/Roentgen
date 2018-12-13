@@ -455,7 +455,7 @@ public class XRaySet //
 		/**
 		 * Returns a set containing all AtomicShell objects represented as the inner
 		 * (ionized) shell associated with this set of CharacteristicXRay objects.
-		 * 
+		 *
 		 * @return Set&lt;AtomicShell&gt;
 		 */
 		public Set<AtomicShell> getSetOfInnerAtomicShells() {
@@ -468,7 +468,7 @@ public class XRaySet //
 		/**
 		 * Returns a set containing all AtomicShell objects represented as the outer
 		 * (donor) shell associated with this set of CharacteristicXRay objects.
-		 * 
+		 *
 		 * @return Set&lt;AtomicShell&gt;
 		 */
 		public Set<AtomicShell> getSetOfOuterAtomicShells() {

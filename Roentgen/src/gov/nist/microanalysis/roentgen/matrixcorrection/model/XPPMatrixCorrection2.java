@@ -1906,10 +1906,11 @@ public class XPPMatrixCorrection2 //
 
 		{
 			final Map<Object, Number> mon = new HashMap<>();
-			for (KRatioLabel krl : mKRatios) {
-				for (MatrixCorrectionDatum mcd : Arrays.asList(krl.getStandard(), krl.getUnknown()))
-					for (CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-						Object sfLbl = new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mcd, cxr.getInner());
+			for (final KRatioLabel krl : mKRatios) {
+				for (final MatrixCorrectionDatum mcd : Arrays.asList(krl.getStandard(), krl.getUnknown()))
+					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
+						final Object sfLbl = new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mcd,
+								cxr.getInner());
 						if (!mon.containsKey(sfLbl))
 							mon.put(sfLbl, new UncertainValue(1.0, 0.01));
 					}
