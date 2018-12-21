@@ -8,6 +8,7 @@ import com.duckandcover.html.Table;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
+import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -20,9 +21,12 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 public class StandardMatrixCorrectionDatum //
 		extends MatrixCorrectionDatum {
 
+	private final Composition mComposition;
+	
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ mComposition.hashCode();
+		return 37 * super.hashCode() + 
+				mComposition.hashCode();
 	}
 
 	@Override
@@ -37,30 +41,52 @@ public class StandardMatrixCorrectionDatum //
 		return Objects.equals(mComposition, other.mComposition);
 	}
 
-	private final Composition mComposition;
 
 	/**
 	 * @param comp
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 */
-	public StandardMatrixCorrectionDatum(final Composition comp, final UncertainValue beamEnergy,
-			final UncertainValue takeOffAngle) {
+	public StandardMatrixCorrectionDatum( //
+			final Composition comp, //
+			final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle //
+	) {
 		super(beamEnergy, takeOffAngle);
 		mComposition = comp.asMassFraction();
 	}
 
 	/**
-	 * /**
 	 * 
 	 * @param comp
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 * @param roughness
 	 */
-	public StandardMatrixCorrectionDatum(final Composition comp, final UncertainValue beamEnergy,
-			final UncertainValue takeOffAngle, final double roughness) {
+	public StandardMatrixCorrectionDatum( //
+			final Composition comp, //
+			final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle, //
+			final double roughness //
+	) {
 		super(beamEnergy, takeOffAngle, roughness);
+		mComposition = comp.asMassFraction();
+	}
+
+	/**
+	 * 
+	 * @param comp
+	 * @param beamEnergy
+	 * @param takeOffAngle
+	 * @param roughness
+	 */
+	public StandardMatrixCorrectionDatum( //
+			final Composition comp, //
+			final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle, //
+			final double roughness, Layer coating //
+	) {
+		super(beamEnergy, takeOffAngle, roughness, coating);
 		mComposition = comp.asMassFraction();
 	}
 
@@ -84,6 +110,10 @@ public class StandardMatrixCorrectionDatum //
 					Table.td(bnf.formatHTML(mTakeOffAngle.multiply(180.0 / Math.PI)) + "&deg;"));
 			if (mRoughness.isPresent())
 				t.addRow(Table.td("Roughness"), Table.td(bnf.formatHTML(mRoughness.get().doubleValue())));
+			if (mCoating.isPresent())
+				t.addRow(Table.td("Coating"), Table.td(mCoating));
+			else
+				t.addRow(Table.td("Coating"), Table.td("Not coated"));
 			return t.toHTML(mode);
 		}
 	}

@@ -13,6 +13,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
+import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -28,7 +29,7 @@ public class UnknownMatrixCorrectionDatum //
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(mElements, mEstimate) ^ super.hashCode();
+		return 37 * super.hashCode() + Objects.hash(mElements, mEstimate);
 	}
 
 	@Override
@@ -81,9 +82,28 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param takeOffAngle
 	 * @param roughness
 	 */
-	public UnknownMatrixCorrectionDatum(final Composition comp, final UncertainValue beamEnergy,
-			final UncertainValue takeOffAngle, final double roughness) {
+	public UnknownMatrixCorrectionDatum(//
+			final Composition comp, //
+			final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle, //
+			final double roughness) {
 		super(beamEnergy, takeOffAngle, roughness);
+		mElements = comp.getElementSet();
+		mEstimate = Optional.of(comp.asMassFraction());
+	}
+
+	/**
+	 * @param beamEnergy
+	 * @param takeOffAngle
+	 * @param roughness
+	 */
+	public UnknownMatrixCorrectionDatum(//
+			final Composition comp, //
+			final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle, //
+			final double roughness, //
+			Layer coating) {
+		super(beamEnergy, takeOffAngle, roughness, coating);
 		mElements = comp.getElementSet();
 		mEstimate = Optional.of(comp.asMassFraction());
 	}
@@ -145,6 +165,10 @@ public class UnknownMatrixCorrectionDatum //
 					Table.td(bnf.formatHTML(mTakeOffAngle.multiply(180.0 / Math.PI)) + "&deg;"));
 			if (mRoughness.isPresent())
 				t.addRow(Table.td("Roughness"), Table.td(bnf.formatHTML(mRoughness.get().doubleValue())));
+			if (mCoating.isPresent())
+				t.addRow(Table.td("Coating"), Table.td(mCoating));
+			else
+				t.addRow(Table.td("Coating"), Table.td("Not coated"));
 			return t.toHTML(mode);
 		}
 	}

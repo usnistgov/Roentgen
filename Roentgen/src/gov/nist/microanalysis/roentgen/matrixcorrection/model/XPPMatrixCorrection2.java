@@ -91,9 +91,6 @@ public class XPPMatrixCorrection2 //
 	// The types of variables to compute Jacobian elements.
 	private final Set<MatrixCorrectionModel2.Variates> mVariates = new HashSet<>();
 
-	// The material MACs computed in getMaterialMACs or updated by setMaterialMACs()
-	private UncertainValues mMaterialMACS = null;
-
 	public static final String EPS = "&epsilon;";
 	public static final String ONE_OVER_S = "<sup>1</sup>/<sub>S</sub>";
 	public static final String QLA = "<html>Q<sub>l</sub><sup>a</sup>";
@@ -311,6 +308,7 @@ public class XPPMatrixCorrection2 //
 			final Object tagE0 = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
 			final int iJ = inputIndex(new MatrixCorrectionModel2.CompositionLabel("J", mDatum.getComposition()));
 			final int iM = inputIndex(new MatrixCorrectionModel2.CompositionLabel("M", mDatum.getComposition()));
+			// ToDo: Make little m an input parameter...
 			checkIndices(iJ, iM);
 
 			final double e0 = getValue(tagE0, point);
@@ -409,14 +407,15 @@ public class XPPMatrixCorrection2 //
 
 			double m = 1.0;
 			final double Za = mShell.getElement().getAtomicNumber();
-			switch (mShell.getFamily().getPrincipleQuantumNumber()) {
-			case 1: // K
+			switch (mShell.getFamily()) {
+			case K: // K
 				m = 0.86 + 0.12 * Math.exp(-1.0 * Math.pow(Za / 5, 2.0));
 				break;
-			case 2: // L
+			case L: // L
 				m = 0.82;
 				break;
-			case 3: // M
+			case M: // M
+			default:
 				m = 0.78;
 				break;
 			}
@@ -1309,6 +1308,11 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.chiLabel(datum, cxr));
 			if (variates.contains(MatrixCorrectionModel2.Variates.SurfaceRoughness))
 				res.add(MatrixCorrectionModel2.roughnessLabel(datum));
+			if (variates.contains(MatrixCorrectionModel2.Variates.Coating) && (datum.hasCoating())) {
+				res.add(MatrixCorrectionModel2.coatingMassThickness(datum));
+				res.add(MatrixCorrectionModel2.takeOffAngleLabel(datum));
+				res.add(MatrixCorrectionModel2.matMacLabel(datum.getCoating().getComposition(), cxr));
+			}
 			return res;
 		}
 
@@ -1356,8 +1360,9 @@ public class XPPMatrixCorrection2 //
 			final double k1 = chi + b * (1 + eps);
 
 			final double Fx = Math.exp(-chi * sr) * (B / k0 - (A * b * eps) / k1 + phi0) / k0;
+
 			rv.setEntry(oFx, Fx); // C2
-			rm.setEntry(oFx, iA, -(1.0 / k0) + 1.0 / k1); // C2
+			rm.setEntry(oFx, iA, (-1.0 / k0) + 1.0 / k1); // C2
 			rm.setEntry(oFx, iB, Math.pow(k0, -2.0)); // C2
 			rm.setEntry(oFx, ib,
 					(-(B / k0) + (A * b * eps) / k1
@@ -1366,7 +1371,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFx, iPhi0, 1.0 / k0); // C2
 			rm.setEntry(oFx, iChi, (-2.0 * B + k0 * ((A * b * eps * (2.0 * k0 + b * eps)) / Math.pow(k1, 2.0) - phi0))
 					/ Math.pow(k0, 3.0)); // C2
-			rm.setEntry(oFx, ieps, -((A * b) / Math.pow(k1, 2.0))); // C2
+			rm.setEntry(oFx, ieps, -1.0 * ((A * b) / Math.pow(k1, 2.0))); // C2
 			writeJacobian(oFx, tagRoughness, -chi * Math.exp(-chi * sr) * Fx, rm);
 			return Pair.create(rv, rm);
 		}
@@ -1396,7 +1401,9 @@ public class XPPMatrixCorrection2 //
 
 			final double k0 = b + chi;
 			final double k1 = chi + b * (1 + eps);
-			rv.setEntry(oFx, Math.exp(-chi * sr) * (B / k0 - (A * b * eps) / k1 + phi0) / k0); // C2
+			final double Fx = Math.exp(-chi * sr) * (B / k0 - (A * b * eps) / k1 + phi0) / k0;
+
+			rv.setEntry(oFx, Fx); // C2
 			return rv;
 		}
 
@@ -1404,7 +1411,99 @@ public class XPPMatrixCorrection2 //
 		public String toString() {
 			return "StepFx[" + mDatum + "," + mXRay + "]";
 		}
+	}
 
+	private static class StepConductiveCoating //
+			extends LabeledMultivariateJacobianFunction //
+			implements ILabeledMultivariateFunction {
+
+		private final MatrixCorrectionDatum mDatum;
+		private final CharacteristicXRay mXRay;
+
+		private static final List<? extends Object> buildInputLabels(MatrixCorrectionDatum datum,
+				CharacteristicXRay cxr, Set<Variates> variates) {
+			final List<Object> res = new ArrayList<>();
+			if (variates.contains(MatrixCorrectionModel2.Variates.Coating) && (datum.hasCoating())) {
+				res.add(MatrixCorrectionModel2.coatingMassThickness(datum));
+				res.add(MatrixCorrectionModel2.takeOffAngleLabel(datum));
+				res.add(MatrixCorrectionModel2.matMacLabel(datum.getCoating().getComposition(), cxr));
+			}
+			res.add(MatrixCorrectionModel2.FofChiLabel(datum, cxr));
+			return res;
+
+		}
+
+		private static final List<? extends Object> buildOutputLabels(//
+				MatrixCorrectionDatum datum, CharacteristicXRay cxr //
+		) {
+			return Collections.singletonList(MatrixCorrectionModel2.FofChiReducedLabel(datum, cxr));
+		}
+
+		public StepConductiveCoating(MatrixCorrectionDatum mcd, CharacteristicXRay cxr, Set<Variates> variates) {
+			super(buildInputLabels(mcd, cxr, variates), buildOutputLabels(mcd, cxr));
+			mDatum = mcd;
+			mXRay = cxr;
+		}
+
+		@Override
+		public Pair<RealVector, RealMatrix> value(RealVector point) {
+			final int iMassTh = inputIndex(MatrixCorrectionModel2.coatingMassThickness(mDatum));
+			final int iFx = inputIndex(MatrixCorrectionModel2.FofChiLabel(mDatum, mXRay));
+			final int oFxRed = outputIndex(MatrixCorrectionModel2.FofChiReducedLabel(mDatum, mXRay));
+
+			final RealVector rv = new ArrayRealVector(getOutputDimension());
+			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+
+			double coatTrans = 1.0;
+			final double Fx = point.getEntry(iFx);
+			// A simple model for absorption of x-rays by a thin coating...
+			if (iMassTh != -1) {
+				final double massTh = point.getEntry(iMassTh);
+				final int itoa = inputIndex(MatrixCorrectionModel2.takeOffAngleLabel(mDatum));
+				final int imu = inputIndex(
+						MatrixCorrectionModel2.matMacLabel(mDatum.getCoating().getComposition(), mXRay));
+				final double toa = point.getEntry(itoa);
+				final double csc = 1.0 / Math.sin(toa);
+				final double mu = point.getEntry(imu);
+				coatTrans = Math.exp(-mu * massTh * csc);
+				final double dcoatTransdmu = coatTrans * (-massTh * csc);
+				final double dcoatTransdmassTh = coatTrans * (-mu * csc);
+				final double dcoatTransdtoa = coatTrans * massTh * mu * csc * csc * Math.cos(toa);
+				rm.setEntry(oFxRed, iMassTh, dcoatTransdmassTh * Fx);
+				rm.setEntry(oFxRed, imu, dcoatTransdmu * Fx);
+				rm.setEntry(oFxRed, itoa, dcoatTransdtoa * Fx);
+				assert coatTrans > 0.9 : coatTrans;
+			}
+			rm.setEntry(oFxRed, iFx, coatTrans);
+			rv.setEntry(oFxRed, coatTrans * Fx);
+			return Pair.create(rv, rm);
+		}
+
+		@Override
+		public RealVector optimized(RealVector point) {
+			final int iMassTh = inputIndex(MatrixCorrectionModel2.coatingMassThickness(mDatum));
+			final int iFx = inputIndex(MatrixCorrectionModel2.FofChiLabel(mDatum, mXRay));
+			final int oFxRed = outputIndex(MatrixCorrectionModel2.FofChiReducedLabel(mDatum, mXRay));
+
+			final RealVector rv = new ArrayRealVector(getOutputDimension());
+
+			double coatTrans = 1.0;
+			final double Fx = point.getEntry(iFx);
+			// A simple model for absorption of x-rays by a thin coating...
+			if (iMassTh != -1) {
+				final double massTh = point.getEntry(iMassTh);
+				final int itoa = inputIndex(MatrixCorrectionModel2.takeOffAngleLabel(mDatum));
+				final int imu = inputIndex(
+						MatrixCorrectionModel2.matMacLabel(mDatum.getCoating().getComposition(), mXRay));
+				final double toa = point.getEntry(itoa);
+				final double csc = 1.0 / Math.sin(toa);
+				final double mu = point.getEntry(imu);
+				coatTrans = Math.exp(-mu * massTh * csc);
+				assert coatTrans > 0.9 : coatTrans;
+			}
+			rv.setEntry(oFxRed, coatTrans * Fx);
+			return rv;
+		}
 	}
 
 	private static class StepZA extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
@@ -1615,6 +1714,12 @@ public class XPPMatrixCorrection2 //
 					step.add(new StepFx(datum, cxr, variates));
 				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Fx", step));
 			}
+			{
+				final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
+				for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
+					step.add(new StepConductiveCoating(datum, cxr, variates));
+				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Fx", step));
+			}
 			return res;
 		}
 
@@ -1676,17 +1781,9 @@ public class XPPMatrixCorrection2 //
 					step.add(new StepZA(krl.getUnknown(), krl.getStandard(), cxr, variates));
 			res.add(LabeledMultivariateJacobianFunctionBuilder.join("ZA", step));
 		}
-		{
-			final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
-			for (final KRatioLabel krl : kratios) {
-				final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
-				final StandardMatrixCorrectionDatum std = krl.getStandard();
-				final ElementXRaySet exrs = krl.getXRaySet();
-				step.add(new MultiE0MultiLineModel(unk, std, exrs, variates));
-			}
-			if (step.size() > 0)
-				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Combine", step));
-		}
+		// Need to do it this way to ensure that certain items aren't double
+		// calculated...
+		res.add(new MultiE0MultiLineModel(kratios, variates));
 		return res;
 	}
 
@@ -1852,14 +1949,35 @@ public class XPPMatrixCorrection2 //
 		if (mVariates.contains(MatrixCorrectionModel2.Variates.MeanIonizationPotential) == withUnc)
 			results.add(buildMeanIonizationPotentials());
 		if (mVariates.contains(MatrixCorrectionModel2.Variates.MassAbsorptionCofficient) == withUnc)
-			results.add(getMaterialMACs());
+			results.add(buildMaterialMACs(withUnc));
 		if (mVariates.contains(MatrixCorrectionModel2.Variates.BeamEnergy) == withUnc) {
 			final Map<Object, Number> vals = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
-				vals.put(MatrixCorrectionModel2.beamEnergyLabel(krl.getUnknown()), krl.getUnknown().getBeamEnergy());
-				vals.put(MatrixCorrectionModel2.beamEnergyLabel(krl.getStandard()), krl.getStandard().getBeamEnergy());
+				{
+					final UnknownMatrixCorrectionDatum mcd = krl.getUnknown();
+					vals.put(MatrixCorrectionModel2.beamEnergyLabel(mcd), mcd.getBeamEnergy());
+				}
+				{
+					final StandardMatrixCorrectionDatum mcd = krl.getStandard();
+					vals.put(MatrixCorrectionModel2.beamEnergyLabel(mcd), mcd.getBeamEnergy());
+				}
 			}
 			results.add(new UncertainValues(vals));
+		}
+		if (mVariates.contains(Variates.Coating) == withUnc) {
+			final Map<Object, Number> vals = new HashMap<>();
+			for (final KRatioLabel krl : mKRatios) {
+				if (krl.getStandard().hasCoating()) {
+					MatrixCorrectionDatum mcd = krl.getStandard();
+					vals.put(MatrixCorrectionModel2.coatingMassThickness(mcd), mcd.getCoating().getMassThickness());
+				}
+				if (krl.getUnknown().hasCoating()) {
+					MatrixCorrectionDatum mcd = krl.getUnknown();
+					vals.put(MatrixCorrectionModel2.coatingMassThickness(mcd), mcd.getCoating().getMassThickness());
+				}
+			}
+			if (!vals.isEmpty())
+				results.add(new UncertainValues(vals));
 		}
 		if (mVariates.contains(MatrixCorrectionModel2.Variates.TakeOffAngle) == withUnc) {
 			final Map<Object, Number> vals = new HashMap<>();
@@ -1879,7 +1997,8 @@ public class XPPMatrixCorrection2 //
 				vals.put(MatrixCorrectionModel2.roughnessLabel(krl.getStandard()),
 						new UncertainValue(0.0, krl.getStandard().getRoughness()));
 			}
-			results.add(new UncertainValues(vals));
+			if (!vals.isEmpty())
+				results.add(new UncertainValues(vals));
 		}
 		if (mVariates.contains(MatrixCorrectionModel2.Variates.WeightsOfLines) == withUnc) {
 			final CharacteristicXRaySet allCxr = new CharacteristicXRaySet();
@@ -1936,18 +2055,7 @@ public class XPPMatrixCorrection2 //
 		return elms;
 	}
 
-	public void setMaterialMACs(final UncertainValues uvs) {
-		mMaterialMACS = uvs;
-	}
-
-	public UncertainValues getMaterialMACs() //
-			throws ArgumentException {
-		if (mMaterialMACS == null)
-			mMaterialMACS = buildMaterialMACs();
-		return mMaterialMACS;
-	}
-
-	private UncertainValues buildMaterialMACs() //
+	private UncertainValues buildMaterialMACs(final boolean withUnc) //
 			throws ArgumentException {
 		final List<ElementalMAC.ElementMAC> elmMacs = new ArrayList<>();
 		final Map<Composition, CharacteristicXRaySet> comps = new HashMap<>();
@@ -1961,8 +2069,20 @@ public class XPPMatrixCorrection2 //
 						comps.put(comp, new CharacteristicXRaySet());
 					comps.get(comp).addAll(krl.getXRaySet());
 				}
+				if (krl.getUnknown().hasCoating() && (mVariates.contains(Variates.Coating) == withUnc)) {
+					final Composition comp = krl.getUnknown().getCoating().getComposition();
+					if (!comps.containsKey(comp))
+						comps.put(comp, new CharacteristicXRaySet());
+					comps.get(comp).addAll(krl.getXRaySet());
+				}
 				{
 					final Composition comp = krl.getStandard().getComposition();
+					if (!comps.containsKey(comp))
+						comps.put(comp, new CharacteristicXRaySet());
+					comps.get(comp).addAll(krl.getXRaySet());
+				}
+				if (krl.getStandard().hasCoating() && (mVariates.contains(Variates.Coating) == withUnc)) {
+					final Composition comp = krl.getStandard().getCoating().getComposition();
 					if (!comps.containsKey(comp))
 						comps.put(comp, new CharacteristicXRaySet());
 					comps.get(comp).addAll(krl.getXRaySet());
@@ -1977,7 +2097,7 @@ public class XPPMatrixCorrection2 //
 						mats.add(me.getKey());
 						elms.addAll(me.getKey().getElementSet());
 					}
-				assert mats.size() > 1;
+				// assert mats.size() > 1;
 				funcs.add(new MaterialMACFunction(new ArrayList<>(mats), cxr));
 				for (final Element elm : elms)
 					elmMacs.add(new ElementalMAC.ElementMAC(elm, cxr));
@@ -1993,7 +2113,8 @@ public class XPPMatrixCorrection2 //
 		inputs.add(macInps);
 		for (final Composition comp : comps.keySet())
 			inputs.add(comp);
-		return UncertainValues.propagate(all, UncertainValues.combine(inputs));
+		return inputs.size() > 0 ? UncertainValues.propagate(all, UncertainValues.combine(inputs))
+				: UncertainValues.NULL;
 	}
 
 	private UncertainValues buildMeanIonizationPotentials() {

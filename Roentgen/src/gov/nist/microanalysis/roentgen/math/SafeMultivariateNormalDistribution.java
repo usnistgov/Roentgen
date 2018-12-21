@@ -127,9 +127,9 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 			}
 			assert MatrixUtils.isSymmetric(MatrixUtils.createRealMatrix(covariances), 1.0e-9);
 			assert validateCovariances(covariances);
-			System.err.println("Means[" + groupIdx + "] = " + Arrays.toString(means));
-			System.err
-					.println("Covariances[" + groupIdx + "] = " + MatrixUtils.createRealMatrix(covariances).toString());
+			// System.err.println("Means[" + groupIdx + "] = " + Arrays.toString(means));
+			// System.err.println("Covariances[" + groupIdx + "] = " +
+			// MatrixUtils.createRealMatrix(covariances).toString());
 			mDistribution[groupIdx] = new MultivariateNormalDistribution(random, means, covariances);
 		}
 		mNormal = new NormalDistribution[mDistIndex.length];

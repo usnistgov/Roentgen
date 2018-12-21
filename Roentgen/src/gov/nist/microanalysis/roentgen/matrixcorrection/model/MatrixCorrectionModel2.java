@@ -83,8 +83,16 @@ abstract public class MatrixCorrectionModel2 //
 		private FofChiLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 			super("F(&chi;)", mcd, cxr);
 		}
+	}
+	
+	public static class FofChiReducedLabel extends MatrixCorrectionDatumTag2<CharacteristicXRay> {
+
+		private FofChiReducedLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
+			super("F<sub>r</sub>(&chi;)", mcd, cxr);
+		}
 
 	}
+
 
 	public static class Phi0Label extends MatrixCorrectionDatumTag2<AtomicShell> {
 
@@ -125,7 +133,8 @@ abstract public class MatrixCorrectionModel2 //
 		TakeOffAngle, //
 		WeightsOfLines, //
 		IonizationExponent, //
-		SurfaceRoughness
+		SurfaceRoughness,
+		Coating
 	}
 
 	protected final Set<KRatioLabel> mKRatios;
@@ -191,10 +200,21 @@ abstract public class MatrixCorrectionModel2 //
 	static public Object chiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.ChiLabel(comp, other);
 	}
+	
+	
+	static public Object coatingMassThickness(final MatrixCorrectionDatum mcd) {
+		return new MatrixCorrectionDatumLabel("[&rho;t]<sub>coating</sub>", mcd);
+	}
 
 	static public Object FofChiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.FofChiLabel(comp, other);
 	}
+	
+	static public Object FofChiReducedLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
+		return new MatrixCorrectionModel2.FofChiReducedLabel(comp, other);
+	}
+
+	
 
 	static public Object phi0Label(final MatrixCorrectionDatum comp, final AtomicShell other) {
 		return new MatrixCorrectionModel2.Phi0Label(comp, other);
@@ -242,6 +262,11 @@ abstract public class MatrixCorrectionModel2 //
 			final ElementXRaySet exrs) {
 		return new MatrixCorrectionLabel(unk, std, exrs);
 	}
+	
+	static public Object zafLabel(KRatioLabel krl) {
+		return new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet());
+	}
+
 
 	static public Object zLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
 			final CharacteristicXRay cxr) {

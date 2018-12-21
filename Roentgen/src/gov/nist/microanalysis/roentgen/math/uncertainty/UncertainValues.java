@@ -72,6 +72,17 @@ public class UncertainValues //
 	private final RealMatrix mCovariance;
 
 	private final Map<Object, Integer> mIndex;
+	
+	
+	private UncertainValues() {
+		mValues=new ArrayRealVector(0);
+		mLabels=new ArrayList<>();
+		mCovariance=NullableRealMatrix.build(0, 0);
+		mIndex=new HashMap<>();
+	}
+	
+	public static final UncertainValues NULL = new UncertainValues();
+	
 
 	/**
 	 * Checks that the covariance matrix is m x m, the variances are non-negative,
@@ -527,7 +538,7 @@ public class UncertainValues //
 			cov.setEntry(ri, ri, uvs.getCovariance(r, r));
 			for (int ci = r + 1; ci < labels.size(); ++ci) {
 				final int c = uvs.indexOf(labels.get(ci));
-				assert c >= 0 : "Column label " + labels.get(ci) + " is unavailable in UncertainValues.extract(...)";
+				assert c >= 0 : "Column label " + labels.get(ci) + " is missing in UncertainValues.extract(...)";
 				final double cc = uvs.getCovariance(r, c);
 				cov.setEntry(ri, ci, cc);
 				cov.setEntry(ci, ri, cc);

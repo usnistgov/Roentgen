@@ -19,6 +19,7 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunctionBuilder;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
@@ -26,6 +27,7 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.Variates;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRayEmissionProbability;
@@ -59,34 +61,62 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 class MultiE0MultiLineModel //
 		extends SerialLabeledMultivariateJacobianFunction {
 
-	private final ElementXRaySet mXRaySet;
+	private final Set<KRatioLabel> mKRatios;
 	private final Set<MatrixCorrectionModel2.Variates> mVariates; //
 
 	private static List<LabeledMultivariateJacobianFunction> buildSteps( //
-			final UnknownMatrixCorrectionDatum unk, //
-			final StandardMatrixCorrectionDatum std, //
-			final ElementXRaySet exrs, //
+			final Set<KRatioLabel> kratios, //
 			final Set<MatrixCorrectionModel2.Variates> variates //
-	) {
-		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
-		for (final AtomicShell shell : exrs.getSetOfInnerAtomicShells()) {
-			res.add(new IonizationCrossSection(unk, shell));
-			res.add(new IonizationCrossSection(std, shell));
+	) throws ArgumentException {
+		Map<MatrixCorrectionDatum, Set<AtomicShell>> allMcd = new HashMap<>();
+
+		for (KRatioLabel krl : kratios) {
+			final Set<AtomicShell> shells = krl.getXRaySet().getSetOfInnerAtomicShells();
+			{
+				final MatrixCorrectionDatum mcd = krl.getStandard();
+				if (!allMcd.containsKey(mcd))
+					allMcd.put(mcd, new HashSet<>());
+				allMcd.get(mcd).addAll(shells);
+			}
+			{
+				final MatrixCorrectionDatum mcd = krl.getUnknown();
+				if (!allMcd.containsKey(mcd))
+					allMcd.put(mcd, new HashSet<>());
+				allMcd.get(mcd).addAll(shells);
+			}
 		}
-		res.add(new IntensityModel(unk, exrs, variates));
-		res.add(new IntensityModel(std, exrs, variates));
-		res.add(new kRatioModel(unk, std, exrs));
+
+		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
+		{
+			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
+			for (Map.Entry<MatrixCorrectionDatum, Set<AtomicShell>> me : allMcd.entrySet())
+				for (AtomicShell sh : me.getValue())
+					funcs.add(new IonizationCrossSection(me.getKey(), sh, variates));
+			res.add(LabeledMultivariateJacobianFunctionBuilder.join("ICXs", funcs));
+		}
+		{
+			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
+			for (final KRatioLabel krl : kratios) {
+				final ElementXRaySet cxrs = krl.getXRaySet();
+				funcs.add(new IntensityModel(krl.getStandard(), cxrs, variates));
+				funcs.add(new IntensityModel(krl.getUnknown(), cxrs, variates));
+			}
+			res.add(LabeledMultivariateJacobianFunctionBuilder.join("Intensities", funcs));
+		}
+		{
+			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
+			for (final KRatioLabel krl : kratios)
+				funcs.add(new kRatioModel(krl));
+			res.add(LabeledMultivariateJacobianFunctionBuilder.join("K-ratios", funcs));
+		}
 		return res;
 	}
 
 	public MultiE0MultiLineModel( //
-			final UnknownMatrixCorrectionDatum unk, //
-			final StandardMatrixCorrectionDatum std, //
-			final ElementXRaySet exrs, //
-			final Set<MatrixCorrectionModel2.Variates> variates //
+			final Set<KRatioLabel> kratios, final Set<MatrixCorrectionModel2.Variates> variates //
 	) throws ArgumentException {
-		super("Multi-E0", buildSteps(unk, std, exrs, variates));
-		mXRaySet = exrs;
+		super("Multi-E0", buildSteps(kratios, variates));
+		mKRatios = kratios;
 		mVariates = variates;
 	}
 
@@ -112,15 +142,14 @@ class MultiE0MultiLineModel //
 		) {
 			final List<Object> res = new ArrayList<>();
 			for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay()) {
-				res.add(MatrixCorrectionModel2.FofChiLabel(mcd, cxr));
+				res.add(MatrixCorrectionModel2.FofChiReducedLabel(mcd, cxr));
 				if (variates.contains(MatrixCorrectionModel2.Variates.WeightsOfLines))
 					res.add(new MatrixCorrectionModel2.XRayWeightLabel(cxr));
 			}
-			if (variates.contains(MatrixCorrectionModel2.Variates.IonizationExponent))
-				for (final AtomicShell sh : exrs.getSetOfInnerAtomicShells()) {
-					res.add(new MatrixCorrectionModel2.IonizationExponentLabel(sh));
-					res.add(new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mcd, sh));
-				}
+			for (final AtomicShell sh : exrs.getSetOfInnerAtomicShells()) {
+				res.add(buildICXLabel(mcd, sh));
+				res.add(new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mcd, sh));
+			}
 			return res;
 		}
 
@@ -156,7 +185,7 @@ class MultiE0MultiLineModel //
 			double res = 0.0;
 			for (final Map.Entry<AtomicShell, Set<CharacteristicXRay>> me : shells.entrySet()) {
 				final AtomicShell shell = me.getKey();
-				final Object ionLbl = new MatrixCorrectionModel2.IonizationExponentLabel(shell);
+				final Object ionLbl = buildICXLabel(mDatum, shell);
 				final Object secLbl = new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mDatum, shell);
 				final double ionVal = getValue(ionLbl, point);
 				final double secVal = getValue(secLbl, point);
@@ -164,7 +193,7 @@ class MultiE0MultiLineModel //
 				double inner = 0.0;
 				for (final CharacteristicXRay cxr : me.getValue()) {
 					final Object wLbl = new MatrixCorrectionModel2.XRayWeightLabel(cxr);
-					final Object fxLbl = MatrixCorrectionModel2.FofChiLabel(mDatum, cxr);
+					final Object fxLbl = MatrixCorrectionModel2.FofChiReducedLabel(mDatum, cxr);
 					final double wVal = getValue(wLbl, point);
 					final double fxVal = getValue(fxLbl, point);
 					inner += wVal * fxVal;
@@ -194,7 +223,7 @@ class MultiE0MultiLineModel //
 			double res = 0.0;
 			for (final Map.Entry<AtomicShell, Set<CharacteristicXRay>> me : shells.entrySet()) {
 				final AtomicShell shell = me.getKey();
-				final Object ionLbl = new MatrixCorrectionModel2.IonizationExponentLabel(shell);
+				final Object ionLbl = buildICXLabel(mDatum, shell);
 				final Object secLbl = new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mDatum, shell);
 				final double ionVal = getValue(ionLbl, point);
 				final double secVal = getValue(secLbl, point);
@@ -202,7 +231,7 @@ class MultiE0MultiLineModel //
 				double inner = 0.0;
 				for (final CharacteristicXRay cxr : me.getValue()) {
 					final Object wLbl = new MatrixCorrectionModel2.XRayWeightLabel(cxr);
-					final Object fxLbl = MatrixCorrectionModel2.FofChiLabel(mDatum, cxr);
+					final Object fxLbl = MatrixCorrectionModel2.FofChiReducedLabel(mDatum, cxr);
 					final double wVal = getValue(wLbl, point);
 					final double fxVal = getValue(fxLbl, point);
 					inner += wVal * fxVal;
@@ -223,57 +252,48 @@ class MultiE0MultiLineModel //
 			extends LabeledMultivariateJacobianFunction //
 			implements ILabeledMultivariateFunction {
 
-		private final UnknownMatrixCorrectionDatum mUnknown;
-		private final StandardMatrixCorrectionDatum mStandard;
-		private final ElementXRaySet mXRaySet;
+		private final KRatioLabel mKRatio;
 
-		private static List<? extends Object> buildInputLabels( //
-				final UnknownMatrixCorrectionDatum unk, //
-				final StandardMatrixCorrectionDatum std, //
-				final ElementXRaySet exrs) {
+		private static List<? extends Object> buildInputLabels(final KRatioLabel krl) {
 			final List<Object> res = new ArrayList<>();
-			res.add(intensityLabel(unk, exrs));
-			res.add(intensityLabel(std, exrs));
-			res.add(Composition.buildMassFractionTag(unk.getComposition(), exrs.getElement()));
-			res.add(Composition.buildMassFractionTag(std.getComposition(), exrs.getElement()));
+			res.add(intensityLabel(krl.getUnknown(), krl.getXRaySet()));
+			res.add(intensityLabel(krl.getStandard(), krl.getXRaySet()));
+			res.add(Composition.buildMassFractionTag(krl.getUnknown().getComposition(), krl.getXRaySet().getElement()));
+			res.add(Composition.buildMassFractionTag(krl.getStandard().getComposition(),
+					krl.getXRaySet().getElement()));
 			return res;
 		}
 
-		private static List<? extends Object> buildOutputLabels(//
-				final UnknownMatrixCorrectionDatum unk, //
-				final StandardMatrixCorrectionDatum std, //
-				final ElementXRaySet exrs //
-		) {
+		private static List<? extends Object> buildOutputLabels(final KRatioLabel krl) {
 			final List<Object> res = new ArrayList<>();
-			res.add(MatrixCorrectionModel2.zafLabel(unk, std, exrs));
-			res.add(new KRatioLabel(unk, std, exrs, Method.Calculated));
+			res.add(MatrixCorrectionModel2.zafLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet()));
+			res.add(new KRatioLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet(), Method.Calculated));
 			return res;
 		}
 
-		public kRatioModel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-				final ElementXRaySet exrs) {
-			super(buildInputLabels(unk, std, exrs), buildOutputLabels(unk, std, exrs));
-			mUnknown = unk;
-			mStandard = std;
-			mXRaySet = exrs;
+		public kRatioModel(final KRatioLabel krl) {
+			super(buildInputLabels(krl), buildOutputLabels(krl));
+			mKRatio = krl;
 		}
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
-
-			final Object zafLabel = MatrixCorrectionModel2.zafLabel(mUnknown, mStandard, mXRaySet);
-			final Object kRatioLabel = new KRatioLabel(mUnknown, mStandard, mXRaySet, Method.Calculated);
+			final UnknownMatrixCorrectionDatum unk = mKRatio.getUnknown();
+			final StandardMatrixCorrectionDatum std = mKRatio.getStandard();
+			final ElementXRaySet exrs = mKRatio.getXRaySet();
+			final Object zafLabel = MatrixCorrectionModel2.zafLabel(mKRatio);
+			final Object kRatioLabel = new KRatioLabel(unk, std, exrs, Method.Calculated);
 			final int kRow = outputIndex(kRatioLabel);
 			XPPMatrixCorrection2.checkIndices(kRow);
 			final int zafRow = outputIndex(zafLabel);
 			XPPMatrixCorrection2.checkIndices(zafRow);
 
-			final Object intUnkLbl = intensityLabel(mUnknown, mXRaySet);
-			final Object intStdLbl = intensityLabel(mStandard, mXRaySet);
-			final Object cUnkLbl = Composition.buildMassFractionTag(mUnknown.getComposition(), mXRaySet.getElement());
-			final Object cStdLbl = Composition.buildMassFractionTag(mStandard.getComposition(), mXRaySet.getElement());
+			final Object intUnkLbl = intensityLabel(unk, exrs);
+			final Object intStdLbl = intensityLabel(std, exrs);
+			final Object cUnkLbl = Composition.buildMassFractionTag(unk.getComposition(), exrs.getElement());
+			final Object cStdLbl = Composition.buildMassFractionTag(std.getComposition(), exrs.getElement());
 
 			final double intUnk = getValue(intUnkLbl, point);
 			final double intStd = getValue(intStdLbl, point);
@@ -297,18 +317,20 @@ class MultiE0MultiLineModel //
 		@Override
 		public RealVector optimized(final RealVector point) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
-
-			final Object zafLabel = MatrixCorrectionModel2.zafLabel(mUnknown, mStandard, mXRaySet);
-			final Object kRatioLabel = new KRatioLabel(mUnknown, mStandard, mXRaySet, Method.Calculated);
+			final UnknownMatrixCorrectionDatum unk = mKRatio.getUnknown();
+			final StandardMatrixCorrectionDatum std = mKRatio.getStandard();
+			final ElementXRaySet exrs = mKRatio.getXRaySet();
+			final Object zafLabel = MatrixCorrectionModel2.zafLabel(unk, std, exrs);
+			final Object kRatioLabel = new KRatioLabel(unk, std, exrs, Method.Calculated);
 			final int kRow = outputIndex(kRatioLabel);
 			XPPMatrixCorrection2.checkIndices(kRow);
 			final int zafRow = outputIndex(zafLabel);
 			XPPMatrixCorrection2.checkIndices(zafRow);
 
-			final Object intUnkLbl = intensityLabel(mUnknown, mXRaySet);
-			final Object intStdLbl = intensityLabel(mStandard, mXRaySet);
-			final Object cUnkLbl = Composition.buildMassFractionTag(mUnknown.getComposition(), mXRaySet.getElement());
-			final Object cStdLbl = Composition.buildMassFractionTag(mStandard.getComposition(), mXRaySet.getElement());
+			final Object intUnkLbl = intensityLabel(unk, exrs);
+			final Object intStdLbl = intensityLabel(std, exrs);
+			final Object cUnkLbl = Composition.buildMassFractionTag(unk.getComposition(), exrs.getElement());
+			final Object cStdLbl = Composition.buildMassFractionTag(std.getComposition(), exrs.getElement());
 
 			final double intUnk = getValue(intUnkLbl, point);
 			final double intStd = getValue(intStdLbl, point);
@@ -320,6 +342,11 @@ class MultiE0MultiLineModel //
 
 			return rv;
 		}
+
+		public String toString() {
+			return "kRatio[" + mKRatio + "]";
+		}
+
 	}
 
 	private static class IonizationCrossSection //
@@ -329,10 +356,13 @@ class MultiE0MultiLineModel //
 		private final AtomicShell mShell;
 		private final MatrixCorrectionDatum mDatum;
 
-		static private List<Object> buildInputLabels(final MatrixCorrectionDatum mcd, final AtomicShell sh) {
+		static private List<Object> buildInputLabels(final MatrixCorrectionDatum mcd, final AtomicShell sh,
+				Set<Variates> variates) {
 			final List<Object> res = new ArrayList<>();
-			res.add(new MatrixCorrectionModel2.IonizationExponentLabel(sh));
-			res.add(MatrixCorrectionModel2.beamEnergyLabel(mcd));
+			if (variates.contains(Variates.IonizationExponent))
+				res.add(new MatrixCorrectionModel2.IonizationExponentLabel(sh));
+			if (variates.contains(Variates.BeamEnergy))
+				res.add(MatrixCorrectionModel2.beamEnergyLabel(mcd));
 			return res;
 		}
 
@@ -340,8 +370,8 @@ class MultiE0MultiLineModel //
 			return Collections.singletonList(buildICXLabel(mcd, sh));
 		}
 
-		public IonizationCrossSection(final MatrixCorrectionDatum mcd, final AtomicShell sh) {
-			super(buildInputLabels(mcd, sh), buildOutputLabels(mcd, sh));
+		public IonizationCrossSection(final MatrixCorrectionDatum mcd, final AtomicShell sh, Set<Variates> variates) {
+			super(buildInputLabels(mcd, sh, variates), buildOutputLabels(mcd, sh));
 			mShell = sh;
 			mDatum = mcd;
 		}
@@ -355,6 +385,7 @@ class MultiE0MultiLineModel //
 			final double e0 = getValue(e0Lbl, point);
 			final Object mLbl = new MatrixCorrectionModel2.IonizationExponentLabel(mShell);
 			final double m = getValue(mLbl, point);
+			assert outputIndex(buildICXLabel(mDatum, mShell)) == 0;
 
 			final double u = e0 / eL;
 			assert u > 1.0 : "The overvoltage for " + mDatum.toString() + " is less than unity.";
@@ -379,9 +410,15 @@ class MultiE0MultiLineModel //
 			final double u = e0 / eL;
 			final RealVector rv = new ArrayRealVector(1);
 			final double icx = Math.log(u) / (Math.pow(u, m) * eL * eL);
+			assert outputIndex(buildICXLabel(mDatum, mShell)) == 0;
 			rv.setEntry(0, icx);
 			return rv;
 		}
+
+		public String toString() {
+			return "ICX2[" + mDatum + "," + mShell + "]";
+		}
+
 	}
 
 	/**
@@ -396,23 +433,28 @@ class MultiE0MultiLineModel //
 	 *
 	 *
 	 *
-	 * @param variables
+	 * @param withUnc
 	 * @return {@link UncertainValues}
 	 */
-	private UncertainValues buildInputs(final boolean variables) {
+	private UncertainValues buildInputs(final boolean withUnc) {
 		final Map<Object, Number> vals = new HashMap<>();
 		XRayEmissionProbability xrep = null;
-		for (final CharacteristicXRay cxr : mXRaySet.getSetOfCharacteristicXRay()) {
-			// MatrixCorrectionModel2.FofChiLabel(mcd, cxr) => Calculated elsewhere...
-			if (mVariates.contains(MatrixCorrectionModel2.Variates.WeightsOfLines) == variables) {
-				if ((xrep == null) || (xrep.getIonized() != cxr.getInner()))
-					xrep = new XRayEmissionProbability(cxr.getInner());
-				vals.put(new MatrixCorrectionModel2.XRayWeightLabel(cxr), xrep.getWeightU(cxr));
+		for (final KRatioLabel krl : mKRatios) {
+			final ElementXRaySet exrs = krl.getXRaySet();
+			for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay()) {
+				// MatrixCorrectionModel2.FofChiReducedLabel(mcd, cxr) => Calculated
+				// elsewhere...
+				if (mVariates.contains(MatrixCorrectionModel2.Variates.WeightsOfLines) == withUnc) {
+					if ((xrep == null) || (xrep.getIonized() != cxr.getInner()))
+						xrep = new XRayEmissionProbability(cxr.getInner());
+					vals.put(new MatrixCorrectionModel2.XRayWeightLabel(cxr), xrep.getWeightU(cxr));
+				}
 			}
+			if (mVariates.contains(MatrixCorrectionModel2.Variates.IonizationExponent) == withUnc)
+				for (final AtomicShell sh : exrs.getSetOfInnerAtomicShells())
+					vals.put(new MatrixCorrectionModel2.IonizationExponentLabel(sh),
+							MatrixCorrectionModel2.computeM(sh));
 		}
-		if (mVariates.contains(MatrixCorrectionModel2.Variates.IonizationExponent) == variables)
-			for (final AtomicShell sh : mXRaySet.getSetOfInnerAtomicShells())
-				vals.put(new MatrixCorrectionModel2.IonizationExponentLabel(sh), MatrixCorrectionModel2.computeM(sh));
 		return new UncertainValues(vals);
 	}
 

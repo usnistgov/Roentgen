@@ -7,6 +7,7 @@ import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 
 /**
  * A package describing a set of arguments to the matrix correction algorithm.
@@ -29,6 +30,7 @@ public abstract class MatrixCorrectionDatum //
 	protected final UncertainValue mBeamEnergy;
 	protected final UncertainValue mTakeOffAngle;
 	protected final Optional<Double> mRoughness;
+	protected final Optional<Layer> mCoating;
 
 	@Override
 	public int hashCode() {
@@ -57,7 +59,7 @@ public abstract class MatrixCorrectionDatum //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle //
 	) {
-		this(beamEnergy, takeOffAngle, Double.NaN);
+		this(beamEnergy, takeOffAngle, Double.NaN, null);
 	}
 
 	/**
@@ -69,9 +71,23 @@ public abstract class MatrixCorrectionDatum //
 			final UncertainValue takeOffAngle, //
 			final double roughness //
 	) {
+		this(beamEnergy, takeOffAngle, roughness, null);
+	}
+
+	/**
+	 * @param beamEnergy   keV
+	 * @param takeOffAngle degrees
+	 * @param roughness    in mass thickness cm * g/cm^3 or g/cm^2
+	 * @param coating      A Layer object
+	 */
+	protected MatrixCorrectionDatum(final UncertainValue beamEnergy, //
+			final UncertainValue takeOffAngle, //
+			final double roughness, final Layer coating//
+	) {
 		mBeamEnergy = beamEnergy;
 		mTakeOffAngle = takeOffAngle;
 		mRoughness = Double.isNaN(roughness) ? Optional.empty() : Optional.of(Double.valueOf(roughness));
+		mCoating = Optional.ofNullable(coating);
 	}
 
 	/**
@@ -94,11 +110,19 @@ public abstract class MatrixCorrectionDatum //
 	}
 
 	public double getRoughness() {
-		return mRoughness.orElse(0.0);
+		return mRoughness.orElse(1.0e-12);
 	}
 
 	public boolean hasRoughness() {
 		return mRoughness.isPresent();
+	}
+
+	public boolean hasCoating() {
+		return mCoating.isPresent();
+	}
+
+	public Layer getCoating() {
+		return mCoating.orElse(null);
 	}
 
 	/**

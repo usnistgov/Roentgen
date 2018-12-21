@@ -459,7 +459,8 @@ abstract public class LabeledMultivariateJacobianFunction //
 			// assert !isConstant(label);
 			return point.getEntry(p);
 		} else {
-			assert isConstant(label) : "Can't find the constant " + label + " in " + toString();
+			assert isConstant(label) : //
+			"Can't find the constant " + label + " in " + toString();
 			return getConstant(label);
 		}
 	}

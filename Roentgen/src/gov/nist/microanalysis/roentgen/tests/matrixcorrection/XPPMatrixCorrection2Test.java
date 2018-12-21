@@ -44,6 +44,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -2167,21 +2168,25 @@ public class XPPMatrixCorrection2Test {
 				std1, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)),
-				MatrixCorrectionDatum.roughness(10.0, 2.5)//
+				MatrixCorrectionDatum.roughness(10.0, 2.5)
+				, Layer.carbonCoating(new UncertainValue(10.0,3.0))//
 		);
 
 		final StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
 				std2, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
-				MatrixCorrectionDatum.roughness(20.0, 2.5) //
+				MatrixCorrectionDatum.roughness(20.0, 2.5)
+				, Layer.carbonCoating(new UncertainValue(10.0,3.0))//
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
 				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
-				MatrixCorrectionDatum.roughness(20.0, 2.5));
+				MatrixCorrectionDatum.roughness(20.0, 2.5)
+				, Layer.carbonCoating(new UncertainValue(12.0,2.0))
+		);
 
 		final ElementXRaySet exrsSi = XRaySet.build(Element.Silicon, Principle.K, 0.01);
 		final KRatioLabel krlSi = new KRatioLabel(unkMcd, std1Mcd, exrsSi, Method.Measured);
@@ -2235,13 +2240,14 @@ public class XPPMatrixCorrection2Test {
 				final Object tagChis = MatrixCorrectionModel2.chiLabel(std1Mcd, cxr);
 				assertEquals(results.getEntry(tagChis), 1038.418, 0.001);
 				final Object tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
-				assertEquals(results.getEntry(tagFChiFu), 0.635, 0.001);
+				assertEquals(results.getEntry(tagFChiFu), 0.634, 0.001);
 				final Object tagFChiFs = MatrixCorrectionModel2.FxFLabel(std1Mcd, cxr);
-				assertEquals(results.getEntry(tagFChiFs), 0.822, 0.001);
+				assertEquals(results.getEntry(tagFChiFs), 0.821, 0.001);
 				final Object tagZASi = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsSi);
 				assertEquals(results.getEntry(tagZASi), 0.7805, 0.001);
 				final Object tagZAO = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsO);
-				assertEquals(results.getEntry(tagZAO), 1.0784, 0.001);
+				assertEquals(results.getEntry(tagZAO), 1.072, 0.001);
+				// assertEquals(results.getEntry(tagZAO), 1.077, 0.001);
 				final Object tagZAAl = MatrixCorrectionModel2.zafLabel(unkMcd, std2Mcd, exrsAl);
 				assertEquals(results.getEntry(tagZAAl), 0.800, 0.002);
 
@@ -2305,10 +2311,18 @@ public class XPPMatrixCorrection2Test {
 							0.01 * Math.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx)))) {
 								System.out.println("J[" + jac.getOutputLabels().get(oIdx) + ","
 										+ jac.getInputLabels().get(iIdx) + "]");
+							}
+						}
+				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
+					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
+						if (Math.abs(jac.getEntry(oIdx, iIdx)) > 1.0e-8) {
+							if (Math.abs(jac.getEntry(oIdx, iIdx) - djac.getEntry(oIdx, iIdx)) > //
+							0.01 * Math.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx)))) {
 								assertEquals(jac.getEntry(oIdx, iIdx), djac.getEntry(oIdx, iIdx), 0.01 * Math
 										.max(Math.abs(jac.getEntry(oIdx, iIdx)), Math.abs(djac.getEntry(oIdx, iIdx))));
 							}
 						}
+
 				if (DUMP) {
 					System.out.println("Results");
 					System.out.println(results.toCSV());
