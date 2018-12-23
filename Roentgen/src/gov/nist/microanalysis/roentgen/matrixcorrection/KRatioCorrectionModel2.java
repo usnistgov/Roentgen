@@ -11,7 +11,6 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -54,7 +53,7 @@ public class KRatioCorrectionModel2 //
 				xpp.buildInput());
 	}
 
-	public UncertainValues getInputs(final MatrixCorrectionModel mcm, final UncertainValues inputs,
+	public UncertainValues getInputs(final MatrixCorrectionModel2 mcm, final UncertainValues inputs,
 			final UncertainValues krs) //
 			throws ArgumentException {
 		return UncertainValues.extract(getInputLabels(), UncertainValues.propagate(mcm, inputs), krs, inputs);

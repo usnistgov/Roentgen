@@ -124,7 +124,7 @@ public abstract class MatrixCorrectionDatum //
 	public Layer getCoating() {
 		return mCoating.orElse(null);
 	}
-
+	
 	/**
 	 * Returns the Composition of the standard or the estimated Composition of the
 	 * unknown.

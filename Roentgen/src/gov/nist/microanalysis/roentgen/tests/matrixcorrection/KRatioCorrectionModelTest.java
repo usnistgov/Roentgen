@@ -48,11 +48,11 @@ public class KRatioCorrectionModelTest {
 	@Test
 	public void test1() throws ParseException, ArgumentException, IOException {
 
-		final Composition std0 = Composition.massFraction("K411", XPPMatrixCorrectionTest.buildK411());
+		final Composition std0 = Composition.massFraction("K411", XPPMatrixCorrection2Test.buildK411());
 
 		final Composition std1 = Composition.parse("Al");
 
-		final Composition unk = Composition.massFraction("K412", XPPMatrixCorrectionTest.buildK412());
+		final Composition unk = Composition.massFraction("K412", XPPMatrixCorrection2Test.buildK412());
 
 		final StandardMatrixCorrectionDatum stdK411Mcd = new StandardMatrixCorrectionDatum( //
 				std0, new UncertainValue(15.0, 0.1), //

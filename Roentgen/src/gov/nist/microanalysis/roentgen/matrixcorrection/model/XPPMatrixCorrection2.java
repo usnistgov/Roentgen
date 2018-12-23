@@ -44,6 +44,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
+import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import joinery.DataFrame;
 
 /**
@@ -1504,6 +1505,11 @@ public class XPPMatrixCorrection2 //
 			rv.setEntry(oFxRed, coatTrans * Fx);
 			return rv;
 		}
+
+		public String toString() {
+			final Layer coating = mDatum.getCoating();
+			return "StepCoating[" + (coating != null ? "coating=" + coating.toString() : "Uncoated") + "]";
+		}
 	}
 
 	private static class StepZA extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
@@ -1718,7 +1724,7 @@ public class XPPMatrixCorrection2 //
 				final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 				for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay())
 					step.add(new StepConductiveCoating(datum, cxr, variates));
-				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Fx", step));
+				res.add(LabeledMultivariateJacobianFunctionBuilder.join("Coating", step));
 			}
 			return res;
 		}
