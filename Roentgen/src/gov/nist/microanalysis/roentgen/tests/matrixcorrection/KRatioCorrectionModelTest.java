@@ -354,6 +354,7 @@ public class KRatioCorrectionModelTest {
 
 			{
 				final Table t2 = new Table();
+		
 				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("#,##0.00000");
 				for (final Object tag : results.sort().getLabels())

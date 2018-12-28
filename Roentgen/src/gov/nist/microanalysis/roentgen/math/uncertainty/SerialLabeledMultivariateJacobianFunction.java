@@ -318,11 +318,6 @@ public class SerialLabeledMultivariateJacobianFunction //
 			assert ovals.getDimension() > 0;
 			final RealMatrix ojac = fres.getSecond();
 			assert ojac.getRowDimension() == ovals.getDimension();
-			if (ojac.getColumnDimension() == 0) {
-				System.err.println("In function "+func);
-				for(Object label : func.getOutputLabels())
-					System.err.println("No Jacobian entries for "+label);
-			}
 			// (ovals, ojac) = func.evaluate(funcPoint)
 			// ovals[fout], ojac[fout][fin]
 			// expJac[expRows][expCols]

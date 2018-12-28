@@ -35,6 +35,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.swing.IValueToColor;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * <p>
@@ -68,21 +69,16 @@ public class UncertainValues //
 
 	private static final double MAX_CORR = 1.00000001;
 	private final RealVector mValues;
-	private final List<Object> mLabels;
+	private final FastIndex<? extends Object> mLabels;
 	private final RealMatrix mCovariance;
 
-	private final Map<Object, Integer> mIndex;
-	
-	
 	private UncertainValues() {
-		mValues=new ArrayRealVector(0);
-		mLabels=new ArrayList<>();
-		mCovariance=NullableRealMatrix.build(0, 0);
-		mIndex=new HashMap<>();
+		mValues = new ArrayRealVector(0);
+		mLabels = new FastIndex<>();
+		mCovariance = NullableRealMatrix.build(0, 0);
 	}
-	
+
 	public static final UncertainValues NULL = new UncertainValues();
-	
 
 	/**
 	 * Checks that the covariance matrix is m x m, the variances are non-negative,
@@ -125,6 +121,26 @@ public class UncertainValues //
 			}
 	}
 
+	private static final RealMatrix buildCovariances(final RealVector variances, final RealMatrix corrCoeffs) {
+		final int dim = variances.getDimension();
+		final RealMatrix res = MatrixUtils.createRealMatrix(dim, dim);
+		for (int r = 0; r < dim; ++r) {
+			final double vr = variances.getEntry(r);
+			assert vr >= 0.0;
+			res.setEntry(r, r, vr);
+			for (int c = r + 1; c < dim; ++c) {
+				final double vc = variances.getEntry(c);
+				final double cc = corrCoeffs.getEntry(r, c);
+				assert cc >= -1.0 : "Correlation coefficient less than negative unity. " + cc;
+				assert cc <= 1.0 : "Correlation coefficient greater than unity. " + cc;
+				final double cov = vr * vc > 0.0 ? Math.sqrt(vr * vc) * cc : 0.0;
+				res.setEntry(r, c, cov);
+				res.setEntry(c, r, cov);
+			}
+		}
+		return res;
+	}
+
 	public void validateCovariance() throws ArgumentException {
 		final Set<Object> labels = new HashSet<>(mLabels);
 		if (labels.size() != mLabels.size())
@@ -132,7 +148,6 @@ public class UncertainValues //
 				if (!labels.contains(label))
 					throw new ArgumentException("The label " + label + " is repeated.");
 		validateCovariance(mLabels.size(), mCovariance, Math.max(mValues.getMaxValue(), -mValues.getMinValue()));
-
 	}
 
 	/**
@@ -156,11 +171,10 @@ public class UncertainValues //
 		if (covar.getColumnDimension() != labels.size())
 			throw new DimensionMismatchException(covar.getColumnDimension(), labels.size());
 		assert noReplicateLabels(labels);
-		mLabels = Collections.unmodifiableList(labels);
+		mLabels = new FastIndex<>(labels);
 		final HashMap<Object, Integer> index = new HashMap<>();
 		for (int i = 0; i < mLabels.size(); ++i)
 			index.put(mLabels.get(i), Integer.valueOf(i));
-		mIndex = Collections.unmodifiableMap(index);
 		mValues = vals;
 		validateCovariance(mLabels.size(), covar, Math.max(mValues.getMaxValue(), -mValues.getMinValue()));
 		mCovariance = covar;
@@ -199,6 +213,23 @@ public class UncertainValues //
 			final RealVector variances //
 	) {
 		this(labels, vals, MatrixUtils.createRealDiagonalMatrix(variances.toArray()));
+	}
+
+	/**
+	 * Constructs a UncertainValues object based on the specified labels, values and
+	 * variances array. "Heteroskedastic-case"
+	 *
+	 * @param labels    List&lt;Object&gt; A list of objects implementing hashCode()
+	 *                  and equals().
+	 * @param vals      {@link RealVector}
+	 * @param variances {@link RealVector} covariances are zero.
+	 */
+	public UncertainValues( //
+			final List<? extends Object> labels, //
+			final RealVector vals, //
+			final RealVector variances, //
+			final RealMatrix corrCoeffs) {
+		this(labels, vals, buildCovariances(variances, corrCoeffs));
 	}
 
 	private static final RealVector extractValues(final Map<? extends Object, Number> vals) {
@@ -351,6 +382,34 @@ public class UncertainValues //
 			res.mCovariance.setEntry(idx, i, input.getCovariance(idx, i));
 		}
 		return res;
+	}
+	
+	/**
+	 * Returns an UncertainValues object with the labels in the order specified by
+	 * the argument. If this is already in this order, this is returned; otherwise a
+	 * new {@link UncertainValues} object is created.
+	 *
+	 * @param labels
+	 * @return {@link UncertainValues}
+	 * @throws ArgumentException
+	 */
+	private UncertainValues reorder(final List<? extends Object> labels) throws ArgumentException {
+		assert labels.size() <= mLabels.size();
+		if (mLabels.size() == labels.size()) {
+			boolean eq = true;
+			for (int i = 0; (i < labels.size()) && eq; ++i)
+				eq &= (mLabels.get(i) == labels.get(i));
+			if (eq)
+				return this;
+		}
+		final int[] idx = new int[labels.size()];
+		for (int i = 0; i < idx.length; ++i) {
+			idx[i] = indexOf(labels.get(i));
+			if (idx[i] < 0)
+				throw new ArgumentException(
+						"The labels " + labels.get(i) + " was not present in the source UncertainValues object.");
+		}
+		return extract(idx);
 	}
 
 	/**
@@ -586,50 +645,13 @@ public class UncertainValues //
 	}
 
 	/**
-	 * Returns an UncertainValues object with the labels in the order specified by
-	 * the argument. If this is already in this order, this is returned; otherwise a
-	 * new {@link UncertainValues} object is created.
-	 *
-	 * @param labels
-	 * @return {@link UncertainValues}
-	 * @throws ArgumentException
-	 */
-	public UncertainValues reorder(final List<? extends Object> labels) throws ArgumentException {
-		assert labels.size() <= mLabels.size();
-		if (mLabels.size() == labels.size()) {
-			boolean eq = true;
-			for (int i = 0; (i < labels.size()) && eq; ++i)
-				eq &= (mLabels.get(i) == labels.get(i));
-			if (eq)
-				return this;
-		}
-		final int[] idx = new int[labels.size()];
-		for (int i = 0; i < idx.length; ++i) {
-			idx[i] = indexOf(labels.get(i));
-			if (idx[i] < 0)
-				throw new ArgumentException(
-						"The labels " + labels.get(i) + " was not present in the source UncertainValues object.");
-		}
-		final UncertainValues res = new UncertainValues(labels);
-		for (int r = 0; r < idx.length; ++r) {
-			res.mValues.setEntry(r, mValues.getEntry(idx[r]));
-			for (int c = r; c < idx.length; ++c) {
-				final double cov = mCovariance.getEntry(idx[r], idx[c]);
-				res.mCovariance.setEntry(r, c, cov);
-				res.mCovariance.setEntry(c, r, cov);
-			}
-		}
-		return res;
-	}
-
-	/**
 	 * Returns an ordered list of the Object labels associated with the values and
 	 * covariances in this object.
 	 *
 	 * @return List&lt;Object&gt;
 	 */
 	final public List<Object> getLabels() {
-		return mLabels;
+		return Collections.unmodifiableList(mLabels);
 	}
 
 	/**
@@ -639,7 +661,7 @@ public class UncertainValues //
 	 * @return boolean
 	 */
 	final public boolean hasEntry(final Object label) {
-		return mLabels.contains(label);
+		return mLabels.indexOf(label) != -1;
 	}
 
 	/**
@@ -660,7 +682,7 @@ public class UncertainValues //
 	 * @return Object
 	 */
 	final public int indexOf(final Object label) {
-		return mIndex.getOrDefault(label, Integer.valueOf(-1));
+		return mLabels.indexOf(label);
 	}
 
 	/**
@@ -784,9 +806,6 @@ public class UncertainValues //
 	 */
 	public double getCovariance(final Object label1, final Object label2) {
 		final int p1 = indexOf(label1), p2 = indexOf(label2);
-		// assert mCovariance.getEntry(p1, p2) == mCovariance.getEntry(p2, p1) :
-		// mCovariance.getEntry(p1, p2) + "!="
-		// + mCovariance.getEntry(p2, p1);
 		return (p1 != -1) && (p2 != -1) ? mCovariance.getEntry(p1, p2) : 0.0;
 	}
 
@@ -809,7 +828,39 @@ public class UncertainValues //
 	 * @return double The correlation coefficient associated with indices p1 and p2
 	 */
 	public double getCorrelationCoefficient(final int p1, final int p2) {
-		return mCovariance.getEntry(p1, p2) / Math.sqrt(mCovariance.getEntry(p1, p1) * mCovariance.getEntry(p2, p2));
+		final double c12 = mCovariance.getEntry(p1, p2);
+		if (c12 == 0.0)
+			return 0.0;
+		else {
+			final double c11 = mCovariance.getEntry(p1, p1);
+			assert c11 != 0.0;
+			final double c22 = mCovariance.getEntry(p2, p2);
+			assert c22 != 0.0;
+			return c11 * c22 > 0.0 ? c12 / Math.sqrt(c11 * c22) : Double.NaN;
+		}
+	}
+
+	/**
+	 * Returns the covariance associated with the specific labels.
+	 *
+	 * @param p1 Object
+	 * @param p2 Object
+	 * @return double The correlation coefficient associated with indices p1 and p2
+	 */
+	public double getCorrelationCoefficient(final Object p1, final Object p2) {
+		return getCorrelationCoefficient(indexOf(p1), indexOf(p2));
+	}
+
+	public RealMatrix getCorrelationCoefficients() {
+		final int dim = getDimension();
+		final RealMatrix rm = MatrixUtils.createRealMatrix(dim, dim);
+		for (int r = 0; r < dim; ++r)
+			for (int c = r + 1; c < dim; ++c) {
+				final double cc = getCorrelationCoefficient(r, c);
+				rm.setEntry(r, c, cc);
+				rm.setEntry(c, r, cc);
+			}
+		return rm;
 	}
 
 	/**
@@ -1124,8 +1175,7 @@ public class UncertainValues //
 	 */
 	public void setCovariance(final Object label1, final Object label2, final double cov) {
 		final int p1 = indexOf(label1), p2 = indexOf(label2);
-		mCovariance.setEntry(p1, p2, cov);
-		mCovariance.setEntry(p2, p1, cov);
+		setCovariance(p1, p2, cov);
 	}
 
 	/**
@@ -1202,16 +1252,7 @@ public class UncertainValues //
 	public UncertainValues sort(final Comparator<Object> compare) {
 		final List<Object> labels = new ArrayList<>(mLabels);
 		labels.sort(compare);
-		final int[] order = new int[labels.size()];
-		final UncertainValues res = new UncertainValues(labels);
-		for (int r = 0; r < labels.size(); ++r)
-			order[r] = indexOf(labels.get(r));
-		for (int r = 0; r < mLabels.size(); ++r) {
-			res.mValues.setEntry(r, mValues.getEntry(order[r]));
-			for (int c = 0; c < mLabels.size(); ++c)
-				res.setCovariance(r, c, mCovariance.getEntry(order[r], order[c]));
-		}
-		return res;
+		return extract(indices(labels));
 	}
 
 	/**
@@ -1233,4 +1274,100 @@ public class UncertainValues //
 	public UncertainValues copy() {
 		return new UncertainValues(getLabels(), mValues.copy(), mCovariance.copy());
 	}
+
+	/**
+	 * Creates a new {@link UncertainValues} object representing only those
+	 * rows/columns whose indexes are in idx.  Can be used to create a sub-set
+	 * of this {@link UncertainValues} or reorder this {@link UncertainValues}.
+	 * 
+	 * @param idx
+	 * @return {@link UncertainValues} A new object
+	 */
+	public UncertainValues extract(final int[] idx) {
+		final List<Object> labels = new ArrayList<>();
+		final RealVector vals = new ArrayRealVector(idx.length);
+		final RealMatrix covs = MatrixUtils.createRealMatrix(idx.length, idx.length);
+		for (int nr = 0; nr < idx.length; ++nr) {
+			final int or = idx[nr];
+			assert !labels.contains(mLabels.get(or)) : "Duplicated column";
+			labels.add(mLabels.get(or));
+			vals.setEntry(nr, mValues.getEntry(or));
+			covs.setEntry(nr, nr, mCovariance.getEntry(or, or));
+			for (int nc = nr + 1; nc < idx.length; ++nc) {
+				final double cov = mCovariance.getEntry(or, idx[nc]);
+				covs.setEntry(nr, nc, cov);
+				covs.setEntry(nc, nr, cov);
+			}
+		}
+		return new UncertainValues(labels, vals, covs);
+	}
+
+	public int[] indices(final List<? extends Object> labels) {
+		final int[] res = new int[labels.size()];
+		for (int i = 0; i < res.length; ++i)
+			res[i] = indexOf(labels.get(i));
+		return res;
+	}
+
+	/**
+	 * Takes the input UncertainValues and creates a new, reordered UncertainValues
+	 * object in which the correlated rows/columns are grouped together. THe
+	 * non-zero covariances are moved away from the edges and upper-right and
+	 * lower-left corners towards the diagonal.
+	 *
+	 *
+	 * @return UncertainValues
+	 */
+
+	public UncertainValues blockDiagnonalize() {
+		final int[] count = new int[getDimension()];
+		for (int r = 0; r < count.length; ++r)
+			for (int c = 0; c < count.length; ++c)
+				if ((r != c) && (mCovariance.getEntry(r, c) != 0.0))
+					++count[r];
+		final int[] idx = new int[getDimension()];
+		final boolean[] done = new boolean[getDimension()];
+		Arrays.fill(done, false);
+		int next = 0;
+		for (int covs = 0; (next < count.length) && (covs < count.length); ++covs) {
+			for (int r = 0; (next < count.length) && (r < count.length); ++r) {
+				if ((!done[r]) && (count[r] == covs)) {
+					final List<Integer> cols = new ArrayList<>();
+					idx[next] = r;
+					++next;
+					done[r] = true;
+					cols.add(r);
+					while (!cols.isEmpty()) {
+						final int col = cols.remove(0);
+						done[col] = true;
+						for (int covs2 = covs; covs2 < count.length; ++covs2) {
+							for (int rr = 0; rr < done.length; ++rr)
+								if ((!done[rr]) && (count[rr] == covs2) && (mCovariance.getEntry(rr, col) != 0.0)) {
+									idx[next] = rr;
+									++next;
+									done[rr] = true;
+									cols.add(rr);
+								}
+						}
+					}
+				}
+			}
+		}
+		assert next == count.length;
+		return extract(idx);
+	}
+
+	public static boolean testEquality(final UncertainValues uvs1, final UncertainValues uvs2) {
+		if (uvs1.getDimension() != uvs2.getDimension())
+			return false;
+		for (final Object label1 : uvs1.getLabels()) {
+			if (uvs1.getEntry(label1) != uvs2.getEntry(label1))
+				return false;
+			for (final Object label2 : uvs1.getLabels())
+				if (uvs1.getCovariance(label1, label2) != uvs2.getCovariance(label1, label2))
+					return false;
+		}
+		return true;
+	}
+
 }

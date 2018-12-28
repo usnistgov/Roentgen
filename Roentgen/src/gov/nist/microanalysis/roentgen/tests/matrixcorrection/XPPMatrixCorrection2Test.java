@@ -1,6 +1,7 @@
 package gov.nist.microanalysis.roentgen.tests.matrixcorrection;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -2168,25 +2169,21 @@ public class XPPMatrixCorrection2Test {
 				std1, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)),
-				MatrixCorrectionDatum.roughness(10.0, 2.5)
-				, Layer.carbonCoating(new UncertainValue(10.0,3.0))//
+				MatrixCorrectionDatum.roughness(10.0, 2.5), Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 		);
 
 		final StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
 				std2, //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
-				MatrixCorrectionDatum.roughness(20.0, 2.5)
-				, Layer.carbonCoating(new UncertainValue(10.0,3.0))//
+				MatrixCorrectionDatum.roughness(20.0, 2.5), Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
 				unk, //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
-				MatrixCorrectionDatum.roughness(20.0, 2.5)
-				, Layer.carbonCoating(new UncertainValue(12.0,2.0))
-		);
+				MatrixCorrectionDatum.roughness(20.0, 2.5), Layer.carbonCoating(new UncertainValue(12.0, 2.0)));
 
 		final ElementXRaySet exrsSi = XRaySet.build(Element.Silicon, Principle.K, 0.01);
 		final KRatioLabel krlSi = new KRatioLabel(unkMcd, std1Mcd, exrsSi, Method.Measured);
@@ -2210,7 +2207,8 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
 				final UncertainValues inputs = xpp.buildInput();
-				r.add(inputs);
+				assertTrue(UncertainValues.testEquality(inputs, inputs.blockDiagnonalize()));
+				r.add(inputs.blockDiagnonalize());
 				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs.getValues());
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
 				final Object tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
@@ -2275,7 +2273,8 @@ public class XPPMatrixCorrection2Test {
 				assertEquals(results.getEntry(tagZAAl), quick.getEntry(xpp.outputIndex(tagZAAl)), 0.001);
 
 				r.addHeader("Results");
-				r.add(results);
+				assertTrue(UncertainValues.testEquality(results, results.blockDiagnonalize()));
+				r.add(results.blockDiagnonalize());
 				r.addHeader("Uncertain Values (relative to inputs)");
 				final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
 				final Table valTable = new Table();

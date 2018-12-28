@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,6 +20,7 @@ import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * <p>
@@ -39,34 +39,6 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 abstract public class LabeledMultivariateJacobianFunction //
 		implements MultivariateJacobianFunction, IToHTML //
 {
-
-	/**
-	 * Seems to produce a 10 % - 20 % improvement in overall evaluation speed.
-	 *
-	 * @author Nicholas W. M. Ritchie
-	 *
-	 * @param <H> H must implement hashCode() and equals()
-	 */
-	private static class FastIndex<H> extends ArrayList<H> {
-
-		private static final long serialVersionUID = 2429500537433349495L;
-
-		private final Map<H, Integer> mIndex;
-
-		private FastIndex(final List<H> list) {
-			super(list);
-			mIndex = new HashMap<>();
-			for (int i = 0; i < list.size(); ++i)
-				mIndex.put(list.get(i), i);
-		}
-
-		@Override
-		public int indexOf(final Object h) {
-			final Integer res = mIndex.get(h);
-			assert (res == null) || (get(res.intValue()).equals(h));
-			return res == null ? -1 : res.intValue();
-		}
-	}
 
 	/***
 	 * Unique object labels identifying each of the random variable arguments to the
