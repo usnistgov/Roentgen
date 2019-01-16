@@ -20,6 +20,7 @@ import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
@@ -96,6 +97,14 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 */
 	public List<? extends Object> getOutputLabels() {
 		return mOutputLabels;
+	}
+
+	public Object getOutputLabel(int idx) {
+		return mOutputLabels.get(idx);
+	}
+
+	public Object getInputLabel(int idx) {
+		return mInputLabels.get(idx);
 	}
 
 	/**
@@ -415,11 +424,17 @@ abstract public class LabeledMultivariateJacobianFunction //
 	}
 
 	/**
+	 * <p>
 	 * First checks to see if <code>label</code> is an input variable in which case
 	 * it gets the associated value from <code>point</code>. Otherwise, it returns
 	 * the constant value associate with <code>label</code>. This is useful for
 	 * implementing compute(...) in situations in which an input is sometimes a
 	 * constant and other times a random variable.
+	 * </p>
+	 * <p>
+	 * getValue(...) is typically used for input parameters and not used for
+	 * intermediate parameters in multi-step calculations.
+	 * </p>
 	 *
 	 * @param label
 	 * @param point
@@ -435,6 +450,23 @@ abstract public class LabeledMultivariateJacobianFunction //
 			"Can't find the constant " + label + " in " + toString();
 			return getConstant(label);
 		}
+	}
+
+	public RealMatrix computeDelta( //
+			final RealVector inp, //
+			final RealVector dinp) {
+		assert inp.getDimension() == getInputDimension();
+		final RealMatrix rm = NullableRealMatrix.build(getOutputDimension(), getInputDimension());
+		for (int c = 0; c < getInputDimension(); ++c) {
+			final RealVector pt0 = new ArrayRealVector(inp), pt1 = new ArrayRealVector(inp);
+			final double deltaX = Math.abs(dinp.getEntry(c));
+			pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
+			pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
+			final RealVector output0 = compute(pt0), output1 = compute(pt1);
+			for (int r = 0; r < getOutputDimension(); ++r)
+				rm.setEntry(r, c, (output0.getEntry(r) - output1.getEntry(r)) / deltaX);
+		}
+		return rm;
 	}
 
 	/**

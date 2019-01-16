@@ -1,5 +1,7 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
+import org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 
 /**
@@ -24,5 +26,5 @@ public interface ILabeledMultivariateFunction {
 	 * @return {@link RealVector}
 	 */
 	public RealVector optimized(RealVector point);
-
+	
 }

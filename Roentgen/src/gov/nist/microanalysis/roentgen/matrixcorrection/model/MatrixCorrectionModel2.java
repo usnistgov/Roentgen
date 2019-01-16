@@ -1,15 +1,16 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection.model;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
@@ -37,7 +38,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  */
 abstract public class MatrixCorrectionModel2 //
 		extends SerialLabeledMultivariateJacobianFunction {
-
+	
 	private static class ElementLabel extends BaseLabel<Element, Object, Object> {
 
 		private ElementLabel(final String name, final Element obj) {
@@ -84,7 +85,7 @@ abstract public class MatrixCorrectionModel2 //
 			super("F(&chi;)", mcd, cxr);
 		}
 	}
-	
+
 	public static class FofChiReducedLabel extends MatrixCorrectionDatumTag2<CharacteristicXRay> {
 
 		private FofChiReducedLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
@@ -92,7 +93,6 @@ abstract public class MatrixCorrectionModel2 //
 		}
 
 	}
-
 
 	public static class Phi0Label extends MatrixCorrectionDatumTag2<AtomicShell> {
 
@@ -124,28 +124,51 @@ abstract public class MatrixCorrectionModel2 //
 		}
 	}
 
-	public enum Variates {
-		MeanIonizationPotential, //
-		MassAbsorptionCofficient, //
-		StandardComposition, //
-		UnknownComposition, //
-		BeamEnergy, //
-		TakeOffAngle, //
-		WeightsOfLines, //
-		IonizationExponent, //
-		SurfaceRoughness,
-		Coating
+	/**
+	 * A list of types of variables that can be included in the uncertainty
+	 * calculation.
+	 * 
+	 * @author Nicholas W. M. Ritchie
+	 *
+	 */
+	public enum Variate {
+
+		MeanIonizationPotential("Mean ionization potential"), //
+		MassAbsorptionCofficient("Mass absorption coefficent"), //
+		StandardComposition("Standard composition"), //
+		UnknownComposition("Unknown composition"), //
+		BeamEnergy("Beam energy"), //
+		TakeOffAngle("Take-off angle"), //
+		WeightsOfLines("Weights-of-Lines"), //
+		IonizationExponent("Ionization exponent"), //
+		SurfaceRoughness("Surface roughness"), //
+		Coating("Coating"); //
+
+		private final String mName;
+
+		private Variate(String name) {
+			mName = name;
+		}
+
+		public String toString() {
+			return mName;
+		}
+
 	}
 
 	protected final Set<KRatioLabel> mKRatios;
+	// The types of variables to compute Jacobian elements.
+	private final Set<MatrixCorrectionModel2.Variate> mVariates;
 
 	public MatrixCorrectionModel2(//
 			final String name, //
 			final Set<KRatioLabel> kratios, //
-			final List<LabeledMultivariateJacobianFunction> steps //
+			final List<LabeledMultivariateJacobianFunction> steps, //
+			final Set<Variate> variates //
 	) throws ArgumentException {
 		super(name, steps);
 		mKRatios = kratios;
+		mVariates = Collections.unmodifiableSet(new TreeSet<>(variates));
 		// Validate the inputs...
 		final List<? extends Object> outputTags = getOutputLabels();
 		final List<? extends Object> inputTags = getInputLabels();
@@ -188,6 +211,24 @@ abstract public class MatrixCorrectionModel2 //
 		return Collections.unmodifiableSet(res);
 	}
 
+	public static Set<Variate> minimalVariates() {
+		final Set<Variate> res = new HashSet<>();
+		res.add(Variate.StandardComposition);
+		res.add(Variate.UnknownComposition);
+		return res;
+	}
+
+	public static Set<Variate> allVariates() {
+		final Set<Variate> res = new HashSet<>(Arrays.asList(Variate.values()));
+		return res;
+	}
+
+	public static Set<Variate> defaultVariates() {
+		final Set<Variate> res = MatrixCorrectionModel2.allVariates();
+		res.remove(Variate.SurfaceRoughness);
+		return res;
+	}
+
 	static public Object aLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
 			final CharacteristicXRay cxr) {
 		return new MatrixCorrectionModel2.ZAFLabel("A", unk, std, cxr);
@@ -200,8 +241,7 @@ abstract public class MatrixCorrectionModel2 //
 	static public Object chiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.ChiLabel(comp, other);
 	}
-	
-	
+
 	static public Object coatingMassThickness(final MatrixCorrectionDatum mcd) {
 		return new MatrixCorrectionDatumLabel("[&rho;t]<sub>coating</sub>", mcd);
 	}
@@ -209,12 +249,10 @@ abstract public class MatrixCorrectionModel2 //
 	static public Object FofChiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.FofChiLabel(comp, other);
 	}
-	
+
 	static public Object FofChiReducedLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.FofChiReducedLabel(comp, other);
 	}
-
-	
 
 	static public Object phi0Label(final MatrixCorrectionDatum comp, final AtomicShell other) {
 		return new MatrixCorrectionModel2.Phi0Label(comp, other);
@@ -229,7 +267,7 @@ abstract public class MatrixCorrectionModel2 //
 	}
 
 	static public Object beamEnergyLabel(final MatrixCorrectionDatum datum) {
-		return new MatrixCorrectionModel2.MatrixCorrectionDatumLabel(XPPMatrixCorrection2.E_0, datum);
+		return new MatrixCorrectionModel2.MatrixCorrectionDatumLabel("E<sub>0</sub>", datum);
 	}
 
 	static public Object takeOffAngleLabel(final MatrixCorrectionDatum datum) {
@@ -262,35 +300,35 @@ abstract public class MatrixCorrectionModel2 //
 			final ElementXRaySet exrs) {
 		return new MatrixCorrectionLabel(unk, std, exrs);
 	}
-	
+
 	static public Object zafLabel(KRatioLabel krl) {
 		return new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet());
 	}
-
 
 	static public Object zLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
 			final CharacteristicXRay cxr) {
 		return new MatrixCorrectionModel2.ZAFLabel("Z", unk, std, cxr);
 	}
-
-	public static UncertainValue computeM(final AtomicShell sh) {
-		double m, dm;
-		switch (sh.getFamily()) {
-		case K:
-			m = 0.86 + 0.12 * Math.exp(-Math.pow(sh.getElement().getAtomicNumber() / 5, 2.0));
-			dm = m * 0.01;
-			break;
-		case L:
-			m = 0.82;
-			dm = 0.02 * m;
-			break;
-		case M:
-		case N:
-		default:
-			m = 0.78;
-			dm = 0.05 * m;
-		}
-		return new UncertainValue(m, dm);
+	
+	public boolean isSet(Variate variate) {
+		return mVariates.contains(variate);
 	}
+
+	/**
+	 * Creates a user-friendly string summarizing the Variates that are set.
+	 * 
+	 * @return String A list of Variates in string form.
+	 */
+	public String listVariates() {
+		StringBuffer sb = new StringBuffer();
+		for (Variate var : mVariates) {
+			if (sb.length() > 0)
+				sb.append(", ");
+			sb.append(var.mName);
+		}
+		return sb.toString();
+	}
+
+
 
 }

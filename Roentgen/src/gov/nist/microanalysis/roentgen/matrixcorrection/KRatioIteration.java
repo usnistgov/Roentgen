@@ -84,7 +84,7 @@ public class KRatioIteration {
 		final Composition unk = computeEstimate(kratios);
 		final Set<Element> elms = unk.getElementSet();
 		final CompositionFromKRatios2 model = new CompositionFromKRatios2(mKRatios,
-				Collections.singleton(MatrixCorrectionModel2.Variates.UnknownComposition));
+				Collections.singleton(MatrixCorrectionModel2.Variate.UnknownComposition));
 		// Figure out which elements are in the unknown
 		final List<MassFractionTag> compInp = new ArrayList<>();
 		for (final Element elm : elms)

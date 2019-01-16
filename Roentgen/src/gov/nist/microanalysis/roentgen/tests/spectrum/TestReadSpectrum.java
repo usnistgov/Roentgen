@@ -17,10 +17,10 @@ import gov.nist.microanalysis.roentgen.spectrum.SpectrumFileReader;
  * @author Nicholas
  * @version 1.0
  */
-public class ReadSpectrum {
+public class TestReadSpectrum {
 
 	private static File makeFile(final String resName) throws IOException {
-		try (final InputStream is = ReadSpectrum.class.getResourceAsStream(resName)) {
+		try (final InputStream is = TestReadSpectrum.class.getResourceAsStream(resName)) {
 			final File f = File.createTempFile("spec", ".msa");
 			try (final FileOutputStream fos = new FileOutputStream(f)) {
 				final byte[] tmp = new byte[4096];

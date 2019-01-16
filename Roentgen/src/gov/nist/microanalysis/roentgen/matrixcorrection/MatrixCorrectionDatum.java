@@ -110,7 +110,7 @@ public abstract class MatrixCorrectionDatum //
 	}
 
 	public double getRoughness() {
-		return mRoughness.orElse(1.0e-12);
+		return mRoughness.orElse(1.0e-10);
 	}
 
 	public boolean hasRoughness() {

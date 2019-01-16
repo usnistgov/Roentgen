@@ -27,7 +27,7 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.Variates;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.Variate;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRayEmissionProbability;
@@ -62,11 +62,11 @@ class MultiE0MultiLineModel //
 		extends SerialLabeledMultivariateJacobianFunction {
 
 	private final Set<KRatioLabel> mKRatios;
-	private final Set<MatrixCorrectionModel2.Variates> mVariates; //
+	private final Set<MatrixCorrectionModel2.Variate> mVariates; //
 
 	private static List<LabeledMultivariateJacobianFunction> buildSteps( //
 			final Set<KRatioLabel> kratios, //
-			final Set<MatrixCorrectionModel2.Variates> variates //
+			final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
 		Map<MatrixCorrectionDatum, Set<AtomicShell>> allMcd = new HashMap<>();
 
@@ -113,7 +113,7 @@ class MultiE0MultiLineModel //
 	}
 
 	public MultiE0MultiLineModel( //
-			final Set<KRatioLabel> kratios, final Set<MatrixCorrectionModel2.Variates> variates //
+			final Set<KRatioLabel> kratios, final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
 		super("Multi-E0", buildSteps(kratios, variates));
 		mKRatios = kratios;
@@ -138,12 +138,12 @@ class MultiE0MultiLineModel //
 		private static List<? extends Object> buildInputTags(//
 				final MatrixCorrectionDatum mcd, //
 				final ElementXRaySet exrs, //
-				final Set<MatrixCorrectionModel2.Variates> variates //
+				final Set<MatrixCorrectionModel2.Variate> variates //
 		) {
 			final List<Object> res = new ArrayList<>();
 			for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay()) {
 				res.add(MatrixCorrectionModel2.FofChiReducedLabel(mcd, cxr));
-				if (variates.contains(MatrixCorrectionModel2.Variates.WeightsOfLines))
+				if (variates.contains(MatrixCorrectionModel2.Variate.WeightsOfLines))
 					res.add(new MatrixCorrectionModel2.XRayWeightLabel(cxr));
 			}
 			for (final AtomicShell sh : exrs.getSetOfInnerAtomicShells()) {
@@ -160,7 +160,7 @@ class MultiE0MultiLineModel //
 		}
 
 		public IntensityModel(final MatrixCorrectionDatum mcd, final ElementXRaySet exrs,
-				final Set<MatrixCorrectionModel2.Variates> variates) {
+				final Set<MatrixCorrectionModel2.Variate> variates) {
 			super(buildInputTags(mcd, exrs, variates), buildOutputTags(mcd, exrs));
 			mDatum = mcd;
 			mXRaySet = exrs;
@@ -357,11 +357,11 @@ class MultiE0MultiLineModel //
 		private final MatrixCorrectionDatum mDatum;
 
 		static private List<Object> buildInputLabels(final MatrixCorrectionDatum mcd, final AtomicShell sh,
-				Set<Variates> variates) {
+				Set<Variate> variates) {
 			final List<Object> res = new ArrayList<>();
-			if (variates.contains(Variates.IonizationExponent))
+			if (variates.contains(Variate.IonizationExponent))
 				res.add(new MatrixCorrectionModel2.IonizationExponentLabel(sh));
-			if (variates.contains(Variates.BeamEnergy))
+			if (variates.contains(Variate.BeamEnergy))
 				res.add(MatrixCorrectionModel2.beamEnergyLabel(mcd));
 			return res;
 		}
@@ -370,7 +370,7 @@ class MultiE0MultiLineModel //
 			return Collections.singletonList(buildICXLabel(mcd, sh));
 		}
 
-		public IonizationCrossSection(final MatrixCorrectionDatum mcd, final AtomicShell sh, Set<Variates> variates) {
+		public IonizationCrossSection(final MatrixCorrectionDatum mcd, final AtomicShell sh, Set<Variate> variates) {
 			super(buildInputLabels(mcd, sh, variates), buildOutputLabels(mcd, sh));
 			mShell = sh;
 			mDatum = mcd;
@@ -444,16 +444,16 @@ class MultiE0MultiLineModel //
 			for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay()) {
 				// MatrixCorrectionModel2.FofChiReducedLabel(mcd, cxr) => Calculated
 				// elsewhere...
-				if (mVariates.contains(MatrixCorrectionModel2.Variates.WeightsOfLines) == withUnc) {
+				if (mVariates.contains(MatrixCorrectionModel2.Variate.WeightsOfLines) == withUnc) {
 					if ((xrep == null) || (xrep.getIonized() != cxr.getInner()))
 						xrep = new XRayEmissionProbability(cxr.getInner());
 					vals.put(new MatrixCorrectionModel2.XRayWeightLabel(cxr), xrep.getWeightU(cxr));
 				}
 			}
-			if (mVariates.contains(MatrixCorrectionModel2.Variates.IonizationExponent) == withUnc)
+			if (mVariates.contains(MatrixCorrectionModel2.Variate.IonizationExponent) == withUnc)
 				for (final AtomicShell sh : exrs.getSetOfInnerAtomicShells())
 					vals.put(new MatrixCorrectionModel2.IonizationExponentLabel(sh),
-							MatrixCorrectionModel2.computeM(sh));
+							XPPMatrixCorrection2.computeIonizationExponent(sh, 1.0));
 		}
 		return new UncertainValues(vals);
 	}

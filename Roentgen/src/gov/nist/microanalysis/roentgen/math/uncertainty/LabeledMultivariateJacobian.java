@@ -64,7 +64,7 @@ public class LabeledMultivariateJacobian //
 
 	/**
 	 * Construct a {@link LabeledMultivariateJacobian} from a
-	 * {@link LabeledMultivariateJacobianFunction} evaluzte at a specific
+	 * {@link LabeledMultivariateJacobianFunction} evaluated at a specific
 	 * {@link RealVector} point.
 	 *
 	 * @param nmjf A {@link LabeledMultivariateJacobianFunction}
@@ -78,6 +78,23 @@ public class LabeledMultivariateJacobian //
 		return new LabeledMultivariateJacobian(nmjf, pt);
 	}
 
+	/**
+	 * Construct a {@link LabeledMultivariateJacobian} from a
+	 * {@link LabeledMultivariateJacobianFunction} evaluated at a specific
+	 * {@link UncertainValues} object
+	 *
+	 * @param nmjf A {@link LabeledMultivariateJacobianFunction}
+	 * @param uvs   The evaluation point represented as an {@link UncertainValues} object
+	 * @return {@link LabeledMultivariateJacobian}
+	 */
+	public static LabeledMultivariateJacobian compute( //
+			final LabeledMultivariateJacobianFunction nmjf, //
+			final UncertainValues uvs //
+	) {
+		return new LabeledMultivariateJacobian(nmjf, uvs);
+	}
+	
+	
 	/**
 	 * Computes the values and an estimate of the Jacobian using a finite difference
 	 * algorithm.
@@ -107,13 +124,13 @@ public class LabeledMultivariateJacobian //
 			pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
 			pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
 			final RealVector output0 = nmjf.compute(pt0), output1 = nmjf.compute(pt1);
-			for (int r = 0; r < nmjf.getOutputDimension(); ++r) {
+			for (int r = 0; r < nmjf.getOutputDimension(); ++r) 
 				rm.setEntry(r, c, (output0.getEntry(r) - output1.getEntry(r)) / deltaX);
-			}
 		}
 		return new LabeledMultivariateJacobian(nmjf.getInputLabels(), nmjf.getOutputLabels(), inp,
 				Pair.create(vals, rm));
 	}
+	
 
 	/**
 	 * Construct a {@link LabeledMultivariateJacobian} from a
@@ -129,6 +146,30 @@ public class LabeledMultivariateJacobian //
 			final RealVector pt //
 	) {
 		this(nmjf.getInputLabels(), nmjf.getOutputLabels(), pt, nmjf.evaluate(pt));
+	}
+
+	private static final RealVector extractPoint(LabeledMultivariateJacobianFunction func, UncertainValues args) {
+		return args.extractValues(func.getInputLabels());
+	}
+
+	/**
+	 * Construct a {@link LabeledMultivariateJacobian} from a
+	 * {@link LabeledMultivariateJacobianFunction} evaluated at a specific
+	 * {@link RealVector} point.
+	 *
+	 * @param nmjf A {@link LabeledMultivariateJacobianFunction}
+	 * @param pt   The evaluation point
+	 * @return {@link LabeledMultivariateJacobian}
+	 */
+	public LabeledMultivariateJacobian( //
+			final LabeledMultivariateJacobianFunction nmjf, //
+			final UncertainValues args //
+	) {
+		this(nmjf.getInputLabels(), //
+				nmjf.getOutputLabels(), //
+				extractPoint(nmjf, args), //
+				nmjf.evaluate(extractPoint(nmjf, args))//
+		);
 	}
 
 	/**

@@ -53,7 +53,7 @@ public class TestEDSFittingFilter {
 		System.out.println("Au = " + agf.extents(Element.Gold, 20.0e3, 1.0e-4).toString());
 		System.out.println("Pb = " + agf.extents(Element.Lead, 20.0e3, 1.0e-4).toString());
 
-		final EDSSpectrum spec = ReadSpectrum.fromResource("Fe_ref1.msa");
+		final EDSSpectrum spec = TestReadSpectrum.fromResource("Fe_ref1.msa");
 		final AdaptiveTophatFilter agf2 = new AdaptiveTophatFilter(spec.size(), spec.getEnergyCalibration(), ls);
 		final Pair<RealVector, RealMatrix> pr = agf2.evaluate(spec.getData());
 		final Report r = new Report("Fe_ref1.msa - Tophat");
@@ -95,7 +95,7 @@ public class TestEDSFittingFilter {
 		System.out.println("Au = " + agf.extents(Element.Gold, 20.0e3, 1.0e-4).toString());
 		System.out.println("Pb = " + agf.extents(Element.Lead, 20.0e3, 1.0e-4).toString());
 
-		final EDSSpectrum spec = ReadSpectrum.fromResource("Fe_ref1.msa");
+		final EDSSpectrum spec = TestReadSpectrum.fromResource("Fe_ref1.msa");
 		final AdaptiveTophatFilter agf2 = new AdaptiveTophatFilter(spec.size(), spec.getEnergyCalibration(), ls);
 		final Pair<RealVector, RealMatrix> pr = agf2.evaluate(spec.getData());
 		final Report r = new Report("Fe_ref1.msa - Tophat");

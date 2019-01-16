@@ -1,5 +1,7 @@
 package gov.nist.microanalysis.roentgen.tests.physics;
 
+import static org.junit.Assert.assertEquals;
+
 import java.awt.Desktop;
 import java.io.File;
 import java.io.FileWriter;
@@ -21,6 +23,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.AtomFractionToMassFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 public class CompositionTest2 {
@@ -313,19 +316,31 @@ public class CompositionTest2 {
 		final Composition af = Composition.atomFraction("K412", atFracs);
 
 		final UncertainValues uv = af;
-		final UncertainValues mup = UncertainValues.propagateMC(new Composition.AtomFractionToMassFraction(af), uv,
+		final UncertainValues mup = UncertainValues.propagateMC(new AtomFractionToMassFraction(af), uv,
 				160000);
 		final Composition mf = af.asMassFraction();
-		// for(Element elm )
+		
+		// From DTSA-II
+		assertEquals(0.4312, mf.getValue(Element.Oxygen).doubleValue(), 0.0001);
+		assertEquals(0.1176, mf.getValue(Element.Magnesium).doubleValue(), 0.0001);
+		assertEquals(0.0495, mf.getValue(Element.Aluminum).doubleValue(), 0.0001);
+		assertEquals(0.2138, mf.getValue(Element.Silicon).doubleValue(), 0.0001);
+		assertEquals(0.1099, mf.getValue(Element.Calcium).doubleValue(), 0.0001);
+		assertEquals(0.0781, mf.getValue(Element.Iron).doubleValue(), 0.0001);
+		
+		// Test MC against analytic
+		for(Object label : mf.getLabels()) 
+			assertEquals(mf.getValue(label).uncertainty(), mup.getUncertainValue(label).uncertainty(),0.001);		
 
 		if (mHTML) {
 			final Report rep = new Report("Atomic Fraction MC");
 			try {
 				rep.addHeader("MC: Atom Fraction to Mass Fraction");
+				rep.addHTML(af.toHTML(Mode.VERBOSE));
 				rep.addSubHeader("TERSE");
-				rep.addHTML(mup.toHTML(Mode.TERSE));
+				rep.addHTML(mf.toHTML(Mode.TERSE));
 				rep.addSubHeader("NORMAL");
-				rep.addHTML(mup.toHTML(Mode.NORMAL));
+				rep.addHTML(mf.toHTML(Mode.NORMAL));
 				rep.addSubHeader("VERBOSE - Analytic");
 				rep.addHTML(mf.toHTML(Mode.VERBOSE));
 				rep.addSubHeader("VERBOSE - Monte Carlo");

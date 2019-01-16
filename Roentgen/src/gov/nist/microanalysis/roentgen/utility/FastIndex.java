@@ -2,6 +2,7 @@ package gov.nist.microanalysis.roentgen.utility;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +21,7 @@ public class FastIndex<H> extends ArrayList<H> {
 	private final Map<H, Integer> mIndex;
 
 	public FastIndex() {
-		super();
-		mIndex = new HashMap<>();
+		this(Collections.emptyList());
 	}
 
 	public FastIndex(final List<H> list) {
@@ -39,27 +39,18 @@ public class FastIndex<H> extends ArrayList<H> {
 	}
 
 	public boolean add(H obj) {
-		if (!mIndex.containsKey(obj)) {
-			add(obj);
-			mIndex.put(obj, size() - 1);
-			return true;
-		}
-		return false;
+		throw new UnsupportedOperationException("add is not supported by FastIndex.");
 	}
 
 	public boolean addAll(Collection<? extends H> hs) {
-		boolean changed = false;
-		for (H h : hs)
-			changed |= add(h);
-		return changed;
+		throw new UnsupportedOperationException("addAll is not supported by FastIndex.");
 	}
 	
 	public H set(int index, H element) {
-		assert false;
-		return null;
+		throw new UnsupportedOperationException("set is not supported by FastIndex.");
 	}
 	
 	public void add(int index, H element) {
-		assert false;
+		throw new UnsupportedOperationException("add is not supported by FastIndex.");
 	}
 }

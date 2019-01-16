@@ -29,12 +29,12 @@ public class TestLinearSpectrumFit {
 
 	@Before
 	public void setup() throws Exception {
-		mUnknown = ReadSpectrum.fromResource("K412 15 keV.msa");
-		mSiO2Std = ReadSpectrum.fromResource("SiO2 15 keV.msa");
-		mMgStd = ReadSpectrum.fromResource("Mg 15 keV.msa");
-		mAlStd = ReadSpectrum.fromResource("Al 15 keV.msa");
-		mCaF2Std = ReadSpectrum.fromResource("CaF2 15 keV.msa");
-		mFeStd = ReadSpectrum.fromResource("Fe 15 keV.msa");
+		mUnknown = TestReadSpectrum.fromResource("K412 15 keV.msa");
+		mSiO2Std = TestReadSpectrum.fromResource("SiO2 15 keV.msa");
+		mMgStd = TestReadSpectrum.fromResource("Mg 15 keV.msa");
+		mAlStd = TestReadSpectrum.fromResource("Al 15 keV.msa");
+		mCaF2Std = TestReadSpectrum.fromResource("CaF2 15 keV.msa");
+		mFeStd = TestReadSpectrum.fromResource("Fe 15 keV.msa");
 	}
 
 	/**

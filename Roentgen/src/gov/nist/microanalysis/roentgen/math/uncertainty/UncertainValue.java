@@ -160,6 +160,10 @@ final public class UncertainValue //
 	public static UncertainValue normal(final double v, final Object src) {
 		return new UncertainValue(v, src, Math.sqrt(v));
 	}
+	
+	public static UncertainValue toRadians(double degrees, double ddegrees) {
+		return new UncertainValue(Math.toRadians(degrees), Math.toRadians(ddegrees));
+	}
 
 	/**
 	 * Constructs a UncertainValue with value <code>v</code> and uncertainties

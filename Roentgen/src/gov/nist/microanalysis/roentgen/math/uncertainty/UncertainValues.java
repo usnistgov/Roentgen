@@ -72,6 +72,23 @@ public class UncertainValues //
 	private final FastIndex<? extends Object> mLabels;
 	private final RealMatrix mCovariance;
 
+	private static class UVSOutOfRangeException extends OutOfRangeException {
+
+		private static final long serialVersionUID = -8886319004986992747L;
+
+		private final String mExtra;
+
+		public UVSOutOfRangeException(Number wrong, Number low, Number high, String extra) {
+			super(wrong, low, high);
+			mExtra = extra;
+		}
+
+		public String toString() {
+			return super.toString() + " - " + mExtra;
+		}
+
+	}
+
 	private UncertainValues() {
 		mValues = new ArrayRealVector(0);
 		mLabels = new FastIndex<>();
@@ -100,19 +117,19 @@ public class UncertainValues //
 				if (entryRR > -EPS * maxVal)
 					covar.setEntry(r, r, 0.0);
 				else
-					throw new OutOfRangeException(entryRR, 0.0, Double.MAX_VALUE);
+					throw new UVSOutOfRangeException(entryRR, 0.0, Double.MAX_VALUE, "Row=" + r);
 			}
 		}
 		for (int r = 0; r < covar.getRowDimension(); ++r)
 			for (int c = r + 1; c < covar.getColumnDimension(); ++c) {
 				final double entryRC = covar.getEntry(r, c);
 				if (Math.abs(entryRC - covar.getEntry(c, r)) > SREPS * Math.abs(entryRC))
-					throw new OutOfRangeException(entryRC, covar.getEntry(c, r), covar.getEntry(c, r));
+					throw new OutOfRangeException(entryRC, covar.getEntry(c, r) - EPS, covar.getEntry(c, r) + EPS);
 				final double max = Math.sqrt(covar.getEntry(c, c) * covar.getEntry(r, r)) + EPS;
 				final double rr = entryRC / max;
 				if ((rr > MAX_CORR) || (rr < -MAX_CORR)) {
 					if (Math.abs(entryRC) > EPS)
-						throw new OutOfRangeException(entryRC, -max, max);
+						throw new UVSOutOfRangeException(entryRC, -max, max, "Row=" + r + ", Col=" + c);
 					else {
 						covar.setEntry(r, c, Math.signum(rr) * max);
 						covar.setEntry(c, r, Math.signum(rr) * max);
@@ -383,7 +400,7 @@ public class UncertainValues //
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Returns an UncertainValues object with the labels in the order specified by
 	 * the argument. If this is already in this order, this is returned; otherwise a
@@ -393,7 +410,7 @@ public class UncertainValues //
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	private UncertainValues reorder(final List<? extends Object> labels) throws ArgumentException {
+	public UncertainValues reorder(final List<? extends Object> labels) throws ArgumentException {
 		assert labels.size() <= mLabels.size();
 		if (mLabels.size() == labels.size()) {
 			boolean eq = true;
@@ -937,6 +954,29 @@ public class UncertainValues //
 		return toHTML(mode, new BasicNumberFormat("0.00E0"));
 	}
 
+	public String toSimpleHTML(final BasicNumberFormat bnf) {
+		final Table t0 = new Table();
+		{
+			List<Table.Item> row = new ArrayList<>();
+			row.add(Table.th("Label"));
+			row.add(Table.thc("Value"));
+			row.add(Table.thc("&nbsp;"));
+			for (int c = 0; c < getDimension(); ++c)
+				row.add(Table.thc(HTML.toHTML(getLabel(c), Mode.NORMAL)));
+			t0.addRow(row);
+		}
+		for (int r = 0; r < getDimension(); ++r) {
+			List<Table.Item> row = new ArrayList<>();
+			row.add(Table.thc(HTML.toHTML(getLabel(r), Mode.NORMAL)));
+			row.add(Table.tdc(bnf.format(getEntry(r))));
+			row.add(Table.tdc(r == getDimension() / 2 ? "&#177;" : "&nbsp;"));
+			for (int c = 0; c < getDimension(); ++c)
+				row.add(Table.tdc(bnf.format(getCovariance(r, c))));
+			t0.addRow(row);
+		}
+		return t0.toHTML(Mode.NORMAL);
+	}
+
 	/**
 	 * Provides a mechanism to convert this {@link UncertainValues} object to HTML
 	 * with a little more control over number formating.
@@ -986,6 +1026,7 @@ public class UncertainValues //
 				all.add(Table.tdc(HTML.toHTML(colLabel, Mode.TERSE)));
 			vals.addRow(all);
 			final BasicNumberFormat bnf2 = new BasicNumberFormat("0.00");
+			final BasicNumberFormat bnf = new BasicNumberFormat("0.0E0");
 			for (int r = 0; r < mLabels.size(); ++r) {
 				final Object rowLabel = mLabels.get(r);
 				final List<Item> row = new ArrayList<>();
@@ -997,20 +1038,35 @@ public class UncertainValues //
 					row.add(Table.td());
 				for (final Object colLabel : mLabels) {
 					final double c = getCovariance(rowLabel, colLabel);
-					if ((rowLabel == colLabel) || (mode != Mode.VERBOSE))
-						row.add(Table.tdc((c > 0.0 ? "" : Transforms.NON_BREAKING_DASH) + "("
-								+ nf.formatHTML(Math.sqrt(Math.abs(c))) + ")<sup>2</sup>"));
-					else {
-						final double cv = Math.sqrt(getVariance(rowLabel) * getVariance(colLabel));
-						final double cc = cv > 0.0 ? c / cv : 0.0;
-						// Compute the corrolatation coefficient
-						// assert (cc >= -MAX_CORR) && (cc <= MAX_CORR) : cc;
-						if (cc == 0.0)
-							row.add(Table.td());
-						else
-							row.add(Table.tdc((cc < 0.0 ? Transforms.NON_BREAKING_DASH : "")
-									+ bnf2.formatHTML(Math.sqrt(Math.abs(cc)))
-									+ "&middot;&sigma;<sub>R</sub>&sigma;<sub>C</sub>"));
+					if ((rowLabel == colLabel) || (mode != Mode.VERBOSE)) {
+						final String html = "(" + nf.formatHTML(Math.sqrt(Math.abs(c))) + ")<sup>2</sup>";
+						if (c >= 0)
+							row.add(Table.tdc(html));
+						else // This is a problem! Highlight it....
+							row.add(Table.thc(HTML.fontColor(Transforms.NON_BREAKING_DASH + html, Color.RED)));
+					} else {
+						if (c == 0)
+							row.add(Table.tdc("&nbsp;"));
+						else {
+							final double rvr = getVariance(rowLabel), cvr = getVariance(colLabel);
+							if ((rvr != 0.0) && (cvr != 0.0)) {
+								final double cc = c / Math.sqrt(rvr * cvr);
+								final String html = (Math.abs(cc) > 0.05 ? bnf2.formatHTML(cc) : bnf.formatHTML(cc))
+										+ "&middot;&sigma;<sub>R</sub>&sigma;<sub>C</sub>";
+								if ((cc >= -MAX_CORR) || (cc <= MAX_CORR)) {
+									if (c == getCovariance(colLabel, rowLabel))
+										row.add(Table.tdc(html));
+									else // This is a problem! Highlight it...
+										row.add(Table.thc(HTML.fontColor(html, Color.MAGENTA)));
+								} else
+									row.add(Table.thc(HTML.fontColor(html, Color.red)));
+							} else {
+								if (c == 0.0)
+									row.add(Table.td());
+								else // This is a problem! Highlight it...
+									row.add(Table.thc(HTML.fontColor(bnf.format(c), Color.RED)));
+							}
+						}
 					}
 				}
 				vals.addRow(row);
@@ -1277,9 +1333,9 @@ public class UncertainValues //
 
 	/**
 	 * Creates a new {@link UncertainValues} object representing only those
-	 * rows/columns whose indexes are in idx.  Can be used to create a sub-set
-	 * of this {@link UncertainValues} or reorder this {@link UncertainValues}.
-	 * 
+	 * rows/columns whose indexes are in idx. Can be used to create a sub-set of
+	 * this {@link UncertainValues} or reorder this {@link UncertainValues}.
+	 *
 	 * @param idx
 	 * @return {@link UncertainValues} A new object
 	 */

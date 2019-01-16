@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -22,7 +21,6 @@ import com.duckandcover.html.Table.Item;
 import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
@@ -60,12 +58,25 @@ public class Composition //
 	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT = new BasicNumberFormat("0.0###");
 	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00E0");
 
-	private final String mHTML;
-	private final Representation mRepresentation;
+	final private String mHTML;
+	/**
+	 * Initial representation
+	 */
+	final Representation mRepresentation;
 
 	public static class ElementTag extends BaseLabel<Element, String, Object> {
+
+		static String addHTML(String base) {
+			final String root = "<html>";
+			if (base.startsWith(root))
+				return base;
+			else
+				return root + base;
+
+		}
+
 		private ElementTag(final String prefix, final String html, final Element elm) {
-			super(prefix, elm, "<html>" + html);
+			super(prefix, elm, addHTML(html));
 		}
 
 		public Element getElement() {
@@ -84,7 +95,11 @@ public class Composition //
 	}
 
 	public static MassFractionTag buildMassFractionTag(final Composition comp, final Element elm) {
-		return new MassFractionTag(comp.mHTML, elm);
+		return buildMassFractionTag(comp.mHTML, elm);
+	}
+	
+	static MassFractionTag buildMassFractionTag(final String html, final Element elm) {
+		return new MassFractionTag(html, elm);
 	}
 
 	public static class NormalizedMassFractionTag extends ElementTag {
@@ -100,6 +115,12 @@ public class Composition //
 	protected static class AtomTypeTag extends ElementTag {
 		protected AtomTypeTag(final String name, final String html, final Element elm) {
 			super(name, html, elm);
+		}
+	}
+	
+	public static class AtomicWeightTag extends ElementTag {
+		protected AtomicWeightTag(final String html, final Element elm) {
+			super("AtomicWeight", html, elm);
 		}
 	}
 
@@ -118,6 +139,18 @@ public class Composition //
 			super("S", html, elm);
 		}
 	}
+	
+	/**
+	 * Build a tag to associate with the atomic weight of the specified element in the 
+	 * specified material.
+	 * 
+	 * @param comp
+	 * @param elm
+	 * @return {@link AtomicWeightTag}
+	 */
+	public static AtomicWeightTag buildAtomicWeightTag(final Composition comp, final Element elm) {
+		return new AtomicWeightTag(comp.mHTML, elm);
+	}
 
 	public static StoichiometryTag buildStoichiometryTag(final Composition comp, final Element elm) {
 		return new StoichiometryTag(comp.mHTML, elm);
@@ -129,6 +162,18 @@ public class Composition //
 
 	public static List<Object> massFractionTags(final Composition comp) {
 		return buildTags(comp, Representation.MassFraction);
+	}
+	
+
+	static final class FracTag extends BaseLabel<String, Object, Object> {
+
+		protected FracTag(final Composition comp) {
+			super("f", ElementTag.addHTML(comp.mHTML));
+		}
+
+		public String getHTML() {
+			return getObject1();
+		}
 	}
 
 	private static List<Object> buildTags(final String html, final List<Element> elms, final Representation mode) {
@@ -445,147 +490,6 @@ public class Composition //
 		return (p1 != -1) && (p2 != -1) ? getCovariance(p1, p2) : 0.0;
 	}
 
-	public static class AtomFractionToMassFraction extends LabeledMultivariateJacobianFunction {
-
-		/**
-		 * Nominally the tabulated atomic weights but can be customized for special
-		 * situations.
-		 */
-		private final Map<Element, Double> mAtomicWeights;
-
-		private static Map<Element, Double> buildAtomicWeights(final Set<Element> elms) {
-			final Map<Element, Double> res = new HashMap<>();
-			for (final Element elm : elms)
-				res.put(elm, elm.getAtomicWeight());
-			return res;
-		}
-
-		/**
-		 * Constructs a AtomicFractionToMassFraction
-		 *
-		 * @param Composition   comp
-		 * @param atomicWeights
-		 */
-		public AtomFractionToMassFraction(final Composition comp, final Map<Element, Double> atomicWeights) {
-			super(comp.getLabels(), buildTags(comp, Representation.MassFraction));
-			assert (comp.mRepresentation == Representation.AtomFraction)
-					|| (comp.mRepresentation == Representation.Stoichiometry);
-			mAtomicWeights = new HashMap<>(atomicWeights);
-		}
-
-		/**
-		 * Constructs a AtomicFractionToMassFraction
-		 *
-		 * @param Composition   comp
-		 * @param atomicWeights
-		 */
-		public AtomFractionToMassFraction(final Composition comp) {
-			this(comp, buildAtomicWeights(comp.getElementSet()));
-		}
-
-		private double denom(final RealVector point) {
-			double res = 0.0;
-			for (final Object tag : getInputLabels()) {
-				final AtomTypeTag aft = (AtomTypeTag) tag;
-				final double a = mAtomicWeights.get(aft.getElement());
-				res += getValue(aft, point) * a;
-			}
-			return res;
-		}
-
-		private double massFraction(final AtomTypeTag aft, final RealVector point) {
-			return getValue(aft, point) * mAtomicWeights.get(aft.getElement()) / denom(point);
-		}
-
-		private double deriv(final MassFractionTag mft, final AtomTypeTag aft, final RealVector point) {
-			final double den = denom(point);
-			final double a1 = mAtomicWeights.get(mft.getElement());
-			final double a2 = mAtomicWeights.get(aft.getElement());
-			if (mft.getElement() == aft.getElement())
-				return a1 * (1.0 / den - a1 * getValue(aft, point) / (den * den));
-			else
-				return -getValue(aft, point) * a1 * a2 / Math.pow(den, 2.0);
-		}
-
-		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final RealVector vals = new ArrayRealVector(getOutputDimension());
-			final RealMatrix jac = NullableRealMatrix.build(getInputDimension(), getOutputDimension());
-			for (int i = 0; i < getInputDimension(); ++i) {
-				final AtomTypeTag aft = (AtomTypeTag) getInputLabels().get(i);
-				vals.setEntry(i, massFraction(aft, point));
-				for (int j = 0; j < getOutputDimension(); ++j) {
-					final MassFractionTag mft = (MassFractionTag) getOutputLabels().get(j);
-					writeJacobian(i, mft, deriv(mft, aft, point), jac);
-				}
-			}
-			return Pair.create(vals, jac);
-		}
-	}
-
-	public static class MassFractionToAtomFraction extends LabeledMultivariateJacobianFunction {
-
-		/**
-		 * Nominally the tabulated atomic weights but can be customized for special
-		 * situations.
-		 */
-		private final RealVector mInvAtomicWeights;
-
-		private static RealVector buildAtomicWeights(final List<? extends Object> elms) {
-			final RealVector atomicWeights = new ArrayRealVector(elms.size());
-			for (int i = 0; i < elms.size(); ++i)
-				atomicWeights.setEntry(i, 1.0 / ((ElementTag) elms.get(i)).getElement().getAtomicWeight());
-			return atomicWeights;
-		}
-
-		/**
-		 * Constructs a AtomicFractionToMassFraction
-		 *
-		 * @param inputTags
-		 * @param outputTags
-		 */
-		public MassFractionToAtomFraction(final List<? extends Object> inputTags,
-				final List<? extends Object> outTags) {
-			this(inputTags, outTags, buildAtomicWeights(inputTags));
-		}
-
-		public MassFractionToAtomFraction(final List<? extends Object> inTags, final List<? extends Object> outTags,
-				final RealVector atomicWeights) {
-			super(inTags, outTags);
-			mInvAtomicWeights = new ArrayRealVector(atomicWeights);
-		}
-
-		private double atomFraction(final int elmIdx, final RealVector point) {
-			return point.getEntry(elmIdx) * mInvAtomicWeights.getEntry(elmIdx) / (point.dotProduct(mInvAtomicWeights));
-		}
-
-		private double deriv(final int idx1, final int idx2, final RealVector point) {
-			final double den = point.dotProduct(mInvAtomicWeights);
-			final double a1 = mInvAtomicWeights.getEntry(idx1);
-			final double a2 = mInvAtomicWeights.getEntry(idx2);
-			if (idx1 == idx2)
-				return a1 * (1.0 / den - a1 * point.getEntry(idx1) / (den * den));
-			else
-				return -point.getEntry(idx1) * a1 * a2 / Math.pow(den, 2.0);
-		}
-
-		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			if (point.getDimension() != getInputDimension())
-				throw new DimensionMismatchException(point.getDimension(), getInputDimension());
-			final RealVector vals = new ArrayRealVector(point.getDimension());
-			final RealMatrix jac = NullableRealMatrix.build(point.getDimension(), point.getDimension());
-			final List<? extends Object> elms = getInputLabels();
-			for (int i = 0; i < elms.size(); ++i) {
-				vals.setEntry(i, atomFraction(i, point));
-				for (int j = 0; j < elms.size(); ++j)
-					jac.setEntry(i, j, deriv(i, j, point));
-			}
-			return Pair.create(vals, jac);
-		}
-
-	}
-
 	/**
 	 * Converts (as necessary) from the internal representation into an object with
 	 * the Representation.MassFraction. The original object is returned for
@@ -656,8 +560,7 @@ public class Composition //
 		switch (mRepresentation) {
 		case NormalizedMassFraction:
 		case MassFraction: {
-			final UncertainValues mf = UncertainValues.propagateOrdered(new MassFractionToAtomFraction(getLabels(),
-					buildTags(mHTML, elms, Representation.NormalizedMassFraction)), this);
+			final UncertainValues mf = UncertainValues.propagateOrdered(new MassFractionToAtomFraction(this), this);
 			return new Composition(Representation.AtomFraction, mHTML, elms, mf.getValues(), mf.getCovariances());
 		}
 		case AtomFraction:
@@ -809,60 +712,6 @@ public class Composition //
 		}
 	}
 
-	private static final class FracTag extends BaseLabel<Composition, Object, Object> {
-
-		protected FracTag(final Composition comp) {
-			super("f", comp);
-		}
-
-		public Composition getComposition() {
-			return getObject1();
-		}
-	}
-
-	private static final class CombineMassFractions extends LabeledMultivariateJacobianFunction {
-
-		private final String mHTML;
-
-		static List<Object> buildOutput(final String htmlName, final List<Element> elms) {
-			final List<Object> outTags = new ArrayList<>();
-			for (final Element elm : elms)
-				outTags.add(new MassFractionTag(htmlName, elm));
-			return outTags;
-		}
-
-		public CombineMassFractions(final String htmlName, final List<? extends Object> inputTags,
-				final List<Element> elms) {
-			super(inputTags, buildOutput(htmlName, elms));
-			mHTML = htmlName;
-		}
-
-		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final List<? extends Object> inTags = getInputLabels();
-			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
-			final RealVector rv = new ArrayRealVector(getOutputDimension());
-			for (final Object inTag : inTags) {
-				if (inTag instanceof FracTag) {
-					final FracTag ct = (FracTag) inTag;
-					final int fIdx = inputIndex(inTag);
-					final String c = "<html>" + ct.getComposition().mHTML;
-					for (final Object inTag2 : inTags) {
-						if ((inTag2 instanceof MassFractionTag) && (((MassFractionTag) inTag2).getHTML().equals(c))) {
-							final MassFractionTag mt2 = (MassFractionTag) inTag2;
-							final int mfIdx = inputIndex(mt2);
-							final MassFractionTag outTag = new MassFractionTag(mHTML, mt2.getElement());
-							final int outIdx = outputIndex(outTag);
-							rv.setEntry(outIdx, rv.getEntry(outIdx) + point.getEntry(fIdx) * point.getEntry(mfIdx));
-							rm.setEntry(outIdx, mfIdx, rm.getEntry(outIdx, mfIdx) + point.getEntry(fIdx));
-							rm.setEntry(outIdx, fIdx, rm.getEntry(outIdx, fIdx) + point.getEntry(mfIdx));
-						}
-					}
-				}
-			}
-			return Pair.create(rv, rm);
-		}
-	}
 
 	/**
 	 * Build a new MassFraction representation of a mixture of the specified
@@ -877,36 +726,19 @@ public class Composition //
 	@SafeVarargs
 	public static Composition combine(final String htmlName, final Pair<Composition, Number>... comps)
 			throws ArgumentException {
-		final List<Object> tags = new ArrayList<>();
-		final HashMap<Composition, Number> mfs = new HashMap<>();
-		for (final Pair<Composition, Number> me : comps) {
-			final Composition mf = me.getFirst().asMassFraction();
-			mfs.put(mf, me.getSecond());
-			tags.add(new FracTag(mf));
+		CombineMassFractions cmf = new CombineMassFractions(htmlName, comps);
+		Map<Object,Number> vals = new HashMap<>();
+		List<UncertainValues> uvs = new ArrayList<>();
+		List<Element> elms = new ArrayList<>();
+		for(Pair<Composition, Number> comp : comps) {
+			vals.put(new FracTag(comp.getFirst()), comp.getSecond());
+			uvs.add(comp.getFirst());
+			for(Element elm : comp.getFirst().getElementSet())
+				if(!elms.contains(elm))
+					elms.add(elm);
 		}
-		final UncertainValues fracs = new UncertainValues(new ArrayList<>(tags));
-		for (final Object tag : tags) {
-			final Number n = mfs.get(((FracTag) tag).getComposition());
-			fracs.set(tag, n.doubleValue(), n instanceof UncertainValue ? ((UncertainValue) n).variance() : 0.0);
-		}
-		final UncertainValues[] uvs = new UncertainValues[mfs.size() + 1];
-		final List<Element> elms = new ArrayList<>();
-		uvs[0] = fracs;
-		int i = 1;
-		for (final Map.Entry<Composition, Number> me : mfs.entrySet()) {
-			final Composition comp = me.getKey();
-			uvs[i] = comp;
-			for (final Object ctag : me.getKey().getLabels()) {
-				assert ctag instanceof MassFractionTag;
-				final MassFractionTag mft = (MassFractionTag) ctag;
-				if (!elms.contains(mft.getElement()))
-					elms.add(mft.getElement());
-				tags.add(ctag);
-			}
-			++i;
-		}
-		final CombineMassFractions cmf = new CombineMassFractions(htmlName, tags, elms);
-		final UncertainValues tmp = UncertainValues.propagate(cmf, UncertainValues.build(tags, uvs));
+		uvs.add(new UncertainValues(vals));
+		final UncertainValues tmp = UncertainValues.propagate(cmf, UncertainValues.combine(uvs));
 		return Composition.massFraction(htmlName, elms, tmp.getValues(), tmp.getCovariances());
 	}
 

@@ -42,7 +42,7 @@ public class KRatioCorrectionModel2 //
 	}
 
 	static public Pair<LabeledMultivariateJacobianFunction, UncertainValues> buildXPPModel( //
-			final Set<KRatioLabel> krs, final Set<MatrixCorrectionModel2.Variates> variates //
+			final Set<KRatioLabel> krs, final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
 		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(krs, variates);

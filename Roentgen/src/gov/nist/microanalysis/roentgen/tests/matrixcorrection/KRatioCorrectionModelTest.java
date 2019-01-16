@@ -29,7 +29,6 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
-import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
@@ -48,27 +47,25 @@ public class KRatioCorrectionModelTest {
 	@Test
 	public void test1() throws ParseException, ArgumentException, IOException {
 
-		final Composition std0 = Composition.massFraction("K411", XPPMatrixCorrection2Test.buildK411());
+		final Composition std0 = XPPMatrixCorrection2Test.buildK411(false);
 
 		final Composition std1 = Composition.parse("Al");
 
-		final Composition unk = Composition.massFraction("K412", XPPMatrixCorrection2Test.buildK412());
+		final Composition unk = XPPMatrixCorrection2Test.buildK412(false);
 
 		final StandardMatrixCorrectionDatum stdK411Mcd = new StandardMatrixCorrectionDatum( //
 				std0, new UncertainValue(15.0, 0.1), //
-				new UncertainValue(Math.toRadians(40.0), //
-						Math.toRadians(0.9)) //
+				UncertainValue.toRadians(40.0,0.9) //
 		);
 
 		final StandardMatrixCorrectionDatum stdAlMcd = new StandardMatrixCorrectionDatum( //
 				std1, new UncertainValue(15.0, 0.12), //
-				new UncertainValue(Math.toRadians(40.0), //
-						Math.toRadians(0.7)) //
+				UncertainValue.toRadians(40.0,0.7) //
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
 				unk, new UncertainValue(15.0, 0.12), //
-				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)) //
+				UncertainValue.toRadians(40.0,0.7) //
 		);
 
 		final ElementXRaySet feTr = ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1);
@@ -97,21 +94,10 @@ public class KRatioCorrectionModelTest {
 		}
 
 		final Pair<LabeledMultivariateJacobianFunction, UncertainValues> pr = KRatioCorrectionModel2
-				.buildXPPModel(kratios, XPPMatrixCorrection2.defaultVariates());
+				.buildXPPModel(kratios, MatrixCorrectionModel2.defaultVariates());
 
 		final LabeledMultivariateJacobianFunction krcm = pr.getFirst();
 		final UncertainValues xppInput = pr.getSecond();
-
-		final Map<Object, Double> constants = new HashMap<>();
-
-		constants.put(Composition.buildMassFractionTag(unk, Element.Silicon), 0.211982);
-		constants.put(Composition.buildMassFractionTag(unk, Element.Iron), 0.0774196);
-		constants.put(Composition.buildMassFractionTag(unk, Element.Magnesium), 0.116567);
-		constants.put(Composition.buildMassFractionTag(unk, Element.Calcium), 0.10899);
-		constants.put(Composition.buildMassFractionTag(unk, Element.Oxygen), 0.42758);
-		constants.put(Composition.buildMassFractionTag(unk, Element.Aluminum), 0.0490615);
-
-		krcm.initializeConstants(constants);
 
 		final Report r = new Report("KRationCorrectionModel - test 1");
 		try {
@@ -128,7 +114,9 @@ public class KRatioCorrectionModelTest {
 			final UncertainValues kuv = new UncertainValues(mouv);
 
 			final UncertainValues uvs = UncertainValues.combine(kuv, xppInput);
-			final LabeledMultivariateJacobian nmvj = new LabeledMultivariateJacobian(krcm, uvs.getValues());
+			
+			
+			final LabeledMultivariateJacobian nmvj = new LabeledMultivariateJacobian(krcm, uvs);
 			r.addHeader("Jacobian");
 
 			r.addHTML(nmvj.toHTML(Mode.NORMAL, new BasicNumberFormat("0.000")));
@@ -207,7 +195,7 @@ public class KRatioCorrectionModelTest {
 		final UncertainValues kratios = new UncertainValues(lkr);
 
 		final Pair<LabeledMultivariateJacobianFunction, UncertainValues> pr = KRatioCorrectionModel2
-				.buildXPPModel(lkr.keySet(), XPPMatrixCorrection2.defaultVariates());
+				.buildXPPModel(lkr.keySet(), MatrixCorrectionModel2.defaultVariates());
 
 		final LabeledMultivariateJacobianFunction krcm = pr.getFirst();
 		final UncertainValues xppInput = pr.getSecond();
@@ -222,7 +210,7 @@ public class KRatioCorrectionModelTest {
 			report.addSubHeader("Function");
 			report.add(krcm);
 			// UncertainValues res = UncertainValues.propagate(ms, msInp);
-			final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(krcm, uvs.getValues());
+			final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(krcm, uvs);
 			report.addSubHeader("Jacobian");
 			report.add(eval);
 			report.addSubHeader("Result");
@@ -313,7 +301,7 @@ public class KRatioCorrectionModelTest {
 		final UncertainValues kuv = new UncertainValues(lkr);
 
 		final CompositionFromKRatios2 cfk = new CompositionFromKRatios2(lkr.keySet(),
-				XPPMatrixCorrection2.allVariates());
+				MatrixCorrectionModel2.allVariates());
 
 		final UncertainValues msInp = cfk.buildInputs(kuv);
 
@@ -325,7 +313,7 @@ public class KRatioCorrectionModelTest {
 			report.addSubHeader("Function");
 			report.addHTML(HTML.toHTML(cfk, Mode.NORMAL));
 			// UncertainValues res = UncertainValues.propagate(ms, msInp);
-			final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp.getValues());
+			final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
 			report.addSubHeader("Jacobian");
 			report.add(eval);
 			report.addSubHeader("Result");

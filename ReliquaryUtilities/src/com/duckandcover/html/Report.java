@@ -73,7 +73,8 @@ public class Report implements IToHTMLExt {
 		add(Transforms.scrollPane(new Image(img, caption)));
 	}
 
-	public void add(final Map<? extends Object, ? extends Object> map, final IToHTML.Mode keyMode, final IToHTML.Mode valueMode) {
+	public void add(final Map<? extends Object, ? extends Object> map, final IToHTML.Mode keyMode,
+			final IToHTML.Mode valueMode) {
 		Table t = new Table();
 		for (Map.Entry<? extends Object, ? extends Object> me : map.entrySet())
 			t.addRow(Table.td(HTML.toHTML(me.getKey(), keyMode)), Table.td(HTML.toHTML(me.getValue(), valueMode)));
@@ -148,6 +149,32 @@ public class Report implements IToHTMLExt {
 	public void toFile(final File f, final Mode mode) throws IOException {
 		HTML.toFile(this, f, mode, mName);
 	}
+
+	/**
+	 * Outputs the specified object to an HTML file and opens it in a browser.
+	 * 
+	 * @param obj
+	 * @param mode
+	 * @throws IOException
+	 */
+	public static void dump(Object obj, Mode mode) throws IOException {
+		Report r = new Report(obj.toString());
+		r.addHTML(HTML.toHTML(obj, mode));
+		r.inBrowser(Mode.VERBOSE);
+	}
+	
+	/**
+	 * Outputs the specified object to an HTML file and opens it in a browser.
+	 * 
+	 * @param html
+	 * @throws IOException
+	 */
+	public static void dump(String html) throws IOException {
+		Report r = new Report("Dump");
+		r.addHTML(html);
+		r.inBrowser(Mode.VERBOSE);
+	}
+
 
 	/**
 	 * Writes the report to a temporary file and then opens the file in the browser.

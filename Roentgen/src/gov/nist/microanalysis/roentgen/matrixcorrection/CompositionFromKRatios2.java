@@ -17,7 +17,7 @@ public class CompositionFromKRatios2 //
 	private final XPPMatrixCorrection2 mXPP;
 
 	private static List<LabeledMultivariateJacobianFunction> buildSteps(final Set<KRatioLabel> kratios,
-			final Set<MatrixCorrectionModel2.Variates> variates) //
+			final Set<MatrixCorrectionModel2.Variate> variates) //
 			throws ArgumentException {
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, variates);
 		final KRatioHModel2 hModel = new KRatioHModel2(kratios);
@@ -29,7 +29,7 @@ public class CompositionFromKRatios2 //
 		return steps;
 	}
 
-	public CompositionFromKRatios2(final Set<KRatioLabel> kratios, final Set<MatrixCorrectionModel2.Variates> variates) //
+	public CompositionFromKRatios2(final Set<KRatioLabel> kratios, final Set<MatrixCorrectionModel2.Variate> variates) //
 			throws ArgumentException {
 		super("Composition From K-Ratios", buildSteps(kratios, variates));
 		mXPP = (XPPMatrixCorrection2) getStep(0);
