@@ -113,7 +113,7 @@ public class XPPMatrixCorrection2 //
 	 *
 	 * @param idxs
 	 */
-	static void checkIndices(final int... idxs) {
+	static private void checkIndices(final int... idxs) {
 		final int len = idxs.length;
 		for (int i = 0; i < len; ++i) {
 			assert idxs[i] >= 0;
@@ -122,15 +122,31 @@ public class XPPMatrixCorrection2 //
 		}
 	}
 
-	static public void checkOptimized(RealVector optimized, RealVector value) {
+	/**
+	 * Ensure that the optimized and compute value are identical.
+	 * 
+	 * @param lmjf {@link ILabeledMultivariateFunction}
+	 * @param point Evaluation point
+	 * @param computed Comparison value
+	 */
+	static private void checkOptimized(ILabeledMultivariateFunction lmjf, RealVector inp, RealVector computed) {
+		final RealVector optimized = lmjf.optimized(inp);
 		for (int i = 0; i < optimized.getDimension(); ++i) {
 			final double opt = optimized.getEntry(i);
-			final double val = value.getEntry(i);
+			final double val = computed.getEntry(i);
 			assert Math.abs(opt - val) < 1.0e-6 * Math.abs(val + 1.0e-6);
 		}
 	}
 
-	static public void checkPartials(LabeledMultivariateJacobianFunction lmjf, RealVector inp, RealVector dinp,
+	/**
+	 * 
+	 * 
+	 * @param lmjf
+	 * @param inp
+	 * @param dinp
+	 * @param computed
+	 */
+	static private void checkPartials(LabeledMultivariateJacobianFunction lmjf, RealVector inp, RealVector dinp,
 			RealMatrix computed) {
 		final RealMatrix delta = lmjf.computeDelta(inp, dinp);
 		for (int r = 0; r < delta.getRowDimension(); r++)
@@ -238,7 +254,7 @@ public class XPPMatrixCorrection2 //
 			for (int i = 0; i < elms.size(); ++i)
 				writeJacobian(oZbarb, tagCi[i], 2.0 * Math.sqrt(Z[i]) * Zbt, rm); // Ci
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -394,7 +410,7 @@ public class XPPMatrixCorrection2 //
 			writeJacobian(oOneOverS, tagm, dOoSdm, rm);
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -552,7 +568,7 @@ public class XPPMatrixCorrection2 //
 			writeJacobian(oPhi0, tagE0, dphi0de0, rm);
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -701,7 +717,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oRbar, iOneOverS, dRbardF * dFdOneOverS);
 			rm.setEntry(oRbar, iQlaE0, dRbardF * dFdQlaE0);
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -868,7 +884,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(ob, iF, (phi0 * Math.sqrt(2.0)) / (2. * Math.pow(F, 2) * k3));
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -993,7 +1009,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oa, iRbar, dadRbar); // C1
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1082,7 +1098,7 @@ public class XPPMatrixCorrection2 //
 				// rm.setEntry(oeps, ib, 0.0); // C1
 			}
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1117,7 +1133,7 @@ public class XPPMatrixCorrection2 //
 		}
 	}
 
-	private static class StepAB // Checked 16-Jan-2019
+	private static class StepAB // Checked 17-Jan-2019
 			extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 		private final MatrixCorrectionDatum mDatum;
@@ -1168,18 +1184,19 @@ public class XPPMatrixCorrection2 //
 			checkIndices(oA, oB);
 			// Page 62
 			final double B = (b * b * F * (1.0 + eps) - P - phi0 * b * (2.0 + eps)) / eps; // Ok
-			final double dBdphi0 = (-b * (2.0 + eps)) / eps; // Ok
+			final double dBdphi0 = -b * (2.0 + eps) / eps; // Ok
 			final double dBdP = -1.0 / eps; // Ok
 			final double dBdF = (b * b * (1.0 + eps)) / eps; // Ok
 			final double dBdb = (2.0 * b * F * (1.0 + eps) - phi0 * (2.0 + eps)) / eps; // Ok
 			final double dBdeps = (P + 2.0 * b * phi0 - b * b * F) / (eps * eps); // Ok
 
-			final double A = (B / b + phi0 - b * F) * (1.0 + eps) / eps;
-			final double dAdb = -1.0 * ((1.0 + eps) * (B + b * (b * F - dBdb))) / (b * b * eps);
-			final double dAdphi0 = (1.0 + eps) * (b + dBdphi0) / (b * eps);
-			final double dAdF = (1 + eps) * (dBdF - b * b) / (b * eps);
-			final double dAdeps = (b * (b * F - phi0) - B + eps * (1.0 + eps) * dBdeps) / (b * eps * eps);
-			final double dAdP = (1.0 + eps) * dBdP / (b * eps);
+			final double kk = (1.0 + eps) / eps;
+			final double A = (B / b + phi0 - b * F) * kk; // Ok
+			final double dAdb = (dBdb / b - B / (b * b) - F) * kk; // Ok
+			final double dAdphi0 = ((b + dBdphi0) / b) * kk; // Ok
+			final double dAdF = ((dBdF - b * b) / b) * kk; // Ok
+			final double dAdeps = -A / (eps * (1.0 + eps)) + (dBdeps / b) * kk; // Ok
+			final double dAdP = kk * dBdP / b; // Ok
 
 			rv.setEntry(oB, B);
 			rm.setEntry(oB, iphi0, dBdphi0); // C2-Ok
@@ -1196,7 +1213,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oA, ieps, dAdeps); // C1-Ok
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1313,7 +1330,7 @@ public class XPPMatrixCorrection2 //
 			rv.setEntry(ochi, chi);
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1432,7 +1449,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFx, ieps, dFxdeps); // C2
 			writeJacobian(oFx, tagRoughness, dFxddz, rm);
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				RealVector dpt = point.mapMultiply(1.0e-6);
 				final int itr = inputIndex(tagRoughness);
 				if (itr >= 0)
@@ -1546,7 +1563,7 @@ public class XPPMatrixCorrection2 //
 			rv.setEntry(oFxRed, coatTrans * Fx);
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1669,7 +1686,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFxFs, iFxs, 1.0 / Fs); // C2
 
 			if (VALIDATE) {
-				checkOptimized(optimized(point), rv);
+				checkOptimized(this, point, rv);;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);

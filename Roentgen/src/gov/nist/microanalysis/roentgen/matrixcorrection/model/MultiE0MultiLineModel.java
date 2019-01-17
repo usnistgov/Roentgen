@@ -286,9 +286,7 @@ class MultiE0MultiLineModel //
 			final Object zafLabel = MatrixCorrectionModel2.zafLabel(mKRatio);
 			final Object kRatioLabel = new KRatioLabel(unk, std, exrs, Method.Calculated);
 			final int kRow = outputIndex(kRatioLabel);
-			XPPMatrixCorrection2.checkIndices(kRow);
 			final int zafRow = outputIndex(zafLabel);
-			XPPMatrixCorrection2.checkIndices(zafRow);
 
 			final Object intUnkLbl = intensityLabel(unk, exrs);
 			final Object intStdLbl = intensityLabel(std, exrs);
@@ -323,9 +321,7 @@ class MultiE0MultiLineModel //
 			final Object zafLabel = MatrixCorrectionModel2.zafLabel(unk, std, exrs);
 			final Object kRatioLabel = new KRatioLabel(unk, std, exrs, Method.Calculated);
 			final int kRow = outputIndex(kRatioLabel);
-			XPPMatrixCorrection2.checkIndices(kRow);
 			final int zafRow = outputIndex(zafLabel);
-			XPPMatrixCorrection2.checkIndices(zafRow);
 
 			final Object intUnkLbl = intensityLabel(unk, exrs);
 			final Object intStdLbl = intensityLabel(std, exrs);

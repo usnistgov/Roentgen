@@ -123,7 +123,7 @@ public class UncertainValues //
 		for (int r = 0; r < covar.getRowDimension(); ++r)
 			for (int c = r + 1; c < covar.getColumnDimension(); ++c) {
 				final double entryRC = covar.getEntry(r, c);
-				if (Math.abs(entryRC - covar.getEntry(c, r)) > SREPS * Math.abs(entryRC))
+				if (Math.abs(entryRC - covar.getEntry(c, r)) > SREPS * Math.abs(entryRC)+EPS)
 					throw new OutOfRangeException(entryRC, covar.getEntry(c, r) - EPS, covar.getEntry(c, r) + EPS);
 				final double max = Math.sqrt(covar.getEntry(c, c) * covar.getEntry(r, r)) + EPS;
 				final double rr = entryRC / max;
