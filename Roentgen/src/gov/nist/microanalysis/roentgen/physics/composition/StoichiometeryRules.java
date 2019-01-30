@@ -10,6 +10,7 @@ import org.apache.commons.math3.util.ArithmeticUtils;
 import com.duckandcover.html.IToHTML;
 import com.google.common.base.Preconditions;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.Element;
 
 public class StoichiometeryRules implements IToHTML {
@@ -69,7 +70,8 @@ public class StoichiometeryRules implements IToHTML {
 		return Collections.unmodifiableMap(mRules);
 	}
 
-	public static StoichiometeryRules defaultOxygenByStoichiomery() {
+	public static StoichiometeryRules defaultOxygenByStoichiomery() //
+			throws ArgumentException {
 		final int[] valences = { 0, 1, 0, 1, 2, 3, 4, 5, -2, 1, 0, 1, 2, 3, 4, 5, 6, 5, 0, 1, 2, 3, 4, 5, 2, 2, 2, 2, 2,
 				2, 2, 3, 4, 3, 6, 5, 0, 1, 2, 3, 4, 5, 6, 2, 4, 4, 2, 1, 2, 3, 2, 3, 4, 5, 0, 1, 2, 3, 4, 3, 3, 3, 3, 3,
 				3, 3, 3, 3, 3, 3, 3, 3, 4, 5, 6, 4, 4, 4, 4, 3, 2, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 4, 4, 4 };

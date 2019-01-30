@@ -53,7 +53,7 @@ public class StandardMatrixCorrectionDatum //
 			final UncertainValue takeOffAngle //
 	) {
 		super(beamEnergy, takeOffAngle);
-		mComposition = comp.asMassFraction();
+		mComposition = comp;
 	}
 
 	/**
@@ -70,7 +70,7 @@ public class StandardMatrixCorrectionDatum //
 			final double roughness //
 	) {
 		super(beamEnergy, takeOffAngle, roughness);
-		mComposition = comp.asMassFraction();
+		mComposition = comp;
 	}
 
 	/**
@@ -87,12 +87,12 @@ public class StandardMatrixCorrectionDatum //
 			final double roughness, Layer coating //
 	) {
 		super(beamEnergy, takeOffAngle, roughness, coating);
-		mComposition = comp.asMassFraction();
+		mComposition = comp;
 	}
 
 	@Override
 	public Composition getComposition() {
-		assert mComposition.getNativeRepresentation() == Representation.MassFraction;
+		assert mComposition.hasRepresentation(Representation.MassFraction);
 		return mComposition;
 	}
 

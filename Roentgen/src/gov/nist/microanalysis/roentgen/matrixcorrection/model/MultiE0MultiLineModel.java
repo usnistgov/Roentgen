@@ -143,12 +143,13 @@ class MultiE0MultiLineModel //
 			final List<Object> res = new ArrayList<>();
 			for (final CharacteristicXRay cxr : exrs.getSetOfCharacteristicXRay()) {
 				res.add(MatrixCorrectionModel2.FofChiReducedLabel(mcd, cxr));
-				if (variates.contains(MatrixCorrectionModel2.Variate.WeightsOfLines))
+				if (variates.contains(Variate.WeightsOfLines))
 					res.add(new MatrixCorrectionModel2.XRayWeightLabel(cxr));
 			}
 			for (final AtomicShell sh : exrs.getSetOfInnerAtomicShells()) {
 				res.add(buildICXLabel(mcd, sh));
-				res.add(new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mcd, sh));
+				if (variates.contains(Variate.SecondaryFluorescence))
+					res.add(new SecondaryFluorescenceModel.SecondaryFluorescenceLabel(mcd, sh));
 			}
 			return res;
 		}
@@ -159,8 +160,11 @@ class MultiE0MultiLineModel //
 			return Collections.singletonList(intensityLabel(mcd, exrs));
 		}
 
-		public IntensityModel(final MatrixCorrectionDatum mcd, final ElementXRaySet exrs,
-				final Set<MatrixCorrectionModel2.Variate> variates) {
+		public IntensityModel( //
+				final MatrixCorrectionDatum mcd, //
+				final ElementXRaySet exrs, //
+				final Set<Variate> variates //
+		) {
 			super(buildInputTags(mcd, exrs, variates), buildOutputTags(mcd, exrs));
 			mDatum = mcd;
 			mXRaySet = exrs;

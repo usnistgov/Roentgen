@@ -18,7 +18,6 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 
 /**
  * Compute the material mass absorption coefficient given the elemental mass
@@ -48,14 +47,11 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 		final List<Object> res = new ArrayList<>();
 		final Set<Element> elms = new HashSet<>();
 		for (final Composition comp : comps) {
-			assert comp.getNativeRepresentation() == Representation.MassFraction;
 			elms.addAll(comp.getElementSet());
+			res.addAll(comp.massFractionTags());
 		}
 		for (final Element elm : elms)
 			res.add(new ElementalMAC.ElementMAC(elm, xray));
-		// Mass fraction of each element in each material
-		for (final Composition comp : comps)
-			res.addAll(comp.getLabels());
 		return res;
 	}
 
@@ -72,7 +68,7 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 			final XRay xray) {
 		final List<Composition> mfs = new ArrayList<>();
 		for (final Composition comp : materials)
-			mfs.add(comp.asMassFraction());
+			mfs.add(comp);
 		final MaterialMACFunction cmac = new MaterialMACFunction(mfs, xray);
 		// Builds an input uncertainty matrix directly
 		final List<? extends Object> inp = cmac.getInputLabels();

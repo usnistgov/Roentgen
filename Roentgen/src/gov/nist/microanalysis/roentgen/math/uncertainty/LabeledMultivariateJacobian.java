@@ -1,7 +1,10 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -41,6 +44,8 @@ public class LabeledMultivariateJacobian //
 	 * The Jacobian at the evaluation point
 	 */
 	private final RealMatrix mJacobian;
+	
+	private final Map<Object, Double> mConstants;
 
 	/**
 	 * @param inpLabels List of input labels
@@ -60,6 +65,7 @@ public class LabeledMultivariateJacobian //
 		mPoint = pt;
 		mValues = result.getFirst();
 		mJacobian = result.getSecond();
+		mConstants = new HashMap<>();
 	}
 
 	/**
@@ -170,8 +176,14 @@ public class LabeledMultivariateJacobian //
 				extractPoint(nmjf, args), //
 				nmjf.evaluate(extractPoint(nmjf, args))//
 		);
+		mConstants.putAll(nmjf.getConstants());
 	}
 
+	public Map<Object, Double> getConstants(){
+		return Collections.unmodifiableMap(mConstants);
+	}
+	
+	
 	/**
 	 * Returns a {@link RealVector} containing the point at which the
 	 * {@link LabeledMultivariateJacobianFunction} was evaluated.

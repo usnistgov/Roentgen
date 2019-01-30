@@ -32,10 +32,7 @@ class KRatioHModel2 //
 			if (!unk.equals(krl.getUnknown().getComposition()))
 				throw new ArgumentException("More than one unknown in KRatioHModel2");
 		}
-		final List<Object> res = new ArrayList<>();
-		for (final Element elm : unk.getElementSet())
-			res.add(Composition.buildMassFractionTag(unk, elm));
-		return res;
+		return unk.massFractionTags();
 	}
 
 	static List<? extends Object> buildInputs(//

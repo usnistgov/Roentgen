@@ -375,7 +375,13 @@ final public class UncertainValue //
 			mSigmas.set(idx, new Sigma(newName, mSigmas.get(idx).mValue));
 	}
 
-	static private UncertainValue asUncertainValue(final Number n) {
+	/**
+	 * A method to convert any Number into the equivalent UncertainValue.
+	 * 
+	 * @param n
+	 * @return {@link UncertainValue}
+	 */
+	static public UncertainValue asUncertainValue(final Number n) {
 		if (n instanceof UncertainValue)
 			return (UncertainValue) n;
 		else
@@ -616,4 +622,6 @@ final public class UncertainValue //
 	public String toHTML(final Mode mode) {
 		return toHTML(mode, new BasicNumberFormat());
 	}
+	
+	
 }

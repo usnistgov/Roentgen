@@ -38,7 +38,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  */
 abstract public class MatrixCorrectionModel2 //
 		extends SerialLabeledMultivariateJacobianFunction {
-	
+
 	private static class ElementLabel extends BaseLabel<Element, Object, Object> {
 
 		private ElementLabel(final String name, final Element obj) {
@@ -142,6 +142,7 @@ abstract public class MatrixCorrectionModel2 //
 		WeightsOfLines("Weights-of-Lines"), //
 		IonizationExponent("Ionization exponent"), //
 		SurfaceRoughness("Surface roughness"), //
+		SecondaryFluorescence("Secondary fluorescence"), //
 		Coating("Coating"); //
 
 		private final String mName;
@@ -211,6 +212,11 @@ abstract public class MatrixCorrectionModel2 //
 		return Collections.unmodifiableSet(res);
 	}
 
+	/**
+	 * Only StandardComposition and UnknownComposition.
+	 * 
+	 * @return
+	 */
 	public static Set<Variate> minimalVariates() {
 		final Set<Variate> res = new HashSet<>();
 		res.add(Variate.StandardComposition);
@@ -223,9 +229,17 @@ abstract public class MatrixCorrectionModel2 //
 		return res;
 	}
 
+	/**
+	 * All Variates except AtomicWeight, IonizationExponent, MeanIonizationPotential
+	 * and WeightsOfLines.
+	 * 
+	 * @return
+	 */
 	public static Set<Variate> defaultVariates() {
 		final Set<Variate> res = MatrixCorrectionModel2.allVariates();
-		res.remove(Variate.SurfaceRoughness);
+		res.remove(Variate.IonizationExponent);
+		res.remove(Variate.MeanIonizationPotential);
+		res.remove(Variate.WeightsOfLines);
 		return res;
 	}
 
@@ -309,7 +323,7 @@ abstract public class MatrixCorrectionModel2 //
 			final CharacteristicXRay cxr) {
 		return new MatrixCorrectionModel2.ZAFLabel("Z", unk, std, cxr);
 	}
-	
+
 	public boolean isSet(Variate variate) {
 		return mVariates.contains(variate);
 	}
@@ -328,7 +342,5 @@ abstract public class MatrixCorrectionModel2 //
 		}
 		return sb.toString();
 	}
-
-
 
 }

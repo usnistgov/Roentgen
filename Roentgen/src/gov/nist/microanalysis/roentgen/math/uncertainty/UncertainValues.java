@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,7 +18,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.OutOfRangeException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -123,7 +123,7 @@ public class UncertainValues //
 		for (int r = 0; r < covar.getRowDimension(); ++r)
 			for (int c = r + 1; c < covar.getColumnDimension(); ++c) {
 				final double entryRC = covar.getEntry(r, c);
-				if (Math.abs(entryRC - covar.getEntry(c, r)) > SREPS * Math.abs(entryRC)+EPS)
+				if (Math.abs(entryRC - covar.getEntry(c, r)) > SREPS * Math.abs(entryRC) + EPS)
 					throw new OutOfRangeException(entryRC, covar.getEntry(c, r) - EPS, covar.getEntry(c, r) + EPS);
 				final double max = Math.sqrt(covar.getEntry(c, c) * covar.getEntry(r, r)) + EPS;
 				final double rr = entryRC / max;
@@ -188,6 +188,7 @@ public class UncertainValues //
 		if (covar.getColumnDimension() != labels.size())
 			throw new DimensionMismatchException(covar.getColumnDimension(), labels.size());
 		assert noReplicateLabels(labels);
+		assert noCollectionLabels(labels);
 		mLabels = new FastIndex<>(labels);
 		final HashMap<Object, Integer> index = new HashMap<>();
 		for (int i = 0; i < mLabels.size(); ++i)
@@ -298,6 +299,16 @@ public class UncertainValues //
 				return false;
 			}
 			rep.add(label);
+		}
+		return true;
+	}
+
+	private static boolean noCollectionLabels(final List<? extends Object> labels) {
+		for (final Object label : labels) {
+			if (label instanceof Collection) {
+				System.err.println("The label " + label + " is a collection.");
+				return false;
+			}
 		}
 		return true;
 	}
@@ -468,6 +479,29 @@ public class UncertainValues //
 				jac.multiply(ordered.getCovariances().multiply(jac.transpose())));
 	}
 
+	/**
+	 * Returns the UncertainValues that result from applying the function/Jacobian
+	 * in <code>nmjf</code> to the input values/variances in <code>input</code>
+	 * which are assumed to be ordered in the same order as nmjf.getInputLabels().
+	 *
+	 *
+	 * @param nmjf
+	 * @param ordered
+	 * @param dinp    Delta in the input values in the same order as ordered...
+	 * @return UncertainValues
+	 */
+	public static UncertainValues propagateDeltaOrdered( //
+			final LabeledMultivariateJacobianFunction nmjf, //
+			final UncertainValues ordered, final RealVector dinp) {
+		assert ordered.getLabels()
+				.equals(nmjf.getInputLabels()) : "The input values are not ordered the same as the nmjf input labels.";
+		final RealVector inp = ordered.extractValues(nmjf.getInputLabels());
+		final RealVector vals = nmjf.compute(inp);
+		final RealMatrix jac = nmjf.computeDelta(inp, dinp);
+		return new UncertainValues(nmjf.getOutputLabels(), vals, //
+				jac.multiply(ordered.getCovariances().multiply(jac.transpose())));
+	}
+
 	public static UncertainValues forceMinCovariance(final UncertainValues vals, final RealVector minCov) {
 		assert vals.getDimension() == minCov.getDimension();
 		final RealMatrix cov = vals.getCovariances().copy();
@@ -523,6 +557,7 @@ public class UncertainValues //
 		final RealVector res = new ArrayRealVector(labels.size());
 		int i = 0;
 		for (final Object label : labels) {
+			assert indexOf(label) != -1 : label + " is missing in extractValues(...)";
 			res.setEntry(i, getEntry(label));
 			++i;
 		}
@@ -612,7 +647,7 @@ public class UncertainValues //
 			assert r >= 0 : labels.get(ri) + " is unavailable in UncertainValues.extract(...)";
 			vals.setEntry(ri, uvs.getEntry(r));
 			cov.setEntry(ri, ri, uvs.getCovariance(r, r));
-			for (int ci = r + 1; ci < labels.size(); ++ci) {
+			for (int ci = 0; ci < ri; ++ci) {
 				final int c = uvs.indexOf(labels.get(ci));
 				assert c >= 0 : "Column label " + labels.get(ci) + " is missing in UncertainValues.extract(...)";
 				final double cc = uvs.getCovariance(r, c);
@@ -850,10 +885,11 @@ public class UncertainValues //
 			return 0.0;
 		else {
 			final double c11 = mCovariance.getEntry(p1, p1);
-			assert c11 != 0.0;
 			final double c22 = mCovariance.getEntry(p2, p2);
-			assert c22 != 0.0;
-			return c11 * c22 > 0.0 ? c12 / Math.sqrt(c11 * c22) : Double.NaN;
+			if (c11 * c22 > 0)
+				return c12 / Math.sqrt(c11 * c22);
+			else
+				return Double.NaN;
 		}
 	}
 
@@ -978,6 +1014,49 @@ public class UncertainValues //
 	}
 
 	/**
+	 * Convert the covariance at r,c into HTML in a human-friendly manner. Variances
+	 * are converted into "(v)^2" and covariances into the correlation coefficient
+	 * times sR sC.
+	 * 
+	 * @param r
+	 * @param c
+	 * @return String
+	 */
+	public String toHTML_Covariance(int r, int c) {
+		final double val = mCovariance.getEntry(r, c);
+		if (r == c) {
+			final BasicNumberFormat nf = new BasicNumberFormat("0.00E0");
+			final String html = "(" + nf.formatHTML(Math.sqrt(Math.abs(val))) + ")<sup>2</sup>";
+			if (c >= 0)
+				return html;
+			else // This is a problem! Highlight it....
+				return HTML.fontColor(Transforms.NON_BREAKING_DASH + html, Color.RED);
+		} else {
+			final double vr = mCovariance.getEntry(r, r), vc = mCovariance.getEntry(c, c);
+			if ((vr != 0.0) && (vc != 0.0)) {
+				final BasicNumberFormat nf = new BasicNumberFormat("0.000");
+				final double cc = val / Math.sqrt(vr * vc);
+				if (Math.abs(cc) < 1.0e-5)
+					return "&nbsp;";
+				else {
+					final String html = nf.formatHTML(cc) + "&middot;&sigma;<sub>R</sub>&sigma;<sub>C</sub>";
+					if ((cc >= -MAX_CORR) || (cc <= MAX_CORR))
+						return html;
+					else
+						return "&nbsp;";
+				}
+			} else {
+				if (val == 0.0)
+					return "&nbsp";
+				else {
+					final BasicNumberFormat nf = new BasicNumberFormat("0.00E0");
+					return HTML.fontColor(nf.format(val), Color.RED);
+				}
+			}
+		}
+	}
+
+	/**
 	 * Provides a mechanism to convert this {@link UncertainValues} object to HTML
 	 * with a little more control over number formating.
 	 *
@@ -1025,8 +1104,6 @@ public class UncertainValues //
 			for (final Object colLabel : mLabels)
 				all.add(Table.tdc(HTML.toHTML(colLabel, Mode.TERSE)));
 			vals.addRow(all);
-			final BasicNumberFormat bnf2 = new BasicNumberFormat("0.00");
-			final BasicNumberFormat bnf = new BasicNumberFormat("0.0E0");
 			for (int r = 0; r < mLabels.size(); ++r) {
 				final Object rowLabel = mLabels.get(r);
 				final List<Item> row = new ArrayList<>();
@@ -1036,39 +1113,8 @@ public class UncertainValues //
 					row.add(Table.tdc("&nbsp;&nbsp;&plusmn;&nbsp;&nbsp;"));
 				else
 					row.add(Table.td());
-				for (final Object colLabel : mLabels) {
-					final double c = getCovariance(rowLabel, colLabel);
-					if ((rowLabel == colLabel) || (mode != Mode.VERBOSE)) {
-						final String html = "(" + nf.formatHTML(Math.sqrt(Math.abs(c))) + ")<sup>2</sup>";
-						if (c >= 0)
-							row.add(Table.tdc(html));
-						else // This is a problem! Highlight it....
-							row.add(Table.thc(HTML.fontColor(Transforms.NON_BREAKING_DASH + html, Color.RED)));
-					} else {
-						if (c == 0)
-							row.add(Table.tdc("&nbsp;"));
-						else {
-							final double rvr = getVariance(rowLabel), cvr = getVariance(colLabel);
-							if ((rvr != 0.0) && (cvr != 0.0)) {
-								final double cc = c / Math.sqrt(rvr * cvr);
-								final String html = (Math.abs(cc) > 0.05 ? bnf2.formatHTML(cc) : bnf.formatHTML(cc))
-										+ "&middot;&sigma;<sub>R</sub>&sigma;<sub>C</sub>";
-								if ((cc >= -MAX_CORR) || (cc <= MAX_CORR)) {
-									if (c == getCovariance(colLabel, rowLabel))
-										row.add(Table.tdc(html));
-									else // This is a problem! Highlight it...
-										row.add(Table.thc(HTML.fontColor(html, Color.MAGENTA)));
-								} else
-									row.add(Table.thc(HTML.fontColor(html, Color.red)));
-							} else {
-								if (c == 0.0)
-									row.add(Table.td());
-								else // This is a problem! Highlight it...
-									row.add(Table.thc(HTML.fontColor(bnf.format(c), Color.RED)));
-							}
-						}
-					}
-				}
+				for (int c = 0; c < mLabels.size(); ++c)
+					row.add(Table.tdc(toHTML_Covariance(r, c)));
 				vals.addRow(row);
 			}
 			return vals.toHTML(Mode.NORMAL);
@@ -1079,15 +1125,21 @@ public class UncertainValues //
 	public BufferedImage asCovarianceBitmap(final int dim, final IValueToColor sigma, final IValueToColor corr) {
 		final RealMatrix sc = NullableRealMatrix.build(getDimension(), getDimension());
 		for (int r = 0; r < getDimension(); ++r) {
-			sc.setEntry(r, r, Math.sqrt(mCovariance.getEntry(r, r)) / mValues.getEntry(r));
-			for (int c = r + 1; c < getDimension(); ++c) {
-				final double rr = mCovariance.getEntry(r, c)
-						/ (Math.sqrt(mCovariance.getEntry(r, r) * mCovariance.getEntry(c, c)));
-				if (!Double.isNaN(rr)) {
-					assert rr >= -MAX_CORR : rr;
-					assert rr <= MAX_CORR : rr;
-					sc.setEntry(r, c, rr);
-					sc.setEntry(c, r, rr);
+			final double crr = mCovariance.getEntry(r, r);
+			final double rVal = mValues.getEntry(r);
+			sc.setEntry(r, r, Math.sqrt(crr) / rVal);
+			if (Math.sqrt(crr) > 1.0e-8 * Math.abs(rVal)) {
+				for (int c = r + 1; c < getDimension(); ++c) {
+					final double ccc = mCovariance.getEntry(c, c);
+					if (Math.sqrt(ccc) > 1.0e-8 * Math.abs(mValues.getEntry(c))) {
+						final double rr = mCovariance.getEntry(r, c) / (Math.sqrt(crr * ccc));
+						assert rr >= -MAX_CORR : rr + " at " + getLabel(r) + ", " + mCovariance.getEntry(r, c) + ", "
+								+ crr + ", " + ccc;
+						assert rr <= MAX_CORR : rr + " at " + getLabel(r) + ", " + mCovariance.getEntry(r, c) + ", "
+								+ crr + ", " + ccc;
+						sc.setEntry(r, c, rr);
+						sc.setEntry(c, r, rr);
+					}
 				}
 			}
 		}
@@ -1128,35 +1180,42 @@ public class UncertainValues //
 		if (uvs1.getDimension() != uvs2.getDimension())
 			throw new DimensionMismatchException(uvs2.getDimension(), uvs1.getDimension());
 		final int dim = uvs1.getDimension();
-		for (int i = 0; i < dim; ++i)
-			assert uvs1.getLabel(i) == uvs2.getLabel(i) : uvs1.getLabel(i) + "!=" + uvs2.getLabel(i);
-		final Array2DRowRealMatrix sc = new Array2DRowRealMatrix(dim, dim);
-		for (int r = 0; r < dim; ++r) {
-			final double rr = (uvs1.getCovariance(r, r) - uvs2.getCovariance(r, r))
-					/ Math.max(1.0 - 100, (uvs1.getCovariance(r, r) + uvs2.getCovariance(r, r)));
-			sc.setEntry(r, r, Math.max(-1, Math.min(1.0, rr)));
-			for (int c = r + 1; c < dim; ++c) {
-				final double rc = (uvs1.getCorrelationCoefficient(r, c) - uvs2.getCorrelationCoefficient(r, c)) / 2.0;
-				if (!Double.isNaN(rc)) {
-					sc.setEntry(r, c, rc);
-					sc.setEntry(c, r, rc);
-				}
-			}
-		}
-		final BufferedImage bi = new BufferedImage(pixDim * dim, pixDim * dim, BufferedImage.TYPE_3BYTE_BGR);
+		boolean[] disp = new boolean[dim];
+		UncertainValues uvs2r = UncertainValues.extract(uvs1.getLabels(), uvs2);
+		final BufferedImage bi = new BufferedImage(pixDim * (dim + 2), pixDim * dim, BufferedImage.TYPE_3BYTE_BGR);
 		final Graphics2D g2 = bi.createGraphics();
 		g2.setColor(Color.WHITE);
 		g2.fillRect(0, 0, bi.getWidth(), bi.getHeight());
-		for (int r = 0; r < dim; ++r) {
-			g2.setColor(corr.map(sc.getEntry(r, r)));
-			g2.fillRect(r * dim, r * dim, dim, dim);
-			for (int c = r + 1; c < dim; ++c) {
-				if (!Double.isNaN(sc.getEntry(r, c)))
-					g2.setColor(corr.map(sc.getEntry(r, c)));
-				else
-					g2.setColor(Color.yellow);
-				g2.fillRect(c * pixDim, r * pixDim, pixDim, pixDim);
-				g2.fillRect(r * pixDim, c * pixDim, pixDim, pixDim);
+		for (int rr = 0; rr < dim; ++rr) {
+			final double v1 = uvs1.getEntry(rr), v2 = uvs2r.getEntry(rr);
+			// Red if values are substantially different
+			if ((Math.abs(v1 - v2) > 0.01 * Math.max(v1, v2)) && (Math.max(v1, v2) > 1.0e-10))
+				g2.setColor(Color.RED);
+			else
+				g2.setColor(Color.white);
+			g2.fillRect(0, rr * pixDim, pixDim, pixDim);
+			final double dv1 = uvs1.getUncertainty(rr), dv2 = uvs2r.getUncertainty(rr);
+			if ((dv1 < 1.0e-6 * Math.abs(v1)) && (dv2 < 1.0e-6 * Math.abs(v2))) {
+				g2.setColor(Color.WHITE);
+				disp[rr] = false;
+			} else {
+				disp[rr] = true;
+				final double delta = 0.5 * Math.abs((dv1 - dv2) / (dv1 + dv2));
+				g2.setColor(corr.map(delta));
+			}
+			g2.fillRect((2 + rr) * pixDim, rr * pixDim, pixDim, pixDim);
+		}
+		for (int rr = 0; rr < dim; ++rr) {
+			if (disp[rr]) {
+				for (int cc = 0; cc < dim; ++cc) {
+					if (disp[cc]) {
+						final double cc1 = uvs1.getCorrelationCoefficient(rr, cc);
+						final double cc2 = uvs2r.getCorrelationCoefficient(rr, cc);
+						final double delta = 0.5 * Math.abs(cc1 - cc2);
+						g2.setColor(corr.map(delta));
+						g2.fillRect((2 + rr) * pixDim, rr * pixDim, pixDim, pixDim);
+					}
+				}
 			}
 		}
 		return bi;
@@ -1424,6 +1483,14 @@ public class UncertainValues //
 					return false;
 		}
 		return true;
+	}
+
+	public String toString() {
+		List<Object> labels = new ArrayList<>();
+		for (int i = 0; (i < mLabels.size()) && (i < 5); ++i)
+			labels.add(mLabels.get(i));
+		return "UVS[" + labels.toString()
+				+ (labels.size() < mLabels.size() ? "+" + (mLabels.size() - labels.size()) + " more" : "") + "]";
 	}
 
 }

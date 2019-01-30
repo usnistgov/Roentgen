@@ -1,8 +1,10 @@
 package gov.nist.microanalysis.roentgen.physics.composition;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -10,91 +12,100 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.AtomTypeTag;
+import gov.nist.microanalysis.roentgen.physics.composition.Composition.AtomFractionTag;
+import gov.nist.microanalysis.roentgen.physics.composition.Composition.AtomicWeightTag;
+import gov.nist.microanalysis.roentgen.physics.composition.Composition.ElementTag;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 
-public class AtomFractionToMassFraction extends LabeledMultivariateJacobianFunction {
+/**
+ * Converts compositional data in atom fraction into mass fraction. Requires
+ * also the atomic weights for each element in the material.
+ * 
+ * @author nicholas
+ *
+ */
+public class AtomFractionToMassFraction //
+		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
-	/**
-	 * Nominally the tabulated atomic weights but can be customized for special
-	 * situations.
-	 */
-	private final Map<Element, Double> mAtomicWeights;
-
-	private static Map<Element, Double> buildAtomicWeights(final Set<Element> elms) {
-		final Map<Element, Double> res = new HashMap<>();
-		for (final Element elm : elms)
-			res.put(elm, elm.getAtomicWeight());
+	private static List<? extends Object> buildInputTags(final String html, final Collection<Element> elms) {
+		final List<Object> res = new ArrayList<>();
+		res.addAll(Composition.buildAtomFractionTags(html, elms));
+		res.addAll(Composition.buildAtomicWeightTags(html, elms));
 		return res;
 	}
 
 	/**
-	 * Constructs a AtomicFractionToMassFraction
+	 * Constructs a AtomicFractionToMassFraction instance.
 	 *
-	 * @param Composition   comp
-	 * @param atomicWeights
+	 * @param String html
+	 * @param Collection&lt;Element&gt; The elements present in the material.
 	 */
-	public AtomFractionToMassFraction(final Composition comp, final Map<Element, Double> atomicWeights) {
-		super(comp.getLabels(), Composition.buildTags(comp, Representation.MassFraction));
-		assert (comp.mRepresentation == Representation.AtomFraction)
-				|| (comp.mRepresentation == Representation.Stoichiometry);
-		mAtomicWeights = new HashMap<>(atomicWeights);
-	}
-
-	/**
-	 * Constructs a AtomicFractionToMassFraction
-	 *
-	 * @param Composition   comp
-	 * @param atomicWeights
-	 */
-	public AtomFractionToMassFraction(final Composition comp) {
-		this(comp, buildAtomicWeights(comp.getElementSet()));
+	public AtomFractionToMassFraction(final String html, final Collection<Element> elms) {
+		super(buildInputTags(html, elms), Composition.buildMassFractionTags(html, elms));
 	}
 
 	private double denom(final RealVector point) {
-		double res = 0.0;
+		Map<Element, Number> frac = new HashMap<>();
+		Map<Element, Number> wgt = new HashMap<>();
+
 		for (final Object tag : getInputLabels())
-			res += getValue(tag, point) * mAtomicWeights.get(((AtomTypeTag) tag).getElement());
+			if (tag instanceof AtomFractionTag)
+				frac.put(((AtomFractionTag) tag).getElement(), getValue(tag, point));
+			else if (tag instanceof AtomicWeightTag)
+				wgt.put(((AtomicWeightTag) tag).getElement(), getValue(tag, point));
+		double res = 0.0;
+		for (Map.Entry<Element, Number> me : frac.entrySet())
+			res += me.getValue().doubleValue() * wgt.get(me.getKey()).doubleValue();
 		return res;
 	}
 
-	private AtomTypeTag find(MassFractionTag mft) {
-		for (Object inp : getInputLabels())
-			if (inp instanceof AtomTypeTag) {
-				AtomTypeTag att = (AtomTypeTag) inp;
-				if (att.getElement() == mft.getElement())
-					return att;
-			}
-		return null;
+	private double delta(final ElementTag a1, final ElementTag a2) {
+		return a1.getElement().equals(a2.getElement()) ? 1.0 : 0.0;
 	}
 
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector vals = new ArrayRealVector(getOutputDimension());
-		final RealMatrix jac = NullableRealMatrix.build(getInputDimension(), getOutputDimension());
+		final RealMatrix jac = NullableRealMatrix.build(getOutputDimension(), getInputDimension());
 		final double den = denom(point);
-		for (int i = 0; i < getOutputDimension(); ++i) {
-			final MassFractionTag mft = (MassFractionTag) getOutputLabels().get(i);
-			final double zm = mAtomicWeights.get(mft.getElement());
-			for (int j = 0; j < getInputDimension(); ++j) {
-				final AtomTypeTag aft = (AtomTypeTag) getInputLabels().get(j);
-				final double za = mAtomicWeights.get(aft.getElement());
-				double dCdA;
-				if (mft.getElement() == aft.getElement()) {
-					final double atomFrac = getValue(aft, point);
-					final double mf = atomFrac * mAtomicWeights.get(aft.getElement()) / den;
-					vals.setEntry(i, mf);
-					dCdA = zm / den - atomFrac * Math.pow(zm / den, 2.0);
+		for (int o1 = 0; o1 < getOutputDimension(); ++o1) {
+			final MassFractionTag mft = (MassFractionTag) getOutputLabel(o1);
+			final double w1 = getValue(Composition.buildAtomicWeightTag(mft.getHTML(), mft.getElement()), point);
+			final double a1 = getValue(Composition.buildAtomFractionTag(mft.getHTML(), mft.getElement()), point);
+			final double c1 = a1 * w1 / den;
+			vals.setEntry(o1, c1);
+			for (int i2 = 0; i2 < getInputDimension(); ++i2) {
+				final Object inLabel = getInputLabel(i2);
+				if (inLabel instanceof AtomFractionTag) {
+					final AtomFractionTag aft = (AtomFractionTag) inLabel;
+					final double w2 = getValue(Composition.buildAtomicWeightTag(aft.getHTML(), aft.getElement()), point);
+					jac.setEntry(o1, i2, (w1 / den) * (delta(mft, aft) - a1 * w2 / den));
 				} else {
-					final double aa = getValue(find(mft), point);
-					dCdA = -aa * zm * za / Math.pow(den, 2.0);
+					assert inLabel instanceof AtomicWeightTag;
+					final AtomicWeightTag awt = (AtomicWeightTag) inLabel;
+					final AtomFractionTag aft2 = Composition.buildAtomFractionTag(awt.getHTML(), awt.getElement());
+					final double a2 = getValue(aft2, point);
+					jac.setEntry(o1, i2, (a1 / den) * (delta(mft, aft2) - w1 * a2 / den));
 				}
-				writeJacobian(i, aft, dCdA, jac);
 			}
 		}
 		return Pair.create(vals, jac);
+	}
+
+	@Override
+	public RealVector optimized(final RealVector point) {
+		final RealVector vals = new ArrayRealVector(getOutputDimension());
+		final double den = denom(point);
+		for (int i1 = 0; i1 < getOutputDimension(); ++i1) {
+			final MassFractionTag mft = (MassFractionTag) getOutputLabel(i1);
+			final double w1 = getValue(Composition.buildAtomicWeightTag(mft.getHTML(), mft.getElement()), point);
+			final double a1 = getValue(Composition.buildAtomFractionTag(mft.getHTML(), mft.getElement()), point);
+			final double c1 = a1 * w1 / den;
+			vals.setEntry(i1, c1);
+		}
+		return vals;
 	}
 }

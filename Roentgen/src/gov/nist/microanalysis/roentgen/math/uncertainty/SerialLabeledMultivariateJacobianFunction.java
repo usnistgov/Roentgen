@@ -186,6 +186,10 @@ public class SerialLabeledMultivariateJacobianFunction //
 		mFinalOutputs = new HashSet<>(getOutputLabels());
 		mFinalOutputs.retainAll(finalOutputs);
 	}
+	
+	public String toString() {
+		return mName+"["+getInputDimension()+","+getOutputDimension()+"]";
+	}
 
 	@Override
 	public String toHTML(final Mode mode) {

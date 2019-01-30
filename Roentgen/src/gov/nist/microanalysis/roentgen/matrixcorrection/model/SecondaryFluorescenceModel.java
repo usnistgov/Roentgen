@@ -14,12 +14,14 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 
 /**
- * @author nicho
+ * @author Nicholas WM Ritchie
  *
  */
-public class SecondaryFluorescenceModel extends LabeledMultivariateJacobianFunction {
+public class SecondaryFluorescenceModel //
+		extends LabeledMultivariateJacobianFunction {
 
-	public static class SecondaryFluorescenceLabel extends BaseLabel<MatrixCorrectionDatum, AtomicShell, Object> {
+	public static class SecondaryFluorescenceLabel //
+			extends BaseLabel<MatrixCorrectionDatum, AtomicShell, Object> {
 
 		public SecondaryFluorescenceLabel(final MatrixCorrectionDatum mcd, final AtomicShell shell) {
 			super("Fs", mcd, shell);
@@ -41,7 +43,6 @@ public class SecondaryFluorescenceModel extends LabeledMultivariateJacobianFunct
 	public SecondaryFluorescenceModel(final List<? extends Object> inputLabels,
 			final List<? extends Object> outputLabels) {
 		super(inputLabels, outputLabels);
-		// TODO Auto-generated constructor stub
 	}
 
 	/*

@@ -31,17 +31,17 @@ import gov.nist.microanalysis.roentgen.tests.spectrum.TestSpectrumFileReader;
   TestUncertainValue.class,
   TestUncertainValues.class,
   TestUtility.class,
-  KRatioCorrectionModelTest.class,
-  KRatioIterationTest.class,
   TwoPointContinuumModelTest.class,
-  XPPMatrixCorrection2Test.class,
-  CompositionTest2.class,
   TestMassAbsorptionCoefficient.class,
   TestReadSpectrum.class,
   TestEDSFittingFilter.class,
   TestLinearSpectrumFit.class,
   TestLineshapeCalibration.class,
-  TestSpectrumFileReader.class
+  TestSpectrumFileReader.class,
+  CompositionTest2.class,
+  XPPMatrixCorrection2Test.class,
+  KRatioCorrectionModelTest.class,
+  KRatioIterationTest.class
 })
 
 public class TestSuite {

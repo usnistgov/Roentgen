@@ -60,16 +60,16 @@ public class TestMassAbsorptionCoefficient {
 	}
 
 	@Test
-	public void testCompute() throws ParseException {
-		final Composition fe = Composition.parse("Fe").asMassFraction();
+	public void testCompute() throws ParseException, ArgumentException {
+		final Composition fe = Composition.parse("Fe");
 		testMac(fe, Element.Oxygen, XRayTransition.KL3, 3625.375742042211, 208.35034389516583);
 		testMac(Element.Iron, Element.Oxygen, XRayTransition.KL3, 3625.375742042211, 208.35034389516583);
 
-		final Composition sio2 = Composition.parse("SiO2").asMassFraction();
+		final Composition sio2 = Composition.parse("SiO2");
 		testMac(sio2, Element.Uranium, XRayTransition.M5N7, 483.741, 4.0156);
 		testMac(sio2, Element.Uranium, XRayTransition.M3N5, 349.892, 2.91998);
 
-		final Composition u3o8 = Composition.parse("U3O8").asMassFraction();
+		final Composition u3o8 = Composition.parse("U3O8");
 		testMac(u3o8, Element.Oxygen, XRayTransition.KA1, 6528.85, 365.556);
 		testMac(u3o8, Element.Uranium, XRayTransition.LA1, 63.5378, 0.632347);
 	}
@@ -86,20 +86,17 @@ public class TestMassAbsorptionCoefficient {
 
 	@Test
 	public void testMultiMaterial() throws ParseException, IOException, ArgumentException {
-		final Composition mf1 = Composition.parse("Fe2O3").asMassFraction();
-		final Composition mf2 = Composition.parse("FeO2").asMassFraction();
-		final Composition mf3 = Composition.parse("FeO").asMassFraction();
-		final Composition mf4 = Composition.parse("Fe3Al2(SiO4)3").asMassFraction();
-		final Composition mf5 = Composition.parse("Al2O3").asMassFraction();
-		final Composition mf6 = Composition.parse("CaF2").asMassFraction();
+		final Composition mf1 = Composition.parse("Fe2O3");
+		final Composition mf2 = Composition.parse("FeO2");
+		final Composition mf3 = Composition.parse("FeO");
+		final Composition mf4 = Composition.parse("Fe3Al2(SiO4)3");
+		final Composition mf5 = Composition.parse("Al2O3");
+		final Composition mf6 = Composition.parse("CaF2");
 		final Composition[] mfs = new Composition[] { mf1, mf2, mf3, mf4, mf5, mf6 };
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Iron, XRayTransition.LA1);
 		final Pair<UncertainValues, MaterialMACFunction> pr = MaterialMACFunction.buildCompute(Arrays.asList(mfs), cxr);
 		final UncertainValues uv = UncertainValues.propagate(pr.getSecond(), pr.getFirst());
-		final RealVector minCov = new ArrayRealVector(pr.getFirst().getDimension());
-		minCov.set(1.0);
-		final UncertainValues mc = UncertainValues.propagateMC(pr.getSecond(),
-				UncertainValues.forceMinCovariance(pr.getFirst(), minCov), 16000);
+		final UncertainValues mc = UncertainValues.propagateMC(pr.getSecond(),pr.getFirst(), 16000);
 		if (REPORT) {
 			final Report r = new Report("TestMultiMAC");
 			for (final Composition mf : mfs)

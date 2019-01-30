@@ -34,7 +34,7 @@ public abstract class MatrixCorrectionDatum //
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(mBeamEnergy, mTakeOffAngle, mRoughness);
+		return Objects.hash(mBeamEnergy, mTakeOffAngle, mRoughness, mCoating);
 	}
 
 	@Override
@@ -48,7 +48,8 @@ public abstract class MatrixCorrectionDatum //
 		final MatrixCorrectionDatum other = (MatrixCorrectionDatum) obj;
 		return Objects.equals(mBeamEnergy, other.mBeamEnergy) && //
 				Objects.equals(mTakeOffAngle, other.mTakeOffAngle) && //
-				Objects.equals(mRoughness, other.mRoughness);
+				Objects.equals(mRoughness, other.mRoughness) && //
+				Objects.equals(mCoating, other.mCoating);
 	}
 
 	/**
@@ -124,7 +125,7 @@ public abstract class MatrixCorrectionDatum //
 	public Layer getCoating() {
 		return mCoating.orElse(null);
 	}
-	
+
 	/**
 	 * Returns the Composition of the standard or the estimated Composition of the
 	 * unknown.

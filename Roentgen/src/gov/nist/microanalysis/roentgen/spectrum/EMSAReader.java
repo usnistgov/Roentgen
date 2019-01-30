@@ -22,6 +22,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
@@ -158,7 +159,7 @@ public class EMSAReader implements ISpectrumReader {
 		return null;
 	}
 
-	private Composition parseComposition(final String compStr) {
+	private Composition parseComposition(final String compStr) throws ArgumentException {
 		// Name,(el1:qty1),(el2:qty2),...,density
 		try {
 			final String[] items = compStr.split(",");
@@ -291,8 +292,12 @@ public class EMSAReader implements ISpectrumReader {
 			// if(props.containsKey("##DET_HASH"))
 			// spec.setOtherProperty("DET_HASH",
 			// UUID.fromString(props.get("##DET_HASH")));
-			if (props.containsKey("##D2STDCMP")) // DTSA-II custom tag
-				spec.setComposition(parseComposition(props.get("##D2STDCMP")));
+			try {
+				if (props.containsKey("##D2STDCMP")) // DTSA-II custom tag
+					spec.setComposition(parseComposition(props.get("##D2STDCMP")));
+			} catch (ArgumentException e) {
+				System.err.println("Unable to parse: " + props.get("##D2STDCMP"));
+			}
 			// Cases: nextDatum then "," or nextDatum then EOL or EOL
 			return spec;
 		}

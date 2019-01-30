@@ -1,6 +1,7 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -13,8 +14,6 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariat
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
-import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
  * @author Nicholas W. M. Ritchie
@@ -28,11 +27,7 @@ public class KRatioCorrectionModel2 //
 	) {
 		assert KRatioLabel.areAllSameUnknownElements(krs);
 		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
-		final Set<Element> elms = unk.getElementSet();
-		final List<Object> res = new ArrayList<>();
-		for (final Element elm : elms)
-			res.add(Composition.buildMassFractionTag(unk.getComposition(), elm));
-		return res;
+		return unk.getComposition().massFractionTags();
 	}
 
 	public KRatioCorrectionModel2(//
@@ -42,15 +37,18 @@ public class KRatioCorrectionModel2 //
 	}
 
 	static public Pair<LabeledMultivariateJacobianFunction, UncertainValues> buildXPPModel( //
-			final Set<KRatioLabel> krs, final Set<MatrixCorrectionModel2.Variate> variates //
+			final UncertainValues krs, final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
+		Set<KRatioLabel> keySet = new HashSet<>(krs.extractTypeOfLabel(KRatioLabel.class));
 		final List<LabeledMultivariateJacobianFunction> steps = new ArrayList<>();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(krs, variates);
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(keySet, variates);
 		steps.add(xpp);
-
-		steps.add(new KRatioCorrectionModel2(krs));
-		return Pair.create(new SerialLabeledMultivariateJacobianFunction("Full K-ratio correction", steps),
-				xpp.buildInput());
+		steps.add(new KRatioCorrectionModel2(keySet));
+		final UncertainValues input = UncertainValues.combine(xpp.buildInput(), krs);
+		return Pair.create( //
+				new SerialLabeledMultivariateJacobianFunction("Full K-ratio correction", steps), //
+				input //
+		);
 	}
 
 	public UncertainValues getInputs(final MatrixCorrectionModel2 mcm, final UncertainValues inputs,

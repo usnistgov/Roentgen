@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -339,13 +338,16 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 			@Override
 			public Pair<RealVector, RealMatrix> value(final RealVector point) {
+				RealVector rv = new ArrayRealVector(1);
+				RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
+
 				double sum = 0.0;
-				for (int i = 0; i < point.getDimension(); ++i)
+				for (int i = 0; i < point.getDimension(); ++i) {
 					sum += point.getEntry(i);
-				final double[] data = new double[point.getDimension()];
-				Arrays.fill(data, 1.0);
-				return Pair.create(MatrixUtils.createRealVector(new double[] { sum }),
-						MatrixUtils.createRowRealMatrix(data));
+					rm.setEntry(0, i, 1.0);
+				}
+				rv.setEntry(0, sum);
+				return Pair.create(rv, rm);
 			}
 
 		};
@@ -366,12 +368,12 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 			@Override
 			public Pair<RealVector, RealMatrix> value(final RealVector point) {
-				final double dot = point.dotProduct(coeffs);
-				final double[][] jac = new double[1][point.getDimension()];
+				RealVector rv = new ArrayRealVector(1);
+				RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
 				for (int v = 0; v < point.getDimension(); ++v)
-					jac[0][v] = coeffs.getEntry(v);
-				final RealVector vals = MatrixUtils.createRealVector(new double[] { dot });
-				return Pair.create(vals, MatrixUtils.createRealMatrix(jac));
+					rm.setEntry(0, v, coeffs.getEntry(v));
+				rv.setEntry(0, point.dotProduct(coeffs));
+				return Pair.create(rv, rm);
 			}
 		};
 	}
@@ -450,6 +452,17 @@ abstract public class LabeledMultivariateJacobianFunction //
 			"Can't find the constant " + label + " in " + toString();
 			return getConstant(label);
 		}
+	}
+
+	/**
+	 * A value either with or without uncertainty has been defined for this label.
+	 * 
+	 * @param label
+	 * @return true if a value has been defined.
+	 */
+	public boolean hasValue(final Object label) {
+		return (inputIndex(label) != -1) || //
+				isConstant(label);
 	}
 
 	public RealMatrix computeDelta( //

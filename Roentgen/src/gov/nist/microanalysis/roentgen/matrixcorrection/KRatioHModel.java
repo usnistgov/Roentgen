@@ -25,10 +25,7 @@ class KRatioHModel extends LabeledMultivariateJacobianFunction {
 	static List<? extends Object> buildOutputs(//
 			final Composition unk //
 	) {
-		final List<Object> res = new ArrayList<>();
-		for (final Element elm : unk.getElementSet())
-			res.add(Composition.buildMassFractionTag(unk, elm));
-		return res;
+		return unk.massFractionTags();
 	}
 
 	static List<? extends Object> buildInputs(//

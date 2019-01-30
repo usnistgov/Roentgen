@@ -89,7 +89,7 @@ public class UnknownMatrixCorrectionDatum //
 			final double roughness) {
 		super(beamEnergy, takeOffAngle, roughness);
 		mElements = comp.getElementSet();
-		mEstimate = Optional.of(comp.asMassFraction());
+		mEstimate = Optional.of(comp);
 	}
 
 	/**
@@ -105,7 +105,7 @@ public class UnknownMatrixCorrectionDatum //
 			Layer coating) {
 		super(beamEnergy, takeOffAngle, roughness, coating);
 		mElements = comp.getElementSet();
-		mEstimate = Optional.of(comp.asMassFraction());
+		mEstimate = Optional.of(comp);
 	}
 
 	public Set<Element> getElementSet() {
@@ -121,7 +121,7 @@ public class UnknownMatrixCorrectionDatum //
 
 	public void setEstimated(final Composition comp) {
 		assert validate(comp);
-		mEstimate = Optional.of(comp.asMassFraction());
+		mEstimate = Optional.of(comp);
 		mElements.clear();
 		mElements.addAll(comp.getElementSet());
 	}
@@ -131,14 +131,14 @@ public class UnknownMatrixCorrectionDatum //
 	}
 
 	public Composition getEstimate() {
-		assert mEstimate.get().getNativeRepresentation() == Representation.MassFraction;
+		assert mEstimate.get().hasRepresentation(Representation.MassFraction);
 		return mEstimate.get();
 	}
 
 	@Override
 	public Composition getComposition() {
 		assert mEstimate.isPresent();
-		assert mEstimate.get().getNativeRepresentation() == Representation.MassFraction;
+		assert mEstimate.get().hasRepresentation(Representation.MassFraction);
 		return mEstimate.get();
 	}
 

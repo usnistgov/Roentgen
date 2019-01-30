@@ -125,8 +125,8 @@ public class XPPMatrixCorrection2 //
 	/**
 	 * Ensure that the optimized and compute value are identical.
 	 * 
-	 * @param lmjf {@link ILabeledMultivariateFunction}
-	 * @param point Evaluation point
+	 * @param lmjf     {@link ILabeledMultivariateFunction}
+	 * @param point    Evaluation point
 	 * @param computed Comparison value
 	 */
 	static private void checkOptimized(ILabeledMultivariateFunction lmjf, RealVector inp, RealVector computed) {
@@ -169,8 +169,10 @@ public class XPPMatrixCorrection2 //
 					? MatrixCorrectionModel2.Variate.StandardComposition
 					: MatrixCorrectionModel2.Variate.UnknownComposition;
 			for (final Element elm : comp.getElementSet()) {
-				if (variates.contains(varType))
+				if (variates.contains(varType)) {
 					res.add(Composition.buildMassFractionTag(comp, elm));
+					res.add(Composition.buildAtomicWeightTag(comp, elm));
+				}
 				if (variates.contains(MatrixCorrectionModel2.Variate.MeanIonizationPotential))
 					res.add(MatrixCorrectionModel2.meanIonizationLabel(elm));
 			}
@@ -209,8 +211,7 @@ public class XPPMatrixCorrection2 //
 				Ci[i] = getValue(tagCi[i], point);
 				Ji[i] = getValue(tagJi[i], point);
 				tagAi[i] = Composition.buildAtomicWeightTag(comp, elm);
-				final int ai = inputIndex(tagAi);
-				Ai[i] = ai >= 0 ? point.getEntry(ai) : elm.getAtomicWeight();
+				Ai[i] = getValue(tagAi[i], point);
 				Z[i] = elm.getAtomicNumber();
 			}
 
@@ -273,8 +274,7 @@ public class XPPMatrixCorrection2 //
 				Ci[i] = getValue(Composition.buildMassFractionTag(comp, elm), point);
 				Z[i] = elm.getAtomicNumber();
 				Ji[i] = getValue(MatrixCorrectionModel2.meanIonizationLabel(elm), point);
-				final int ai = inputIndex(Composition.buildAtomicWeightTag(comp, elm));
-				final double a = ai >= 0 ? point.getEntry(ai) : elm.getAtomicWeight();
+				final double a = getValue(Composition.buildAtomicWeightTag(comp, elm), point);
 				ZoA[i] = Z[i] / a;
 			}
 
@@ -717,7 +717,8 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oRbar, iOneOverS, dRbardF * dFdOneOverS);
 			rm.setEntry(oRbar, iQlaE0, dRbardF * dFdQlaE0);
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -884,7 +885,8 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(ob, iF, (phi0 * Math.sqrt(2.0)) / (2. * Math.pow(F, 2) * k3));
 
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1009,7 +1011,8 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oa, iRbar, dadRbar); // C1
 
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1098,7 +1101,8 @@ public class XPPMatrixCorrection2 //
 				// rm.setEntry(oeps, ib, 0.0); // C1
 			}
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1213,7 +1217,8 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oA, ieps, dAdeps); // C1-Ok
 
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1330,7 +1335,8 @@ public class XPPMatrixCorrection2 //
 			rv.setEntry(ochi, chi);
 
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1449,7 +1455,8 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFx, ieps, dFxdeps); // C2
 			writeJacobian(oFx, tagRoughness, dFxddz, rm);
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				RealVector dpt = point.mapMultiply(1.0e-6);
 				final int itr = inputIndex(tagRoughness);
 				if (itr >= 0)
@@ -1563,7 +1570,8 @@ public class XPPMatrixCorrection2 //
 			rv.setEntry(oFxRed, coatTrans * Fx);
 
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1686,7 +1694,8 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFxFs, iFxs, 1.0 / Fs); // C2
 
 			if (VALIDATE) {
-				checkOptimized(this, point, rv);;
+				checkOptimized(this, point, rv);
+				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -2090,7 +2099,7 @@ public class XPPMatrixCorrection2 //
 				results.add(uvs);
 			}
 		}
-		{
+		if (isSet(Variate.SecondaryFluorescence) == withUnc) {
 			final Map<Object, Number> mon = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
 				for (final MatrixCorrectionDatum mcd : Arrays.asList(krl.getStandard(), krl.getUnknown()))
@@ -2101,6 +2110,7 @@ public class XPPMatrixCorrection2 //
 							mon.put(sfLbl, new UncertainValue(1.0, 0.01));
 					}
 			}
+
 			results.add(new UncertainValues(mon));
 		}
 		// Make sure that there are no replicated Compositions
@@ -2111,8 +2121,11 @@ public class XPPMatrixCorrection2 //
 			if (isSet(Variate.UnknownComposition) == withUnc)
 				allComps.add(krl.getUnknown().getComposition());
 		}
-		results.addAll(allComps);
-		return UncertainValues.combine(results.toArray(new UncertainValues[results.size()]));
+		for (Composition comp : allComps) {
+			results.add(comp.toMassFraction());
+			results.add(comp.getAtomicWeights());
+		}
+		return UncertainValues.combine(results);
 	}
 
 	public Set<Element> getElements() {
@@ -2179,7 +2192,7 @@ public class XPPMatrixCorrection2 //
 		final List<UncertainValues> inputs = new ArrayList<>();
 		inputs.add(macInps);
 		for (final Composition comp : comps.keySet())
-			inputs.add(comp);
+			inputs.add(comp.toMassFraction());
 		return inputs.size() > 0 ? UncertainValues.propagate(all, UncertainValues.combine(inputs))
 				: UncertainValues.NULL;
 	}

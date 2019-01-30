@@ -75,16 +75,18 @@ public class KRatioCorrectionModelTest {
 		final ElementXRaySet alTr = ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1);
 		final ElementXRaySet siTr = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
 
-		final Set<KRatioLabel> kratios = new HashSet<>();
-		kratios.add(new KRatioLabel(unkMcd, stdK411Mcd, siTr, Method.Measured));
-		kratios.add(new KRatioLabel(unkMcd, stdK411Mcd, feTr, Method.Measured));
-		kratios.add(new KRatioLabel(unkMcd, stdK411Mcd, mgTr, Method.Measured));
-		kratios.add(new KRatioLabel(unkMcd, stdK411Mcd, caTr, Method.Measured));
-		kratios.add(new KRatioLabel(unkMcd, stdK411Mcd, oTr, Method.Measured));
-		kratios.add(new KRatioLabel(unkMcd, stdAlMcd, alTr, Method.Measured));
+
+		final Map<KRatioLabel, Number> mouv = new HashMap<>();
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, siTr, Method.Measured), new UncertainValue(0.794983));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, feTr, Method.Measured), new UncertainValue(0.687101));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, mgTr, Method.Measured), new UncertainValue(1.364719));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, caTr, Method.Measured), new UncertainValue(0.980070));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, oTr, Method.Measured), new UncertainValue(1.011527));
+		mouv.put(new KRatioLabel(unkMcd, stdAlMcd, alTr, Method.Measured), new UncertainValue(0.032001));
+		final UncertainValues kuv = new UncertainValues(mouv);
 
 		final Set<Object> outputs = new HashSet<>();
-		for (final KRatioLabel krl : kratios) {
+		for (final KRatioLabel krl : mouv.keySet()) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				outputs.add(MatrixCorrectionModel2.zafLabel(krl.getUnknown(), meStd, cxr));
@@ -94,27 +96,14 @@ public class KRatioCorrectionModelTest {
 		}
 
 		final Pair<LabeledMultivariateJacobianFunction, UncertainValues> pr = KRatioCorrectionModel2
-				.buildXPPModel(kratios, MatrixCorrectionModel2.defaultVariates());
+				.buildXPPModel(kuv, MatrixCorrectionModel2.defaultVariates());
 
 		final LabeledMultivariateJacobianFunction krcm = pr.getFirst();
-		final UncertainValues xppInput = pr.getSecond();
+		final UncertainValues uvs = pr.getSecond();
 
 		final Report r = new Report("KRationCorrectionModel - test 1");
 		try {
-			r.add(krcm, Mode.VERBOSE);
-
-			final Map<Object, Number> mouv = new HashMap<>();
-
-			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, siTr, Method.Measured), new UncertainValue(0.794983));
-			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, feTr, Method.Measured), new UncertainValue(0.687101));
-			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, mgTr, Method.Measured), new UncertainValue(1.364719));
-			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, caTr, Method.Measured), new UncertainValue(0.980070));
-			mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, oTr, Method.Measured), new UncertainValue(1.011527));
-			mouv.put(new KRatioLabel(unkMcd, stdAlMcd, alTr, Method.Measured), new UncertainValue(0.032001));
-			final UncertainValues kuv = new UncertainValues(mouv);
-
-			final UncertainValues uvs = UncertainValues.combine(kuv, xppInput);
-			
+			r.add(krcm, Mode.VERBOSE);			
 			
 			final LabeledMultivariateJacobian nmvj = new LabeledMultivariateJacobian(krcm, uvs);
 			r.addHeader("Jacobian");
@@ -195,12 +184,10 @@ public class KRatioCorrectionModelTest {
 		final UncertainValues kratios = new UncertainValues(lkr);
 
 		final Pair<LabeledMultivariateJacobianFunction, UncertainValues> pr = KRatioCorrectionModel2
-				.buildXPPModel(lkr.keySet(), MatrixCorrectionModel2.defaultVariates());
+				.buildXPPModel(kratios, MatrixCorrectionModel2.defaultVariates());
 
 		final LabeledMultivariateJacobianFunction krcm = pr.getFirst();
-		final UncertainValues xppInput = pr.getSecond();
-
-		final UncertainValues uvs = UncertainValues.combine(kratios, xppInput);
+		final UncertainValues uvs = pr.getSecond();
 
 		final Report report = new Report("K-Ratio (2)");
 		try {

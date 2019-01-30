@@ -50,8 +50,9 @@ public class KRatioIteration {
 	 *
 	 * @param kratios
 	 * @return {@link Composition}
+	 * @throws ArgumentException 
 	 */
-	public Composition computeEstimate(final UncertainValues kratios) {
+	public Composition computeEstimate(final UncertainValues kratios) throws ArgumentException {
 		final Map<Object, Double> krm = kratios.getValueMap();
 		final Map<Element, Number> est = new HashMap<>();
 		for (final Map.Entry<Object, Double> me : krm.entrySet()) {
@@ -86,9 +87,7 @@ public class KRatioIteration {
 		final CompositionFromKRatios2 model = new CompositionFromKRatios2(mKRatios,
 				Collections.singleton(MatrixCorrectionModel2.Variate.UnknownComposition));
 		// Figure out which elements are in the unknown
-		final List<MassFractionTag> compInp = new ArrayList<>();
-		for (final Element elm : elms)
-			compInp.add(Composition.buildMassFractionTag(unk, elm));
+		final List<MassFractionTag> compInp = unk.massFractionTags();
 		// Trim the inputs down to only the elements in the unknown...
 		final TrimmedNamedMultivariateJacobianFunction trimmed = //
 				new TrimmedNamedMultivariateJacobianFunction(model, compInp, model.getOutputLabels());
