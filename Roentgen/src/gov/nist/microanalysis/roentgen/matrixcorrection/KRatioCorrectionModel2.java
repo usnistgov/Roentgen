@@ -36,7 +36,7 @@ public class KRatioCorrectionModel2 //
 		super(new KRatioHModel2(krs), buildOutputs(krs));
 	}
 
-	static public Pair<LabeledMultivariateJacobianFunction, UncertainValues> buildXPPModel( //
+	static public Pair<SerialLabeledMultivariateJacobianFunction, UncertainValues> buildXPPModel( //
 			final UncertainValues krs, final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
 		Set<KRatioLabel> keySet = new HashSet<>(krs.extractTypeOfLabel(KRatioLabel.class));

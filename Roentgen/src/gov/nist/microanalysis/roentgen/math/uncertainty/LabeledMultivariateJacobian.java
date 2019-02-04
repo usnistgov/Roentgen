@@ -316,31 +316,44 @@ public class LabeledMultivariateJacobian //
 			return table.toHTML(Mode.NORMAL);
 		}
 		case NORMAL:
-		case VERBOSE:
 		default: {
-			final Table valt = new Table();
 			final Table jact = new Table();
 			final List<Item> items = new ArrayList<>();
+			items.add(Table.td("Output"));
+			items.add(Table.td("Value"));
 			for (int r = 0; r < getInputDimension(); ++r)
 				items.add(Table.td(HTML.toHTML(getInputLabels().get(r), Mode.TERSE)));
 			jact.addRow(items);
-			valt.addRow(Table.td("Output"), Table.td("Values"));
 			for (int r = 0; r < getOutputDimension(); ++r) {
 				final Object label = getOutputLabels().get(r);
-				valt.addRow(Table.td(HTML.toHTML(label, Mode.TERSE)), Table.td(nf.formatHTML(mValues.getEntry(r))));
 				items.clear();
-				// items.add(Table.td(HTML.toHTML(getInputLabels().get(r),
-				// Mode.TERSE)));
+				items.add(Table.td(HTML.toHTML(label, Mode.TERSE)));
+				items.add(Table.td(nf.format(mValues.getEntry(r))));
+				for (int c = 0; c < getInputDimension(); ++c)
+					items.add(Table.td(nf.format(mJacobian.getEntry(r, c))));
+				jact.addRow(items);
+			}
+			return jact.toHTML(Mode.NORMAL);
+		}
+		case VERBOSE:
+		{
+			final Table jact = new Table();
+			final List<Item> items = new ArrayList<>();
+			items.add(Table.td("Output"));
+			items.add(Table.td("Value"));
+			for (int r = 0; r < getInputDimension(); ++r)
+				items.add(Table.td(HTML.toHTML(getInputLabels().get(r), Mode.TERSE)));
+			jact.addRow(items);
+			for (int r = 0; r < getOutputDimension(); ++r) {
+				final Object label = getOutputLabels().get(r);
+				items.clear();
+				items.add(Table.td(HTML.toHTML(label, Mode.TERSE)));
+				items.add(Table.td(nf.formatHTML(mValues.getEntry(r))));
 				for (int c = 0; c < getInputDimension(); ++c)
 					items.add(Table.td(nf.formatHTML(mJacobian.getEntry(r, c))));
 				jact.addRow(items);
 			}
-
-			final Table res = new Table();
-			// res.addRow(Table.td("Values"), Table.td(), Table.td("Jacobian"));
-			res.addRow(Table.td(valt.toHTML(Mode.NORMAL)), Table.tdc("<bold>J</bold> ="),
-					Table.td(jact.toHTML(Mode.NORMAL)));
-			return res.toHTML(Mode.NORMAL);
+			return jact.toHTML(Mode.NORMAL);
 		}
 		}
 	}

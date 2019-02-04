@@ -64,7 +64,7 @@ abstract public class MatrixCorrectionModel2 //
 		}
 	}
 
-	private static class MatrixCorrectionDatumTag2<H> extends BaseLabel<MatrixCorrectionDatum, H, Object> {
+	public static class MatrixCorrectionDatumTag2<H> extends BaseLabel<MatrixCorrectionDatum, H, Object> {
 
 		MatrixCorrectionDatumTag2(final String name, final MatrixCorrectionDatum mcd, final H obj2) {
 			super(name, mcd, obj2);

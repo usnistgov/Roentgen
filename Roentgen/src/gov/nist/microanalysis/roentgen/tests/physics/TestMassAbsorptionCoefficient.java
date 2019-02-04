@@ -2,6 +2,7 @@ package gov.nist.microanalysis.roentgen.tests.physics;
 
 import static org.junit.Assert.assertEquals;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Arrays;
@@ -25,6 +26,8 @@ import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
 import gov.nist.microanalysis.roentgen.physics.XRay;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.swing.LinearToColor;
+import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 
 /**
  * <p>
@@ -96,7 +99,7 @@ public class TestMassAbsorptionCoefficient {
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Iron, XRayTransition.LA1);
 		final Pair<UncertainValues, MaterialMACFunction> pr = MaterialMACFunction.buildCompute(Arrays.asList(mfs), cxr);
 		final UncertainValues uv = UncertainValues.propagate(pr.getSecond(), pr.getFirst());
-		final UncertainValues mc = UncertainValues.propagateMC(pr.getSecond(),pr.getFirst(), 16000);
+		final UncertainValues mc = UncertainValues.propagateMC(pr.getSecond(), pr.getFirst(), 16000);
 		if (REPORT) {
 			final Report r = new Report("TestMultiMAC");
 			for (final Composition mf : mfs)
@@ -116,6 +119,56 @@ public class TestMassAbsorptionCoefficient {
 				Assert.assertEquals(uv.getCovariance(p, q), mc.getCovariance(p, q),
 						0.05 * Math.sqrt(uv.getVariance(p) * uv.getVariance(q)));
 			}
+		}
+
+	}
+
+	@Test
+	public void testK412() throws ParseException, IOException, ArgumentException {
+
+		final Composition k412 = Composition.combine("K412", //
+				Pair.create(Composition.parse("SiO2"), new UncertainValue(0.4541, 0.0077)), //
+				Pair.create(Composition.parse("FeO"), new UncertainValue(0.0994, 0.0018)), //
+				Pair.create(Composition.parse("MgO"), new UncertainValue(0.1966, 0.0025)), //
+				Pair.create(Composition.parse("CaO"), new UncertainValue(0.1544, 0.0015)), //
+				Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)));
+		final Composition mf1 = Composition.parse("MgO");
+		final Composition mf2 = Composition.parse("Al2O3");
+		final Composition mf3 = Composition.parse("SiO2");
+		final Composition mf4 = Composition.parse("CaF2");
+		final Composition mf5 = Composition.parse("Fe");
+		final Composition mf6 = Composition.combine("K411", //
+						Pair.create(Composition.parse("SiO2"), new UncertainValue(0.5389, 0.0096)), //
+						Pair.create(Composition.parse("FeO"), new UncertainValue(0.1448, 0.0027)), //
+						Pair.create(Composition.parse("MgO"), new UncertainValue(0.1512, 0.0020)), //
+						Pair.create(Composition.parse("CaO"), new UncertainValue(0.1549, 0.0015)));
+		final Composition[] mfs = new Composition[] { k412, mf1, mf2, mf3, mf4, mf5, mf6 };
+		final CharacteristicXRay[] cxrs = { CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1),
+				CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1),
+				CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1),
+				CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1),
+				CharacteristicXRay.create(Element.Calcium, XRayTransition.KA1),
+				CharacteristicXRay.create(Element.Iron, XRayTransition.KA1) };
+		final Report r = new Report("Test K412");
+		try {
+			for (CharacteristicXRay cxr : cxrs) {
+				final Pair<UncertainValues, MaterialMACFunction> pr = MaterialMACFunction
+						.buildCompute(Arrays.asList(mfs), cxr);
+				final UncertainValues uv = UncertainValues.propagate(pr.getSecond(), pr.getFirst());
+				//final UncertainValues mc = UncertainValues.propagateDeltaOrdered(pr.getSecond(), pr.getFirst(),
+				//		pr.getFirst().getValues().mapMultiply(0.001));
+				r.addHeader(cxr);
+				r.addSubHeader("Taylor");
+				r.add(uv);
+				r.addHTML(uv.toHTML(Mode.NORMAL));
+				//r.addSubHeader("Delta");
+				//r.add(mc);
+				final ValueToLog3 V2L3 = new ValueToLog3(1.0);
+				r.addImage(uv.asCovarianceBitmap(20, V2L3, V2L3), "Taylor");
+				//r.addImage(mc.asCovarianceBitmap(8, V2L3, L2C), "Delta");
+			}
+		} finally {
+			r.inBrowser(Mode.VERBOSE);
 		}
 
 	}

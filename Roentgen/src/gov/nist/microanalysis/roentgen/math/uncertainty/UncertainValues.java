@@ -405,10 +405,7 @@ public class UncertainValues //
 	public static UncertainValues zeroBut(final Object label, final UncertainValues input) {
 		final UncertainValues res = new UncertainValues(input.getLabels(), input.getValues(), 0.0);
 		final int idx = input.indexOf(label);
-		for (int i = 0; i < res.getDimension(); ++i) {
-			res.mCovariance.setEntry(i, idx, input.getCovariance(i, idx));
-			res.mCovariance.setEntry(idx, i, input.getCovariance(idx, i));
-		}
+		res.mCovariance.setEntry(idx, idx, input.getCovariance(idx, idx));
 		return res;
 	}
 
@@ -421,23 +418,37 @@ public class UncertainValues //
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	public UncertainValues reorder(final List<? extends Object> labels) throws ArgumentException {
+	public UncertainValues reorder(final List<? extends Object> labels) {
 		assert labels.size() <= mLabels.size();
 		if (mLabels.size() == labels.size()) {
+			// Check if already in correct order...
 			boolean eq = true;
 			for (int i = 0; (i < labels.size()) && eq; ++i)
-				eq &= (mLabels.get(i) == labels.get(i));
+				if (mLabels.get(i) != labels.get(i)) {
+					eq = false;
+					break;
+				}
 			if (eq)
 				return this;
 		}
-		final int[] idx = new int[labels.size()];
-		for (int i = 0; i < idx.length; ++i) {
-			idx[i] = indexOf(labels.get(i));
-			if (idx[i] < 0)
-				throw new ArgumentException(
-						"The labels " + labels.get(i) + " was not present in the source UncertainValues object.");
+		return extract(indices(labels));
+	}
+
+	/**
+	 * Check that the indices are valid and not repeated. Uses assert rather than an
+	 * Exception.
+	 * 
+	 * @param indices
+	 * @return true
+	 */
+	public boolean assertIndices(int[] indices) {
+		for (int i = 0; i < indices.length; ++i) {
+			assert indices[i] >= 0 : "Index[" + i + "] is less than zero.";
+			assert indices[i] < mLabels.size() : "Index[" + i + "] is larger than the number of labels.";
+			for (int j = i + 1; j < indices.length; ++j)
+				assert indices[i] != indices[j] : "Duplicated index: Index[" + i + "] equals Index[" + j + "]";
 		}
-		return extract(idx);
+		return true;
 	}
 
 	/**
@@ -1084,13 +1095,13 @@ public class UncertainValues //
 			final Table t = new Table();
 			final Map<String, Object> tagMap = new TreeMap<>();
 			for (final Object tag : tmp.keySet())
-				tagMap.put(tag.toString(), tag);
+				tagMap.put(HTML.toHTML(tag, Mode.TERSE), tag);
 			t.addRow(Table.th("Label"), Table.th("Value"), Table.th("Uncertainty"), Table.th("Fractional"));
 			final DecimalFormat df = new DecimalFormat("0.0%");
 			for (final Map.Entry<String, Object> me : tagMap.entrySet()) {
 				final UncertainValue uv = tmp.get(me.getValue());
-				t.addRow(Table.td(HTML.toHTML(me.getKey(), Mode.TERSE)), Table.td(uv.doubleValue()),
-						Table.td(uv.uncertainty()), Table.td(df.format(uv.fractionalUncertainty())));
+				t.addRow(Table.td(me.getKey()), Table.td(uv.doubleValue()), Table.td(uv.uncertainty()),
+						Table.td(df.format(uv.fractionalUncertainty())));
 			}
 			return t.toHTML(Mode.NORMAL);
 		}
@@ -1149,7 +1160,7 @@ public class UncertainValues //
 		g2.setColor(Color.WHITE);
 		g2.fillRect(0, 0, bi.getWidth(), bi.getHeight());
 		for (int r = 0; r < getDimension(); ++r) {
-			g2.setColor(sigma.map(sc.getEntry(r, r)));
+			g2.setColor(sigma.map(Math.sqrt(sc.getEntry(r, r))));
 			g2.fillRect(r * dim, r * dim, dim, dim);
 			for (int c = r + 1; c < getDimension(); ++c) {
 				final double entry = sc.getEntry(r, c);
@@ -1399,6 +1410,7 @@ public class UncertainValues //
 	 * @return {@link UncertainValues} A new object
 	 */
 	public UncertainValues extract(final int[] idx) {
+		assert assertIndices(idx);
 		final List<Object> labels = new ArrayList<>();
 		final RealVector vals = new ArrayRealVector(idx.length);
 		final RealMatrix covs = MatrixUtils.createRealMatrix(idx.length, idx.length);
@@ -1417,6 +1429,12 @@ public class UncertainValues //
 		return new UncertainValues(labels, vals, covs);
 	}
 
+	/**
+	 * Note: Returns an index of -1 if the label is missing
+	 * 
+	 * @param labels
+	 * @return Returns an array of integer indices for the specified labels in order
+	 */
 	public int[] indices(final List<? extends Object> labels) {
 		final int[] res = new int[labels.size()];
 		for (int i = 0; i < res.length; ++i)

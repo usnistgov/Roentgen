@@ -12,11 +12,7 @@ public class ValueToLog3 implements IValueToColor {
 
 	@Override
 	public Color map(final double value) {
-		final int i = (int) (255.0 * value / mMax);
-		if (i < 0)
-			return Color.red;
-		if(i==0)
-			return Color.white;
+		final int i = Math.min(Math.max(0, (int) (-255.0 * Math.log10(value / mMax)/3.0)),255);
 		if (i <= 86)
 			return new Color((200 * i) / 86, (200 * i) / 86, 60 + ((195 * i) / 86));
 		if (i <= 170) {
@@ -27,6 +23,6 @@ public class ValueToLog3 implements IValueToColor {
 			final int j = i - 171;
 			new Color(60 + ((195 * j) / (254 - 171)), (200 * j) / (254 - 171), (200 * j) / (254 - 171));
 		}
-		return new Color(255, 255, 0);
+		return new Color(255, 255, 255);
 	}
 }

@@ -124,11 +124,12 @@ public class KRatioLabel//
 	@Override
 	public String toHTML(final Mode mode) {
 		final String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
+		final String xrs = getXRaySet().toHTML(Mode.TERSE);
 		if (mode == Mode.TERSE)
-			return "k<sub>" + getObject3().toHTML(Mode.TERSE) + "," + meth + "</sub>";
+			return "k<sub>" + xrs + "," + meth + "</sub>";
 		else if (mode == Mode.NORMAL)
-			return "k<sub>" + getObject3().toHTML(Mode.TERSE) + " using " + getObject1().toHTML(Mode.TERSE) + "," + meth
-					+ "</sub>";
+			return "k<sub>" + getUnknown().getComposition().getHTMLName() + "," //
+					+ getStandard().getComposition().getHTMLName() + "," + xrs + "," + meth + "</sub>";
 		else {
 			final Table table = new Table();
 

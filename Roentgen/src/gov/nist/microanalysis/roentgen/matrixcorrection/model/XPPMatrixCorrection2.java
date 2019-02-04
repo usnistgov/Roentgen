@@ -718,7 +718,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oRbar, iQlaE0, dRbardF * dFdQlaE0);
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -886,7 +885,6 @@ public class XPPMatrixCorrection2 //
 
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1012,7 +1010,6 @@ public class XPPMatrixCorrection2 //
 
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1102,7 +1099,6 @@ public class XPPMatrixCorrection2 //
 			}
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1218,7 +1214,6 @@ public class XPPMatrixCorrection2 //
 
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1336,7 +1331,6 @@ public class XPPMatrixCorrection2 //
 
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1456,7 +1450,6 @@ public class XPPMatrixCorrection2 //
 			writeJacobian(oFx, tagRoughness, dFxddz, rm);
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				RealVector dpt = point.mapMultiply(1.0e-6);
 				final int itr = inputIndex(tagRoughness);
 				if (itr >= 0)
@@ -1571,7 +1564,6 @@ public class XPPMatrixCorrection2 //
 
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);
@@ -1695,7 +1687,6 @@ public class XPPMatrixCorrection2 //
 
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				;
 				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
 			}
 			return Pair.create(rv, rm);

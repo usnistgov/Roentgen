@@ -16,7 +16,6 @@ import java.util.Set;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -41,17 +40,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * as though it was the only source of uncertainty.
  * </p>
  * <p>
- * XML looks like:
- * </p>
- * <p>
- * &lt;UncertainValue&gt;</br>
- * &nbsp;&nbsp;&nbsp;&lt;value&gt;1.0&lt;/value&gt;</br>
- * &nbsp;&nbsp;&nbsp;&lt;sigma name="dx1"&gt;0.1&lt;/sigma&gt;</br>
- * &nbsp;&nbsp;&nbsp;&lt;sigma name="dx2"&gt;0.3&lt;/sigma&gt;</br>
- * &lt;/UncertainValue&gt;</br>
- * </p>
- * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2018
+ * Copyright Nicholas W. M. Ritchie 2014-2019
  * </p>
  *
  * @author Nicholas W. M. Ritchie
@@ -68,17 +57,19 @@ final public class UncertainValue //
 	 * The one sigma standard deviation value associated with a specific label
 	 */
 	@XStreamAlias("sigma")
-	// XML looks like <sigma name="dx">0.1</sigma>
 	private class Sigma {
-		@XStreamAsAttribute
 		@XStreamAlias("label")
 		private final Object mLabel;
 		@XStreamAlias("value")
-		private final double mValue;
+		private final double mOneSigma;
 
 		private Sigma(final Object name, final double val) {
 			mLabel = name;
-			mValue = Math.abs(val);
+			mOneSigma = Math.abs(val);
+		}
+
+		public String toString() {
+			return mLabel + " = " + mOneSigma;
 		}
 	}
 
@@ -160,7 +151,7 @@ final public class UncertainValue //
 	public static UncertainValue normal(final double v, final Object src) {
 		return new UncertainValue(v, src, Math.sqrt(v));
 	}
-	
+
 	public static UncertainValue toRadians(double degrees, double ddegrees) {
 		return new UncertainValue(Math.toRadians(degrees), Math.toRadians(ddegrees));
 	}
@@ -223,7 +214,7 @@ final public class UncertainValue //
 		if (sigma != 0.0) {
 			final int idx = indexOf(name);
 			if (idx >= 0)
-				mSigmas.set(idx, new Sigma(name, sigma));
+				mSigmas.set(idx, new Sigma(name, Math.abs(sigma)));
 			else
 				mSigmas.add(new Sigma(name, Math.abs(sigma)));
 		} else
@@ -303,7 +294,7 @@ final public class UncertainValue //
 		sb.append(nf.format(mValue));
 		for (final Sigma sigma : mSigmas) {
 			sb.append("\u00B1");
-			sb.append(nf.format(sigma.mValue));
+			sb.append(nf.format(sigma.mOneSigma));
 			sb.append("(");
 			sb.append(sigma.mLabel);
 			sb.append(")");
@@ -330,7 +321,7 @@ final public class UncertainValue //
 	 */
 	public double getComponent(final Object src) {
 		final int idx = indexOf(src);
-		final Double dv = (idx >= 0 ? mSigmas.get(idx).mValue : Double.valueOf(0.0));
+		final Double dv = (idx >= 0 ? mSigmas.get(idx).mOneSigma : Double.valueOf(0.0));
 		return dv.doubleValue();
 	}
 
@@ -351,7 +342,7 @@ final public class UncertainValue //
 	public Map<Object, Double> getComponents() {
 		final Map<Object, Double> res = new HashMap<>();
 		for (final Sigma s : mSigmas)
-			res.put(s.mLabel, s.mValue);
+			res.put(s.mLabel, s.mOneSigma);
 		return Collections.unmodifiableMap(res);
 	}
 
@@ -372,7 +363,7 @@ final public class UncertainValue //
 	public void renameComponent(final String oldName, final String newName) {
 		final int idx = indexOf(oldName);
 		if (idx != -1)
-			mSigmas.set(idx, new Sigma(newName, mSigmas.get(idx).mValue));
+			mSigmas.set(idx, new Sigma(newName, mSigmas.get(idx).mOneSigma));
 	}
 
 	/**
@@ -456,7 +447,7 @@ final public class UncertainValue //
 	public double variance() {
 		double sigma2 = 0.0;
 		for (final Sigma s : mSigmas)
-			sigma2 += s.mValue * s.mValue;
+			sigma2 += s.mOneSigma * s.mOneSigma;
 		return sigma2;
 	}
 
@@ -509,7 +500,7 @@ final public class UncertainValue //
 	public UncertainValue multiply(final double k) {
 		final List<Sigma> sigmas = new ArrayList<>();
 		for (final Sigma ss : mSigmas)
-			sigmas.add(new Sigma(ss.mLabel, k * ss.mValue));
+			sigmas.add(new Sigma(ss.mLabel, k * ss.mOneSigma));
 		return new UncertainValue(k * mValue.doubleValue(), sigmas);
 	}
 
@@ -522,7 +513,7 @@ final public class UncertainValue //
 	public UncertainValue divide(final double k) {
 		final List<Sigma> sigmas = new ArrayList<>();
 		for (final Sigma ss : mSigmas)
-			sigmas.add(new Sigma(ss.mLabel, ss.mValue / k));
+			sigmas.add(new Sigma(ss.mLabel, ss.mOneSigma / k));
 		return new UncertainValue(mValue.doubleValue() / k, sigmas);
 	}
 
@@ -565,7 +556,7 @@ final public class UncertainValue //
 				sigmas.sort(new Comparator<Sigma>() {
 					@Override
 					public int compare(final Sigma o1, final Sigma o2) {
-						return -Double.compare(o1.mValue, o2.mValue);
+						return -Double.compare(o1.mOneSigma, o2.mOneSigma);
 					}
 				});
 				for (final Sigma sigma : sigmas) {
@@ -573,7 +564,7 @@ final public class UncertainValue //
 						sb.append(",");
 					sb.append(HTML.toHTML(sigma.mLabel, Mode.TERSE));
 					sb.append(":");
-					sb.append(bnf.formatHTML(sigma.mValue));
+					sb.append(bnf.formatHTML(sigma.mOneSigma));
 					first = false;
 				}
 				sb.append(")");
@@ -594,14 +585,14 @@ final public class UncertainValue //
 				sigmas.sort(new Comparator<Sigma>() {
 					@Override
 					public int compare(final Sigma o1, final Sigma o2) {
-						return -Double.compare(o1.mValue, o2.mValue);
+						return -Double.compare(o1.mOneSigma, o2.mOneSigma);
 					}
 				});
 				for (final Sigma sigma : sigmas) {
 					sb.append("<tr>");
 					sb.append("<td>U(" + HTML.toHTML(sigma.mLabel, Mode.TERSE) + ")</td>");
-					sb.append("<td>" + bnf.formatHTML(sigma.mValue) + "</td>");
-					sb.append("<td>&nbsp;&nbsp;" + pct.formatHTML(100.0 * sigma.mValue / mValue) + " %</td>");
+					sb.append("<td>" + bnf.formatHTML(sigma.mOneSigma) + "</td>");
+					sb.append("<td>&nbsp;&nbsp;" + pct.formatHTML(100.0 * sigma.mOneSigma / mValue) + " %</td>");
 					sb.append("</tr>");
 				}
 				sb.append("</table></td>");
@@ -622,6 +613,5 @@ final public class UncertainValue //
 	public String toHTML(final Mode mode) {
 		return toHTML(mode, new BasicNumberFormat());
 	}
-	
-	
+
 }

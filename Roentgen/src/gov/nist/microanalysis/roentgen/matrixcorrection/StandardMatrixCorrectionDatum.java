@@ -100,7 +100,7 @@ public class StandardMatrixCorrectionDatum //
 	public String toHTML(final Mode mode) {
 		final BasicNumberFormat bnf = new BasicNumberFormat("0.0");
 		if (mode != Mode.VERBOSE)
-			return mComposition.toHTML(Mode.TERSE) + " at " + bnf.formatHTML(mBeamEnergy.doubleValue()) + " keV";
+			return "Standard[" + mComposition.toHTML(Mode.TERSE)+"]"; // + " at " + bnf.formatHTML(mBeamEnergy.doubleValue()) + " keV";
 		else {
 			final Table t = new Table();
 			t.addRow(Table.td("Composition"), Table.td(mComposition.toHTML(Mode.VERBOSE)));

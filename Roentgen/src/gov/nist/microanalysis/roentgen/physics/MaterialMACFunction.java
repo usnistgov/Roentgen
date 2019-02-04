@@ -26,9 +26,12 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFract
  * @author Nicholas W. M. Ritchie
  *
  */
-public class MaterialMACFunction extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
+public class MaterialMACFunction //
+		extends LabeledMultivariateJacobianFunction //
+		implements ILabeledMultivariateFunction {
 
-	public static class MaterialMAC extends BaseLabel<Composition, XRay, Object> {
+	public static class MaterialMAC //
+			extends BaseLabel<Composition, XRay, Object> {
 
 		public MaterialMAC(final Composition mf, final XRay xr) {
 			super("[&mu;/&rho;]", mf, xr);
@@ -59,13 +62,15 @@ public class MaterialMACFunction extends LabeledMultivariateJacobianFunction imp
 	 * Helper for implementing {@link ElementalMAC}.compute(...) and
 	 * {@link ElementalMAC}.computeMC(...)
 	 *
-	 * @param comps List&lt;{@link IComposition}&gt;
+	 * @param comps List&lt;{@link Composition}&gt;
 	 * @param xray  {@link XRay}
 	 * @return Pair&lt;{@link UncertainValues},
 	 *         {@link ComputeMassAbsorptionCoefficients}&gt;
 	 */
-	final static public Pair<UncertainValues, MaterialMACFunction> buildCompute(final List<Composition> materials,
-			final XRay xray) {
+	final static public Pair<UncertainValues, MaterialMACFunction> buildCompute(//
+			final List<Composition> materials, //
+			final XRay xray //
+	) {
 		final List<Composition> mfs = new ArrayList<>();
 		for (final Composition comp : materials)
 			mfs.add(comp);

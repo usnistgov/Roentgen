@@ -274,8 +274,8 @@ abstract public class LabeledMultivariateJacobianFunction //
 			res.put(outLabels.get(i), new UncertainValue(vals.getEntry(i)));
 		for (int inIdx = 0; inIdx < inLabels.size(); ++inIdx) {
 			final Object inLabel = inLabels.get(inIdx);
-			final UncertainValues uvsLabel = UncertainValues.zeroBut(inLabel, ordered);
-			final RealMatrix covLabel = jac.multiply(uvsLabel.getCovariances()).multiply(jac.transpose());
+			final UncertainValues zeroed = UncertainValues.zeroBut(inLabel, ordered);
+			final RealMatrix covLabel = jac.multiply(zeroed.getCovariances()).multiply(jac.transpose());
 			for (int outIdx = 0; outIdx < outLabels.size(); ++outIdx) {
 				final UncertainValue val = res.get(outLabels.get(outIdx));
 				final double sigma = Math.sqrt(covLabel.getEntry(outIdx, outIdx));

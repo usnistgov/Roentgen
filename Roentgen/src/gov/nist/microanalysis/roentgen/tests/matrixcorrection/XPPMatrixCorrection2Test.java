@@ -6,12 +6,14 @@ import static org.junit.Assert.assertTrue;
 import java.awt.Color;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
@@ -22,11 +24,13 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
+import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
 import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.MCPropagator;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
@@ -105,7 +109,7 @@ public class XPPMatrixCorrection2Test {
 		Set<Variate> variates = new HashSet<>();
 		variates.addAll(XPPMatrixCorrection2.defaultVariates());
 		variates.add(Variate.MeanIonizationPotential);
-		
+
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, variates);
 		final Report r = new Report("XPP Report - test1");
 		UncertainValues resultsD = null;
@@ -117,7 +121,7 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Inputs");
 				final UncertainValues inputs = xpp.buildInput();
 				r.add(inputs);
-				r.add(xpp.getConstants(), Mode.NORMAL,Mode.NORMAL);
+				r.add(xpp.getConstants(), Mode.NORMAL, Mode.NORMAL);
 				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs);
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
 				final Object tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
@@ -500,8 +504,9 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
 
 			}
-			if ( false &&(MC_ITERATIONS > 0)) {
-				// Can't seem to diagnose problem with input to SafeMultivariateNormalDistribution
+			if (false && (MC_ITERATIONS > 0)) {
+				// Can't seem to diagnose problem with input to
+				// SafeMultivariateNormalDistribution
 				r.addHeader("Monte Carlo Results");
 				r.add(xpp);
 				r.addHeader("Inputs");
@@ -935,7 +940,8 @@ public class XPPMatrixCorrection2Test {
 
 			}
 			if (false && (MC_ITERATIONS > 0)) {
-				// Can't seem to diagnose problem with input to SafeMultivariateNormalDistribution
+				// Can't seem to diagnose problem with input to
+				// SafeMultivariateNormalDistribution
 				inputs.validateCovariance();
 				Report.dump(inputs.blockDiagnonalize().toSimpleHTML(new BasicNumberFormat("0.00E0")));
 
@@ -2166,8 +2172,8 @@ public class XPPMatrixCorrection2Test {
 		final StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
 				std1, //
 				new UncertainValue(15.0, 0.1), //
-				UncertainValue.toRadians(40.0, 0.9),
-				MatrixCorrectionDatum.roughness(10.0, 2.5), Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
+				UncertainValue.toRadians(40.0, 0.9), MatrixCorrectionDatum.roughness(10.0, 2.5),
+				Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 		);
 
 		final StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
@@ -2449,6 +2455,176 @@ public class XPPMatrixCorrection2Test {
 		} finally {
 			r.inBrowser(Mode.VERBOSE);
 		}
+	}
+
+	/**
+	 * Compute ZAF for K412 as in SP 260-74 using elements and simple compounds
+	 *
+	 * @throws ArgumentException
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@Test
+	public void testXPP11() throws ArgumentException, ParseException, IOException {
+		// K412 as in SP 260-74 using elements and simple compounds
+
+		final Composition std0 = Composition.parse("SiO2");
+		final Composition std1 = Composition.parse("Al2O3");
+		final Composition std2 = Composition.parse("MgO");
+		final Composition std3 = Composition.parse("CaF2");
+		final Composition std4 = Composition.parse("Fe");
+
+		final Composition unk = buildK412(true);
+		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.5);
+		Layer coating = Layer.carbonCoating(new UncertainValue(10.0, 2.0));
+		final double roughness = MatrixCorrectionDatum.roughness(1.0e-8, 3.0);
+
+		final Report r = new Report("XPP Report - Test11()");
+		final int MIN_E = 9;
+		final int MAX_E = 31;
+		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
+		List<? extends Object> outLabels = null, inLabels = null;
+
+		try {
+			final Table valTable = new Table();
+			for (int i = MIN_E; i < MAX_E; ++i) {
+				final double e0 = i;
+				UncertainValue e0u = new UncertainValue(e0, 0.1);
+				final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum(std0, e0u, toa,
+						roughness, coating);
+
+				final StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum(std1, e0u, toa,
+						roughness, coating);
+				final StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum(std2, e0u, toa,
+						roughness, coating);
+				final StandardMatrixCorrectionDatum std3Mcd = new StandardMatrixCorrectionDatum(std3, e0u, toa,
+						roughness, coating);
+				final StandardMatrixCorrectionDatum std4Mcd = new StandardMatrixCorrectionDatum(std4, e0u, toa,
+						roughness, coating);
+				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk, e0u, toa, roughness,
+						coating);
+
+				final Set<KRatioLabel> skrl = new HashSet<>();
+				skrl.add(new KRatioLabel(unkMcd, std0Mcd, ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1),
+						Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std0Mcd, ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1),
+						Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std1Mcd,
+						ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1), Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std2Mcd,
+						ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1), Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std2Mcd,
+						ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA2), Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std3Mcd, ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1),
+						Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std3Mcd,
+						ElementXRaySet.singleton(Element.Calcium, XRayTransition.L3M1), Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std4Mcd, ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1),
+						Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std4Mcd, ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1),
+						Method.Measured));
+
+				final Set<Object> outputs = new HashSet<>();
+				for (final KRatioLabel krl : skrl) {
+					final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
+						outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
+						outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
+						outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
+					}
+				}
+				final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, MatrixCorrectionModel2.allVariates());
+				xpp.trimOutputs(outputs);
+				assertEquals(xpp.getOutputDimension(), outputs.size());
+				final UncertainValues inputs = xpp.buildInput();
+				// UncertainValues results = UncertainValues.propagate(xpp, inputs);
+				outVals.put(i, xpp.getOutputValues(inputs, 0.0));
+				if (i == MIN_E) {
+					outLabels = xpp.getOutputLabels();
+					inLabels = xpp.getInputLabels();
+				}
+			}
+			{
+				List<Item> row = new ArrayList<>();
+				row.add(Table.td("Output"));
+				row.add(Table.td("Abbrev."));
+				row.add(Table.td("Input"));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				valTable.addRow(row);
+			}
+			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+			for (int oi = 0; oi < outLabels.size(); ++oi) {
+				final Object outTag = outLabels.get(oi);
+				if (outTag instanceof MatrixCorrectionLabel) {
+					final MatrixCorrectionLabel mcl = (MatrixCorrectionLabel) outTag;
+					for (int ii = 0; ii < inLabels.size(); ++ii) {
+						final Object inTag = inLabels.get(ii);
+						List<Item> row = new ArrayList<>();
+						row.add(Table.td(mcl));
+						row.add(Table.td(mcl.getElementXRaySet()));
+						row.add(Table.td(inTag));
+						boolean addRow = false;
+						for (int i = MIN_E; i < MAX_E; ++i) {
+							final Map<? extends Object, UncertainValue> oVals = outVals.get(i);
+							final UncertainValue tmp = getByXRT(oVals, mcl);
+							if (tmp != null)
+								row.add(Table.td(bnf.format(tmp.doubleValue())));
+							else
+								row.add(Table.td("---"));
+						}
+						for (int i = MIN_E; i < MAX_E; ++i) {
+							final Map<? extends Object, UncertainValue> oVals = outVals.get(i);
+							final UncertainValue tmp = getByXRT(oVals, mcl);
+							if (tmp != null) {
+								final double cbn = getComponentByName(tmp, inTag);
+								if (cbn != 0.0)
+									addRow = true;
+								row.add(Table.td(bnf.format(cbn)));
+							} else
+								row.add(Table.td("---"));
+						}
+						for (int i = MIN_E; i < MAX_E; ++i) {
+							final Map<? extends Object, UncertainValue> oVals = outVals.get(i);
+							final UncertainValue tmp = getByXRT(oVals, mcl);
+							if (tmp != null)
+								row.add(Table
+										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //
+							else
+								row.add(Table.td("---"));
+						}
+						if (addRow)
+							valTable.addRow(row);
+					}
+				}
+			}
+			r.addHTML(valTable.toHTML(Mode.NORMAL));
+		} finally {
+			r.inBrowser(Mode.NORMAL);
+		}
+	}
+
+	public double getComponentByName(UncertainValue uv, Object tag) {
+		final String name = tag.toString();
+		for (Map.Entry<Object, Double> me : uv.getComponents().entrySet())
+			if (me.getKey().toString().equals(name))
+				return me.getValue().doubleValue();
+		return 0.0;
+	}
+
+	public UncertainValue getByXRT(Map<? extends Object, UncertainValue> oVals, MatrixCorrectionLabel mcl) {
+		for (Map.Entry<? extends Object, UncertainValue> me : oVals.entrySet()) {
+			if (me.getKey() instanceof MatrixCorrectionLabel) {
+				MatrixCorrectionLabel mcl2 = (MatrixCorrectionLabel) me.getKey();
+				if (mcl2.toString().equals(mcl.toString()))
+					return me.getValue();
+			}
+		}
+		return null;
 	}
 
 }

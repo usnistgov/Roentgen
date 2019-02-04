@@ -152,7 +152,7 @@ public class UnknownMatrixCorrectionDatum //
 		if (mode != Mode.VERBOSE) {
 			final String elms = getElementSet().stream().map((final Element elm) -> elm.getAbbrev())
 					.collect(Collectors.joining(", "));
-			return "Unknown[" + elms + "] at " + bnf.formatHTML(mBeamEnergy.doubleValue()) + " keV";
+			return "Unknown[" + elms + "]"; // " at " + bnf.formatHTML(mBeamEnergy.doubleValue()) + " keV";
 
 		} else {
 			final Table t = new Table();

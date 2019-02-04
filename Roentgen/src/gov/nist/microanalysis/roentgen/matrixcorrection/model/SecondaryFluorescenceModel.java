@@ -55,7 +55,7 @@ public class SecondaryFluorescenceModel //
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector rv = new ArrayRealVector(new double[] { 1.0 });
-		final RealMatrix rm = MatrixUtils.createRealMatrix(new double[][] { { 0.02 * 0.02 } });
+		final RealMatrix rm = MatrixUtils.createRealMatrix(new double[][] { { 0.0001 * 0.0001 } });
 		return Pair.create(rv, rm);
 	}
 
