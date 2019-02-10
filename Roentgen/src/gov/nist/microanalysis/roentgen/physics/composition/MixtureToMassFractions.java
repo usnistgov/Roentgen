@@ -14,9 +14,6 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.AtomicWeightTag;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.MaterialMassFractionTag;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 
 /**
@@ -41,8 +38,8 @@ final class MixtureToMassFractions //
 		final List<Object> res = new ArrayList<>();
 		for (final Composition comp : comps)
 			elms.addAll(comp.getElementSet());
-		res.addAll(Composition.buildMassFractionTags(htmlName, elms));
-		res.addAll(Composition.buildAtomicWeightTags(htmlName, elms));
+		res.addAll(CompositionalLabel.buildMassFractionTags(htmlName, elms));
+		res.addAll(CompositionalLabel.buildAtomicWeightTags(htmlName, elms));
 		return res;
 	}
 
@@ -52,9 +49,9 @@ final class MixtureToMassFractions //
 		final List<Object> res = new ArrayList<>();
 		for (final Composition comp : comps) {
 			assert comp.hasRepresentation(Representation.MassFraction);
-			res.addAll(comp.massFractionTags());
-			res.addAll(comp.atomWeightTags());
-			res.add(new MaterialMassFractionTag(comp));
+			res.addAll(CompositionalLabel.massFractionTags(comp));
+			res.addAll(CompositionalLabel.atomWeightTags(comp));
+			res.add(CompositionalLabel.buildMaterialFractionTag(comp));
 		}
 		return res;
 	}
@@ -83,23 +80,23 @@ final class MixtureToMassFractions //
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		final List<MaterialMassFractionTag> mmfts = new ArrayList<>();
+		final List<MaterialMassFraction> mmfts = new ArrayList<>();
 		for (final Object inTag : getInputLabels())
-			if (inTag instanceof MaterialMassFractionTag)
-				mmfts.add((MaterialMassFractionTag) inTag);
+			if (inTag instanceof MaterialMassFraction)
+				mmfts.add((MaterialMassFraction) inTag);
 		for (final Element elm : mElements) {
 			double tmpCz = 0.0, tmpAz = 0.0;
-			final MassFractionTag resCz = Composition.buildMassFractionTag(mHTML, elm);
-			final AtomicWeightTag resAz = Composition.buildAtomicWeightTag(mHTML, elm);
+			final CompositionalLabel.MassFraction resCz = CompositionalLabel.buildMassFractionTag(mHTML, elm);
+			final CompositionalLabel.AtomicWeight resAz = CompositionalLabel.buildAtomicWeightTag(mHTML, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (final MaterialMassFractionTag mmft : mmfts) {
+			for (final MaterialMassFraction mmft : mmfts) {
 				final String html = mmft.getHTML();
-				final MassFractionTag mft = Composition.buildMassFractionTag(html, elm);
+				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(html, elm);
 				// The material may or may not have the element...
 				final double mmf = getValue(mmft, point);
 				if (hasValue(mft)) {
-					final AtomicWeightTag awt = Composition.buildAtomicWeightTag(html, elm);
+					final CompositionalLabel.AtomicWeight awt = CompositionalLabel.buildAtomicWeightTag(html, elm);
 					assert hasValue(awt);
 					final double mf = getValue(mft, point);
 					final double aw = getValue(awt, point);
@@ -109,14 +106,14 @@ final class MixtureToMassFractions //
 			}
 			final double cZ = tmpCz;
 			final double aZ = tmpCz / tmpAz;
-			for (final MaterialMassFractionTag mmft : mmfts) {
+			for (final MaterialMassFraction mmft : mmfts) {
 				final String html = mmft.getHTML();
-				final MassFractionTag mft = Composition.buildMassFractionTag(html, elm);
+				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(html, elm);
 				// The material may or may not have the element...
 				final double mI = getValue(mmft, point);
 				writeJacobian(iCz, mft, mI, rm);
 				if (hasValue(mft)) {
-					final AtomicWeightTag awt = Composition.buildAtomicWeightTag(html, elm);
+					final CompositionalLabel.AtomicWeight awt = CompositionalLabel.buildAtomicWeightTag(html, elm);
 					assert hasValue(awt);
 					final double cIZ = getValue(mft, point);
 					writeJacobian(iCz, mmft, cIZ, rm);
@@ -139,23 +136,23 @@ final class MixtureToMassFractions //
 	@Override
 	public RealVector optimized(final RealVector point) {
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		final List<MaterialMassFractionTag> mmfts = new ArrayList<>();
+		final List<MaterialMassFraction> mmfts = new ArrayList<>();
 		for (final Object inTag : getInputLabels())
-			if (inTag instanceof MaterialMassFractionTag)
-				mmfts.add((MaterialMassFractionTag) inTag);
+			if (inTag instanceof MaterialMassFraction)
+				mmfts.add((MaterialMassFraction) inTag);
 		for (final Element elm : mElements) {
 			double tmpCz = 0.0, tmpAz = 0.0;
-			final MassFractionTag resCz = Composition.buildMassFractionTag(mHTML, elm);
-			final AtomicWeightTag resAz = Composition.buildAtomicWeightTag(mHTML, elm);
+			final CompositionalLabel.MassFraction resCz = CompositionalLabel.buildMassFractionTag(mHTML, elm);
+			final CompositionalLabel.AtomicWeight resAz = CompositionalLabel.buildAtomicWeightTag(mHTML, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (final MaterialMassFractionTag mmft : mmfts) {
+			for (final MaterialMassFraction mmft : mmfts) {
 				final String html = mmft.getHTML();
-				final MassFractionTag mft = Composition.buildMassFractionTag(html, elm);
+				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(html, elm);
 				// The material may or may not have the element...
 				final double mmf = getValue(mmft, point);
 				if (hasValue(mft)) {
-					final AtomicWeightTag awt = Composition.buildAtomicWeightTag(html, elm);
+					final CompositionalLabel.AtomicWeight awt = CompositionalLabel.buildAtomicWeightTag(html, elm);
 					assert hasValue(awt);
 					final double mf = getValue(mft, point);
 					final double aw = getValue(awt, point);

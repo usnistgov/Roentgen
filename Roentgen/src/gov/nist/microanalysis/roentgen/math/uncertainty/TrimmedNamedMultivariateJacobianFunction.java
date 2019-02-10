@@ -56,7 +56,7 @@ public class TrimmedNamedMultivariateJacobianFunction //
 			final double value = idx != -1 ? point.getEntry(idx) : getConstant(baseInputs.get(i));
 			basePoint.setEntry(i, value);
 		}
-		final Pair<RealVector, RealMatrix> tmp = mBase.value(point);
+		final Pair<RealVector, RealMatrix> tmp = mBase.evaluate(point);
 		final List<? extends Object> outLabels = getOutputLabels();
 		final int[] outIdx = new int[outLabels.size()];
 		for (int i = 0; i < outIdx.length; ++i)

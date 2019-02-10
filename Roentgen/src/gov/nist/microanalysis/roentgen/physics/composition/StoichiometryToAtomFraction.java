@@ -11,9 +11,6 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.AtomFractionTag;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.AtomTypeTag;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.StoichiometryTag;
 
 public class StoichiometryToAtomFraction //
 		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
@@ -25,7 +22,7 @@ public class StoichiometryToAtomFraction //
 	 * @param atomicWeights
 	 */
 	public StoichiometryToAtomFraction(final String html, final Collection<Element> elms) {
-		super(Composition.buildStoichiometryTags(html, elms), Composition.buildAtomFractionTags(html, elms));
+		super(CompositionalLabel.buildStoichiometryTags(html, elms), CompositionalLabel.buildAtomFractionTags(html, elms));
 	}
 
 	private double denom(final RealVector point) {
@@ -35,7 +32,7 @@ public class StoichiometryToAtomFraction //
 		return res;
 	}
 
-	private double delta(final AtomTypeTag a1, final AtomTypeTag a2) {
+	private double delta(final CompositionalLabel.AtomType a1, final CompositionalLabel.AtomType a2) {
 		return a1.getElement().equals(a2.getElement()) ? 1.0 : 0.0;
 	}
 
@@ -45,12 +42,12 @@ public class StoichiometryToAtomFraction //
 		final RealMatrix jac = NullableRealMatrix.build(getInputDimension(), getOutputDimension());
 		final double den = denom(point);
 		for (int outIdx = 0; outIdx < getOutputDimension(); ++outIdx) {
-			final AtomFractionTag aft1 = (AtomFractionTag) getOutputLabel(outIdx);
-			final StoichiometryTag st1 = Composition.buildStoichiometryTag(aft1.getHTML(), aft1.getElement());
+			final CompositionalLabel.AtomFraction aft1 = (CompositionalLabel.AtomFraction) getOutputLabel(outIdx);
+			final CompositionalLabel.Stoichiometry st1 = CompositionalLabel.buildStoichiometryTag(aft1.getHTML(), aft1.getElement());
 			final double s1 = getValue(st1, point);
 			vals.setEntry(outIdx, s1 / den);
 			for (int inIdx = 0; inIdx < getInputDimension(); ++inIdx) {
-				final StoichiometryTag st2 = (StoichiometryTag) getInputLabel(inIdx);
+				final CompositionalLabel.Stoichiometry st2 = (CompositionalLabel.Stoichiometry) getInputLabel(inIdx);
 				jac.setEntry(outIdx, inIdx, (delta(aft1, st2) - s1 / den) / den);
 			}
 		}
@@ -62,8 +59,8 @@ public class StoichiometryToAtomFraction //
 		final RealVector vals = new ArrayRealVector(getOutputDimension());
 		final double den = denom(point);
 		for (int outIdx = 0; outIdx < getOutputDimension(); ++outIdx) {
-			final AtomFractionTag aft1 = (AtomFractionTag) getOutputLabel(outIdx);
-			final StoichiometryTag st1 = Composition.buildStoichiometryTag(aft1.getHTML(), aft1.getElement());
+			final CompositionalLabel.AtomFraction aft1 = (CompositionalLabel.AtomFraction) getOutputLabel(outIdx);
+			final CompositionalLabel.Stoichiometry st1 = CompositionalLabel.buildStoichiometryTag(aft1.getHTML(), aft1.getElement());
 			final double s1 = getValue(st1, point);
 			vals.setEntry(outIdx, s1 / den);
 		}

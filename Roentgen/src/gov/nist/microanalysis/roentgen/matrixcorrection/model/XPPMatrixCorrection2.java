@@ -44,7 +44,8 @@ import gov.nist.microanalysis.roentgen.physics.XRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
+import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import joinery.DataFrame;
 
@@ -160,18 +161,21 @@ public class XPPMatrixCorrection2 //
 	private static class StepMJZBarb // Checked 14-Jan-2019
 			extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
-		private final Composition mComposition;
+		private final IMaterial mComposition;
 
-		public static List<? extends Object> buildInputs(final Composition comp,
-				final Set<MatrixCorrectionModel2.Variate> variates, final boolean isStandard) {
+		public static List<? extends Object> buildInputs(//
+				final IMaterial comp, //
+				final Set<MatrixCorrectionModel2.Variate> variates, //
+				final boolean isStandard //
+		) {
 			final List<Object> res = new ArrayList<>();
 			final MatrixCorrectionModel2.Variate varType = isStandard
 					? MatrixCorrectionModel2.Variate.StandardComposition
 					: MatrixCorrectionModel2.Variate.UnknownComposition;
 			for (final Element elm : comp.getElementSet()) {
 				if (variates.contains(varType)) {
-					res.add(Composition.buildMassFractionTag(comp, elm));
-					res.add(Composition.buildAtomicWeightTag(comp, elm));
+					res.add(CompositionalLabel.buildMassFractionTag(comp, elm));
+					res.add(CompositionalLabel.buildAtomicWeightTag(comp, elm));
 				}
 				if (variates.contains(MatrixCorrectionModel2.Variate.MeanIonizationPotential))
 					res.add(MatrixCorrectionModel2.meanIonizationLabel(elm));
@@ -179,7 +183,7 @@ public class XPPMatrixCorrection2 //
 			return res;
 		}
 
-		public static List<? extends Object> buildOutputs(final Composition comp) {
+		public static List<? extends Object> buildOutputs(final IMaterial comp) {
 			final List<Object> res = new ArrayList<>();
 			res.add(new MatrixCorrectionModel2.CompositionLabel("M", comp));
 			res.add(new MatrixCorrectionModel2.CompositionLabel("J", comp));
@@ -187,16 +191,18 @@ public class XPPMatrixCorrection2 //
 			return res;
 		}
 
-		public StepMJZBarb(final Composition comp, final Set<MatrixCorrectionModel2.Variate> variates,
-				final boolean isStandard) {
+		public StepMJZBarb( //
+				final IMaterial comp, //
+				final Set<MatrixCorrectionModel2.Variate> variates, //
+				final boolean isStandard //
+		) {
 			super(buildInputs(comp, variates, isStandard), buildOutputs(comp));
 			mComposition = comp;
 		}
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final Composition comp = mComposition;
-			final List<Element> elms = new ArrayList<>(comp.getElementSet());
+			ArrayList<Element> elms = new ArrayList<>(mComposition.getElementSet());
 			final Object[] tagCi = new Object[elms.size()];
 			final Object[] tagJi = new Object[elms.size()];
 			final Object[] tagAi = new Object[elms.size()];
@@ -206,11 +212,11 @@ public class XPPMatrixCorrection2 //
 			final double[] Ji = new double[elms.size()];
 			for (int i = 0; i < Ci.length; ++i) {
 				final Element elm = elms.get(i);
-				tagCi[i] = Composition.buildMassFractionTag(comp, elm);
+				tagCi[i] = CompositionalLabel.buildMassFractionTag(mComposition, elm);
 				tagJi[i] = MatrixCorrectionModel2.meanIonizationLabel(elm);
 				Ci[i] = getValue(tagCi[i], point);
 				Ji[i] = getValue(tagJi[i], point);
-				tagAi[i] = Composition.buildAtomicWeightTag(comp, elm);
+				tagAi[i] = CompositionalLabel.buildAtomicWeightTag(mComposition, elm);
 				Ai[i] = getValue(tagAi[i], point);
 				Z[i] = elm.getAtomicNumber();
 			}
@@ -263,18 +269,17 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public RealVector optimized(final RealVector point) {
-			final Composition comp = mComposition;
-			final List<Element> elms = new ArrayList<>(comp.getElementSet());
+			final List<Element> elms = new ArrayList<>(mComposition.getElementSet());
 			final double[] Ci = new double[elms.size()];
 			final double[] ZoA = new double[elms.size()];
 			final double[] Z = new double[elms.size()];
 			final double[] Ji = new double[elms.size()];
 			for (int i = 0; i < Ci.length; ++i) {
 				final Element elm = elms.get(i);
-				Ci[i] = getValue(Composition.buildMassFractionTag(comp, elm), point);
+				Ci[i] = getValue(CompositionalLabel.buildMassFractionTag(mComposition, elm), point);
 				Z[i] = elm.getAtomicNumber();
 				Ji[i] = getValue(MatrixCorrectionModel2.meanIonizationLabel(elm), point);
-				final double a = getValue(Composition.buildAtomicWeightTag(comp, elm), point);
+				final double a = getValue(CompositionalLabel.buildAtomicWeightTag(mComposition, elm), point);
 				ZoA[i] = Z[i] / a;
 			}
 
@@ -1932,12 +1937,12 @@ public class XPPMatrixCorrection2 //
 	 */
 	public UncertainValues computeMaterialMACs(final UncertainValues elmMacs) //
 			throws ArgumentException {
-		final Map<CharacteristicXRay, List<Composition>> mclc = new HashMap<>();
+		final Map<CharacteristicXRay, List<IMaterial>> mclc = new HashMap<>();
 		final Set<Composition> comps = new HashSet<>();
 		for (final KRatioLabel krl : mKRatios) {
 			final Set<CharacteristicXRay> scxrs = krl.getXRaySet().getSetOfCharacteristicXRay();
 			for (final CharacteristicXRay cxr : scxrs) {
-				List<Composition> lc = mclc.get(cxr);
+				List<IMaterial> lc = mclc.get(cxr);
 				if (lc == null) {
 					lc = new ArrayList<>();
 					mclc.put(cxr, lc);
@@ -1952,7 +1957,7 @@ public class XPPMatrixCorrection2 //
 			}
 		}
 		final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
-		for (final Map.Entry<CharacteristicXRay, List<Composition>> me : mclc.entrySet())
+		for (final Map.Entry<CharacteristicXRay, List<IMaterial>> me : mclc.entrySet())
 			step.add(new MaterialMACFunction(me.getValue(), me.getKey()));
 		final LabeledMultivariateJacobianFunction macs = LabeledMultivariateJacobianFunctionBuilder.join("MACs", step);
 		final UncertainValues[] items = new UncertainValues[1 + comps.size()];
@@ -2217,7 +2222,7 @@ public class XPPMatrixCorrection2 //
 		final List<Object> inpOut = new ArrayList<>();
 		final Composition mf = unknown;
 		for (final Object mft : mf.getLabels()) {
-			assert mft instanceof MassFractionTag;
+			assert mft instanceof CompositionalLabel.MassFraction;
 			inpOut.add(mft);
 		}
 		return jac.extract(inpOut, inpOut);

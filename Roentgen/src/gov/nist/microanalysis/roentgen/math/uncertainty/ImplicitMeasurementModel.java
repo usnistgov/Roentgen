@@ -95,8 +95,9 @@ public class ImplicitMeasurementModel //
 		final int outDim = getOutputDimension();
 		final int inDim = getInputDimension();
 		final RealMatrix mcy = MatrixUtils.createRealMatrix(outDim, outDim);
+		final List<? extends Object> outputLabels = getOutputLabels();
 		for (int c = 0; c < outDim; ++c) {
-			final int cIdx = hIn.indexOf(getOutputLabels().get(c));
+			final int cIdx = hIn.indexOf(outputLabels.get(c));
 			for (int r = 0; r < outDim; ++r)
 				mcy.setEntry(r, c, hrm.getEntry(r, cIdx));
 		}
@@ -109,7 +110,7 @@ public class ImplicitMeasurementModel //
 		}
 		final RealVector rv = new ArrayRealVector(outDim);
 		for (int r = 0; r < rv.getDimension(); ++r)
-			rv.setEntry(r, getConstant(getOutputLabels().get(r)));
+			rv.setEntry(r, getConstant(outputLabels.get(r)));
 		return Pair.create(rv, mcyInv.multiply(mcx));
 	}
 }

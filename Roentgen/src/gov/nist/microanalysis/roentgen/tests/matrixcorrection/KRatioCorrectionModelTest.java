@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
 
 import com.duckandcover.html.HTML;
@@ -22,12 +23,10 @@ import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.matrixcorrection.CompositionFromKRatios2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel3;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
@@ -39,7 +38,9 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
+import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel.MassFraction;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -99,13 +100,10 @@ public class KRatioCorrectionModelTest {
 			}
 		}
 
-		final Pair<SerialLabeledMultivariateJacobianFunction, UncertainValues> pr = KRatioCorrectionModel2
-				.buildXPPModel(kuv, MatrixCorrectionModel2.defaultVariates());
+		KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(mouv.keySet(), MatrixCorrectionModel2.defaultVariates());
+		final UncertainValues uvs = UncertainValues.combine(krcm.buildInputs(), kuv);
 
-		final LabeledMultivariateJacobianFunction krcm = pr.getFirst();
-		final UncertainValues uvs = pr.getSecond();
-
-		final Report r = new Report("KRationCorrectionModel - test 1");
+		final Report r = new Report("KRatioCorrectionModel - test 1");
 		try {
 			r.add(krcm, Mode.VERBOSE);
 
@@ -123,6 +121,94 @@ public class KRatioCorrectionModelTest {
 			r.inBrowser(Mode.VERBOSE);
 		}
 	}
+	
+	@Test
+	public void test2vs3() throws ParseException, ArgumentException, IOException {
+
+		final Composition std0 = XPPMatrixCorrection2Test.buildK411(false);
+
+		final Composition std1 = Composition.parse("Al");
+
+		final Composition unk = XPPMatrixCorrection2Test.buildK412(false);
+
+		final StandardMatrixCorrectionDatum stdK411Mcd = new StandardMatrixCorrectionDatum( //
+				std0, new UncertainValue(15.0, 0.1), //
+				UncertainValue.toRadians(40.0, 0.9) //
+		);
+
+		final StandardMatrixCorrectionDatum stdAlMcd = new StandardMatrixCorrectionDatum( //
+				std1, new UncertainValue(15.0, 0.12), //
+				UncertainValue.toRadians(40.0, 0.7) //
+		);
+
+		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+				unk, new UncertainValue(15.0, 0.12), //
+				UncertainValue.toRadians(40.0, 0.7) //
+		);
+
+		final ElementXRaySet feTr = ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1);
+		final ElementXRaySet mgTr = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
+		final ElementXRaySet caTr = ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1);
+		final ElementXRaySet oTr = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
+		final ElementXRaySet alTr = ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1);
+		final ElementXRaySet siTr = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
+
+		final Map<KRatioLabel, Number> mouv = new HashMap<>();
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, siTr, Method.Measured), new UncertainValue(0.794983));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, feTr, Method.Measured), new UncertainValue(0.687101));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, mgTr, Method.Measured), new UncertainValue(1.364719));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, caTr, Method.Measured), new UncertainValue(0.980070));
+		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, oTr, Method.Measured), new UncertainValue(1.011527));
+		mouv.put(new KRatioLabel(unkMcd, stdAlMcd, alTr, Method.Measured), new UncertainValue(0.032001));
+		final UncertainValues kuv = new UncertainValues(mouv);
+
+		final Set<Object> outputs = new HashSet<>();
+		for (final KRatioLabel krl : mouv.keySet()) {
+			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
+				outputs.add(MatrixCorrectionModel2.zafLabel(krl.getUnknown(), meStd, cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(krl.getUnknown(), cxr));
+				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
+			}
+		}
+
+		KRatioCorrectionModel2 krcm2 = new KRatioCorrectionModel2(mouv.keySet(), MatrixCorrectionModel2.defaultVariates());
+		final UncertainValues uvs2 = UncertainValues.combine(krcm2.buildInputs(), kuv);
+		
+		KRatioCorrectionModel3 krcm3 = new KRatioCorrectionModel3(mouv.keySet(), MatrixCorrectionModel2.defaultVariates());
+		final UncertainValues uvs3 = UncertainValues.combine(krcm2.buildInputs(), kuv);
+
+		final Report r = new Report("KRatioCorrectionModel - test 2 to 3 comparison");
+		try {
+			r.add(krcm2, Mode.VERBOSE);
+
+			final LabeledMultivariateJacobian nmvj2 = new LabeledMultivariateJacobian(krcm2, uvs2);
+			r.addHeader("Jacobian - 2");
+			r.addHTML(nmvj2.toHTML(Mode.NORMAL, new BasicNumberFormat("0.000")));
+
+			final LabeledMultivariateJacobian nmvj3 = new LabeledMultivariateJacobian(krcm3, uvs3);
+			r.addHeader("Jacobian - 3");
+			r.addHTML(nmvj3.toHTML(Mode.NORMAL, new BasicNumberFormat("0.000")));
+
+			r.addHeader("Results");
+			
+			UncertainValues res2 = UncertainValues.propagate(nmvj2, uvs2);
+			UncertainValues res3 = UncertainValues.propagate(nmvj3, uvs3);
+				
+			for(Object label : res2.getLabels()) {
+				if(label instanceof MassFraction) {
+					r.addSubHeader(HTML.toHTML(label,Mode.NORMAL));
+					r.add(res2.getUncertainValue(label));
+					r.add(res3.getUncertainValue(label));
+				}
+			}
+		} finally {
+			r.inBrowser(Mode.VERBOSE);
+		}
+	}
+
+	
+	
 
 	public static Map<Element, Number> buildK240() {
 		final Map<Element, Number> res = new HashMap<Element, Number>();
@@ -186,11 +272,8 @@ public class KRatioCorrectionModelTest {
 		lkr.put(new KRatioLabel(unkMcd, std3Mcd, zrTrs, Method.Measured), new UncertainValue(0.051319, 0.001));
 		final UncertainValues kratios = new UncertainValues(lkr);
 
-		final Pair<SerialLabeledMultivariateJacobianFunction, UncertainValues> pr = //
-				KRatioCorrectionModel2.buildXPPModel(kratios, MatrixCorrectionModel2.defaultVariates());
-
-		final LabeledMultivariateJacobianFunction krcm = pr.getFirst();
-		final UncertainValues uvs = pr.getSecond();
+		KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(lkr.keySet(), MatrixCorrectionModel2.defaultVariates());
+		final UncertainValues uvs = UncertainValues.combine(krcm.buildInputs(), kratios);
 
 		final Report report = new Report("K-Ratio (2)");
 		try {
@@ -208,7 +291,7 @@ public class KRatioCorrectionModelTest {
 			final Map<? extends Object, UncertainValue> outVals = eval.getOutputValues(uvs);
 			t.addRow(Table.th("Element"), Table.td("Mass Fraction"));
 			for (final Element elm : unkMcd.getElementSet()) {
-				final MassFractionTag mft = Composition.buildMassFractionTag(unkMcd.getComposition(), elm);
+				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), elm);
 				final UncertainValue uv = outVals.get(mft);
 				t.addRow(Table.td(elm), Table.td(HTML.toHTML(uv, Mode.VERBOSE)));
 			}
@@ -290,25 +373,24 @@ public class KRatioCorrectionModelTest {
 
 		final UncertainValues kuv = new UncertainValues(lkr);
 
-		final CompositionFromKRatios2 cfk = new CompositionFromKRatios2(lkr.keySet(),
-				MatrixCorrectionModel2.allVariates());
-
-		final UncertainValues msInp = cfk.buildInputs(kuv);
+		
+		KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(lkr.keySet(), MatrixCorrectionModel2.defaultVariates());
+		final UncertainValues uvs = UncertainValues.combine(krcm.buildInputs(), kuv);
 
 		final Report report = new Report("K-Ratio (3)");
 		try {
 			report.addHeader("K-ratio Test3");
 			report.addSubHeader("Inputs");
-			report.add(msInp);
+			report.add(uvs);
 			report.addSubHeader("Function");
-			report.addHTML(HTML.toHTML(cfk, Mode.NORMAL));
+			report.addHTML(HTML.toHTML(krcm, Mode.NORMAL));
 			// UncertainValues res = UncertainValues.propagate(ms, msInp);
-			final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
+			final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(krcm, uvs);
 			report.addSubHeader("Jacobian");
 			report.add(eval);
 			report.addSubHeader("Result");
 			final Table t = new Table();
-			final Map<? extends Object, UncertainValue> outVals = eval.getOutputValues(msInp, 1.0e-6);
+			final Map<? extends Object, UncertainValue> outVals = eval.getOutputValues(uvs, 1.0e-6);
 			t.addRow(Table.th("Element"), Table.th("Mass Fraction"));
 			for (final Map.Entry<? extends Object, UncertainValue> me : outVals.entrySet()) {
 				if (me.getKey() instanceof KRatioLabel) {
@@ -318,15 +400,15 @@ public class KRatioCorrectionModelTest {
 			}
 			report.add(t);
 
-			final UncertainValues results = UncertainValues.propagate(eval, msInp);
+			final UncertainValues results = UncertainValues.propagate(eval, uvs);
 			{
 				final Table t2 = new Table();
 				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.00E0");
-				for (final Object tag : msInp.sort().getLabels())
+				for (final Object tag : uvs.sort().getLabels())
 					t2.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-							Table.td(bnf.formatHTML(msInp.getEntry(tag))), //
-							Table.td(bnf.formatHTML(msInp.getUncertainty(tag))));
+							Table.td(bnf.formatHTML(uvs.getEntry(tag))), //
+							Table.td(bnf.formatHTML(uvs.getUncertainty(tag))));
 				report.addSubHeader("Inputs");
 				report.add(t2);
 			}
@@ -347,16 +429,16 @@ public class KRatioCorrectionModelTest {
 			report.addImage(results.asCovarianceBitmap(4, V2L3, L2C), "Correlation matrix");
 
 			final Set<Object> tags = new HashSet<>();
-			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Oxygen));
-			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Magnesium));
-			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Silicon));
-			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Titanium));
-			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Zinc));
-			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Zirconium));
-			tags.add(Composition.buildMassFractionTag(unkMcd.getComposition(), Element.Barium));
-			cfk.trimOutputs(tags);
+			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), Element.Oxygen));
+			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), Element.Magnesium));
+			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), Element.Silicon));
+			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), Element.Titanium));
+			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), Element.Zinc));
+			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), Element.Zirconium));
+			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getComposition(), Element.Barium));
+			krcm.getModel().trimOutputs(tags);
 
-			final UncertainValues resultsTr = UncertainValues.propagate(cfk, msInp);
+			final UncertainValues resultsTr = UncertainValues.propagate(krcm, uvs);
 			{
 				final Table t2 = new Table();
 				t2.addRow(Table.th("Tag"), Table.th("Value"), Table.th("Uncertainty"));
@@ -390,40 +472,18 @@ public class KRatioCorrectionModelTest {
 		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
 		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
 
-		final Composition mgo = Composition.parse("MgO");
+		final Composition mgo = Composition.parse("Mg");
 		final Composition basi2o5 = Composition.parse("BaSi2O5");
 		final Composition zn = Composition.parse("Zn");
 		final Composition zr = Composition.parse("Zr");
 		final Composition ti = Composition.parse("Ti");
 		final Composition sio2 = Composition.parse("SiO2");
 
-		// KRatios computed using DTSA-II. 10 keV to 30 keV by 1 keV
-		final double[] kOk = { 0.610759, 0.599076, 0.588755, 0.579709, 0.571847, 0.565075, 0.559301, 0.554432, 0.550382,
-				0.547066, 0.544407, 0.542332, 0.540773, 0.539669, 0.538963, 0.538604, 0.538544, 0.538741, 0.539158,
-				0.539761, 0.540519 };
-		final double[] kMgK = { 0.043289, 0.041490, 0.039785, 0.038176, 0.036665, 0.035249, 0.033928, 0.032699,
-				0.031557, 0.030499, 0.029521, 0.028618, 0.027786, 0.027019, 0.026314, 0.025667, 0.025073, 0.024529,
-				0.024030, 0.023575, 0.023159 };
-		final double[] kSiK = { 0.403768, 0.393957, 0.384338, 0.374920, 0.365717, 0.356747, 0.348022, 0.339558,
-				0.331364, 0.323450, 0.315821, 0.308482, 0.301434, 0.294677, 0.288208, 0.282024, 0.276119, 0.270489,
-				0.265126, 0.260023, 0.255171 };
-		final double[] kTiK = { 0.055908, 0.055749, 0.055580, 0.055398, 0.055205, 0.055001, 0.054787, 0.054563,
-				0.054329, 0.054086, 0.053836, 0.053577, 0.053312, 0.053040, 0.052761, 0.052477, 0.052188, 0.051893,
-				0.051595, 0.051292, 0.050985 };
-		final double[] kZnK = { 0.035080, 0.035080, 0.035194, 0.035282, 0.035346, 0.035391, 0.035418, 0.035431,
-				0.035431, 0.035420, 0.035399, 0.035368, 0.035330, 0.035284, 0.035231, 0.035172, 0.035108, 0.035038,
-				0.034963, 0.034884, 0.034800 };
-		final double[] kZrL = { 0.054396, 0.053683, 0.052905, 0.052079, 0.051219, 0.050334, 0.049435, 0.048530,
-				0.047623, 0.046722, 0.045831, 0.044953, 0.044092, 0.043249, 0.042427, 0.041628, 0.040853, 0.040101,
-				0.039375, 0.038674, 0.037998 };
-		final double[] kBaL = { 0.503054, 0.504528, 0.505786, 0.506870, 0.507813, 0.508641, 0.509374, 0.510028,
-				0.510614, 0.511143, 0.511623, 0.512058, 0.512456, 0.512819, 0.513153, 0.513458, 0.513739, 0.513998,
-				0.514236, 0.514455, 0.514656 };
-
 		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.5);
 		final double roughness = MatrixCorrectionDatum.roughness(10.0, 3.6);
 
 		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
+		final Map<Integer, UncertainValues> resVals = new TreeMap<>();
 		final int MIN_E = 10, MAX_E = 31;
 		List<? extends Object> outLabels = null, inLabels = null;
 		{
@@ -441,44 +501,40 @@ public class KRatioCorrectionModelTest {
 				final StandardMatrixCorrectionDatum tiMcd = new StandardMatrixCorrectionDatum(ti, e0, toa, roughness);
 				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk, e0, toa, roughness);
 
-				final Map<KRatioLabel, Number> lkr = new HashMap<>();
-				lkr.put(new KRatioLabel(unkMcd, mgoMcd, mgTrs, Method.Measured),
-						new UncertainValue(kMgK[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, basi2o5Mcd, baTrs, Method.Measured),
-						new UncertainValue(kBaL[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured),
-						new UncertainValue(kZnK[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured),
-						new UncertainValue(kZrL[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, sio2Mcd, siTrs, Method.Measured),
-						new UncertainValue(kSiK[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, sio2Mcd, oTrs, Method.Measured),
-						new UncertainValue(kOk[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured),
-						new UncertainValue(kTiK[ie0 - MIN_E], 0.001));
+				final Set<KRatioLabel> lkr = new HashSet<>();
+				lkr.add(new KRatioLabel(unkMcd, mgoMcd, mgTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, basi2o5Mcd, baTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, sio2Mcd, siTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, sio2Mcd, oTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				final UncertainValues kuv = new UncertainValues(lkr);
-
-				final Pair<SerialLabeledMultivariateJacobianFunction, UncertainValues> pair = //
-						KRatioCorrectionModel2.buildXPPModel(kuv, MatrixCorrectionModel2.allVariates());
-				final SerialLabeledMultivariateJacobianFunction cfk = pair.getFirst();
+				KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr, MatrixCorrectionModel2.allVariates());
+				final UncertainValues input = cfk.buildInputs();
+				MatrixCorrectionModel2 mcm = cfk.getModel();
+				// Calculate the optimal k-ratios
+				RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured);
+				final UncertainValues msInp = UncertainValues.combine(cfk.buildInputs(), krs);
+				
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
-					if (output instanceof Composition.MassFractionTag)
+					if (output instanceof CompositionalLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
-				final UncertainValues msInp = pair.getSecond();
 				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
+				final UncertainValues res = UncertainValues.propagate(cfk, msInp);
 				if (ie0 % 5 == 0) {
 					initReport.addSubHeader("Inputs");
 					initReport.add(msInp.sort(), Mode.VERBOSE);
 					initReport.addSubHeader("Jacobian");
 					initReport.addHTML(eval.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 					initReport.addSubHeader("Output");
-					initReport.addHTML(
-							UncertainValues.propagate(cfk, msInp).toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
+					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 				}
 				outVals.put(ie0, eval.getOutputValues(msInp, 0.0));
+				resVals.put(ie0, res);
 				if (ie0 == MIN_E)
 					for (final Object label : cfk.getOutputLabels())
 						System.out.println(label);
@@ -509,8 +565,8 @@ public class KRatioCorrectionModelTest {
 			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 			for (int oi = 0; oi < outLabels.size(); ++oi) {
 				final Object outTag = outLabels.get(oi);
-				if (outTag instanceof MassFractionTag) {
-					final MassFractionTag mft = (MassFractionTag) outTag;
+				if (outTag instanceof CompositionalLabel.MassFraction) {
+					final CompositionalLabel.MassFraction mft = (CompositionalLabel.MassFraction) outTag;
 					for (int ii = 0; ii < inLabels.size(); ++ii) {
 						final Object inTag = inLabels.get(ii);
 						final List<Item> row = new ArrayList<>();
@@ -549,6 +605,19 @@ public class KRatioCorrectionModelTest {
 						if (addRow)
 							valTable.addRow(row);
 					}
+					final List<Item> row = new ArrayList<>();
+					row.add(Table.td(mft));
+					row.add(Table.td(mft.getElement()));
+					row.add(Table.td("Overall"));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
+						row.add(Table.td(bnf.format(resVals.get(ie0).getEntry(outTag))));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
+						row.add(Table.td(bnf.format(resVals.get(ie0).getUncertainty(outTag))));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
+						final UncertainValues uvs = resVals.get(ie0);
+						row.add(Table.td(bnf.format(100.0 * uvs.getUncertainty(outTag) / uvs.getEntry(outTag))));
+					}
+					valTable.addRow(row);
 				}
 			}
 			report.addHTML(valTable.toHTML(Mode.NORMAL));
@@ -571,37 +640,16 @@ public class KRatioCorrectionModelTest {
 		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
 		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
 
-		final Composition mgo = Composition.parse("MgO");
+		final Composition mgo = Composition.parse("Mg");
 		final Composition benitoite = Composition.parse("BaTiSi3O9");
 		final Composition zn = Composition.parse("Zn");
 		final Composition zr = Composition.parse("Zr");
-
-		final double[] kOk = { 0.986842, 0.98807, 0.989192, 0.990207, 0.991117, 0.991925, 0.992635, 0.993254, 0.993788,
-				0.994244, 0.994629, 0.99495, 0.995213, 0.995425, 0.995591, 0.995717, 0.995808, 0.995869, 0.995903,
-				0.995914, 0.995906 };
-		final double[] kMgK = { 0.043289, 0.04149, 0.039785, 0.038176, 0.036665, 0.035249, 0.033928, 0.032699, 0.031557,
-				0.030499, 0.029521, 0.028618, 0.027786, 0.027019, 0.026314, 0.025667, 0.025073, 0.024529, 0.02403,
-				0.023575, 0.023159 };
-		final double[] kSiK = { 0.915356, 0.91524, 0.915111, 0.914972, 0.914825, 0.914671, 0.914512, 0.914349, 0.914183,
-				0.914016, 0.913847, 0.913679, 0.913511, 0.913344, 0.913179, 0.913015, 0.912854, 0.912696, 0.912541,
-				0.912388, 0.912239 };
-		final double[] kTiK = { 0.513686, 0.513278, 0.512855, 0.512407, 0.51193, 0.511425, 0.510893, 0.510335, 0.509753,
-				0.509148, 0.508522, 0.507876, 0.507211, 0.506528, 0.505829, 0.505115, 0.504386, 0.503645, 0.502891,
-				0.502126, 0.50135 };
-		final double[] kZnK = { 0.023714, 0.03508, 0.035194, 0.035282, 0.035346, 0.035391, 0.035418, 0.035431, 0.035431,
-				0.03542, 0.035399, 0.035368, 0.03533, 0.035284, 0.035231, 0.035172, 0.035108, 0.035038, 0.034963,
-				0.034884, 0.0348 };
-		final double[] kZrL = { 0.054396, 0.053683, 0.052905, 0.052079, 0.051219, 0.050334, 0.049435, 0.04853, 0.047623,
-				0.046722, 0.045831, 0.044953, 0.044092, 0.043249, 0.042427, 0.041628, 0.040853, 0.040101, 0.039375,
-				0.038674, 0.037998 };
-		final double[] kBaL = { 0.802829, 0.802215, 0.801573, 0.800888, 0.800156, 0.799378, 0.798557, 0.797694,
-				0.796793, 0.795857, 0.794887, 0.793885, 0.792854, 0.791796, 0.790712, 0.789604, 0.788474, 0.787324,
-				0.786154, 0.784967, 0.783764 };
 
 		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.5);
 		final double roughness = MatrixCorrectionDatum.roughness(10.0, 3.6);
 
 		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
+		final Map<Integer, UncertainValues> resVals = new TreeMap<>();
 		final int MIN_E = 10, MAX_E = 31;
 		List<? extends Object> outLabels = null, inLabels = null;
 		{
@@ -616,44 +664,40 @@ public class KRatioCorrectionModelTest {
 				final StandardMatrixCorrectionDatum zrMcd = new StandardMatrixCorrectionDatum(zr, e0, toa, roughness);
 				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk, e0, toa, roughness);
 
-				final Map<KRatioLabel, Number> lkr = new HashMap<>();
-				lkr.put(new KRatioLabel(unkMcd, mgoMcd, mgTrs, Method.Measured),
-						new UncertainValue(kMgK[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured),
-						new UncertainValue(kBaL[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured),
-						new UncertainValue(kZnK[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured),
-						new UncertainValue(kZrL[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, benitoiteMcd, siTrs, Method.Measured),
-						new UncertainValue(kSiK[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, benitoiteMcd, oTrs, Method.Measured),
-						new UncertainValue(kOk[ie0 - MIN_E], 0.001));
-				lkr.put(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured),
-						new UncertainValue(kTiK[ie0 - MIN_E], 0.001));
-
-				final UncertainValues kuv = new UncertainValues(lkr);
-
-				final Pair<SerialLabeledMultivariateJacobianFunction, UncertainValues> pair = //
-						KRatioCorrectionModel2.buildXPPModel(kuv, MatrixCorrectionModel2.allVariates());
-				final SerialLabeledMultivariateJacobianFunction cfk = pair.getFirst();
+				final Set<KRatioLabel> lkr = new HashSet<>();
+				lkr.add(new KRatioLabel(unkMcd, mgoMcd, mgTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, siTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, oTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
+				
+				KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr, MatrixCorrectionModel2.allVariates());
+				final UncertainValues input = cfk.buildInputs();
+				MatrixCorrectionModel2 mcm = cfk.getModel();
+				// Calculate the optimal k-ratios
+				RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured);
+				final UncertainValues msInp = UncertainValues.combine(cfk.buildInputs(), krs);
+				
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
-					if (output instanceof Composition.MassFractionTag)
+					if (output instanceof CompositionalLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
-				final UncertainValues msInp = pair.getSecond();
 				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
+				final UncertainValues res = UncertainValues.propagate(cfk, msInp);
 				if (ie0 % 5 == 0) {
 					initReport.addSubHeader("Inputs");
 					initReport.add(msInp.sort(), Mode.VERBOSE);
 					initReport.addSubHeader("Jacobian");
 					initReport.addHTML(eval.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 					initReport.addSubHeader("Output");
-					initReport.addHTML(
-							UncertainValues.propagate(cfk, msInp).toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
+					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 				}
 				outVals.put(ie0, eval.getOutputValues(msInp, 0.0));
+				resVals.put(ie0, res);
 				if (ie0 == MIN_E)
 					for (final Object label : cfk.getOutputLabels())
 						System.out.println(label);
@@ -666,7 +710,7 @@ public class KRatioCorrectionModelTest {
 		}
 		final Report report = new Report("K-Ratio (5)");
 		try {
-			report.addHeader("K240 against simple standards");
+			report.addHeader("K240 against benitoite");
 			final Table valTable = new Table();
 			{
 				final List<Item> row = new ArrayList<>();
@@ -684,8 +728,8 @@ public class KRatioCorrectionModelTest {
 			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 			for (int oi = 0; oi < outLabels.size(); ++oi) {
 				final Object outTag = outLabels.get(oi);
-				if (outTag instanceof MassFractionTag) {
-					final MassFractionTag mft = (MassFractionTag) outTag;
+				if (outTag instanceof CompositionalLabel.MassFraction) {
+					final CompositionalLabel.MassFraction mft = (CompositionalLabel.MassFraction) outTag;
 					for (int ii = 0; ii < inLabels.size(); ++ii) {
 						final Object inTag = inLabels.get(ii);
 						final List<Item> row = new ArrayList<>();
@@ -723,9 +767,192 @@ public class KRatioCorrectionModelTest {
 						}
 						if (addRow)
 							valTable.addRow(row);
-						else 
-							System.out.println("Skipping "+outTag +" - "+ inTag);
+						else
+							System.out.println("Skipping " + outTag + " - " + inTag);
 					}
+					final List<Item> row = new ArrayList<>();
+					row.add(Table.td(mft));
+					row.add(Table.td(mft.getElement()));
+					row.add(Table.td("Overall"));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
+						row.add(Table.td(bnf.format(resVals.get(ie0).getEntry(outTag))));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
+						row.add(Table.td(bnf.format(resVals.get(ie0).getUncertainty(outTag))));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
+						final UncertainValues uvs = resVals.get(ie0);
+						row.add(Table.td(bnf.format(100.0 * uvs.getUncertainty(outTag) / uvs.getEntry(outTag))));
+					}
+					valTable.addRow(row);
+				}
+			}
+			report.addHTML(valTable.toHTML(Mode.NORMAL));
+		} finally {
+			report.inBrowser(Mode.NORMAL);
+		}
+	}
+
+	@Test
+	public void test6() //
+			throws ParseException, ArgumentException, IOException {
+		// K240 using simple elements
+		final Composition unk = Composition.massFraction("K240", buildK240());
+
+		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
+		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
+		final ElementXRaySet tiTrs = ElementXRaySet.singleton(Element.Titanium, XRayTransition.KA1);
+		final ElementXRaySet siTrs = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
+		final ElementXRaySet oTrs = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
+		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
+		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
+
+		final Composition mg = Composition.parse("Mg");
+		final Composition ba = Composition.parse("Ba");
+		final Composition zn = Composition.parse("Zn");
+		final Composition zr = Composition.parse("Zr");
+		final Composition ti = Composition.parse("Ti");
+		final Composition si = Composition.parse("Si");
+		final Composition o = Composition.parse("O");
+
+		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.5);
+		final double roughness = MatrixCorrectionDatum.roughness(10.0, 3.6);
+
+		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
+		final Map<Integer, UncertainValues> resVals = new TreeMap<>();
+		final int MIN_E = 10, MAX_E = 31;
+		List<? extends Object> outLabels = null, inLabels = null;
+		{
+			final Report initReport = new Report("K-Ratio - Initialization");
+			for (int ie0 = MIN_E; ie0 < MAX_E; ie0++) {
+				initReport.addHeader("E<sub>0</sub> = " + ie0);
+				final UncertainValue e0 = new UncertainValue(ie0, 0.1);
+				final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, toa, roughness);
+				final StandardMatrixCorrectionDatum baMcd = new StandardMatrixCorrectionDatum(ba, e0, toa, roughness);
+				final StandardMatrixCorrectionDatum znMcd = new StandardMatrixCorrectionDatum(zn, e0, toa, roughness);
+				final StandardMatrixCorrectionDatum zrMcd = new StandardMatrixCorrectionDatum(zr, e0, toa, roughness);
+				final StandardMatrixCorrectionDatum tiMcd = new StandardMatrixCorrectionDatum(ti, e0, toa, roughness);
+				final StandardMatrixCorrectionDatum siMcd = new StandardMatrixCorrectionDatum(si, e0, toa, roughness);
+				final StandardMatrixCorrectionDatum oMcd = new StandardMatrixCorrectionDatum(o, e0, toa, roughness);
+				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk, e0, toa, roughness);
+
+				final Set<KRatioLabel> lkr = new HashSet<>();
+				lkr.add(new KRatioLabel(unkMcd, mgMcd, mgTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, baMcd, baTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, siMcd, siTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, oMcd, oTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
+
+				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr, MatrixCorrectionModel2.allVariates());
+				final UncertainValues input = cfk.buildInputs();
+				MatrixCorrectionModel2 mcm = cfk.getModel();
+				// Calculate the optimal k-ratios
+				RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured);
+				final UncertainValues msInp = UncertainValues.combine(cfk.buildInputs(), krs);
+
+				final Set<Object> finalOutputs = new HashSet<>();
+				for (final Object output : cfk.getOutputLabels())
+					if (output instanceof CompositionalLabel.MassFraction)
+						finalOutputs.add(output);
+				// cfk.trimOutputs(finalOutputs);
+				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
+				final UncertainValues res = UncertainValues.propagate(cfk, msInp);
+				if (ie0 % 5 == 0) {
+					initReport.addSubHeader("Inputs");
+					initReport.add(msInp.sort(), Mode.VERBOSE);
+					initReport.addSubHeader("Jacobian");
+					initReport.addHTML(eval.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
+					initReport.addSubHeader("Output");
+					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
+				}
+				outVals.put(ie0, eval.getOutputValues(msInp, 0.0));
+				resVals.put(ie0, res);
+				if (ie0 == MIN_E)
+					for (final Object label : cfk.getOutputLabels())
+						System.out.println(label);
+				if (ie0 == MIN_E) {
+					outLabels = cfk.getOutputLabels();
+					inLabels = cfk.getInputLabels();
+				}
+			}
+			initReport.inBrowser(Mode.NORMAL);
+		}
+		final Report report = new Report("K-Ratio (6)");
+		try {
+			report.addHeader("K240 using simple elements");
+			final Table valTable = new Table();
+			{
+				final List<Item> row = new ArrayList<>();
+				row.add(Table.td("Output"));
+				row.add(Table.td("Abbrev."));
+				row.add(Table.td("Input"));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				valTable.addRow(row);
+			}
+			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+			for (int oi = 0; oi < outLabels.size(); ++oi) {
+				final Object outTag = outLabels.get(oi);
+				if (outTag instanceof CompositionalLabel.MassFraction) {
+					final CompositionalLabel.MassFraction mft = (CompositionalLabel.MassFraction) outTag;
+					for (int ii = 0; ii < inLabels.size(); ++ii) {
+						final Object inTag = inLabels.get(ii);
+						final List<Item> row = new ArrayList<>();
+						boolean addRow = false;
+						row.add(Table.td(mft));
+						row.add(Table.td(mft.getElement()));
+						row.add(Table.td(inTag));
+						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
+							final Map<? extends Object, UncertainValue> oVals = outVals.get(ie0);
+							final UncertainValue tmp = getByMFT(oVals, mft);
+							if (tmp != null)
+								row.add(Table.td(bnf.format(tmp.doubleValue())));
+							else
+								row.add(Table.td("---"));
+						}
+						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
+							final Map<? extends Object, UncertainValue> oVals = outVals.get(ie0);
+							final UncertainValue tmp = getByMFT(oVals, mft);
+							if (tmp != null) {
+								final double cbn = getComponentByName(tmp, inTag);
+								if (cbn != 0.0)
+									addRow = true;
+								row.add(Table.td(bnf.format(cbn)));
+							} else
+								row.add(Table.td("---"));
+						}
+						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
+							final Map<? extends Object, UncertainValue> oVals = outVals.get(ie0);
+							final UncertainValue tmp = getByMFT(oVals, mft);
+							if (tmp != null)
+								row.add(Table
+										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //
+							else
+								row.add(Table.td("---"));
+						}
+						if (addRow)
+							valTable.addRow(row);
+						else
+							System.out.println("Skipping " + outTag + " - " + inTag);
+					}
+					final List<Item> row = new ArrayList<>();
+					row.add(Table.td(mft));
+					row.add(Table.td(mft.getElement()));
+					row.add(Table.td("Overall"));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
+						row.add(Table.td(bnf.format(resVals.get(ie0).getEntry(outTag))));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
+						row.add(Table.td(bnf.format(resVals.get(ie0).getUncertainty(outTag))));
+					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
+						final UncertainValues uvs = resVals.get(ie0);
+						row.add(Table.td(bnf.format(100.0 * uvs.getUncertainty(outTag) / uvs.getEntry(outTag))));
+					}
+					valTable.addRow(row);
 				}
 			}
 			report.addHTML(valTable.toHTML(Mode.NORMAL));
@@ -742,15 +969,104 @@ public class KRatioCorrectionModelTest {
 		return 0.0;
 	}
 
-	public UncertainValue getByMFT(final Map<? extends Object, UncertainValue> oVals, final MassFractionTag mft) {
+	public UncertainValue getByMFT(final Map<? extends Object, UncertainValue> oVals, final CompositionalLabel.MassFraction mft) {
 		for (final Map.Entry<? extends Object, UncertainValue> me : oVals.entrySet()) {
-			if (me.getKey() instanceof MassFractionTag) {
-				final MassFractionTag mft2 = (MassFractionTag) me.getKey();
+			if (me.getKey() instanceof CompositionalLabel.MassFraction) {
+				final CompositionalLabel.MassFraction mft2 = (CompositionalLabel.MassFraction) me.getKey();
 				if (mft2.toString().equals(mft.toString()))
 					return me.getValue();
 			}
 		}
 		return null;
 	}
+	
+	@Test
+	public void iterationTest1() throws ArgumentException, ParseException {
+		// Material K240 = [O(0.3400 mass frac),Mg(0.0302 mass frac),Si(0.1870 mass
+		// frac),Ti(0.0600 mass frac),Zn(0.0402 mass frac),Zr(0.0740 mass
+		// frac),Ba(0.2687 mass frac),Σ=1.0001]
+		// Detector Si(Li) - FWHM[Mn Kα]=154.1 eV - 2014-05-29 00:00
+		// Algorithm XPP - Pouchou & Pichoir Simplified
+		// MAC NIST-Chantler 2005
+		// E0 15 keV
+		// Take-off 40°
+		// IUPAC Seigbahn Standard Energy ZAF Z A F k-ratio
+		// O K-L3 O Kα1 SiO2 0.5249 0.8951 1.1356 0.7885 0.9996 0.571425
+		// Mg K-L3 Mg Kα1 Pure Mg 1.2536 0.5677 1.0961 0.5160 1.0038 0.017146
+		// Si K-L3 Si Kα1 SiO2 1.7397 0.9119 1.1390 0.7985 1.0027 0.364811
+		// Ti K-L3 Ti Kα1 Pure Ti 4.5109 0.9204 0.9441 0.9684 1.0067 0.055222
+		// Zn K-L3 Zn Kα1 Pure Zn 8.6389 0.8816 0.8920 0.9884 1.0000 0.035440
+		// Zr L3-M5 Zr Lα1 Pure Zr 2.0423 0.6935 0.8393 0.8248 1.0017 0.051319
+		// Ba L3-M5 Ba Lα1 BaF2 4.4663 0.8279 0.8194 1.0107 0.9996 0.283990
+
+		final UncertainValue beamEnergy = new UncertainValue(15.0, 0.1);
+		final UncertainValue takeOffAngle = new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9));
+		final StandardMatrixCorrectionDatum mcd_sio2 = new StandardMatrixCorrectionDatum( //
+				Composition.parse("SiO2"), beamEnergy, takeOffAngle);
+		final StandardMatrixCorrectionDatum mcd_mg = new StandardMatrixCorrectionDatum( //
+				Composition.pureElement(Element.Magnesium), beamEnergy, takeOffAngle);
+		final StandardMatrixCorrectionDatum mcd_ti = new StandardMatrixCorrectionDatum( //
+				Composition.pureElement(Element.Titanium), beamEnergy, takeOffAngle);
+		final StandardMatrixCorrectionDatum mcd_zn = new StandardMatrixCorrectionDatum( //
+				Composition.pureElement(Element.Zinc), beamEnergy, takeOffAngle);
+		final StandardMatrixCorrectionDatum mcd_zr = new StandardMatrixCorrectionDatum( //
+				Composition.pureElement(Element.Zirconium), beamEnergy, takeOffAngle);
+		final StandardMatrixCorrectionDatum mcd_baf2 = new StandardMatrixCorrectionDatum( //
+				Composition.parse("BaF2"), beamEnergy, takeOffAngle);
+
+		final Set<KRatioLabel> skrl = new HashSet<>();
+
+		final Set<Element> elms = new HashSet<>(Arrays.asList(Element.Oxygen, Element.Silicon, Element.Titanium,
+				Element.Zinc, Element.Zirconium, Element.Barium));
+
+		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(new Material("Unknown", elms), beamEnergy, takeOffAngle);
+
+		skrl.add(new KRatioLabel(unkMcd, mcd_sio2, ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1),
+				Method.Measured));
+		skrl.add(new KRatioLabel(unkMcd, mcd_sio2, ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1),
+				Method.Measured));
+		skrl.add(new KRatioLabel(unkMcd, mcd_mg, ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1),
+				Method.Measured));
+		skrl.add(new KRatioLabel(unkMcd, mcd_ti, ElementXRaySet.singleton(Element.Titanium, XRayTransition.KA1),
+				Method.Measured));
+		skrl.add(new KRatioLabel(unkMcd, mcd_zn, ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1),
+				Method.Measured));
+		skrl.add(new KRatioLabel(unkMcd, mcd_zr, ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1),
+				Method.Measured));
+		skrl.add(new KRatioLabel(unkMcd, mcd_baf2, ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1),
+				Method.Measured));
+
+		final KRatioCorrectionModel2 kri = new KRatioCorrectionModel2(skrl, MatrixCorrectionModel2.defaultVariates());
+
+		final Map<Object, Number> vals = new HashMap<>();
+		vals.put(new KRatioLabel(unkMcd, mcd_sio2, ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1),
+				KRatioLabel.Method.Measured), 0.571425);
+		vals.put(new KRatioLabel(unkMcd, mcd_mg, ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1),
+				KRatioLabel.Method.Measured), 0.017146);
+		vals.put(new KRatioLabel(unkMcd, mcd_sio2, ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1),
+				KRatioLabel.Method.Measured), 0.364811);
+		vals.put(new KRatioLabel(unkMcd, mcd_ti, ElementXRaySet.singleton(Element.Titanium, XRayTransition.KA1),
+				KRatioLabel.Method.Measured), 0.05522);
+		vals.put(new KRatioLabel(unkMcd, mcd_zn, ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1),
+				KRatioLabel.Method.Measured), 0.035440);
+		vals.put(new KRatioLabel(unkMcd, mcd_zr, ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1),
+				KRatioLabel.Method.Measured), 0.051319);
+		vals.put(new KRatioLabel(unkMcd, mcd_baf2, ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1),
+				KRatioLabel.Method.Measured), 0.283990);
+
+		final UncertainValues kratios = new UncertainValues(vals);
+
+		final Composition res = kri.optimize(kratios);
+
+		final Report rep = new Report("K240 Iteration");
+		rep.addSubHeader("Unknown");
+		rep.add(unkMcd);
+		rep.addSubHeader("K-ratios");
+		rep.add(vals, Mode.NORMAL, Mode.VERBOSE);
+		rep.addSubHeader("Results");
+		rep.add(res);
+
+	}
+
 
 }

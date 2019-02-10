@@ -1,11 +1,18 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.math3.linear.RealVector;
+
+import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
@@ -74,7 +81,7 @@ public class KRatioLabel//
 		return mMethod == Method.Measured;
 	}
 
-	public boolean isCalcualted() {
+	public boolean isCalculated() {
 		return mMethod == Method.Calculated;
 	}
 
@@ -142,6 +149,12 @@ public class KRatioLabel//
 		}
 	}
 
+	public String toString() {
+		final String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
+		final String xrts = HTML.stripTags(getXRaySet().toHTML(Mode.TERSE));
+		return "k[" + xrts.substring(1, xrts.length()-1) + "," + meth + "]";
+	}
+
 	@Override
 	public int compareTo(final KRatioLabel o) {
 		int c = getObject3().getElement().compareTo(o.getObject3().getElement());
@@ -165,6 +178,20 @@ public class KRatioLabel//
 				c = hashCode() < o.hashCode() ? -1 : 1;
 		}
 		return c;
+	}
+
+	public static UncertainValues extractKRatios(RealVector res, List<? extends Object> labels, Method meth) {
+		final Map<Object, Number> vals = new HashMap<>();
+		for (int i = 0; i < labels.size(); ++i) {
+			Object label = labels.get(i);
+			if (label instanceof KRatioLabel) {
+				KRatioLabel calc = (KRatioLabel) label;
+				assert calc.isCalculated();
+				KRatioLabel meas = new KRatioLabel(calc.getUnknown(), calc.getStandard(), calc.getXRaySet(), meth);
+				vals.put(meas, res.getEntry(i));
+			}
+		}
+		return new UncertainValues(vals);
 	}
 
 }

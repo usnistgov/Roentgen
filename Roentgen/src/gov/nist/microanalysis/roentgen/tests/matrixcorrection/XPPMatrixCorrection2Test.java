@@ -30,7 +30,6 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
 import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.MCPropagator;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
@@ -50,6 +49,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
@@ -232,7 +232,7 @@ public class XPPMatrixCorrection2Test {
 				}
 
 				final Object unkCompTag = new MatrixCorrectionModel2.CompositionLabel("J", unk);
-				assertEquals(jac.getEntry(unkCompTag, Composition.buildMassFractionTag(unk, Element.Oxygen)), -0.027565,
+				assertEquals(jac.getEntry(unkCompTag, CompositionalLabel.buildMassFractionTag(unk, Element.Oxygen)), -0.027565,
 						0.00001);
 				assertEquals(jac.getEntry(unkCompTag, MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)),
 						0.609601, 0.00001);
@@ -2337,7 +2337,7 @@ public class XPPMatrixCorrection2Test {
 				}
 
 				final Object unkCompTag = new MatrixCorrectionModel2.CompositionLabel("J", unk);
-				assertEquals(jac.getEntry(unkCompTag, Composition.buildMassFractionTag(unk, Element.Oxygen)), -0.027565,
+				assertEquals(jac.getEntry(unkCompTag, CompositionalLabel.buildMassFractionTag(unk, Element.Oxygen)), -0.027565,
 						0.00001);
 				assertEquals(jac.getEntry(unkCompTag, MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)),
 						0.609601, 0.00001);

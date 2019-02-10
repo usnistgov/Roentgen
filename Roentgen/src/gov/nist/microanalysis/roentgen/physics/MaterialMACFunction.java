@@ -17,7 +17,8 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunc
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
+import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 
 /**
  * Compute the material mass absorption coefficient given the elemental mass
@@ -31,13 +32,13 @@ public class MaterialMACFunction //
 		implements ILabeledMultivariateFunction {
 
 	public static class MaterialMAC //
-			extends BaseLabel<Composition, XRay, Object> {
+			extends BaseLabel<IMaterial, XRay, Object> {
 
-		public MaterialMAC(final Composition mf, final XRay xr) {
+		public MaterialMAC(final IMaterial mf, final XRay xr) {
 			super("[&mu;/&rho;]", mf, xr);
 		}
 
-		public Composition getComposition() {
+		public IMaterial getMaterial() {
 			return getObject1();
 		}
 
@@ -46,12 +47,12 @@ public class MaterialMACFunction //
 		}
 	}
 
-	private static List<Object> inputTags(final List<Composition> comps, final XRay xray) {
+	private static List<Object> inputTags(final List<? extends IMaterial> comps, final XRay xray) {
 		final List<Object> res = new ArrayList<>();
 		final Set<Element> elms = new HashSet<>();
-		for (final Composition comp : comps) {
+		for (final IMaterial comp : comps) {
 			elms.addAll(comp.getElementSet());
-			res.addAll(comp.massFractionTags());
+			res.addAll(CompositionalLabel.massFractionTags(comp));
 		}
 		for (final Element elm : elms)
 			res.add(new ElementalMAC.ElementMAC(elm, xray));
@@ -237,7 +238,7 @@ public class MaterialMACFunction //
 			if (labeli instanceof MaterialMAC) {
 				double mult = 1.0;
 				final MaterialMAC mmi = (MaterialMAC) labeli;
-				for (final Element elm : mmi.getComposition().getElementSet()) {
+				for (final Element elm : mmi.getMaterial().getElementSet()) {
 					for (final AtomicShell sh : AtomicShell.forElement(elm))
 						mult = Math.min(mult, decor.compute(sh, mmi.getXRay()));
 					assert (mult >= 0.0) && (mult <= 1.0) : mult;
@@ -245,7 +246,7 @@ public class MaterialMACFunction //
 						for (int j = i + 1; j < labelCx; ++j)
 							if (labels.get(j) instanceof MaterialMAC) {
 								final MaterialMAC mmj = (MaterialMAC) labels.get(j);
-								if (mmj.getComposition().contains(elm))
+								if (mmj.getMaterial().getElementSet().contains(elm))
 									res.setCovariance(i, j, mult * res.getCovariance(i, j));
 							}
 				}
@@ -260,9 +261,9 @@ public class MaterialMACFunction //
 		return UncertainValues.propagate(tmp.getValue(), tmp.getFirst());
 	}
 
-	private static List<Object> outputTags(final List<Composition> materials, final XRay xray) {
+	private static List<Object> outputTags(final List<? extends IMaterial> materials, final XRay xray) {
 		final List<Object> res = new ArrayList<>();
-		for (final Composition mf : materials)
+		for (final IMaterial mf : materials)
 			res.add(new MaterialMAC(mf, xray));
 		return res;
 	}
@@ -273,7 +274,7 @@ public class MaterialMACFunction //
 	 * @param materials A list of materials to compute
 	 * @param xrays     A list of x-ray energies to compute
 	 */
-	public MaterialMACFunction(final List<Composition> materials, final XRay xray) {
+	public MaterialMACFunction(final List<? extends IMaterial> materials, final XRay xray) {
 		super(inputTags(materials, xray), outputTags(materials, xray));
 	}
 
@@ -292,12 +293,12 @@ public class MaterialMACFunction //
 		final List<? extends Object> inp = getInputLabels();
 		for (int matMacIdx = 0; matMacIdx < macTags.size(); ++matMacIdx) {
 			final MaterialMAC matMacTag = (MaterialMAC) macTags.get(matMacIdx);
-			final Composition comp = matMacTag.getComposition();
+			final IMaterial comp = matMacTag.getMaterial();
 			final XRay xr = matMacTag.getXRay();
 			double matMac = 0.0;
 			for (final Element elm : comp.getElementSet()) {
 				final ElementalMAC.ElementMAC elmMacTag = new ElementalMAC.ElementMAC(elm, xr);
-				final MassFractionTag mfTag = Composition.buildMassFractionTag(comp, elm);
+				final CompositionalLabel.MassFraction mfTag = CompositionalLabel.buildMassFractionTag(comp, elm);
 				final int macIdx = inp.indexOf(elmMacTag);
 				assert macIdx >= 0 : elmMacTag;
 				final int mfIdx = inp.indexOf(mfTag);
@@ -320,12 +321,12 @@ public class MaterialMACFunction //
 		final List<? extends Object> inp = getInputLabels();
 		for (int i = 0; i < macTags.size(); ++i) {
 			final MaterialMAC macTag = (MaterialMAC) macTags.get(i);
-			final Composition mf = macTag.getComposition();
+			final IMaterial mf = macTag.getMaterial();
 			final XRay xr = macTag.getXRay();
 			double tmp = 0.0;
 			for (final Element elm : mf.getElementSet()) {
 				final int p = inp.indexOf(new ElementalMAC.ElementMAC(elm, xr));
-				final int q = inp.indexOf(Composition.buildMassFractionTag(mf, elm));
+				final int q = inp.indexOf(CompositionalLabel.buildMassFractionTag(mf, elm));
 				assert (p >= 0) && (q >= 0);
 				tmp += point.getEntry(p) * point.getEntry(q);
 			}

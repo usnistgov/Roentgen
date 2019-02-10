@@ -11,6 +11,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
@@ -22,13 +23,15 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.MassFractionTag;
+import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 
 /**
  * A matrix correction model is a model that computes the values associated with
- * {@link MatrixCorrectionLabel} for a set of {@link ElementXRaySet} objects
- * associated with {@link MatrixCorrectionDatum}s associated with Standards
- * relative to a {@link MatrixCorrectionDatum} associated with an unknown.
+ * {@link MatrixCorrectionLabel} and {@link KRatioLabel} for a set of 
+ * {@link ElementXRaySet} objects associated with {@link MatrixCorrectionDatum}s 
+ * associated with Standards relative to a {@link MatrixCorrectionDatum} associated 
+ * with an unknown.
  *
  * A matrix correction model may also calculate values for {@link KRatioLabel}
  * and other related tags.
@@ -58,8 +61,8 @@ abstract public class MatrixCorrectionModel2 //
 		}
 	}
 
-	public static class CompositionLabel extends BaseLabel<Composition, Object, Object> {
-		public CompositionLabel(final String name, final Composition mcd) {
+	public static class CompositionLabel extends BaseLabel<IMaterial, Object, Object> {
+		public CompositionLabel(final String name, final IMaterial mcd) {
 			super(name, mcd);
 		}
 	}
@@ -180,13 +183,13 @@ abstract public class MatrixCorrectionModel2 //
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
 			final Composition stdComp = krl.getStandard().getComposition();
 			for (final Element elm : stdComp.getElementSet()) {
-				final MassFractionTag mft = Composition.buildMassFractionTag(stdComp, elm);
+				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(stdComp, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
 			final Composition unkComp = krl.getUnknown().getComposition();
 			for (final Element elm : unkComp.getElementSet()) {
-				final MassFractionTag mft = Composition.buildMassFractionTag(unkComp, elm);
+				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(unkComp, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
@@ -292,7 +295,7 @@ abstract public class MatrixCorrectionModel2 //
 		return new MatrixCorrectionModel2.ElementLabel("J", elm);
 	}
 
-	static public Object matMacLabel(final Composition comp, final CharacteristicXRay cxr) {
+	static public Object matMacLabel(final IMaterial comp, final CharacteristicXRay cxr) {
 		return new MaterialMACFunction.MaterialMAC(comp, cxr);
 	}
 
@@ -342,5 +345,7 @@ abstract public class MatrixCorrectionModel2 //
 		}
 		return sb.toString();
 	}
+
+	abstract public UncertainValues buildInput() throws ArgumentException;
 
 }

@@ -192,7 +192,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 	/**
 	 * <p>
-	 * A safer but slower version of <code>value(x)</code>.
+	 * A safer version of <code>value(x)</code>.
 	 * </p>
 	 * <p>
 	 * Checks the length of the input argument x, calls <code>value(x)</code> and

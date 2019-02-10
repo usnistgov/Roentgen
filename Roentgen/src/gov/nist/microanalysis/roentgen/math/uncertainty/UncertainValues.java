@@ -424,7 +424,7 @@ public class UncertainValues //
 			// Check if already in correct order...
 			boolean eq = true;
 			for (int i = 0; (i < labels.size()) && eq; ++i)
-				if (mLabels.get(i) != labels.get(i)) {
+				if (!mLabels.get(i).equals(labels.get(i))) {
 					eq = false;
 					break;
 				}
@@ -467,6 +467,15 @@ public class UncertainValues //
 	) throws ArgumentException {
 		return propagateOrdered(nmjf, input.reorder(nmjf.getInputLabels()));
 	}
+	
+	private static boolean checkOrdered(List<? extends Object> labels1, List<? extends Object> labels2 ) {
+		if(labels1.size()!=labels2.size())
+			return false;
+		for(int i=0;i<labels1.size();++i)
+			if(!labels1.get(i).equals(labels2.get(i)))
+				return false;
+		return true;
+	}
 
 	/**
 	 * Returns the UncertainValues that result from applying the function/Jacobian
@@ -481,8 +490,7 @@ public class UncertainValues //
 	public static UncertainValues propagateOrdered( //
 			final LabeledMultivariateJacobianFunction nmjf, //
 			final UncertainValues ordered) {
-		assert ordered.getLabels()
-				.equals(nmjf.getInputLabels()) : "The input values are not ordered the same as the nmjf input labels.";
+		assert checkOrdered(ordered.getLabels(), nmjf.getInputLabels()) : "The input values are not ordered the same as the nmjf input labels.";
 		final Pair<RealVector, RealMatrix> eval = nmjf.evaluate(ordered.getValues());
 		final RealMatrix jac = eval.getSecond();
 		return new UncertainValues(nmjf.getOutputLabels(), //
@@ -600,19 +608,18 @@ public class UncertainValues //
 	/**
 	 * Extracts all labels assignable as cls
 	 *
-	 * @param <T>
-	 *
 	 * @param cls<T> The class type
 	 * @return List&lt;T&gt;
 	 */
-	public <T> List<T> extractTypeOfLabel(final Class<T> cls) {
+	public <T> List<T> getLabels(final Class<T> cls) {
 		final List<T> res = new ArrayList<>();
 		for (final Object tag : mLabels)
 			if (cls.isInstance(tag))
 				res.add(cls.cast(tag));
-		return res;
+		return Collections.unmodifiableList(res);
 	}
-
+	
+	
 	/**
 	 * Returns a {@link RealVector} containing the values associated with this
 	 * object.
@@ -716,7 +723,8 @@ public class UncertainValues //
 	final public List<Object> getLabels() {
 		return Collections.unmodifiableList(mLabels);
 	}
-
+	
+	
 	/**
 	 * Is there a value and covariances associated with the specified label?
 	 *

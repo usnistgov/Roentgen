@@ -32,7 +32,7 @@ import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRayEmissionProbability;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
 
 /**
  * Takes the matrix corrections for the individual lines and sums them as
@@ -262,8 +262,8 @@ class MultiE0MultiLineModel //
 			final List<Object> res = new ArrayList<>();
 			res.add(intensityLabel(krl.getUnknown(), krl.getXRaySet()));
 			res.add(intensityLabel(krl.getStandard(), krl.getXRaySet()));
-			res.add(Composition.buildMassFractionTag(krl.getUnknown().getComposition(), krl.getXRaySet().getElement()));
-			res.add(Composition.buildMassFractionTag(krl.getStandard().getComposition(),
+			res.add(CompositionalLabel.buildMassFractionTag(krl.getUnknown().getComposition(), krl.getXRaySet().getElement()));
+			res.add(CompositionalLabel.buildMassFractionTag(krl.getStandard().getComposition(),
 					krl.getXRaySet().getElement()));
 			return res;
 		}
@@ -294,8 +294,8 @@ class MultiE0MultiLineModel //
 
 			final Object intUnkLbl = intensityLabel(unk, exrs);
 			final Object intStdLbl = intensityLabel(std, exrs);
-			final Object cUnkLbl = Composition.buildMassFractionTag(unk.getComposition(), exrs.getElement());
-			final Object cStdLbl = Composition.buildMassFractionTag(std.getComposition(), exrs.getElement());
+			final Object cUnkLbl = CompositionalLabel.buildMassFractionTag(unk.getComposition(), exrs.getElement());
+			final Object cStdLbl = CompositionalLabel.buildMassFractionTag(std.getComposition(), exrs.getElement());
 
 			final double intUnk = getValue(intUnkLbl, point);
 			final double intStd = getValue(intStdLbl, point);
@@ -329,8 +329,8 @@ class MultiE0MultiLineModel //
 
 			final Object intUnkLbl = intensityLabel(unk, exrs);
 			final Object intStdLbl = intensityLabel(std, exrs);
-			final Object cUnkLbl = Composition.buildMassFractionTag(unk.getComposition(), exrs.getElement());
-			final Object cStdLbl = Composition.buildMassFractionTag(std.getComposition(), exrs.getElement());
+			final Object cUnkLbl = CompositionalLabel.buildMassFractionTag(unk.getComposition(), exrs.getElement());
+			final Object cStdLbl = CompositionalLabel.buildMassFractionTag(std.getComposition(), exrs.getElement());
 
 			final double intUnk = getValue(intUnkLbl, point);
 			final double intStd = getValue(intStdLbl, point);

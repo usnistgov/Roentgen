@@ -11,7 +11,6 @@ import gov.nist.microanalysis.roentgen.tests.math.TestUncertainValue;
 import gov.nist.microanalysis.roentgen.tests.math.TestUncertainValues;
 import gov.nist.microanalysis.roentgen.tests.math.TestUtility;
 import gov.nist.microanalysis.roentgen.tests.matrixcorrection.KRatioCorrectionModelTest;
-import gov.nist.microanalysis.roentgen.tests.matrixcorrection.KRatioIterationTest;
 import gov.nist.microanalysis.roentgen.tests.matrixcorrection.TwoPointContinuumModelTest;
 import gov.nist.microanalysis.roentgen.tests.matrixcorrection.XPPMatrixCorrection2Test;
 import gov.nist.microanalysis.roentgen.tests.physics.CompositionTest2;
@@ -40,8 +39,7 @@ import gov.nist.microanalysis.roentgen.tests.spectrum.TestSpectrumFileReader;
   TestSpectrumFileReader.class,
   CompositionTest2.class,
   XPPMatrixCorrection2Test.class,
-  KRatioCorrectionModelTest.class,
-  KRatioIterationTest.class
+  KRatioCorrectionModelTest.class
 })
 
 public class TestSuite {

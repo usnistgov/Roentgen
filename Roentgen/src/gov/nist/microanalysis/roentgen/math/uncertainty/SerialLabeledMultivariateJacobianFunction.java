@@ -20,6 +20,7 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 
 /**
  * <p>
@@ -383,7 +384,7 @@ public class SerialLabeledMultivariateJacobianFunction //
 							inputs.remove(label);
 					}
 					// Build the trimmed Jacobian
-					final RealMatrix trimmedJac = MatrixUtils.createRealMatrix(trimmedIdx.size(), currCols.size());
+					final RealMatrix trimmedJac = NullableRealMatrix.build(trimmedIdx.size(), currCols.size());
 					for (int r = trimmedIdx.size() - 1; r >= 0; --r)
 						trimmedJac.setRow(r, newJac.getRow(trimmedIdx.get(r)));
 					// Calculate the cumulative Jacobian

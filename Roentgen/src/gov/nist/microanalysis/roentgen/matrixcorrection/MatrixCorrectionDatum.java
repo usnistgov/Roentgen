@@ -7,6 +7,7 @@ import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 
 /**
@@ -87,7 +88,8 @@ public abstract class MatrixCorrectionDatum //
 	) {
 		mBeamEnergy = beamEnergy;
 		mTakeOffAngle = takeOffAngle;
-		mRoughness = Double.isNaN(roughness) ? Optional.empty() : Optional.of(Double.valueOf(roughness));
+		mRoughness = Double.isNaN(roughness) || (roughness == 0.0) ? Optional.empty()
+				: Optional.of(Double.valueOf(roughness));
 		mCoating = Optional.ofNullable(coating);
 	}
 
@@ -110,8 +112,13 @@ public abstract class MatrixCorrectionDatum //
 		return mTakeOffAngle;
 	}
 
+	/**
+	 * Returns the max(roughness, 1.0 nm g/cm<sup>3</cm>)
+	 * 
+	 * @return double
+	 */
 	public double getRoughness() {
-		return mRoughness.orElse(1.0e-10);
+		return mRoughness.orElse(roughness(1.0, 1.0));
 	}
 
 	public boolean hasRoughness() {
@@ -132,5 +139,5 @@ public abstract class MatrixCorrectionDatum //
 	 *
 	 * @return {@link Composition}
 	 */
-	public abstract Composition getComposition();
+	public abstract IMaterial getComposition();
 }
