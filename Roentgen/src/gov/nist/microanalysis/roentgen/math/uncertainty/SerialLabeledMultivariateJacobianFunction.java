@@ -400,7 +400,7 @@ public class SerialLabeledMultivariateJacobianFunction //
 		// Build the output structures
 		final List<? extends Object> outs = getOutputLabels();
 		final RealVector resVals = new ArrayRealVector(outs.size());
-		final RealMatrix resJac = MatrixUtils.createRealMatrix(outs.size(), inpLabels.size());
+		final RealMatrix resJac = NullableRealMatrix.build(outs.size(), inpLabels.size());
 		{ // Ensure the output rows are ordered correctly.
 			assert inputs.size() == cumJac.getRowDimension();
 			assert cumJac.getColumnDimension() == inpLabels.size();

@@ -1,5 +1,6 @@
 package gov.nist.microanalysis.roentgen.physics.composition;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,6 +50,12 @@ public class Material //
 		mHTMLName = htmlName.startsWith("<html>") ? htmlName : "<html>" + htmlName;
 		mElements = Collections.unmodifiableSet(new HashSet<>(elms));
 	}
+	
+	public Material(String htmlName, Element ... elms) {
+		this(htmlName, Arrays.asList(elms));
+	}
+	
+	
 
 	/*
 	 * (non-Javadoc)
@@ -88,6 +95,11 @@ public class Material //
 			}
 			return mHTMLName.substring(6) + "[" + sb.toString() + "]";
 		}
+	}
+
+	@Override
+	public Material asMaterial() {
+		return this;
 	}
 
 }

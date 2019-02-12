@@ -17,7 +17,6 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
  * <p>
@@ -90,19 +89,6 @@ public class KRatioLabel//
 		return super.hashCode() + 31 * mMethod.hashCode();
 	}
 
-	static public boolean areAllSameUnknownComposition(final Set<KRatioLabel> krs) {
-		Composition unk = null;
-		for (final KRatioLabel krl : krs) {
-			final UnknownMatrixCorrectionDatum tmp = krl.getUnknown();
-			if (!tmp.hasEstimate())
-				return false;
-			if (unk == null)
-				unk = tmp.getComposition();
-			else if (!tmp.getComposition().getValues().equals(unk.getValues()))
-				return false;
-		}
-		return true;
-	}
 
 	static public boolean areAllSameUnknownElements(final Set<KRatioLabel> krs) {
 		Set<Element> elms = null;
@@ -135,7 +121,7 @@ public class KRatioLabel//
 		if (mode == Mode.TERSE)
 			return "k<sub>" + xrs + "," + meth + "</sub>";
 		else if (mode == Mode.NORMAL)
-			return "k<sub>" + getUnknown().getComposition().getHTMLName() + "," //
+			return "k<sub>" + getUnknown().getMaterial().getHTMLName() + "," //
 					+ getStandard().getComposition().getHTMLName() + "," + xrs + "," + meth + "</sub>";
 		else {
 			final Table table = new Table();

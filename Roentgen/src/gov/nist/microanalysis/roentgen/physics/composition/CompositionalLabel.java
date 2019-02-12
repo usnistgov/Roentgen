@@ -19,9 +19,16 @@ import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
  */
 public class CompositionalLabel //
 		extends BaseLabel<Element, String, Object> {
+	
+	private static String wrap(String html) {
+		if(html.startsWith("<html>"))
+			return html;
+		else
+			return "<html>"+html;
+	}
 
 	private CompositionalLabel(final String prefix, final String html, final Element elm) {
-		super(prefix, elm, html);
+		super(prefix, elm, wrap(html));
 	}
 
 	public Element getElement() {

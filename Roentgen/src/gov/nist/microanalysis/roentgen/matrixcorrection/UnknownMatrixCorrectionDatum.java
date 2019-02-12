@@ -10,8 +10,6 @@ import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -26,10 +24,12 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  */
 public class UnknownMatrixCorrectionDatum //
 		extends MatrixCorrectionDatum {
+	
+	private final Material mMaterial;
 
 	@Override
 	public int hashCode() {
-		return 37 * super.hashCode() + Objects.hash(mEstimate, mEstimate);
+		return 37 * super.hashCode() + Objects.hash(mMaterial);
 	}
 
 	@Override
@@ -41,10 +41,8 @@ public class UnknownMatrixCorrectionDatum //
 		if (getClass() != obj.getClass())
 			return false;
 		final UnknownMatrixCorrectionDatum other = (UnknownMatrixCorrectionDatum) obj;
-		return Objects.equals(mEstimate, other.mEstimate);
+		return Objects.equals(mMaterial, other.mMaterial);
 	}
-
-	private IMaterial mEstimate;
 
 	/**
 	 * @param comp Not null Material or Composition
@@ -54,14 +52,14 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param coating Layer
 	 */
 	public UnknownMatrixCorrectionDatum(//
-			final IMaterial comp, //
+			final Material mat, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle, //
 			final double roughness, //
 			Layer coating) {
 		super(beamEnergy, takeOffAngle, roughness, coating);
-		assert comp != null;
-		mEstimate = comp;
+		assert mat != null;
+		mMaterial = mat;
 	}
 
 	/**
@@ -69,7 +67,7 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param takeOffAngle
 	 */
 	public UnknownMatrixCorrectionDatum(//
-			IMaterial estimate, //
+			Material estimate, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle//
 	) {
@@ -82,7 +80,7 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param roughness
 	 */
 	public UnknownMatrixCorrectionDatum(//
-			final IMaterial comp, //
+			final Material comp, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle, //
 			final double roughness) {
@@ -90,32 +88,14 @@ public class UnknownMatrixCorrectionDatum //
 	}
 
 	public Set<Element> getElementSet() {
-		return Collections.unmodifiableSet(mEstimate.getElementSet());
+		return Collections.unmodifiableSet(mMaterial.getElementSet());
 	}
 
-	public void setEstimated(final Composition comp) {
-		mEstimate = comp;
+	public Material getMaterial() {
+		return mMaterial;
 	}
-
-	public void clearEstimate() {
-		mEstimate = new Material(mEstimate.getHTMLName(), mEstimate.getElementSet());
-	}
-
-	public Composition getEstimate() {
-		assert mEstimate instanceof Composition;
-		return (Composition) mEstimate;
-	}
-
-	@Override
-	public Composition getComposition() {
-		assert mEstimate instanceof Composition;
-		return (Composition) mEstimate;
-	}
-
-	public boolean hasEstimate() {
-		return mEstimate instanceof Composition;
-	}
-
+	
+	
 	@Override
 	public String toHTML(final Mode mode) {
 		final BasicNumberFormat bnf = new BasicNumberFormat("0.0");
@@ -126,7 +106,7 @@ public class UnknownMatrixCorrectionDatum //
 
 		} else {
 			final Table t = new Table();
-			t.addRow(Table.td("Estimate"), Table.td(mEstimate.toHTML(Mode.NORMAL)));
+			t.addRow(Table.td("Estimate"), Table.td(mMaterial.toHTML(Mode.NORMAL)));
 			t.addRow(Table.td("Is standard?"), Table.td("False"));
 			t.addRow(Table.td("Beam Energy"), Table.td(bnf.formatHTML(mBeamEnergy)));
 			t.addRow(Table.td("Take-off angle"),

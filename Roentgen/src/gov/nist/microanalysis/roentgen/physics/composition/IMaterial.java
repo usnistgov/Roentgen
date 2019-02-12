@@ -19,5 +19,7 @@ public interface IMaterial extends IToHTML {
 	public Set<Element> getElementSet();
 	
 	public String getHTMLName();
+	
+	public Material asMaterial();
 
 }

@@ -19,7 +19,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
-
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 /**
  * Compute the material mass absorption coefficient given the elemental mass
  * absorption coefficients.
@@ -32,9 +32,10 @@ public class MaterialMACFunction //
 		implements ILabeledMultivariateFunction {
 
 	public static class MaterialMAC //
-			extends BaseLabel<IMaterial, XRay, Object> {
-
-		public MaterialMAC(final IMaterial mf, final XRay xr) {
+			extends BaseLabel<Material, XRay, Object> {
+		
+		
+		public MaterialMAC(final Material mf, final XRay xr) {
 			super("[&mu;/&rho;]", mf, xr);
 		}
 
@@ -45,6 +46,7 @@ public class MaterialMACFunction //
 		public XRay getXRay() {
 			return getObject2();
 		}
+
 	}
 
 	private static List<Object> inputTags(final List<? extends IMaterial> comps, final XRay xray) {
@@ -264,7 +266,7 @@ public class MaterialMACFunction //
 	private static List<Object> outputTags(final List<? extends IMaterial> materials, final XRay xray) {
 		final List<Object> res = new ArrayList<>();
 		for (final IMaterial mf : materials)
-			res.add(new MaterialMAC(mf, xray));
+			res.add(new MaterialMAC(mf.asMaterial(), xray));
 		return res;
 	}
 
@@ -302,7 +304,7 @@ public class MaterialMACFunction //
 				final int macIdx = inp.indexOf(elmMacTag);
 				assert macIdx >= 0 : elmMacTag;
 				final int mfIdx = inp.indexOf(mfTag);
-				assert mfIdx >= 0 : mfTag;
+				assert mfIdx >= 0 : mfTag + " is missing...";
 				final double macVal = point.getEntry(macIdx);
 				final double mfVal = point.getEntry(mfIdx);
 				matMac += macVal * mfVal;

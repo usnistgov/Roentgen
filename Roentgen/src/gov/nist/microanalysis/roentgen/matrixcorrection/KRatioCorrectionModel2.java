@@ -33,6 +33,7 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 
 /**
  * <p>
@@ -60,8 +61,8 @@ public class KRatioCorrectionModel2 //
 
 	private final MatrixCorrectionModel2 mModel;
 
-	private static class HModel //
-			extends LabeledMultivariateJacobianFunction //
+	private static class KR2HModel //
+			extends ImplicitMeasurementModel.HModel //
 			implements ILabeledMultivariateFunction {
 
 		private final Set<KRatioLabel> mKRatios;
@@ -69,11 +70,11 @@ public class KRatioCorrectionModel2 //
 		static List<? extends Object> buildOutputs(//
 				final Set<KRatioLabel> kratios //
 		) throws ArgumentException {
-			Composition unk = null;
+			Material unk = null;
 			for (final KRatioLabel krl : kratios) {
 				if (unk == null)
-					unk = krl.getUnknown().getComposition();
-				if (!unk.equals(krl.getUnknown().getComposition()))
+					unk = krl.getUnknown().getMaterial();
+				if (!unk.equals(krl.getUnknown().getMaterial()))
 					throw new ArgumentException("More than one unknown in KRatioCorrectionModel2.HModel");
 			}
 			return CompositionalLabel.massFractionTags(unk);
@@ -85,8 +86,6 @@ public class KRatioCorrectionModel2 //
 			final List<Object> res = new ArrayList<>();
 			for (final KRatioLabel krl : kratios) {
 				res.add(krl);
-				res.add(CompositionalLabel.buildMassFractionTag(krl.getUnknown().getComposition(),
-						krl.getXRaySet().getElement()));
 				res.add(CompositionalLabel.buildMassFractionTag(krl.getStandard().getComposition(),
 						krl.getXRaySet().getElement()));
 				res.add(new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet()));
@@ -94,10 +93,10 @@ public class KRatioCorrectionModel2 //
 			return res;
 		}
 
-		private HModel(//
+		private KR2HModel(//
 				final Set<KRatioLabel> kratios //
 		) throws ArgumentException {
-			super(buildInputs(kratios), ImplicitMeasurementModel.buildHLabels(buildOutputs(kratios)));
+			super(buildInputs(kratios), buildOutputs(kratios));
 			mKRatios = new HashSet<>(kratios);
 		}
 
@@ -107,12 +106,11 @@ public class KRatioCorrectionModel2 //
 			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 			for (final KRatioLabel kMeasTag : mKRatios) {
 				final Element elm = kMeasTag.getXRaySet().getElement();
-				final Object mfUnkTag = CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getComposition(), elm);
+				final Object mfUnkTag = CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm);
 				final Object mfStdTag = CompositionalLabel.buildMassFractionTag(kMeasTag.getStandard().getComposition(), elm);
 				final Object zafTag = new MatrixCorrectionLabel(kMeasTag.getUnknown(), kMeasTag.getStandard(),
 						kMeasTag.getXRaySet());
-				final Object hTag = new ImplicitMeasurementModel.HLabel(
-						CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getComposition(), elm));
+				final Object hTag = new ImplicitMeasurementModel.HLabel(CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm));
 				final int iKMeas = inputIndex(kMeasTag);
 				final int iMFUnk = inputIndex(mfUnkTag);
 				final int iMFStd = inputIndex(mfStdTag);
@@ -138,12 +136,12 @@ public class KRatioCorrectionModel2 //
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			for (final KRatioLabel kMeasTag : mKRatios) {
 				final Element elm = kMeasTag.getXRaySet().getElement();
-				final Object mfUnkTag = CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getComposition(), elm);
+				final Object mfUnkTag = CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm);
 				final Object mfStdTag = CompositionalLabel.buildMassFractionTag(kMeasTag.getStandard().getComposition(), elm);
 				final Object zafTag = new MatrixCorrectionLabel(kMeasTag.getUnknown(), kMeasTag.getStandard(),
 						kMeasTag.getXRaySet());
 				final Object hTag = new ImplicitMeasurementModel.HLabel(
-						CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getComposition(), elm));
+						CompositionalLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm));
 				final int iKMeas = inputIndex(kMeasTag);
 				final int iMFUnk = inputIndex(mfUnkTag);
 				final int iMFStd = inputIndex(mfStdTag);
@@ -176,10 +174,10 @@ public class KRatioCorrectionModel2 //
 			MatrixCorrectionModel2 mcm) //
 			throws ArgumentException {
 		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
-		List<? extends Object> outputs = CompositionalLabel.massFractionTags(unk.getComposition());
+		List<? extends Object> outputs = CompositionalLabel.massFractionTags(unk.getMaterial());
 		List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
 		res.add(mcm);
-		res.add(new ImplicitMeasurementModel(new HModel(krs), outputs));
+		res.add(new ImplicitMeasurementModel(new KR2HModel(krs), outputs));
 		return res;
 
 	}
@@ -209,9 +207,9 @@ public class KRatioCorrectionModel2 //
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	public UncertainValues buildInputs() //
+	public UncertainValues buildInput(Composition estUnknown) //
 			throws ArgumentException {
-		return mModel.buildInput();
+		return mModel.buildInput(estUnknown);
 	}
 
 	/**

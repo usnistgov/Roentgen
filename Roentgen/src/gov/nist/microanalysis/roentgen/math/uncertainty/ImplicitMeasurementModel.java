@@ -39,23 +39,39 @@ public class ImplicitMeasurementModel //
 		}
 	}
 
-	/**
-	 * Builds a special set of labels to represent the function
-	 * <b>h</b>(<b>X</b>,<b>Y</b>,<b>Z</b>) = <b>0</b>.
-	 *
-	 * @param outlabels
-	 * @return List&lt;? extends Object&gt;
-	 */
-	public static List<? extends Object> buildHLabels(//
-			final List<? extends Object> outlabels //
-	) {
-		final List<Object> res = new ArrayList<>();
-		for (final Object label : outlabels)
-			res.add(new HLabel(label));
-		return res;
+	public static abstract class HModel //
+			extends LabeledMultivariateJacobianFunction {
+
+		private static List<? extends Object> combine(List<? extends Object> inp, List<? extends Object> outp) {
+			List<Object> res = new ArrayList<>();
+			res.addAll(inp);
+			res.addAll(outp);
+			return res;
+		}
+
+		/**
+		 * Builds a special set of labels to represent the function
+		 * <b>h</b>(<b>X</b>,<b>Y</b>,<b>Z</b>) = <b>0</b>.
+		 *
+		 * @param outlabels
+		 * @return List&lt;? extends Object&gt;
+		 */
+		private static List<? extends Object> buildHLabels(//
+				final List<? extends Object> outlabels //
+		) {
+			final List<Object> res = new ArrayList<>();
+			for (final Object label : outlabels)
+				res.add(new HLabel(label));
+			return res;
+		}
+
+		public HModel(List<? extends Object> inputLabels, List<? extends Object> outputLabels) {
+			super(combine(inputLabels, outputLabels), buildHLabels(outputLabels));
+		}
+
 	}
 
-	private final LabeledMultivariateJacobianFunction mHFunction;
+	private final HModel mHFunction;
 
 	private static List<? extends Object> buildInputs(//
 			final LabeledMultivariateJacobianFunction h, //
@@ -67,7 +83,7 @@ public class ImplicitMeasurementModel //
 	}
 
 	public ImplicitMeasurementModel(//
-			final LabeledMultivariateJacobianFunction h, //
+			final HModel h, //
 			final List<? extends Object> outputLabels //
 	) {
 		super(buildInputs(h, outputLabels), outputLabels);

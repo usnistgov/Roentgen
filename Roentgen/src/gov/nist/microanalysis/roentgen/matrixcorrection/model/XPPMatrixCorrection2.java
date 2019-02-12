@@ -332,8 +332,8 @@ public class XPPMatrixCorrection2 //
 		public static List<? extends Object> buildInputs(final MatrixCorrectionDatum datum, final AtomicShell shell,
 				final Set<MatrixCorrectionModel2.Variate> variates) {
 			final List<Object> res = new ArrayList<>();
-			res.add(new MatrixCorrectionModel2.CompositionLabel("M", datum.getComposition()));
-			res.add(new MatrixCorrectionModel2.CompositionLabel("J", datum.getComposition()));
+			res.add(new MatrixCorrectionModel2.CompositionLabel("M", datum.getMaterial()));
+			res.add(new MatrixCorrectionModel2.CompositionLabel("J", datum.getMaterial()));
 			if (variates.contains(MatrixCorrectionModel2.Variate.BeamEnergy))
 				res.add(MatrixCorrectionModel2.beamEnergyLabel(datum));
 			if (variates.contains(MatrixCorrectionModel2.Variate.IonizationExponent))
@@ -352,8 +352,8 @@ public class XPPMatrixCorrection2 //
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
 			final Object tagE0 = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
 			final Object tagm = new MatrixCorrectionModel2.IonizationExponentLabel(mShell);
-			final int iJ = inputIndex(new MatrixCorrectionModel2.CompositionLabel("J", mDatum.getComposition()));
-			final int iM = inputIndex(new MatrixCorrectionModel2.CompositionLabel("M", mDatum.getComposition()));
+			final int iJ = inputIndex(new MatrixCorrectionModel2.CompositionLabel("J", mDatum.getMaterial()));
+			final int iM = inputIndex(new MatrixCorrectionModel2.CompositionLabel("M", mDatum.getMaterial()));
 			checkIndices(iJ, iM);
 
 			final double e0 = getValue(tagE0, point);
@@ -425,8 +425,8 @@ public class XPPMatrixCorrection2 //
 		public RealVector optimized(final RealVector point) {
 			final Object tagE0 = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
 			final Object tagm = new MatrixCorrectionModel2.IonizationExponentLabel(mShell);
-			final int iJ = inputIndex(new MatrixCorrectionModel2.CompositionLabel("J", mDatum.getComposition()));
-			final int iM = inputIndex(new MatrixCorrectionModel2.CompositionLabel("M", mDatum.getComposition()));
+			final int iJ = inputIndex(new MatrixCorrectionModel2.CompositionLabel("J", mDatum.getMaterial()));
+			final int iM = inputIndex(new MatrixCorrectionModel2.CompositionLabel("M", mDatum.getMaterial()));
 			checkIndices(iJ, iM);
 
 			final double e0 = getValue(tagE0, point);
@@ -490,7 +490,7 @@ public class XPPMatrixCorrection2 //
 		public static List<? extends Object> buildInputs(final MatrixCorrectionDatum datum,
 				final Set<MatrixCorrectionModel2.Variate> variates) {
 			final List<Object> res = new ArrayList<>();
-			res.add(new MatrixCorrectionModel2.CompositionLabel(ZBARB, datum.getComposition()));
+			res.add(new MatrixCorrectionModel2.CompositionLabel(ZBARB, datum.getMaterial()));
 			if (variates.contains(MatrixCorrectionModel2.Variate.BeamEnergy))
 				res.add(MatrixCorrectionModel2.beamEnergyLabel(datum));
 			return res;
@@ -505,7 +505,7 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getComposition()));
+			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getMaterial()));
 			final Object tagE0 = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
 			checkIndices(iZbarb);
 
@@ -581,7 +581,7 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public RealVector optimized(final RealVector point) {
-			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getComposition()));
+			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getMaterial()));
 			checkIndices(iZbarb);
 
 			final double Ea = eVtokeV(mShell.getEdgeEnergy());
@@ -634,7 +634,7 @@ public class XPPMatrixCorrection2 //
 		public static List<? extends Object> buildInputs(final MatrixCorrectionDatum datum, final AtomicShell shell,
 				final Set<MatrixCorrectionModel2.Variate> variates) {
 			final List<Object> res = new ArrayList<>();
-			res.add(new MatrixCorrectionModel2.CompositionLabel(ZBARB, datum.getComposition()));
+			res.add(new MatrixCorrectionModel2.CompositionLabel(ZBARB, datum.getMaterial()));
 			if (variates.contains(MatrixCorrectionModel2.Variate.BeamEnergy))
 				res.add(MatrixCorrectionModel2.beamEnergyLabel(datum));
 			res.add(MatrixCorrectionModel2.shellLabel(ONE_OVER_S, datum, shell));
@@ -654,7 +654,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
 			final Object tagE0 = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
-			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getComposition()));
+			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getMaterial()));
 			final int iOneOverS = inputIndex(MatrixCorrectionModel2.shellLabel(ONE_OVER_S, mDatum, mShell));
 			final int iQlaE0 = inputIndex(MatrixCorrectionModel2.shellLabel(QLA, mDatum, mShell));
 			final int iPhi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mShell));
@@ -730,7 +730,7 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public RealVector optimized(final RealVector point) {
-			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getComposition()));
+			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getMaterial()));
 			final int iOneOverS = inputIndex(MatrixCorrectionModel2.shellLabel(ONE_OVER_S, mDatum, mShell));
 			final int iQlaE0 = inputIndex(MatrixCorrectionModel2.shellLabel(QLA, mDatum, mShell));
 			final int iPhi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mShell));
@@ -796,7 +796,7 @@ public class XPPMatrixCorrection2 //
 			final List<Object> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.shellLabel(RBAR, datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel("F", datum, shell));
-			res.add(new MatrixCorrectionModel2.CompositionLabel(ZBARB, datum.getComposition()));
+			res.add(new MatrixCorrectionModel2.CompositionLabel(ZBARB, datum.getMaterial()));
 			if (variates.contains(MatrixCorrectionModel2.Variate.BeamEnergy))
 				res.add(MatrixCorrectionModel2.beamEnergyLabel(datum));
 			res.add(MatrixCorrectionModel2.phi0Label(datum, shell));
@@ -812,7 +812,7 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getComposition()));
+			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getMaterial()));
 			final Object tagE0 = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
 			final int iRbar = inputIndex(MatrixCorrectionModel2.shellLabel(RBAR, mDatum, mShell));
 			final int iF = inputIndex(MatrixCorrectionModel2.shellLabel("F", mDatum, mShell));
@@ -897,7 +897,7 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public RealVector optimized(final RealVector point) {
-			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getComposition()));
+			final int iZbarb = inputIndex(new MatrixCorrectionModel2.CompositionLabel(ZBARB, mDatum.getMaterial()));
 			final int iRbar = inputIndex(MatrixCorrectionModel2.shellLabel(RBAR, mDatum, mShell));
 			final int iF = inputIndex(MatrixCorrectionModel2.shellLabel("F", mDatum, mShell));
 			final int iphi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mShell));
@@ -1308,7 +1308,7 @@ public class XPPMatrixCorrection2 //
 				final CharacteristicXRay cxr, final Set<MatrixCorrectionModel2.Variate> variates) {
 			final List<Object> res = new ArrayList<>();
 			if (variates.contains(MatrixCorrectionModel2.Variate.MassAbsorptionCofficient))
-				res.add(matMacLabel(datum.getComposition(), cxr));
+				res.add(matMacLabel(datum.getMaterial(), cxr));
 			if (variates.contains(MatrixCorrectionModel2.Variate.TakeOffAngle))
 				res.add(MatrixCorrectionModel2.takeOffAngleLabel(datum));
 			return res;
@@ -1327,7 +1327,7 @@ public class XPPMatrixCorrection2 //
 			assert (toa > 0.0) && (toa < 0.5 * Math.PI);
 			final double csc = 1.0 / Math.sin(toa);
 
-			final Object macT = MatrixCorrectionModel2.matMacLabel(mDatum.getComposition(), mXRay);
+			final Object macT = MatrixCorrectionModel2.matMacLabel(mDatum.getMaterial(), mXRay);
 			final double mac = getValue(macT, point);
 			final double chi = mac * csc;
 			writeJacobian(ochi, macT, csc, rm);
@@ -1351,7 +1351,7 @@ public class XPPMatrixCorrection2 //
 			final double toa = getValue(MatrixCorrectionModel2.takeOffAngleLabel(mDatum), point);
 			assert (toa > 0.0) && (toa < 0.5 * Math.PI);
 			final double csc = 1.0 / Math.sin(toa);
-			final double mac = getValue(MatrixCorrectionModel2.matMacLabel(mDatum.getComposition(), mXRay), point);
+			final double mac = getValue(MatrixCorrectionModel2.matMacLabel(mDatum.getMaterial(), mXRay), point);
 			final double chi = mac * csc; // C1
 			rv.setEntry(ochi, chi);
 
@@ -1750,7 +1750,7 @@ public class XPPMatrixCorrection2 //
 				final CharacteristicXRaySet exrs, final Set<MatrixCorrectionModel2.Variate> variates)
 				throws ArgumentException {
 			final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
-			res.add(new StepMJZBarb(datum.getComposition(), variates, datum instanceof StandardMatrixCorrectionDatum));
+			res.add(new StepMJZBarb(datum.getMaterial(), variates, datum instanceof StandardMatrixCorrectionDatum));
 			final Set<AtomicShell> shells = exrs.getSetOfInnerAtomicShells();
 			{
 				final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
@@ -1935,10 +1935,11 @@ public class XPPMatrixCorrection2 //
 	 * @return UncertainValues containing {@link MaterialMAC} tags
 	 * @throws ArgumentException
 	 */
-	public UncertainValues computeMaterialMACs(final UncertainValues elmMacs) //
+	public UncertainValues computeMaterialMACs(final UncertainValues elmMacs, Composition estUnknown) //
 			throws ArgumentException {
 		final Map<CharacteristicXRay, List<IMaterial>> mclc = new HashMap<>();
 		final Set<Composition> comps = new HashSet<>();
+		comps.add(estUnknown);
 		for (final KRatioLabel krl : mKRatios) {
 			final Set<CharacteristicXRay> scxrs = krl.getXRaySet().getSetOfCharacteristicXRay();
 			for (final CharacteristicXRay cxr : scxrs) {
@@ -1951,9 +1952,6 @@ public class XPPMatrixCorrection2 //
 				comps.add(stdComp);
 				if (!lc.contains(stdComp))
 					lc.add(stdComp);
-				final Composition unkComp = krl.getUnknown().getComposition();
-				if (!lc.contains(unkComp))
-					lc.add(unkComp);
 			}
 		}
 		final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
@@ -1980,9 +1978,9 @@ public class XPPMatrixCorrection2 //
 	 * @return
 	 * @throws ArgumentException
 	 */
-	public UncertainValues buildInput() //
+	public UncertainValues buildInput(Composition estUnknown) //
 			throws ArgumentException {
-		return UncertainValues.extract(getInputLabels(), buildParameters(true));
+		return UncertainValues.extract(getInputLabels(), buildParameters(true, estUnknown));
 	}
 
 	/**
@@ -1995,7 +1993,7 @@ public class XPPMatrixCorrection2 //
 	 */
 	private void initializeConstants() //
 			throws ArgumentException {
-		final UncertainValues constants = buildParameters(false);
+		final UncertainValues constants = buildParameters(false, null);
 		if (constants.getDimension() > 0) {
 			final Map<Object, Double> mod = new HashMap<>();
 			for (final Object tag : constants.getLabels())
@@ -2014,13 +2012,13 @@ public class XPPMatrixCorrection2 //
 	 *         the constant quantities
 	 * @throws ArgumentException
 	 */
-	private UncertainValues buildParameters(final boolean withUnc) //
+	private UncertainValues buildParameters(final boolean withUnc, Composition estUnknown) //
 			throws ArgumentException {
 		final List<UncertainValues> results = new ArrayList<>();
 		if (isSet(Variate.MeanIonizationPotential) == withUnc)
 			results.add(buildMeanIonizationPotentials());
 		if (isSet(Variate.MassAbsorptionCofficient) == withUnc)
-			results.add(buildMaterialMACs(withUnc));
+			results.add(buildMaterialMACs(withUnc, estUnknown));
 		if (isSet(Variate.BeamEnergy) == withUnc) {
 			final Map<Object, Number> vals = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
@@ -2111,11 +2109,13 @@ public class XPPMatrixCorrection2 //
 		}
 		// Make sure that there are no replicated Compositions
 		final Set<Composition> allComps = new HashSet<>();
+		if(withUnc) {
+			assert estUnknown!=null;
+			allComps.add(estUnknown);
+		}
 		for (final KRatioLabel krl : mKRatios) {
 			if (isSet(Variate.StandardComposition) == withUnc)
 				allComps.add(krl.getStandard().getComposition());
-			if (isSet(Variate.UnknownComposition) == withUnc)
-				allComps.add(krl.getUnknown().getComposition());
 		}
 		for (Composition comp : allComps) {
 			results.add(comp.toMassFraction());
@@ -2131,20 +2131,17 @@ public class XPPMatrixCorrection2 //
 		return elms;
 	}
 
-	private UncertainValues buildMaterialMACs(final boolean withUnc) //
+	private UncertainValues buildMaterialMACs(final boolean withUnc, Composition estUnknown) //
 			throws ArgumentException {
 		final List<ElementalMAC.ElementMAC> elmMacs = new ArrayList<>();
 		final Map<Composition, CharacteristicXRaySet> comps = new HashMap<>();
 		final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
 		{
 			final Set<CharacteristicXRay> allCxr = new HashSet<>();
+			comps.put(estUnknown, new CharacteristicXRaySet());
 			for (final KRatioLabel krl : mKRatios) {
-				{
-					final Composition comp = krl.getUnknown().getComposition();
-					if (!comps.containsKey(comp))
-						comps.put(comp, new CharacteristicXRaySet());
-					comps.get(comp).addAll(krl.getXRaySet());
-				}
+				assert estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
+				comps.get(estUnknown).addAll(krl.getXRaySet());
 				if (krl.getUnknown().hasCoating() && (isSet(Variate.Coating) == withUnc)) {
 					final Composition comp = krl.getUnknown().getCoating().getComposition();
 					if (!comps.containsKey(comp))
@@ -2166,7 +2163,7 @@ public class XPPMatrixCorrection2 //
 				allCxr.addAll(krl.getXRaySet().getSetOfCharacteristicXRay());
 			}
 			for (final CharacteristicXRay cxr : allCxr) {
-				final Set<Composition> mats = new HashSet<>();
+				final Set<IMaterial> mats = new HashSet<>();
 				final Set<Element> elms = new HashSet<>();
 				for (final Map.Entry<Composition, CharacteristicXRaySet> me : comps.entrySet())
 					if (me.getValue().contains(cxr)) {
@@ -2196,8 +2193,8 @@ public class XPPMatrixCorrection2 //
 	private UncertainValues buildMeanIonizationPotentials() {
 		final Set<Element> elms = new HashSet<>();
 		for (final KRatioLabel krl : mKRatios) {
-			elms.addAll(krl.getStandard().getComposition().getElementSet());
-			elms.addAll(krl.getUnknown().getComposition().getElementSet());
+			elms.addAll(krl.getStandard().getMaterial().getElementSet());
+			elms.addAll(krl.getUnknown().getMaterial().getElementSet());
 		}
 		final RealVector vals = new ArrayRealVector(elms.size());
 		final RealVector var = new ArrayRealVector(vals.getDimension());
@@ -2262,7 +2259,7 @@ public class XPPMatrixCorrection2 //
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				if (cxr.getWeight() > minWeight) {
 					{
-						final MatrixCorrectionDatum std = krl.getStandard();
+						final StandardMatrixCorrectionDatum std = krl.getStandard();
 						final double a = outputs.get(MatrixCorrectionModel2.shellLabel("a", std, cxr.getInner()))
 								.doubleValue();
 						final double b = outputs.get(MatrixCorrectionModel2.shellLabel("b", std, cxr.getInner()))
@@ -2281,11 +2278,11 @@ public class XPPMatrixCorrection2 //
 							vals1.add(prz);
 							vals2.add(prz * Math.exp(-chi * rhoZ));
 						}
-						res.add(std.getComposition().toString() + "[" + cxr.toString() + ", gen]", vals1);
-						res.add(std.getComposition().toString() + "[" + cxr.toString() + ", emit]", vals2);
+						res.add(std.toString() + "[" + cxr.toString() + ", gen]", vals1);
+						res.add(std.toString() + "[" + cxr.toString() + ", emit]", vals2);
 					}
 					{
-						final MatrixCorrectionDatum unk = krl.getUnknown();
+						final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
 						final double a = outputs.get(MatrixCorrectionModel2.shellLabel("a", unk, cxr.getInner()))
 								.doubleValue();
 						final double b = outputs.get(MatrixCorrectionModel2.shellLabel("b", unk, cxr.getInner()))
@@ -2304,8 +2301,8 @@ public class XPPMatrixCorrection2 //
 							vals1.add(prz);
 							vals2.add(prz * Math.exp(-chi * rhoZ));
 						}
-						res.add(unk.getComposition().toString() + "[" + cxr.toString() + ", gen]", vals1);
-						res.add(unk.getComposition().toString() + "[" + cxr.toString() + ", emit]", vals2);
+						res.add(unk.toString() + "[" + cxr.toString() + ", gen]", vals1);
+						res.add(unk.toString() + "[" + cxr.toString() + ", emit]", vals2);
 					}
 				}
 			}

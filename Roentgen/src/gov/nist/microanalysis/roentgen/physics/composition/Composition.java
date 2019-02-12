@@ -778,6 +778,10 @@ public class Composition //
 	public String getHTMLName() {
 		return mHTML;
 	}
+	
+	public Material asMaterial() {
+		return new Material(getHTMLName(), getElementSet());
+	}
 
 	public List<? extends Object> getLabels(final Representation rep) {
 		final List<Element> elms = getElementList();

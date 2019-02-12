@@ -25,6 +25,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 
 /**
  * A matrix correction model is a model that computes the values associated with
@@ -187,9 +188,9 @@ abstract public class MatrixCorrectionModel2 //
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
-			final Composition unkComp = krl.getUnknown().getComposition();
-			for (final Element elm : unkComp.getElementSet()) {
-				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(unkComp, elm);
+			final Material unkMat = krl.getUnknown().getMaterial();
+			for (final Element elm : unkMat.getElementSet()) {
+				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(unkMat, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
@@ -296,7 +297,7 @@ abstract public class MatrixCorrectionModel2 //
 	}
 
 	static public Object matMacLabel(final IMaterial comp, final CharacteristicXRay cxr) {
-		return new MaterialMACFunction.MaterialMAC(comp, cxr);
+		return new MaterialMACFunction.MaterialMAC(comp.asMaterial(), cxr);
 	}
 
 	static public Object shellLabel(final String name, final MatrixCorrectionDatum comp, final AtomicShell other) {
@@ -346,6 +347,6 @@ abstract public class MatrixCorrectionModel2 //
 		return sb.toString();
 	}
 
-	abstract public UncertainValues buildInput() throws ArgumentException;
+	abstract public UncertainValues buildInput(Composition estUnknown) throws ArgumentException;
 
 }

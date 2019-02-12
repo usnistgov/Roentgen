@@ -6,7 +6,6 @@ import java.util.Optional;
 import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 
@@ -132,12 +131,6 @@ public abstract class MatrixCorrectionDatum //
 	public Layer getCoating() {
 		return mCoating.orElse(null);
 	}
-
-	/**
-	 * Returns the Composition of the standard or the estimated Composition of the
-	 * unknown.
-	 *
-	 * @return {@link Composition}
-	 */
-	public abstract IMaterial getComposition();
+	
+	public abstract IMaterial getMaterial();
 }
