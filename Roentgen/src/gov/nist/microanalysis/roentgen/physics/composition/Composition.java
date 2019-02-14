@@ -2,7 +2,6 @@ package gov.nist.microanalysis.roentgen.physics.composition;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +27,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariat
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -44,13 +44,12 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * Compositions are labeled by a String (HTML) name. Compositions with the same
  * name are assumed to be interchangable within calculations.
  * </p>
- * 
+ *
  * @author Nicholas W.M. Ritchie
  *
  */
 public class Composition //
-		extends UncertainValues //
-		implements IMaterial {
+		extends UncertainValues {
 
 	public enum Representation {
 		/**
@@ -75,13 +74,13 @@ public class Composition //
 		Mixture
 	};
 
-	private final String mHTML;
-	private final Set<Element> mElements;
+	private final Material mMaterial;
 	private final Representation mPrimary;
+	private final int mHashCode;
 
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ Objects.hash(mHTML, mElements, mPrimary);
+		return mHashCode;
 	}
 
 	@Override
@@ -94,8 +93,7 @@ public class Composition //
 			return false;
 		final Composition other = (Composition) obj;
 		return super.equals(other) && //
-				Objects.equals(mHTML, other.mHTML) //
-				&& Objects.equals(mElements, other.mElements) //
+				Objects.equals(mMaterial, other.mMaterial) //
 				&& Objects.equals(mPrimary, other.mPrimary);
 	}
 
@@ -104,7 +102,6 @@ public class Composition //
 	static public BasicNumberFormat MEAN_Z_FORMAT = new BasicNumberFormat("0.00");
 	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT = new BasicNumberFormat("0.0###");
 	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00E0");
-
 
 	private static String htmlHelper(final String str) {
 		final StringBuffer res = new StringBuffer();
@@ -199,14 +196,12 @@ public class Composition //
 		return res;
 	}
 
-	private Composition(final Representation rep, final String html, final UncertainValues uvs,
-			final Collection<Element> elms) {
+	private Composition(final Representation rep, final Material mat, final UncertainValues uvs) {
 		super(uvs.getLabels(), uvs.getValues(), uvs.getCovariances());
+		mMaterial = mat;
 		mPrimary = rep;
-		mHTML = html;
-		mElements = Collections.unmodifiableSet(new HashSet<>(elms));
+		mHashCode = super.hashCode() ^ Objects.hash(mMaterial, mPrimary);
 	}
-
 
 	private <H> List<H> extractLabels(final Class<H> cls) {
 		final List<H> res = new ArrayList<>();
@@ -215,63 +210,59 @@ public class Composition //
 				res.add(cls.cast(lbl));
 		return res;
 	}
-	
+
 	/**
-	 * Returns a list of {@link MaterialMassFraction} objects one for each
-	 * element in the material.
+	 * Returns a list of {@link MaterialMassFraction} objects one for each element
+	 * in the material.
 	 *
 	 * @return List&lt;MaterialMassFractionTag&gt;
 	 */
 	public List<MaterialMassFraction> materialFractionTags() {
 		return extractLabels(MaterialMassFraction.class);
 	}
-	
-	
+
 	/**
 	 * Returns a list of {@link MassFraction} objects one for each element in the
 	 * material.
 	 *
 	 * @return List&lt;MassFractionTag&gt;
 	 */
-	public List<CompositionalLabel.MassFraction> massFractionTags() {
-		return CompositionalLabel.massFractionTags(this);
+	public List<MaterialLabel.MassFraction> massFractionTags() {
+		return MaterialLabel.massFractionTags(this.getMaterial());
 	}
 
 	public UncertainValues toMassFraction() {
 		return UncertainValues.extract(massFractionTags(), this);
 	}
 
-
-
 	public UncertainValues getAtomicWeights() {
-		return UncertainValues.extract(CompositionalLabel.atomWeightTags(this), this);
+		return UncertainValues.extract(MaterialLabel.atomWeightTags(this.getMaterial()), this);
 	}
-
 
 	public static class StoichiometryToComposition //
 			extends SerialLabeledMultivariateJacobianFunction {
-		public StoichiometryToComposition(String html, List<Element> elms) throws ArgumentException {
-			super(html, buildSteps(html, elms));
+		public StoichiometryToComposition(final Material mat) throws ArgumentException {
+			super("StoC", buildSteps(mat));
 		}
 
-		private static List<LabeledMultivariateJacobianFunction> buildSteps(String html, List<Element> elms) {
+		private static List<LabeledMultivariateJacobianFunction> buildSteps(final Material mat) {
 			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
-			funcs.add(new StoichiometryToAtomFraction(html, elms));
-			funcs.add(new AtomFractionToMassFraction(html, elms));
-			funcs.add(new MassFractionToNormalized(html, elms));
+			funcs.add(new StoichiometryToAtomFraction(mat));
+			funcs.add(new AtomFractionToMassFraction(mat));
+			funcs.add(new MassFractionToNormalized(mat));
 			return funcs;
 		}
 
 	}
-	
-	private static Map<CompositionalLabel.AtomicWeight, Number> buildAtomicWeights(final String html, final Collection<Element> elms,
-			final Map<Element, Number> atomicWeights) {
-		final Map<CompositionalLabel.AtomicWeight, Number> man = new HashMap<>();
-		for (final Element elm : elms) {
+
+	private static Map<MaterialLabel.AtomicWeight, Number> buildAtomicWeights( //
+			final Material mat, final Map<Element, Number> atomicWeights) {
+		final Map<MaterialLabel.AtomicWeight, Number> man = new HashMap<>();
+		for (final Element elm : mat.getElementSet()) {
 			Number A = Double.valueOf(elm.getAtomicWeight());
 			if (atomicWeights.containsKey(elm))
 				A = atomicWeights.get(elm);
-			man.put(CompositionalLabel.buildAtomicWeightTag(html, elm), A);
+			man.put(MaterialLabel.buildAtomicWeightTag(mat, elm), A);
 		}
 		return man;
 	}
@@ -281,16 +272,17 @@ public class Composition //
 			final Map<Element, Integer> stoic, //
 			final Map<Element, Number> atomicWeights //
 	) throws ArgumentException {
-		final Map<CompositionalLabel.Stoichiometry, Number> msn = new HashMap<>();
+		final Material mat = new Material(html, stoic.keySet());
+		final Map<MaterialLabel.Stoichiometry, Number> msn = new HashMap<>();
 		for (final Map.Entry<Element, Integer> me : stoic.entrySet())
-			msn.put(new CompositionalLabel.Stoichiometry(html, me.getKey()), me.getValue());
+			msn.put(new MaterialLabel.Stoichiometry(mat, me.getKey()), me.getValue());
 		final UncertainValues sfrac = new UncertainValues(msn);
-		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(html, stoic.keySet(), atomicWeights));
+		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
 		final UncertainValues input = UncertainValues.combine(sfrac, wgts);
-		final StoichiometryToComposition slmjf = new StoichiometryToComposition(html, new ArrayList<>(stoic.keySet()));
+		final StoichiometryToComposition slmjf = new StoichiometryToComposition(mat);
 		final UncertainValues uvs = UncertainValues.propagate(slmjf, input);
 		final UncertainValues res = UncertainValues.combine(input, uvs);
-		return new Composition(Representation.Stoichiometry, html, res, stoic.keySet());
+		return new Composition(Representation.Stoichiometry, mat, res);
 	}
 
 	public static Composition stoichiometry( //
@@ -307,15 +299,18 @@ public class Composition //
 	) throws ArgumentException {
 		assert elms.size() == vals.getDimension();
 		assert elms.size() == vars.getDimension();
-		final List<CompositionalLabel.MassFraction> labels = CompositionalLabel.buildMassFractionTags(html, elms);
-		final UncertainValues mfracs = new UncertainValues(labels, vals, vars);
-		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(html, elms, atomicWeights));
+		final Material mat = new Material(html, elms);
+		final Map<MassFraction, Number> meu = new HashMap<>();
+		for(int i=0;i<elms.size();++i)
+			meu.put(MaterialLabel.buildMassFractionTag(mat, elms.get(i)), new UncertainValue(vals.getEntry(i),Math.sqrt(vars.getEntry(i))));		
+		final UncertainValues mfracs = new UncertainValues(meu);
+		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
 		final UncertainValues input = UncertainValues.combine(mfracs, wgts);
 		try {
-			final MassFractionToComposition slmjf = new MassFractionToComposition(html, elms);
+			final MassFractionToComposition slmjf = new MassFractionToComposition(mat);
 			final UncertainValues uvs = UncertainValues.propagate(slmjf, input);
 			final UncertainValues res = UncertainValues.combine(input, uvs);
-			return new Composition(Representation.MassFraction, html, res, elms);
+			return new Composition(Representation.MassFraction, mat, res);
 		} catch (final ArgumentException e) {
 			e.printStackTrace();
 		}
@@ -332,15 +327,15 @@ public class Composition //
 	public static class MassFractionToComposition //
 			extends SerialLabeledMultivariateJacobianFunction {
 
-		final static List<LabeledMultivariateJacobianFunction> buildSteps(String html, List<Element> elms) {
+		final static List<LabeledMultivariateJacobianFunction> buildSteps(final Material mat) {
 			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
-			funcs.add(new MassFractionToAtomFraction(html, elms));
-			funcs.add(new MassFractionToNormalized(html, elms));
+			funcs.add(new MassFractionToAtomFraction(mat));
+			funcs.add(new MassFractionToNormalized(mat));
 			return funcs;
 		}
 
-		public MassFractionToComposition(String html, List<Element> elms) throws ArgumentException {
-			super(html, buildSteps(html, elms));
+		public MassFractionToComposition(final Material mat) throws ArgumentException {
+			super("MFtoC", buildSteps(mat));
 		}
 
 	}
@@ -355,14 +350,17 @@ public class Composition //
 		assert elms.size() == vals.getDimension();
 		assert elms.size() == cov.getRowDimension();
 		assert elms.size() == cov.getColumnDimension();
-		final List<CompositionalLabel.MassFraction> labels = CompositionalLabel.buildMassFractionTags(html, elms);
+		final Material mat = new Material(html, elms);
+		final List<MaterialLabel.MassFraction> labels = new ArrayList<>();
+		for(Element elm : elms)
+			labels.add(MaterialLabel.buildMassFractionTag(mat, elm));
 		final UncertainValues mfracs = new UncertainValues(labels, vals, cov);
-		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(html, elms, atomicWeights));
+		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
 		final UncertainValues input = UncertainValues.combine(mfracs, wgts);
-		final MassFractionToComposition slmjf = new MassFractionToComposition(html, elms);
+		final MassFractionToComposition slmjf = new MassFractionToComposition(mat);
 		final UncertainValues uvs = UncertainValues.propagate(slmjf, input);
 		final UncertainValues res = UncertainValues.combine(input, uvs);
-		return new Composition(Representation.MassFraction, html, res, elms);
+		return new Composition(Representation.MassFraction, mat, res);
 	}
 
 	public static Composition massFraction( //
@@ -415,14 +413,17 @@ public class Composition //
 		assert elms.size() == vals.getDimension();
 		assert elms.size() == vars.getDimension();
 		assert elms.size() == vals.getDimension();
-		final List<CompositionalLabel.AtomFraction> labels = CompositionalLabel.buildAtomFractionTags(html, elms);
+		final Material mat = new Material(html, elms);
+		final List<MaterialLabel.AtomFraction> labels = new ArrayList<>();
+		for(Element elm : elms)
+			labels.add(MaterialLabel.buildAtomFractionTag(mat, elm));
 		final UncertainValues sfrac = new UncertainValues(labels, vals, vals);
-		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(html, elms, atomicWeights));
+		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
 		final UncertainValues input = UncertainValues.combine(sfrac, wgts);
-		final AtomFractionToComposition slmjf = new AtomFractionToComposition(html, elms);
+		final AtomFractionToComposition slmjf = new AtomFractionToComposition(mat);
 		final UncertainValues uvs = UncertainValues.propagate(slmjf, input);
 		final UncertainValues res = UncertainValues.combine(input, uvs);
-		return new Composition(Representation.AtomFraction, html, res, elms);
+		return new Composition(Representation.AtomFraction, mat, res);
 	}
 
 	public static Composition atomFraction( //
@@ -443,14 +444,17 @@ public class Composition //
 		assert elms.size() == vals.getDimension();
 		assert elms.size() == cov.getRowDimension();
 		assert elms.size() == cov.getColumnDimension();
-		final List<CompositionalLabel.AtomFraction> labels = CompositionalLabel.buildAtomFractionTags(html, elms);
+		final Material mat = new Material(html, elms);
+		final List<MaterialLabel.AtomFraction> labels = new ArrayList<>();
+		for(Element elm : elms)
+			labels.add(MaterialLabel.buildAtomFractionTag(mat, elm));
 		final UncertainValues afrac = new UncertainValues(labels, vals, vals);
-		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(html, elms, atomicWeights));
+		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
 		final UncertainValues input = UncertainValues.combine(afrac, wgts);
-		final AtomFractionToComposition slmjf = new AtomFractionToComposition(html, elms);
+		final AtomFractionToComposition slmjf = new AtomFractionToComposition(mat);
 		final UncertainValues uvs = UncertainValues.propagate(slmjf, input);
 		final UncertainValues res = UncertainValues.combine(input, uvs);
-		return new Composition(Representation.AtomFraction, html, res, elms);
+		return new Composition(Representation.AtomFraction, mat, res);
 	}
 
 	public static Composition atomFraction( //
@@ -465,21 +469,21 @@ public class Composition //
 	/**
 	 * Performs the necessary calculations to convert compositional data in atom
 	 * fraction into mass fraction and normalized mass fraction.
-	 * 
+	 *
 	 * @author nicholas
 	 *
 	 */
 	public static class AtomFractionToComposition //
 			extends SerialLabeledMultivariateJacobianFunction {
 
-		public AtomFractionToComposition(String html, List<Element> elms) throws ArgumentException {
-			super(html, buildSteps(html, elms));
+		public AtomFractionToComposition(final Material mat) throws ArgumentException {
+			super("AFtoC", buildSteps(mat));
 		}
 
-		private static List<LabeledMultivariateJacobianFunction> buildSteps(String html, List<Element> elms) {
+		private static List<LabeledMultivariateJacobianFunction> buildSteps(final Material mat) {
 			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
-			funcs.add(new AtomFractionToMassFraction(html, elms));
-			funcs.add(new MassFractionToNormalized(html, elms));
+			funcs.add(new AtomFractionToMassFraction(mat));
+			funcs.add(new MassFractionToNormalized(mat));
 			return funcs;
 		}
 
@@ -490,18 +494,18 @@ public class Composition //
 			final Map<Element, ? extends Number> men, //
 			final Map<Element, Number> atomicWeights //
 	) throws ArgumentException {
-		final List<Element> elms = new ArrayList<>(men.keySet());
-		final List<CompositionalLabel.AtomFraction> labels = CompositionalLabel.buildAtomFractionTags(html, elms);
-		final Map<CompositionalLabel.AtomFraction, Number> data = new HashMap<>();
-		for (final CompositionalLabel.AtomFraction lbl : labels)
+		final Material mat = new Material(html, men.keySet());
+		final List<MaterialLabel.AtomFraction> labels = MaterialLabel.buildAtomFractionTags(mat);
+		final Map<MaterialLabel.AtomFraction, Number> data = new HashMap<>();
+		for (final MaterialLabel.AtomFraction lbl : labels)
 			data.put(lbl, men.get(lbl.getElement()));
 		final UncertainValues afrac = new UncertainValues(data);
-		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(html, elms, atomicWeights));
+		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
 		final UncertainValues input = UncertainValues.combine(afrac, wgts);
-		final AtomFractionToComposition slmjf = new AtomFractionToComposition(html, elms);
+		final AtomFractionToComposition slmjf = new AtomFractionToComposition(mat);
 		final UncertainValues uvs = UncertainValues.propagate(slmjf, input);
 		final UncertainValues res = UncertainValues.combine(input, uvs);
-		return new Composition(Representation.AtomFraction, html, res, elms);
+		return new Composition(Representation.AtomFraction, mat, res);
 	}
 
 	public static Composition atomFraction(//
@@ -515,39 +519,47 @@ public class Composition //
 	 * A sequence of {@link LabeledMultivariateJacobianFunction}s for converting a
 	 * mixture of {@link Composition} objects to mass fractions, atom fractions and
 	 * normalized mass fractions.
-	 * 
+	 *
 	 * @author nicholas
 	 *
 	 */
 	public static class MixtureToComposition //
 			extends SerialLabeledMultivariateJacobianFunction {
 
-		public static List<LabeledMultivariateJacobianFunction> buildSteps(String htmlName, Set<Composition> comps) {
-			final Set<Element> elms = extractElements(comps);
+		private final Material mMaterial;
+
+		public static List<LabeledMultivariateJacobianFunction> buildSteps(final String html,
+				final Set<Material> mats) {
 			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
-			funcs.add(new MixtureToMassFractions(htmlName, comps));
-			funcs.add(new MassFractionToAtomFraction(htmlName, elms));
-			funcs.add(new MassFractionToNormalized(htmlName, elms));
+			final MixtureToMassFractions m2mf = new MixtureToMassFractions(html, mats);
+			funcs.add(m2mf);
+			funcs.add(new MassFractionToAtomFraction(m2mf.getNewMaterial()));
+			funcs.add(new MassFractionToNormalized(m2mf.getNewMaterial()));
 			return funcs;
 		}
 
-		public MixtureToComposition(String htmlName, Set<Composition> comps) throws ArgumentException {
-			super(htmlName, buildSteps(htmlName, comps));
+		public MixtureToComposition(final String htmlName, final Set<Material> mats) throws ArgumentException {
+			super(htmlName, buildSteps(htmlName, mats));
+			mMaterial = new Material(htmlName, extractElements(mats));
+		}
+
+		public Material getMaterial() {
+			return mMaterial;
 		}
 	}
 
 	@SafeVarargs
-	private static Map<Composition, Number> convert(Pair<Composition, Number>... comps) {
-		Map<Composition, Number> res = new HashMap<>();
-		for (Pair<Composition, Number> pr : comps)
+	private static Map<Composition, Number> convert(final Pair<Composition, Number>... comps) {
+		final Map<Composition, Number> res = new HashMap<>();
+		for (final Pair<Composition, Number> pr : comps)
 			res.put(pr.getFirst(), pr.getSecond());
 		return res;
 	}
 
-	private static Set<Element> extractElements(Set<Composition> comps) {
+	private static Set<Element> extractElements(final Set<Material> mats) {
 		final Set<Element> elms = new HashSet<>();
-		for (final Composition comp : comps)
-			elms.addAll(comp.getElementList());
+		for (final Material mat : mats)
+			elms.addAll(mat.getElementSet());
 		return elms;
 	}
 
@@ -571,7 +583,7 @@ public class Composition //
 	/**
 	 * Combines fractional amounts of the specified Composition into a Composition
 	 * object.
-	 * 
+	 *
 	 * @param htmlName
 	 * @param comps
 	 * @return {@link Composition}
@@ -582,18 +594,20 @@ public class Composition //
 			final Map<Composition, Number> comps //
 	) throws ArgumentException {
 		final List<UncertainValues> input = new ArrayList<>();
+		final Set<Material> mats = new HashSet<>();
 		final Map<MaterialMassFraction, Number> fracs = new HashMap<>();
 		for (final Map.Entry<Composition, Number> pr : comps.entrySet()) {
 			input.add(pr.getKey().toMassFraction());
 			input.add(pr.getKey().getAtomicWeights());
-			fracs.put(new MaterialMassFraction(pr.getKey()), pr.getValue());
+			fracs.put(new MaterialMassFraction(pr.getKey().getMaterial()), pr.getValue());
+			mats.add(pr.getKey().getMaterial());
 		}
 		input.add(new UncertainValues(fracs));
-		final MixtureToComposition combine = new MixtureToComposition(htmlName, comps.keySet());
+		final MixtureToComposition combine = new MixtureToComposition(htmlName, mats);
 		final UncertainValues inp = UncertainValues.combine(input);
 		final UncertainValues uvs = UncertainValues.propagate(combine, inp);
 		final UncertainValues res = UncertainValues.combine(inp, uvs);
-		return new Composition(Representation.Mixture, htmlName, res, extractElements(comps.keySet()));
+		return new Composition(Representation.Mixture, combine.getMaterial(), res);
 	}
 
 	/**
@@ -618,12 +632,13 @@ public class Composition //
 	public static Composition pureElement(final Element elm) {
 		final Map<Object, Number> tags = new HashMap<>();
 		final String html = "Pure " + elm.getAbbrev();
-		tags.put(CompositionalLabel.buildStoichiometryTag(html, elm), 1.0);
-		tags.put(CompositionalLabel.buildMassFractionTag(html, elm), 1.0);
-		tags.put(CompositionalLabel.buildNormalizedMassFractionTag(html, elm), 1.0);
-		tags.put(CompositionalLabel.buildAtomicWeightTag(html, elm), elm.getAtomicWeight());
+		final Material mat = new Material(html, Collections.singleton(elm));
+		tags.put(MaterialLabel.buildStoichiometryTag(mat, elm), 1.0);
+		tags.put(MaterialLabel.buildMassFractionTag(mat, elm), 1.0);
+		tags.put(MaterialLabel.buildNormalizedMassFractionTag(mat, elm), 1.0);
+		tags.put(MaterialLabel.buildAtomicWeightTag(mat, elm), elm.getAtomicWeight());
 		final UncertainValues uvs = new UncertainValues(tags);
-		return new Composition(Representation.Stoichiometry, html, uvs, Collections.singleton(elm));
+		return new Composition(Representation.Stoichiometry, mat, uvs);
 	}
 
 	public static Composition massFraction( //
@@ -650,15 +665,15 @@ public class Composition //
 	}
 
 	public List<Element> getElementList() {
-		return new ArrayList<>(mElements);
+		return new ArrayList<>(mMaterial.getElementSet());
 	}
 
 	public Set<Element> getElementSet() {
-		return mElements;
+		return mMaterial.getElementSet();
 	}
 
 	public boolean contains(final Element elm) {
-		return mElements.contains(elm);
+		return mMaterial.contains(elm);
 	}
 
 	public Representation getNativeRepresentation() {
@@ -666,26 +681,26 @@ public class Composition //
 	}
 
 	public UncertainValue getAtomFraction(final Element elm) {
-		final Object tag = CompositionalLabel.buildAtomFractionTag(mHTML, elm);
+		final Object tag = MaterialLabel.buildAtomFractionTag(mMaterial, elm);
 		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
 	}
 
 	public UncertainValue getMassFraction(final Element elm) {
-		final Object tag = CompositionalLabel.buildMassFractionTag(mHTML, elm);
+		final Object tag = MaterialLabel.buildMassFractionTag(mMaterial, elm);
 		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
 	}
 
 	public UncertainValue getNomalizedMassFraction(final Element elm) {
-		final Object tag = new CompositionalLabel.NormalizedMassFraction(mHTML, elm);
+		final Object tag = MaterialLabel.buildNormalizedMassFractionTag(mMaterial, elm);
 		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
 	}
 
 	public UncertainValues asStoichiometry() {
-		return UncertainValues.extract(CompositionalLabel.buildStoichiometryTags(mHTML, mElements), this);
+		return UncertainValues.extract(MaterialLabel.buildStoichiometryTags(mMaterial), this);
 	}
 
 	public UncertainValue getStoichiometry(final Element elm) {
-		final Object tag = new CompositionalLabel.Stoichiometry(mHTML, elm);
+		final Object tag = new MaterialLabel.Stoichiometry(mMaterial, elm);
 		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
 	}
 
@@ -705,7 +720,7 @@ public class Composition //
 	}
 
 	public UncertainValue getAnalyticalTotal() {
-		final List<CompositionalLabel.MassFraction> tags = CompositionalLabel.massFractionTags(this);
+		final List<MaterialLabel.MassFraction> tags = MaterialLabel.massFractionTags(this.getMaterial());
 		final TotalTag tag = new TotalTag(this);
 		return UncertainValues.propagateOrdered( //
 				LabeledMultivariateJacobianFunction.sum(tags, tag), //
@@ -728,10 +743,10 @@ public class Composition //
 	}
 
 	public UncertainValue getMeanAtomicNumber() {
-		final List<? extends Object> tags = CompositionalLabel.massFractionTags(this);
+		final List<? extends Object> tags = MaterialLabel.massFractionTags(this.getMaterial());
 		final RealVector z = new ArrayRealVector(tags.size());
 		for (int i = 0; i < z.getDimension(); ++i)
-			z.setEntry(i, ((CompositionalLabel) tags.get(i)).getElement().getAtomicNumber());
+			z.setEntry(i, ((MaterialLabel) tags.get(i)).getElement().getAtomicNumber());
 		final Object tag = buildMeanZTag(this);
 		return UncertainValues.propagateOrdered( //
 				LabeledMultivariateJacobianFunction.linear(tags, z, tag), //
@@ -775,33 +790,27 @@ public class Composition //
 		}
 	}
 
-	public String getHTMLName() {
-		return mHTML;
-	}
-	
-	public Material asMaterial() {
-		return new Material(getHTMLName(), getElementSet());
+	public Material getMaterial() {
+		return mMaterial;
 	}
 
 	public List<? extends Object> getLabels(final Representation rep) {
-		final List<Element> elms = getElementList();
 		switch (rep) {
 		case AtomFraction:
-			return CompositionalLabel.buildAtomFractionTags(mHTML, elms);
+			return MaterialLabel.buildAtomFractionTags(mMaterial);
 		case MassFraction:
-			return CompositionalLabel.buildMassFractionTags(mHTML, elms);
-		case Mixture:
-		{
-			List<Object> res=new ArrayList<>();
-			for(Object lbl : getLabels())
-				if(lbl instanceof MaterialMassFraction)
+			return MaterialLabel.buildMassFractionTags(mMaterial);
+		case Mixture: {
+			final List<Object> res = new ArrayList<>();
+			for (final Object lbl : getLabels())
+				if (lbl instanceof MaterialMassFraction)
 					res.add(lbl);
 			return res;
 		}
 		case NormalizedMassFraction:
-			return CompositionalLabel.buildNormMassFractionTags(mHTML, elms);
+			return MaterialLabel.buildNormMassFractionTags(mMaterial);
 		case Stoichiometry:
-			return CompositionalLabel.buildStoichiometryTags(mHTML, elms);
+			return MaterialLabel.buildStoichiometryTags(mMaterial);
 		default:
 			assert false;
 			return null;
@@ -828,14 +837,14 @@ public class Composition //
 			for (final MaterialMassFraction mmft : tags) {
 				final UncertainValue uv = getValue(mmft);
 				t.addRow( //
-						Table.td(mmft.getHTML()), //
+						Table.td(mmft.getMaterial()), //
 						Table.td(MASS_FRACTION_FORMAT.format(uv.doubleValue())), //
 						Table.td(MASS_FRACTION_FORMAT.format(uv.uncertainty())) //
 				);
 			}
-			return HTML.header(mHTML) + t.toHTML(Mode.NORMAL);
+			return HTML.header(mMaterial.getHTMLName()) + t.toHTML(Mode.NORMAL);
 		case TERSE:
-			return mHTML;
+			return mMaterial.getHTMLName();
 		case VERBOSE:
 			final StringBuffer sb = new StringBuffer();
 			sb.append(toHTMLasMixture(Mode.NORMAL));
@@ -850,13 +859,13 @@ public class Composition //
 		case TERSE:
 		case NORMAL:
 		default:
-			return mHTML;
+			return mMaterial.getHTMLName();
 		case VERBOSE: {
 			final Table t = new Table();
 			t.addRow(Table.th("Element"), Table.thc("Z"), Table.thc("Atoms"), Table.thc("Mass<br/>Fraction"));
 			final BasicNumberFormat nf = MASS_FRACTION_FORMAT;
-			for (final Object tag : CompositionalLabel.stoichiometryTags(this)) {
-				final CompositionalLabel elementTag = (CompositionalLabel) tag;
+			for (final Object tag : MaterialLabel.stoichiometryTags(this.getMaterial())) {
+				final MaterialLabel elementTag = (MaterialLabel) tag;
 				final Element elm = elementTag.getElement();
 				final UncertainValue uv = getValue(elementTag);
 				t.addRow(Table.td(elm.getAbbrev()), //
@@ -864,7 +873,7 @@ public class Composition //
 						Table.tdc(uv.doubleValue()), //
 						Table.tdc(nf.format(getMassFraction(elm))));
 			}
-			return HTML.subHeader(mHTML) + t.toHTML(Mode.VERBOSE);
+			return HTML.subHeader(mMaterial.getHTMLName()) + t.toHTML(Mode.VERBOSE);
 		}
 		}
 	}
@@ -874,7 +883,7 @@ public class Composition //
 		assert hasRepresentation(Representation.MassFraction);
 		switch (mode) {
 		case TERSE:
-			return mHTML;
+			return mMaterial.getHTMLName();
 		case NORMAL: {
 			final Table t = new Table();
 			final List<Item> hdr = new ArrayList<>();
@@ -908,11 +917,11 @@ public class Composition //
 		assert hasRepresentation(Representation.MassFraction);
 		switch (mode) {
 		case TERSE:
-			return mHTML;
+			return mMaterial.getHTMLName();
 		case NORMAL: {
 			final Table t = new Table();
 			try {
-				t.addRow(Table.th(mHTML, 8));
+				t.addRow(Table.th(mMaterial.getHTMLName(), 8));
 				t.addRow(Table.th("Element"), //
 						Table.thc("Z"), //
 						Table.thc("Mass<br/>Fraction"), //
@@ -961,7 +970,7 @@ public class Composition //
 
 	@Override
 	public String toString() {
-		return HTML.stripTags(mHTML);
+		return "C[" + mMaterial.toString() + "]";
 	}
 
 }

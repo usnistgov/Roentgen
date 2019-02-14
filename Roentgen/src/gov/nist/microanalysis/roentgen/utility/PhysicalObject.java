@@ -1,8 +1,8 @@
 package gov.nist.microanalysis.roentgen.utility;
 
+import java.util.Objects;
 import java.util.UUID;
 
-import com.google.common.base.Objects;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
@@ -53,7 +53,7 @@ public class PhysicalObject {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(mUUID, mFriendlyName);
+		return Objects.hash(mUUID, mFriendlyName);
 	}
 
 	/**

@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.physics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.concurrent.ConcurrentException;
@@ -10,7 +11,6 @@ import org.apache.commons.lang3.concurrent.LazyInitializer;
 
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
-import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.Globals;
 import gov.nist.microanalysis.roentgen.math.Utility;
@@ -304,7 +304,7 @@ public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(mElement, mTransition);
+		return Objects.hash(mElement, mTransition);
 	}
 
 	@Override
@@ -316,8 +316,8 @@ public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay
 		if (getClass() != obj.getClass())
 			return false;
 		final CharacteristicXRay other = (CharacteristicXRay) obj;
-		return Objects.equal(mElement, other.mElement) && //
-				Objects.equal(mTransition, other.mTransition);
+		return Objects.equals(mElement, other.mElement) && //
+				Objects.equals(mTransition, other.mTransition);
 	}
 
 	@Override

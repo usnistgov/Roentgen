@@ -122,7 +122,7 @@ public class KRatioLabel//
 			return "k<sub>" + xrs + "," + meth + "</sub>";
 		else if (mode == Mode.NORMAL)
 			return "k<sub>" + getUnknown().getMaterial().getHTMLName() + "," //
-					+ getStandard().getComposition().getHTMLName() + "," + xrs + "," + meth + "</sub>";
+					+ getStandard().getMaterial().getHTMLName() + "," + xrs + "," + meth + "</sub>";
 		else {
 			final Table table = new Table();
 

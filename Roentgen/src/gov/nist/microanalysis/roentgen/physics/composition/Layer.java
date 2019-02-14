@@ -72,6 +72,10 @@ public class Layer //
 	public Composition getComposition() {
 		return mComposition;
 	}
+	
+	public Material getMaterial() {
+		return mComposition.getMaterial();
+	}
 
 	/**
 	 * Thickness in meters

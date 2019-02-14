@@ -49,8 +49,9 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -91,8 +92,9 @@ public class XPPMatrixCorrection2Test {
 				UncertainValue.toRadians(40.0, 0.9) //
 		);
 
+		final Material unkMat = unk.getMaterial();
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unkMat, //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.9) //
 		);
@@ -231,8 +233,8 @@ public class XPPMatrixCorrection2Test {
 					System.out.println(djac.toCSV());
 				}
 
-				final Object unkCompTag = new MatrixCorrectionModel2.CompositionLabel("J", unk);
-				assertEquals(jac.getEntry(unkCompTag, CompositionalLabel.buildMassFractionTag(unk, Element.Oxygen)),
+				final Object unkCompTag = new MatrixCorrectionModel2.MaterialBasedLabel("J", unkMat);
+				assertEquals(jac.getEntry(unkCompTag, MaterialLabel.buildMassFractionTag(unkMat, Element.Oxygen)),
 						-0.027565, 0.00001);
 				assertEquals(jac.getEntry(unkCompTag, MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)),
 						0.609601, 0.00001);
@@ -412,7 +414,7 @@ public class XPPMatrixCorrection2Test {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
@@ -601,7 +603,7 @@ public class XPPMatrixCorrection2Test {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.9) //
 		);
@@ -800,7 +802,7 @@ public class XPPMatrixCorrection2Test {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
@@ -1060,7 +1062,7 @@ public class XPPMatrixCorrection2Test {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
@@ -1319,7 +1321,7 @@ public class XPPMatrixCorrection2Test {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
@@ -1585,7 +1587,7 @@ public class XPPMatrixCorrection2Test {
 				MatrixCorrectionDatum.roughness(10.0, 5.62));
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7), //
 				MatrixCorrectionDatum.roughness(10.0, 3.5));
@@ -1866,7 +1868,7 @@ public class XPPMatrixCorrection2Test {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
@@ -2106,7 +2108,7 @@ public class XPPMatrixCorrection2Test {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
@@ -2183,8 +2185,9 @@ public class XPPMatrixCorrection2Test {
 				MatrixCorrectionDatum.roughness(20.0, 2.5), Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 		);
 
+		final Material unkMat = unk.getMaterial();
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unkMat, //
 				new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7), //
 				MatrixCorrectionDatum.roughness(20.0, 2.5), Layer.carbonCoating(new UncertainValue(12.0, 2.0)));
@@ -2216,7 +2219,7 @@ public class XPPMatrixCorrection2Test {
 				final LabeledMultivariateJacobian xppI = new LabeledMultivariateJacobian(xpp, inputs);
 				final UncertainValues results = UncertainValues.propagate(xppI, inputs).sort();
 				final Object tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
-				assertEquals(results.getEntry(tagAu), 401.654, 0.001);
+				assertEquals(tagAu.toString(), results.getEntry(tagAu), 401.654, 0.001);
 				final Object tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagau), 11189.1680, 0.001);
 				final Object tagBu = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner());
@@ -2336,8 +2339,8 @@ public class XPPMatrixCorrection2Test {
 					System.out.println(djac.toCSV());
 				}
 
-				final Object unkCompTag = new MatrixCorrectionModel2.CompositionLabel("J", unk);
-				assertEquals(jac.getEntry(unkCompTag, CompositionalLabel.buildMassFractionTag(unk, Element.Oxygen)),
+				final Object unkCompTag = new MatrixCorrectionModel2.MaterialBasedLabel("J", unkMat);
+				assertEquals(jac.getEntry(unkCompTag, MaterialLabel.buildMassFractionTag(unkMat, Element.Oxygen)),
 						-0.027565, 0.00001);
 				assertEquals(jac.getEntry(unkCompTag, MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)),
 						0.609601, 0.00001);
@@ -2502,7 +2505,7 @@ public class XPPMatrixCorrection2Test {
 				final StandardMatrixCorrectionDatum std4Mcd = new StandardMatrixCorrectionDatum(std4, e0u, toa,
 						roughness, coating);
 				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-						unk.asMaterial(), e0u, toa, roughness, coating);
+						unk.getMaterial(), e0u, toa, roughness, coating);
 
 				final Set<KRatioLabel> skrl = new HashSet<>();
 				skrl.add(new KRatioLabel(unkMcd, std0Mcd, ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1),

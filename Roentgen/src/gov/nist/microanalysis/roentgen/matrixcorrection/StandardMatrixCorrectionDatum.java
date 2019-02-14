@@ -8,8 +8,8 @@ import com.duckandcover.html.Table;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
-import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -91,11 +91,6 @@ public class StandardMatrixCorrectionDatum //
 		mComposition = comp;
 	}
 
-	public Composition getComposition() {
-		assert mComposition.hasRepresentation(Representation.MassFraction);
-		return mComposition;
-	}
-
 	@Override
 	public String toHTML(final Mode mode) {
 		final BasicNumberFormat bnf = new BasicNumberFormat("0.0");
@@ -128,7 +123,12 @@ public class StandardMatrixCorrectionDatum //
 	 * @see gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum#getMaterial()
 	 */
 	@Override
-	public IMaterial getMaterial() {
-		return mComposition.asMaterial();
+	public Material getMaterial() {
+		return mComposition.getMaterial();
+	}
+
+	public Composition getComposition() {
+		assert mComposition.hasRepresentation(Representation.MassFraction);
+		return mComposition;
 	}
 }

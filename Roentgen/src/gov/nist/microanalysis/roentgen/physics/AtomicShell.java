@@ -10,11 +10,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
 import com.duckandcover.html.IToHTML;
-import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.Globals;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
@@ -368,7 +368,7 @@ public class AtomicShell implements Comparable<AtomicShell>, IToHTML {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(mElement, mShell);
+		return Objects.hash(mElement, mShell);
 	}
 
 	/**
@@ -387,8 +387,8 @@ public class AtomicShell implements Comparable<AtomicShell>, IToHTML {
 		if (getClass() != obj.getClass())
 			return false;
 		final AtomicShell other = (AtomicShell) obj;
-		return Objects.equal(mElement, other.mElement) && //
-				Objects.equal(mShell, other.mShell);
+		return Objects.equals(mElement, other.mElement) && //
+				Objects.equals(mShell, other.mShell);
 	}
 
 	/**

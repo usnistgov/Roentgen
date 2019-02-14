@@ -23,8 +23,7 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
-import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 
 /**
@@ -62,8 +61,8 @@ abstract public class MatrixCorrectionModel2 //
 		}
 	}
 
-	public static class CompositionLabel extends BaseLabel<IMaterial, Object, Object> {
-		public CompositionLabel(final String name, final IMaterial mcd) {
+	public static class MaterialBasedLabel extends BaseLabel<Material, Object, Object> {
+		public MaterialBasedLabel(final String name, final Material mcd) {
 			super(name, mcd);
 		}
 	}
@@ -182,15 +181,15 @@ abstract public class MatrixCorrectionModel2 //
 					krl.getXRaySet());
 			if (!outputTags.contains(mct))
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
-			final Composition stdComp = krl.getStandard().getComposition();
+			final Material stdComp = krl.getStandard().getComposition().getMaterial();
 			for (final Element elm : stdComp.getElementSet()) {
-				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(stdComp, elm);
+				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(stdComp, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
 			final Material unkMat = krl.getUnknown().getMaterial();
 			for (final Element elm : unkMat.getElementSet()) {
-				final CompositionalLabel.MassFraction mft = CompositionalLabel.buildMassFractionTag(unkMat, elm);
+				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(unkMat, elm);
 				if (!inputTags.contains(mft))
 					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
 			}
@@ -296,17 +295,17 @@ abstract public class MatrixCorrectionModel2 //
 		return new MatrixCorrectionModel2.ElementLabel("J", elm);
 	}
 
-	static public Object matMacLabel(final IMaterial comp, final CharacteristicXRay cxr) {
-		return new MaterialMACFunction.MaterialMAC(comp.asMaterial(), cxr);
+	static public Object matMacLabel(final Material mat, final CharacteristicXRay cxr) {
+		return new MaterialMACFunction.MaterialMAC(mat, cxr);
 	}
 
-	static public Object shellLabel(final String name, final MatrixCorrectionDatum comp, final AtomicShell other) {
-		return new MatrixCorrectionModel2.MatrixCorrectionDatumTag2<>(name, comp, other);
+	static public Object shellLabel(final String name, final MatrixCorrectionDatum mcd, final AtomicShell other) {
+		return new MatrixCorrectionModel2.MatrixCorrectionDatumTag2<>(name, mcd, other);
 	}
 
-	static public Object characterisiticLabel(final String name, final MatrixCorrectionDatum comp,
+	static public Object characterisiticLabel(final String name, final MatrixCorrectionDatum mcd,
 			final CharacteristicXRay other) {
-		return new MatrixCorrectionModel2.MatrixCorrectionDatumTag2<CharacteristicXRay>(name, comp, other);
+		return new MatrixCorrectionModel2.MatrixCorrectionDatumTag2<CharacteristicXRay>(name, mcd, other);
 	}
 
 	static public Object zafLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,

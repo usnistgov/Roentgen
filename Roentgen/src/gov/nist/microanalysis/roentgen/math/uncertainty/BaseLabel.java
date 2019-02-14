@@ -27,7 +27,7 @@ public class BaseLabel<H, I, J> //
 	final I mObject2;
 	final J mObject3;
 
-	final transient int mHashCode;
+	final int mHashCode;
 
 	/**
 	 * Creates a BaseLabel object with an name from three objects. The objects must
@@ -74,14 +74,20 @@ public class BaseLabel<H, I, J> //
 	}
 
 	protected H getObject1() {
+		assert mObject1 != null;
 		return mObject1;
 	}
 
 	protected I getObject2() {
+		assert mObject1 != null;
+		assert mObject2 != null;
 		return mObject2;
 	}
 
 	protected J getObject3() {
+		assert mObject1 != null;
+		assert mObject2 != null;
+		assert mObject3 != null;
 		return mObject3;
 	}
 

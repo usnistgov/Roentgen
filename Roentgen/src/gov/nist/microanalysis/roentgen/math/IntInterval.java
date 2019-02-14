@@ -2,9 +2,8 @@ package gov.nist.microanalysis.roentgen.math;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
-
-import com.google.common.base.Objects;
 
 /**
  * <p>
@@ -233,7 +232,7 @@ public class IntInterval implements Comparable<IntInterval> {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(mLower, mUpper);
+		return Objects.hash(mLower, mUpper);
 	}
 
 	/**

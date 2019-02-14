@@ -6,29 +6,31 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
+import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.physics.Element;
 
 /**
- * The material class represents the most basic information about a material -
- * its name and the set of constituent elements. Implements the same interface
- * as Composition for those situations in which the mass fractions are not
- * known.
+ * The Material class represents the most basic information about a material -
+ * its name and the set of constituent elements.
  * 
  * @author Nicholas W. M. Ritchie
  *
  */
 public class Material //
-		implements IMaterial, IToHTML {
+		implements IToHTML {
 
-	private final Set<Element> mElements;
+	private final SortedSet<Element> mElements;
 	private final String mHTMLName;
+	private final int mHashCode;
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(mElements, mHTMLName);
+		return mHashCode;
 	}
 
 	@Override
@@ -40,50 +42,51 @@ public class Material //
 		if (getClass() != obj.getClass())
 			return false;
 		Material other = (Material) obj;
-		return mElements.equals(other.mElements) && mHTMLName.equals(other.mHTMLName);
+		return mHTMLName.equals(other.mHTMLName) && mElements.equals(other.mElements);
+	}
+	
+	
+	public static Set<Material> convert(Collection<Composition> comps){
+		Set<Material> res=new HashSet<>();
+		for(Composition comp : comps)
+			res.add(comp.getMaterial());
+		return res;
 	}
 
 	/**
 	 * 
 	 */
 	public Material(String htmlName, Collection<Element> elms) {
-		mHTMLName = htmlName.startsWith("<html>") ? htmlName : "<html>" + htmlName;
-		mElements = Collections.unmodifiableSet(new HashSet<>(elms));
+		mHTMLName = htmlName;
+		mElements = Collections.unmodifiableSortedSet(new TreeSet<>(elms));
+		mHashCode = Objects.hash(mElements, mHTMLName);
 	}
 	
 	public Material(String htmlName, Element ... elms) {
 		this(htmlName, Arrays.asList(elms));
 	}
 	
-	
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.nist.microanalysis.roentgen.physics.composition.IMaterial#getElementSet()
-	 */
-	@Override
-	public Set<Element> getElementSet() {
+	public SortedSet<Element> getElementSet() {
 		return mElements;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.nist.microanalysis.roentgen.physics.composition.IMaterial#getHTMLName()
-	 */
-	@Override
 	public String getHTMLName() {
 		return mHTMLName;
+	}
+	
+	public String toString() {
+		return HTML.stripTags(mHTMLName);
+	}
+	
+	public boolean contains(Element elm) {
+		return mElements.contains(elm);
 	}
 
 	@Override
 	public String toHTML(Mode mode) {
 		switch (mode) {
 		case TERSE:
-			return mHTMLName.substring(6);
+			return mHTMLName;
 		case NORMAL:
 		case VERBOSE:
 		default:
@@ -93,13 +96,7 @@ public class Material //
 					sb.append(",");
 				sb.append(elm.getAbbrev());
 			}
-			return mHTMLName.substring(6) + "[" + sb.toString() + "]";
+			return mHTMLName + "[" + sb.toString() + "]";
 		}
 	}
-
-	@Override
-	public Material asMaterial() {
-		return this;
-	}
-
 }

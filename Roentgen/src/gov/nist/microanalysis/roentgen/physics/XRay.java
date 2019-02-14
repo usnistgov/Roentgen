@@ -1,10 +1,10 @@
 package gov.nist.microanalysis.roentgen.physics;
 
+import java.util.Objects;
+
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import com.duckandcover.html.IToHTML;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
@@ -37,7 +37,7 @@ public class XRay implements IToHTML, Comparable<XRay> {
 	 * @param energy in eV
 	 */
 	public XRay(final double energy) {
-		Preconditions.checkArgument(energy > 0, "XRay energy must be greater than zero. " + energy);
+		assert energy > 0 : "XRay energy must be greater than zero. " + energy;
 		mEnergy = energy;
 	}
 
@@ -89,7 +89,7 @@ public class XRay implements IToHTML, Comparable<XRay> {
 	 */
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ Objects.hashCode(mEnergy);
+		return super.hashCode() ^ Objects.hash(mEnergy);
 	}
 
 	/**

@@ -41,6 +41,24 @@ public class HTML {
 			return StringEscapeUtils.escapeHtml4(html);
 	}
 
+	/**
+	 * Prepend "<html>" onto this string if not already.  
+	 * 
+	 * @param html
+	 * @return String
+	 */
+	public static String mark(final String html) {
+		return isMarked(html) ? html : "<html>" + html;
+	}
+
+	public static boolean isMarked(final String html) {
+		return html.startsWith("<html>") || html.startsWith("<HTML>");
+	}
+	
+	public static String removeMark(final String html) {
+		return isMarked(html) ? html.substring(6) : html;
+	}
+
 	public static String error(final String html) {
 		return "<p class=\"error\"><b>ERROR:</b> " + html + "</p>";
 	}

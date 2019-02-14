@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -29,7 +30,6 @@ import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 import com.duckandcover.html.Transforms;
-import com.google.common.base.Objects;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
@@ -71,6 +71,7 @@ public class UncertainValues //
 	private final RealVector mValues;
 	private final FastIndex<? extends Object> mLabels;
 	private final RealMatrix mCovariance;
+	private int mHashCode;
 
 	private static class UVSOutOfRangeException extends OutOfRangeException {
 
@@ -1359,7 +1360,9 @@ public class UncertainValues //
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(mValues, mLabels, mCovariance);
+		if(mHashCode==0)
+			mHashCode = Objects.hash(mValues, mLabels, mCovariance);
+		return mHashCode;
 	}
 
 	@Override
@@ -1371,9 +1374,9 @@ public class UncertainValues //
 		if (getClass() != obj.getClass())
 			return false;
 		final UncertainValues other = (UncertainValues) obj;
-		return Objects.equal(mCovariance, other.mCovariance) && //
-				Objects.equal(mLabels, other.mLabels) && //
-				Objects.equal(mValues, other.mValues);
+		return Objects.equals(mCovariance, other.mCovariance) && //
+				Objects.equals(mLabels, other.mLabels) && //
+				Objects.equals(mValues, other.mValues);
 	}
 
 	/**

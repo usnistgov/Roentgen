@@ -38,8 +38,8 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
-import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel.MassFraction;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
@@ -70,7 +70,7 @@ public class KRatioCorrectionModelTest {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), new UncertainValue(15.0, 0.12), //
+				unk.getMaterial(), new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
 
@@ -143,7 +143,7 @@ public class KRatioCorrectionModelTest {
 		);
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), new UncertainValue(15.0, 0.12), //
+				unk.getMaterial(), new UncertainValue(15.0, 0.12), //
 				UncertainValue.toRadians(40.0, 0.7) //
 		);
 
@@ -259,7 +259,7 @@ public class KRatioCorrectionModelTest {
 
 		final Composition unk = Composition.massFraction("K240", buildK240());
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.5));
@@ -294,7 +294,7 @@ public class KRatioCorrectionModelTest {
 			final Map<? extends Object, UncertainValue> outVals = eval.getOutputValues(uvs);
 			t.addRow(Table.th("Element"), Table.td("Mass Fraction"));
 			for (final Element elm : unkMcd.getElementSet()) {
-				final CompositionalLabel.MassFraction mft = CompositionalLabel
+				final MaterialLabel.MassFraction mft = MaterialLabel
 						.buildMassFractionTag(unkMcd.getMaterial(), elm);
 				final UncertainValue uv = outVals.get(mft);
 				t.addRow(Table.td(elm), Table.td(HTML.toHTML(uv, Mode.VERBOSE)));
@@ -353,7 +353,7 @@ public class KRatioCorrectionModelTest {
 				MatrixCorrectionDatum.roughness(10.0, 4.5));
 
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.asMaterial(), //
+				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.5));
@@ -404,7 +404,7 @@ public class KRatioCorrectionModelTest {
 			final Map<? extends Object, UncertainValue> outVals = eval.getOutputValues(uvs, 1.0e-6);
 			t.addRow(Table.th("Quantity"), Table.th("Verbose"), Table.th("Normal"));
 			for (final Map.Entry<? extends Object, UncertainValue> me : outVals.entrySet()) {
-				if ((me.getKey() instanceof CompositionalLabel.MassFraction) //
+				if ((me.getKey() instanceof MaterialLabel.MassFraction) //
 						|| (me.getKey() instanceof KRatioLabel)) {
 					final UncertainValue uv = me.getValue();
 					t.addRow(Table.td(me.getKey()), Table.td(uv.toHTML(Mode.VERBOSE, new BasicNumberFormat("0.0000"))), Table.td(uv.toHTML(Mode.TERSE, new BasicNumberFormat("0.0000"))));
@@ -441,13 +441,13 @@ public class KRatioCorrectionModelTest {
 			report.addImage(results.asCovarianceBitmap(4, V2L3, L2C), "Correlation matrix");
 
 			final Set<Object> tags = new HashSet<>();
-			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Oxygen));
-			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Magnesium));
-			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Silicon));
-			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Titanium));
-			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Zinc));
-			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Zirconium));
-			tags.add(CompositionalLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Barium));
+			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Oxygen));
+			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Magnesium));
+			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Silicon));
+			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Titanium));
+			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Zinc));
+			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Zirconium));
+			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Barium));
 			krcm.trimOutputs(tags);
 
 			final UncertainValues resultsTr = UncertainValues.propagate(krcm, uvs);
@@ -511,7 +511,7 @@ public class KRatioCorrectionModelTest {
 				final StandardMatrixCorrectionDatum sio2Mcd = new StandardMatrixCorrectionDatum(sio2, e0, toa,
 						roughness);
 				final StandardMatrixCorrectionDatum tiMcd = new StandardMatrixCorrectionDatum(ti, e0, toa, roughness);
-				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk.asMaterial(), e0, toa,
+				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk.getMaterial(), e0, toa,
 						roughness);
 
 				final Set<KRatioLabel> lkr = new HashSet<>();
@@ -533,7 +533,7 @@ public class KRatioCorrectionModelTest {
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
-					if (output instanceof CompositionalLabel.MassFraction)
+					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
 				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
@@ -578,8 +578,8 @@ public class KRatioCorrectionModelTest {
 			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 			for (int oi = 0; oi < outLabels.size(); ++oi) {
 				final Object outTag = outLabels.get(oi);
-				if (outTag instanceof CompositionalLabel.MassFraction) {
-					final CompositionalLabel.MassFraction mft = (CompositionalLabel.MassFraction) outTag;
+				if (outTag instanceof MaterialLabel.MassFraction) {
+					final MaterialLabel.MassFraction mft = (MaterialLabel.MassFraction) outTag;
 					for (int ii = 0; ii < inLabels.size(); ++ii) {
 						final Object inTag = inLabels.get(ii);
 						final List<Item> row = new ArrayList<>();
@@ -691,7 +691,7 @@ public class KRatioCorrectionModelTest {
 				final StandardMatrixCorrectionDatum benitoiteMcd = new StandardMatrixCorrectionDatum(//
 						benitoite, e0, toa, roughness);
 				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(//
-						unk.asMaterial(), e0, toa, roughness);
+						unk.getMaterial(), e0, toa, roughness);
 
 				final Set<KRatioLabel> lkr = new HashSet<>();
 				lkr.add(new KRatioLabel(unkMcd, mgMcd, mgTrs, Method.Measured));
@@ -746,7 +746,7 @@ public class KRatioCorrectionModelTest {
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
-					if (output instanceof CompositionalLabel.MassFraction)
+					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
 				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
@@ -789,8 +789,8 @@ public class KRatioCorrectionModelTest {
 			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 			for (int oi = 0; oi < outLabels.size(); ++oi) {
 				final Object outTag = outLabels.get(oi);
-				if (outTag instanceof CompositionalLabel.MassFraction) {
-					final CompositionalLabel.MassFraction mft = (CompositionalLabel.MassFraction) outTag;
+				if (outTag instanceof MaterialLabel.MassFraction) {
+					final MaterialLabel.MassFraction mft = (MaterialLabel.MassFraction) outTag;
 					for (int ii = 0; ii < inLabels.size(); ++ii) {
 						final Object inTag = inLabels.get(ii);
 						final List<Item> row = new ArrayList<>();
@@ -891,7 +891,7 @@ public class KRatioCorrectionModelTest {
 				final StandardMatrixCorrectionDatum tiMcd = new StandardMatrixCorrectionDatum(ti, e0, toa, roughness);
 				final StandardMatrixCorrectionDatum siMcd = new StandardMatrixCorrectionDatum(si, e0, toa, roughness);
 				final StandardMatrixCorrectionDatum oMcd = new StandardMatrixCorrectionDatum(o, e0, toa, roughness);
-				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk.asMaterial(), e0, toa,
+				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unk.getMaterial(), e0, toa,
 						roughness);
 
 				final Set<KRatioLabel> lkr = new HashSet<>();
@@ -914,7 +914,7 @@ public class KRatioCorrectionModelTest {
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
-					if (output instanceof CompositionalLabel.MassFraction)
+					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
 				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
@@ -959,8 +959,8 @@ public class KRatioCorrectionModelTest {
 			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 			for (int oi = 0; oi < outLabels.size(); ++oi) {
 				final Object outTag = outLabels.get(oi);
-				if (outTag instanceof CompositionalLabel.MassFraction) {
-					final CompositionalLabel.MassFraction mft = (CompositionalLabel.MassFraction) outTag;
+				if (outTag instanceof MaterialLabel.MassFraction) {
+					final MaterialLabel.MassFraction mft = (MaterialLabel.MassFraction) outTag;
 					for (int ii = 0; ii < inLabels.size(); ++ii) {
 						final Object inTag = inLabels.get(ii);
 						final List<Item> row = new ArrayList<>();
@@ -1031,10 +1031,10 @@ public class KRatioCorrectionModelTest {
 	}
 
 	public UncertainValue getByMFT(final Map<? extends Object, UncertainValue> oVals,
-			final CompositionalLabel.MassFraction mft) {
+			final MaterialLabel.MassFraction mft) {
 		for (final Map.Entry<? extends Object, UncertainValue> me : oVals.entrySet()) {
-			if (me.getKey() instanceof CompositionalLabel.MassFraction) {
-				final CompositionalLabel.MassFraction mft2 = (CompositionalLabel.MassFraction) me.getKey();
+			if (me.getKey() instanceof MaterialLabel.MassFraction) {
+				final MaterialLabel.MassFraction mft2 = (MaterialLabel.MassFraction) me.getKey();
 				if (mft2.toString().equals(mft.toString()))
 					return me.getValue();
 			}

@@ -6,8 +6,8 @@ import java.util.Optional;
 import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.physics.composition.IMaterial;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 
 /**
  * A package describing a set of arguments to the matrix correction algorithm.
@@ -132,5 +132,5 @@ public abstract class MatrixCorrectionDatum //
 		return mCoating.orElse(null);
 	}
 	
-	public abstract IMaterial getMaterial();
+	public abstract Material getMaterial();
 }

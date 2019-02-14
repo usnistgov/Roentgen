@@ -1,8 +1,8 @@
 package gov.nist.microanalysis.roentgen.spectrum;
 
-import org.apache.commons.math3.special.Erf;
+import java.util.Objects;
 
-import com.google.common.base.Objects;
+import org.apache.commons.math3.special.Erf;
 
 /**
  * <p>
@@ -190,7 +190,7 @@ abstract public class LineshapeCalibration {
 
 		@Override
 		public int hashCode() {
-			return super.hashCode() ^ Objects.hashCode(mEnergyPerEHPair, mFano, mNoise);
+			return super.hashCode() ^ Objects.hash(mEnergyPerEHPair, mFano, mNoise);
 		}
 
 		@Override
@@ -202,8 +202,8 @@ abstract public class LineshapeCalibration {
 			if (getClass() != obj.getClass())
 				return false;
 			final Gaussian other = (Gaussian) obj;
-			return super.equals(obj) && Objects.equal(mEnergyPerEHPair, other.mEnergyPerEHPair)
-					&& Objects.equal(mFano, other.mFano) && Objects.equal(mNoise, other.mNoise);
+			return super.equals(obj) && Objects.equals(mEnergyPerEHPair, other.mEnergyPerEHPair)
+					&& Objects.equals(mFano, other.mFano) && Objects.equals(mNoise, other.mNoise);
 		}
 
 	}

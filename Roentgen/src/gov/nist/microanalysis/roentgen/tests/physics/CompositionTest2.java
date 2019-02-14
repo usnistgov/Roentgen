@@ -31,7 +31,8 @@ import gov.nist.microanalysis.roentgen.physics.composition.AtomFractionToMassFra
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.MixtureToComposition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
-import gov.nist.microanalysis.roentgen.physics.composition.CompositionalLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialMassFraction;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
@@ -55,10 +56,11 @@ public class CompositionTest2 {
 		Assert.assertEquals(3.0, sc.getStoichiometry(Element.Silicon).doubleValue(), 1e-12);
 		Assert.assertEquals(8.0, sc.getStoichiometry(Element.Oxygen).doubleValue(), 1e-12);
 
-		Assert.assertEquals(1.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Sodium)), 1e-12);
-		Assert.assertEquals(1.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Aluminum)), 1e-12);
-		Assert.assertEquals(3.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Silicon)), 1e-12);
-		Assert.assertEquals(8.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Oxygen)), 1e-12);
+		final Material mat = sc.getMaterial();
+		Assert.assertEquals(1.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Sodium)), 1e-12);
+		Assert.assertEquals(1.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Aluminum)), 1e-12);
+		Assert.assertEquals(3.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Silicon)), 1e-12);
+		Assert.assertEquals(8.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Oxygen)), 1e-12);
 
 		Assert.assertTrue(sc.toHTML(Mode.NORMAL).equals("NaAlSi<sub>3</sub>O<sub>8</sub>"));
 
@@ -113,10 +115,11 @@ public class CompositionTest2 {
 		Assert.assertEquals(13.0, sc.getStoichiometry(Element.Oxygen).doubleValue(), 1e-12);
 		Assert.assertEquals(1.0, sc.getStoichiometry(Element.Hydrogen).doubleValue(), 1e-12);
 
-		Assert.assertEquals(5.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Calcium)), 1e-12);
-		Assert.assertEquals(3.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Phosphorus)), 1e-12);
-		Assert.assertEquals(13.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Oxygen)), 1e-12);
-		Assert.assertEquals(1.0, sc.getEntry(CompositionalLabel.buildStoichiometryTag(sc, Element.Hydrogen)), 1e-12);
+		final Material mat = sc.getMaterial();
+		Assert.assertEquals(5.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Calcium)), 1e-12);
+		Assert.assertEquals(3.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Phosphorus)), 1e-12);
+		Assert.assertEquals(13.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Oxygen)), 1e-12);
+		Assert.assertEquals(1.0, sc.getEntry(MaterialLabel.buildStoichiometryTag(mat, Element.Hydrogen)), 1e-12);
 
 		Assert.assertTrue(sc.toHTML(Mode.TERSE).equals("Ca<sub>5</sub>(PO<sub>4</sub>)<sub>3</sub>(OH)"));
 		Assert.assertTrue(sc.toHTML(Mode.NORMAL).equals("Ca<sub>5</sub>(PO<sub>4</sub>)<sub>3</sub>(OH)"));
@@ -173,10 +176,11 @@ public class CompositionTest2 {
 		Assert.assertEquals(13.0 / 22.0, mf.getAtomFraction(Element.Oxygen).doubleValue(), 1.0e-6);
 		Assert.assertEquals(1.0 / 22.0, mf.getAtomFraction(Element.Hydrogen).doubleValue(), 1.0e-6);
 
-		final CompositionalLabel.AtomFraction aft_ca = CompositionalLabel.buildAtomFractionTag(mf, Element.Calcium);
-		final CompositionalLabel.AtomFraction aft_p = CompositionalLabel.buildAtomFractionTag(mf, Element.Phosphorus);
-		final CompositionalLabel.AtomFraction aft_o = CompositionalLabel.buildAtomFractionTag(mf, Element.Oxygen);
-		final CompositionalLabel.AtomFraction aft_h = CompositionalLabel.buildAtomFractionTag(mf, Element.Hydrogen);
+		final Material mat = mf.getMaterial();
+		final MaterialLabel.AtomFraction aft_ca = MaterialLabel.buildAtomFractionTag(mat, Element.Calcium);
+		final MaterialLabel.AtomFraction aft_p = MaterialLabel.buildAtomFractionTag(mat, Element.Phosphorus);
+		final MaterialLabel.AtomFraction aft_o = MaterialLabel.buildAtomFractionTag(mat, Element.Oxygen);
+		final MaterialLabel.AtomFraction aft_h = MaterialLabel.buildAtomFractionTag(mat, Element.Hydrogen);
 		Assert.assertEquals(0.0000767132, mf.getCovariance(aft_ca, aft_ca), 1.0e-7);
 		Assert.assertEquals(0.0000430936, mf.getCovariance(aft_p, aft_p), 1.0e-7);
 		Assert.assertEquals(0.000273062, mf.getCovariance(aft_o, aft_o), 1.0e-6);
@@ -240,14 +244,15 @@ public class CompositionTest2 {
 		Assert.assertEquals(0.00529588, af.getMassFraction(Element.Calcium).uncertainty(), 1.0e-5);
 		Assert.assertEquals(0.00402649, af.getMassFraction(Element.Iron).uncertainty(), 1.0e-5);
 
-		CompositionalLabel.MassFraction mft_o = CompositionalLabel.buildMassFractionTag(af, Element.Oxygen);
-		CompositionalLabel.MassFraction mft_ca = CompositionalLabel.buildMassFractionTag(af, Element.Calcium);
-		CompositionalLabel.MassFraction mft_mg = CompositionalLabel.buildMassFractionTag(af, Element.Magnesium);
-		CompositionalLabel.MassFraction mft_fe = CompositionalLabel.buildMassFractionTag(af, Element.Iron);
-		CompositionalLabel.MassFraction mft_si = CompositionalLabel.buildMassFractionTag(af, Element.Silicon);
-		CompositionalLabel.MassFraction mft_al = CompositionalLabel.buildMassFractionTag(af, Element.Aluminum);
-		CompositionalLabel.MassFraction mft_ag = CompositionalLabel.buildMassFractionTag(af, Element.Silver);
-		CompositionalLabel.MassFraction mft_sb = CompositionalLabel.buildMassFractionTag(af, Element.Antimony);
+		Material mat = af.getMaterial();
+		MaterialLabel.MassFraction mft_o = MaterialLabel.buildMassFractionTag(mat, Element.Oxygen);
+		MaterialLabel.MassFraction mft_ca = MaterialLabel.buildMassFractionTag(mat, Element.Calcium);
+		MaterialLabel.MassFraction mft_mg = MaterialLabel.buildMassFractionTag(mat, Element.Magnesium);
+		MaterialLabel.MassFraction mft_fe = MaterialLabel.buildMassFractionTag(mat, Element.Iron);
+		MaterialLabel.MassFraction mft_si = MaterialLabel.buildMassFractionTag(mat, Element.Silicon);
+		MaterialLabel.MassFraction mft_al = MaterialLabel.buildMassFractionTag(mat, Element.Aluminum);
+		MaterialLabel.MassFraction mft_ag = MaterialLabel.buildMassFractionTag(mat, Element.Silver);
+		MaterialLabel.MassFraction mft_sb = MaterialLabel.buildMassFractionTag(mat, Element.Antimony);
 		Assert.assertEquals(-0.0000857086, af.getCovariance(mft_o, mft_ca), 1.0e-7);
 		Assert.assertEquals(9.2027e-6, af.getCovariance(mft_mg, mft_fe), 1.0e-7);
 		Assert.assertEquals(9.68555e-6, af.getCovariance(mft_fe, mft_ca), 1.0e-7);
@@ -303,7 +308,7 @@ public class CompositionTest2 {
 
 		final UncertainValues uv = af;
 		final UncertainValues mup = UncertainValues
-				.propagateMC(new AtomFractionToMassFraction(af.getHTMLName(), af.getElementList()), uv, 160000);
+				.propagateMC(new AtomFractionToMassFraction(af.getMaterial()), uv, 160000);
 
 		// From DTSA-II
 		assertEquals(0.4312, af.getMassFraction(Element.Oxygen).doubleValue(), 0.0001);
@@ -362,13 +367,13 @@ public class CompositionTest2 {
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
 		Composition mix = Composition.combine(name, mcn);
 
-		MixtureToComposition m2c = new MixtureToComposition(name, mcn.keySet());
+		MixtureToComposition m2c = new MixtureToComposition(name, Material.convert(mcn.keySet()));
 		List<UncertainValues> vs = new ArrayList<>();
 		for (Composition comp : mcn.keySet())
 			vs.add(comp);
 		Map<MaterialMassFraction, Number> aft = new HashMap<>();
 		for (Map.Entry<Composition, Number> me : mcn.entrySet())
-			aft.put(new MaterialMassFraction(me.getKey()), me.getValue());
+			aft.put(new MaterialMassFraction(me.getKey().getMaterial()), me.getValue());
 		vs.add(new UncertainValues(aft));
 		UncertainValues uvs = UncertainValues.combine(vs);
 		UncertainValues inp = UncertainValues.extract(m2c.getInputLabels(), uvs);

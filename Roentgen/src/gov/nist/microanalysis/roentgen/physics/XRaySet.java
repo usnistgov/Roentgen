@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -15,8 +16,6 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 import com.duckandcover.lazy.SimplyLazy;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -140,14 +139,14 @@ public class XRaySet //
 		private final double mEMin, mEMax;
 
 		public EdgeMemberTest(final double eMin, final double eMax) {
-			Preconditions.checkArgument(eMin >= 0.0);
-			Preconditions.checkArgument(eMin < eMax);
+			assert eMin >= 0.0;
+			assert eMin < eMax;
 			mEMin = eMin;
 			mEMax = eMax;
 		}
 
 		public EdgeMemberTest(final double eMax) {
-			Preconditions.checkArgument(eMax > 0);
+			assert eMax > 0;
 			mEMin = 0.0;
 			mEMax = eMax;
 		}
@@ -189,7 +188,7 @@ public class XRaySet //
 	};
 
 	public XRaySet(final IMemberTest mt) {
-		Preconditions.checkArgument(mt != null);
+		assert mt != null;
 		mTests = new ArrayList<>();
 		add(mt);
 	}
@@ -201,8 +200,8 @@ public class XRaySet //
 	}
 
 	protected void add(final IMemberTest mt) {
-		Preconditions.checkArgument(mSet.size() == 0);
-		Preconditions.checkArgument(mt != null);
+		assert mSet.size() == 0;
+		assert mt != null;
 		mTests.add(mt);
 		mName.reset();
 	}
@@ -299,7 +298,7 @@ public class XRaySet //
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(mSet);
+		return Objects.hash(mSet);
 	}
 
 	@Override
@@ -310,7 +309,7 @@ public class XRaySet //
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		return Objects.equal(mSet, ((XRaySet) obj).mSet);
+		return Objects.equals(mSet, ((XRaySet) obj).mSet);
 	}
 
 	protected String buildName() {
@@ -798,7 +797,7 @@ public class XRaySet //
 
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(mSet, mElement);
+			return Objects.hash(mSet, mElement);
 		}
 
 		@Override
