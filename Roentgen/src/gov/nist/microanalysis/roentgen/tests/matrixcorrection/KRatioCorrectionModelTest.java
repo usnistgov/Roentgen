@@ -21,7 +21,6 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel3;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
@@ -113,93 +112,6 @@ public class KRatioCorrectionModelTest {
 
 			r.addHeader("Result");
 			r.add(UncertainValues.propagate(nmvj, uvs));
-		} finally {
-			r.inBrowser(Mode.VERBOSE);
-		}
-	}
-
-	@Test
-	public void test2vs3() throws ParseException, ArgumentException, IOException {
-
-		final Composition std0 = XPPMatrixCorrection2Test.buildK411(false);
-
-		final Composition std1 = Composition.parse("Al");
-
-		final Composition unk = XPPMatrixCorrection2Test.buildK412(false);
-
-		final StandardMatrixCorrectionDatum stdK411Mcd = new StandardMatrixCorrectionDatum( //
-				std0, new UncertainValue(15.0, 0.1), //
-				UncertainValue.toRadians(40.0, 0.9) //
-		);
-
-		final StandardMatrixCorrectionDatum stdAlMcd = new StandardMatrixCorrectionDatum( //
-				std1, new UncertainValue(15.0, 0.12), //
-				UncertainValue.toRadians(40.0, 0.7) //
-		);
-
-		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
-				unk.getMaterial(), new UncertainValue(15.0, 0.12), //
-				UncertainValue.toRadians(40.0, 0.7) //
-		);
-
-		final ElementXRaySet feTr = ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1);
-		final ElementXRaySet mgTr = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
-		final ElementXRaySet caTr = ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1);
-		final ElementXRaySet oTr = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
-		final ElementXRaySet alTr = ElementXRaySet.singleton(Element.Aluminum, XRayTransition.KA1);
-		final ElementXRaySet siTr = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
-
-		final Map<KRatioLabel, Number> mouv = new HashMap<>();
-		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, siTr, Method.Measured), new UncertainValue(0.794983));
-		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, feTr, Method.Measured), new UncertainValue(0.687101));
-		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, mgTr, Method.Measured), new UncertainValue(1.364719));
-		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, caTr, Method.Measured), new UncertainValue(0.980070));
-		mouv.put(new KRatioLabel(unkMcd, stdK411Mcd, oTr, Method.Measured), new UncertainValue(1.011527));
-		mouv.put(new KRatioLabel(unkMcd, stdAlMcd, alTr, Method.Measured), new UncertainValue(0.032001));
-		final UncertainValues kuv = new UncertainValues(mouv);
-
-		final Set<Object> outputs = new HashSet<>();
-		for (final KRatioLabel krl : mouv.keySet()) {
-			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
-			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-				outputs.add(MatrixCorrectionModel2.zafLabel(krl.getUnknown(), meStd, cxr));
-				outputs.add(MatrixCorrectionModel2.FxFLabel(krl.getUnknown(), cxr));
-				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
-			}
-		}
-
-		KRatioCorrectionModel2 krcm2 = new KRatioCorrectionModel2(mouv.keySet(),
-				MatrixCorrectionModel2.defaultVariates());
-		final UncertainValues uvs2 = UncertainValues.combine(krcm2.buildInput(unk), kuv);
-
-		KRatioCorrectionModel3 krcm3 = new KRatioCorrectionModel3(mouv.keySet(),
-				MatrixCorrectionModel2.defaultVariates());
-		final UncertainValues uvs3 = UncertainValues.combine(krcm2.buildInput(unk), kuv);
-
-		final Report r = new Report("KRatioCorrectionModel - test 2 to 3 comparison");
-		try {
-			r.add(krcm2, Mode.VERBOSE);
-
-			final LabeledMultivariateJacobian nmvj2 = new LabeledMultivariateJacobian(krcm2, uvs2);
-			r.addHeader("Jacobian - 2");
-			r.addHTML(nmvj2.toHTML(Mode.NORMAL, new BasicNumberFormat("0.000")));
-
-			final LabeledMultivariateJacobian nmvj3 = new LabeledMultivariateJacobian(krcm3, uvs3);
-			r.addHeader("Jacobian - 3");
-			r.addHTML(nmvj3.toHTML(Mode.NORMAL, new BasicNumberFormat("0.000")));
-
-			r.addHeader("Results");
-
-			UncertainValues res2 = UncertainValues.propagate(nmvj2, uvs2);
-			UncertainValues res3 = UncertainValues.propagate(nmvj3, uvs3);
-
-			for (Object label : res2.getLabels()) {
-				if (label instanceof MassFraction) {
-					r.addSubHeader(HTML.toHTML(label, Mode.NORMAL));
-					r.add(res2.getUncertainValue(label));
-					r.add(res3.getUncertainValue(label));
-				}
-			}
 		} finally {
 			r.inBrowser(Mode.VERBOSE);
 		}
