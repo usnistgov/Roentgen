@@ -79,11 +79,12 @@ public class UncertainValues //
 
 		private final String mExtra;
 
-		public UVSOutOfRangeException(Number wrong, Number low, Number high, String extra) {
+		public UVSOutOfRangeException(final Number wrong, final Number low, final Number high, final String extra) {
 			super(wrong, low, high);
 			mExtra = extra;
 		}
 
+		@Override
 		public String toString() {
 			return super.toString() + " - " + mExtra;
 		}
@@ -409,11 +410,11 @@ public class UncertainValues //
 		res.mCovariance.setEntry(idx, idx, input.getCovariance(idx, idx));
 		return res;
 	}
-	
+
 	/**
 	 * Return an {@link UncertainValues} object with the same dimension and values
-	 * as input except all the covariances except those associated with the labels are
-	 * zeroed.
+	 * as input except all the covariances except those associated with the labels
+	 * are zeroed.
 	 *
 	 * @param labels
 	 * @param input
@@ -421,16 +422,14 @@ public class UncertainValues //
 	 */
 	public static UncertainValues zeroBut(final Collection<? extends Object> labels, final UncertainValues input) {
 		final UncertainValues res = new UncertainValues(input.getLabels(), input.getValues(), 0.0);
-		List<Integer> idxs = new ArrayList<>();
-		for(Object label : labels)
+		final List<Integer> idxs = new ArrayList<>();
+		for (final Object label : labels)
 			idxs.add(input.indexOf(label));
-		for(int ridx : idxs)
-			for(int cidx : idxs) 
+		for (final int ridx : idxs)
+			for (final int cidx : idxs)
 				res.mCovariance.setEntry(ridx, cidx, input.getCovariance(ridx, cidx));
 		return res;
 	}
-	
-	
 
 	/**
 	 * Returns an UncertainValues object with the labels in the order specified by
@@ -460,11 +459,11 @@ public class UncertainValues //
 	/**
 	 * Check that the indices are valid and not repeated. Uses assert rather than an
 	 * Exception.
-	 * 
+	 *
 	 * @param indices
 	 * @return true
 	 */
-	public boolean assertIndices(int[] indices) {
+	public boolean assertIndices(final int[] indices) {
 		for (int i = 0; i < indices.length; ++i) {
 			assert indices[i] >= 0 : "Index[" + i + "] is less than zero.";
 			assert indices[i] < mLabels.size() : "Index[" + i + "] is larger than the number of labels.";
@@ -490,12 +489,12 @@ public class UncertainValues //
 	) throws ArgumentException {
 		return propagateOrdered(nmjf, input.reorder(nmjf.getInputLabels()));
 	}
-	
-	private static boolean checkOrdered(List<? extends Object> labels1, List<? extends Object> labels2 ) {
-		if(labels1.size()!=labels2.size())
+
+	private static boolean checkOrdered(final List<? extends Object> labels1, final List<? extends Object> labels2) {
+		if (labels1.size() != labels2.size())
 			return false;
-		for(int i=0;i<labels1.size();++i)
-			if(!labels1.get(i).equals(labels2.get(i)))
+		for (int i = 0; i < labels1.size(); ++i)
+			if (!labels1.get(i).equals(labels2.get(i)))
 				return false;
 		return true;
 	}
@@ -513,7 +512,8 @@ public class UncertainValues //
 	public static UncertainValues propagateOrdered( //
 			final LabeledMultivariateJacobianFunction nmjf, //
 			final UncertainValues ordered) {
-		assert checkOrdered(ordered.getLabels(), nmjf.getInputLabels()) : "The input values are not ordered the same as the nmjf input labels.";
+		assert checkOrdered(ordered.getLabels(),
+				nmjf.getInputLabels()) : "The input values are not ordered the same as the nmjf input labels.";
 		final Pair<RealVector, RealMatrix> eval = nmjf.evaluate(ordered.getValues());
 		final RealMatrix jac = eval.getSecond();
 		return new UncertainValues(nmjf.getOutputLabels(), //
@@ -641,8 +641,7 @@ public class UncertainValues //
 				res.add(cls.cast(tag));
 		return Collections.unmodifiableList(res);
 	}
-	
-	
+
 	/**
 	 * Returns a {@link RealVector} containing the values associated with this
 	 * object.
@@ -746,8 +745,7 @@ public class UncertainValues //
 	final public List<Object> getLabels() {
 		return Collections.unmodifiableList(mLabels);
 	}
-	
-	
+
 	/**
 	 * Is there a value and covariances associated with the specified label?
 	 *
@@ -1035,7 +1033,7 @@ public class UncertainValues //
 	public String toSimpleHTML(final BasicNumberFormat bnf) {
 		final Table t0 = new Table();
 		{
-			List<Table.Item> row = new ArrayList<>();
+			final List<Table.Item> row = new ArrayList<>();
 			row.add(Table.th("Label"));
 			row.add(Table.thc("Value"));
 			row.add(Table.thc("&nbsp;"));
@@ -1044,7 +1042,7 @@ public class UncertainValues //
 			t0.addRow(row);
 		}
 		for (int r = 0; r < getDimension(); ++r) {
-			List<Table.Item> row = new ArrayList<>();
+			final List<Table.Item> row = new ArrayList<>();
 			row.add(Table.thc(HTML.toHTML(getLabel(r), Mode.NORMAL)));
 			row.add(Table.tdc(bnf.format(getEntry(r))));
 			row.add(Table.tdc(r == getDimension() / 2 ? "&#177;" : "&nbsp;"));
@@ -1059,12 +1057,12 @@ public class UncertainValues //
 	 * Convert the covariance at r,c into HTML in a human-friendly manner. Variances
 	 * are converted into "(v)^2" and covariances into the correlation coefficient
 	 * times sR sC.
-	 * 
+	 *
 	 * @param r
 	 * @param c
 	 * @return String
 	 */
-	public String toHTML_Covariance(int r, int c) {
+	public String toHTML_Covariance(final int r, final int c) {
 		final double val = mCovariance.getEntry(r, c);
 		if (r == c) {
 			final BasicNumberFormat nf = new BasicNumberFormat("0.00E0");
@@ -1222,8 +1220,8 @@ public class UncertainValues //
 		if (uvs1.getDimension() != uvs2.getDimension())
 			throw new DimensionMismatchException(uvs2.getDimension(), uvs1.getDimension());
 		final int dim = uvs1.getDimension();
-		boolean[] disp = new boolean[dim];
-		UncertainValues uvs2r = UncertainValues.extract(uvs1.getLabels(), uvs2);
+		final boolean[] disp = new boolean[dim];
+		final UncertainValues uvs2r = UncertainValues.extract(uvs1.getLabels(), uvs2);
 		final BufferedImage bi = new BufferedImage(pixDim * (dim + 2), pixDim * dim, BufferedImage.TYPE_3BYTE_BGR);
 		final Graphics2D g2 = bi.createGraphics();
 		g2.setColor(Color.WHITE);
@@ -1382,7 +1380,7 @@ public class UncertainValues //
 
 	@Override
 	public int hashCode() {
-		if(mHashCode==0)
+		if (mHashCode == 0)
 			mHashCode = Objects.hash(mValues, mLabels, mCovariance);
 		return mHashCode;
 	}
@@ -1464,7 +1462,7 @@ public class UncertainValues //
 
 	/**
 	 * Note: Returns an index of -1 if the label is missing
-	 * 
+	 *
 	 * @param labels
 	 * @return Returns an array of integer indices for the specified labels in order
 	 */
@@ -1536,8 +1534,9 @@ public class UncertainValues //
 		return true;
 	}
 
+	@Override
 	public String toString() {
-		List<Object> labels = new ArrayList<>();
+		final List<Object> labels = new ArrayList<>();
 		for (int i = 0; (i < mLabels.size()) && (i < 5); ++i)
 			labels.add(mLabels.get(i));
 		return "UVS[" + labels.toString()

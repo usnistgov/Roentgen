@@ -20,14 +20,14 @@ public class Layer //
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Layer other = (Layer) obj;
+		final Layer other = (Layer) obj;
 		return Objects.equals(mComposition, other.mComposition) //
 				&& Objects.equals(mDensity, other.mDensity) //
 				&& Objects.equals(mThickness, other.mThickness);
@@ -50,36 +50,36 @@ public class Layer //
 	/**
 	 * Makes a Layer consisting of thickness_nm (in nanometers) of carbon with
 	 * density of 1.5 &pm; 0.1 g/cm<sup>3</sup>.
-	 * 
+	 *
 	 * @param thickness_nm
 	 * @return Layer object
 	 */
-	public static Layer carbonCoating(UncertainValue thickness_nm) {
+	public static Layer carbonCoating(final UncertainValue thickness_nm) {
 		return new Layer(Composition.pureElement(Element.Carbon), thickness_nm, new UncertainValue(1.5, 0.1));
 	}
 
 	/**
 	 * Makes a Layer consisting of thickness_nm (in nanometers) of gold with density
 	 * of 19.3 &pm; 0.1 g/cm<sup>3</sup>.
-	 * 
+	 *
 	 * @param thickness_nm
 	 * @return Layer object
 	 */
-	public static Layer goldCoating(UncertainValue thickness_nm) {
+	public static Layer goldCoating(final UncertainValue thickness_nm) {
 		return new Layer(Composition.pureElement(Element.Gold), thickness_nm, new UncertainValue(19.3, 0.1));
 	}
 
 	public Composition getComposition() {
 		return mComposition;
 	}
-	
+
 	public Material getMaterial() {
 		return mComposition.getMaterial();
 	}
 
 	/**
 	 * Thickness in meters
-	 * 
+	 *
 	 * @return in meters
 	 */
 	public UncertainValue getThickness() {

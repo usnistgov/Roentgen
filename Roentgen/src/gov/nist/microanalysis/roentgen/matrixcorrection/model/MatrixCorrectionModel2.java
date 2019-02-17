@@ -23,15 +23,15 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 
 /**
  * A matrix correction model is a model that computes the values associated with
- * {@link MatrixCorrectionLabel} and {@link KRatioLabel} for a set of 
- * {@link ElementXRaySet} objects associated with {@link MatrixCorrectionDatum}s 
- * associated with Standards relative to a {@link MatrixCorrectionDatum} associated 
- * with an unknown.
+ * {@link MatrixCorrectionLabel} and {@link KRatioLabel} for a set of
+ * {@link ElementXRaySet} objects associated with {@link MatrixCorrectionDatum}s
+ * associated with Standards relative to a {@link MatrixCorrectionDatum}
+ * associated with an unknown.
  *
  * A matrix correction model may also calculate values for {@link KRatioLabel}
  * and other related tags.
@@ -130,7 +130,7 @@ abstract public class MatrixCorrectionModel2 //
 	/**
 	 * A list of types of variables that can be included in the uncertainty
 	 * calculation.
-	 * 
+	 *
 	 * @author Nicholas W. M. Ritchie
 	 *
 	 */
@@ -150,10 +150,11 @@ abstract public class MatrixCorrectionModel2 //
 
 		private final String mName;
 
-		private Variate(String name) {
+		private Variate(final String name) {
 			mName = name;
 		}
 
+		@Override
 		public String toString() {
 			return mName;
 		}
@@ -217,7 +218,7 @@ abstract public class MatrixCorrectionModel2 //
 
 	/**
 	 * Only StandardComposition and UnknownComposition.
-	 * 
+	 *
 	 * @return
 	 */
 	public static Set<Variate> minimalVariates() {
@@ -235,7 +236,7 @@ abstract public class MatrixCorrectionModel2 //
 	/**
 	 * All Variates except AtomicWeight, IonizationExponent, MeanIonizationPotential
 	 * and WeightsOfLines.
-	 * 
+	 *
 	 * @return
 	 */
 	public static Set<Variate> defaultVariates() {
@@ -318,7 +319,7 @@ abstract public class MatrixCorrectionModel2 //
 		return new MatrixCorrectionLabel(unk, std, exrs);
 	}
 
-	static public Object zafLabel(KRatioLabel krl) {
+	static public Object zafLabel(final KRatioLabel krl) {
 		return new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet());
 	}
 
@@ -327,18 +328,18 @@ abstract public class MatrixCorrectionModel2 //
 		return new MatrixCorrectionModel2.ZAFLabel("Z", unk, std, cxr);
 	}
 
-	public boolean isSet(Variate variate) {
+	public boolean isSet(final Variate variate) {
 		return mVariates.contains(variate);
 	}
 
 	/**
 	 * Creates a user-friendly string summarizing the Variates that are set.
-	 * 
+	 *
 	 * @return String A list of Variates in string form.
 	 */
 	public String listVariates() {
-		StringBuffer sb = new StringBuffer();
-		for (Variate var : mVariates) {
+		final StringBuffer sb = new StringBuffer();
+		for (final Variate var : mVariates) {
 			if (sb.length() > 0)
 				sb.append(", ");
 			sb.append(var.mName);

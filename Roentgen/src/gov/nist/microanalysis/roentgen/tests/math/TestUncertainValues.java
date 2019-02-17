@@ -21,11 +21,11 @@ public class TestUncertainValues {
 
 	@Test
 	public void testUVs1() {
-		List<String> labels = Arrays.asList("B", "A", "C", "F", "E", "D", "G");
-		RealVector vals = new ArrayRealVector(new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0 });
-		RealVector vars = new ArrayRealVector(
+		final List<String> labels = Arrays.asList("B", "A", "C", "F", "E", "D", "G");
+		final RealVector vals = new ArrayRealVector(new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0 });
+		final RealVector vars = new ArrayRealVector(
 				new double[] { 0.3 * 0.3, 12.0 * 12.0, 0.4 * 0.4, 1.1 * 1.1, 3.3 * 3.3, 0.2 * 0.2, 0.27 * 0.27 });
-		RealMatrix corrCoeff = MatrixUtils.createRealMatrix(new double[][] { //
+		final RealMatrix corrCoeff = MatrixUtils.createRealMatrix(new double[][] { //
 				{ 0.0, 0.1, 0.02, 0.0, -0.2, 0.0, -0.8 }, //
 				{ 0.0, 0.0, -0.3, 0.0, 0.3, 0.0, 0.6 }, //
 				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.3 }, //
@@ -35,7 +35,7 @@ public class TestUncertainValues {
 				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, //
 		});
 		final double EPS = 1.0e-8;
-		UncertainValues uvs = new UncertainValues(labels, vals, vars, corrCoeff);
+		final UncertainValues uvs = new UncertainValues(labels, vals, vars, corrCoeff);
 		assertEquals(0.1, uvs.getCorrelationCoefficient(0, 1), EPS);
 		assertEquals(0.1, uvs.getCorrelationCoefficient(1, 0), EPS);
 		assertEquals(0.33, uvs.getCorrelationCoefficient(6, 5), EPS);
@@ -60,7 +60,7 @@ public class TestUncertainValues {
 		assertEquals(0.4 * 0.27 * -0.3, covCG, EPS);
 		assertEquals(0.3 * 0.27 * -0.8, covBG, EPS);
 
-		UncertainValues uvss = uvs.sort();
+		final UncertainValues uvss = uvs.sort();
 
 		assertEquals(2.0, uvss.getEntry("A"), EPS);
 		assertEquals(4.0, uvss.getEntry("F"), EPS);
@@ -80,8 +80,8 @@ public class TestUncertainValues {
 		assertEquals(-0.3, uvs.getCorrelationCoefficient("A", "C"), EPS);
 		assertEquals(-0.3, uvss.getCorrelationCoefficient("C", "A"), EPS);
 		assertEquals(-0.3, uvs.getCorrelationCoefficient("C", "A"), EPS);
-		
-		UncertainValues uvsd = uvs.blockDiagnonalize();
+
+		final UncertainValues uvsd = uvs.blockDiagnonalize();
 		assertEquals(2.0, uvsd.getEntry("A"), EPS);
 		assertEquals(4.0, uvsd.getEntry("F"), EPS);
 		assertEquals(7.0, uvsd.getEntry("G"), EPS);
@@ -93,30 +93,29 @@ public class TestUncertainValues {
 		assertEquals(covCF, uvsd.getCovariance("C", "F"), EPS);
 		assertEquals(covCG, uvsd.getCovariance("C", "G"), EPS);
 		assertEquals(covBG, uvsd.getCovariance("B", "G"), EPS);
-		
+
 	}
 
-	
 	@Test
 	public void testUVs2() {
-		List<String> labels = Arrays.asList("B", "A", "C", "F", "E", "D", "G");
-		RealVector vals = new ArrayRealVector(new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0 });
-		RealVector vars = new ArrayRealVector(
+		final List<String> labels = Arrays.asList("B", "A", "C", "F", "E", "D", "G");
+		final RealVector vals = new ArrayRealVector(new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0 });
+		final RealVector vars = new ArrayRealVector(
 				new double[] { 0.3 * 0.3, 12.0 * 12.0, 0.4 * 0.4, 1.1 * 1.1, 3.3 * 3.3, 0.2 * 0.2, 0.27 * 0.27 });
-		RealMatrix corrCoeff = MatrixUtils.createRealMatrix(new double[][] { //
-				{ 0.0, 0.1, 0.02, 0.0, 0.0,  0.0, 0.0 }, //
-				{ 0.0, 0.0, -0.3, 0.0, 0.0,  0.0, 0.0 }, //
-				{ 0.0, -0.1, 0.0, 0.0, 0.0,  0.0, 0.0 }, //
-				{ 0.0, 0.0, 0.0,  0.0, 0.0,  0.0, 0.0, }, //
-				{ 0.0, 0.0, 0.0,  0.0, 0.0, -0.11, 0.0, }, //
-				{ 0.0, 0.0, 0.0,  0.0, 0.0,  0.0, 0.33 }, //
-				{ 0.0, 0.0, 0.0,  0.0, 0.0,  0.0,  0.0 }, //
+		final RealMatrix corrCoeff = MatrixUtils.createRealMatrix(new double[][] { //
+				{ 0.0, 0.1, 0.02, 0.0, 0.0, 0.0, 0.0 }, //
+				{ 0.0, 0.0, -0.3, 0.0, 0.0, 0.0, 0.0 }, //
+				{ 0.0, -0.1, 0.0, 0.0, 0.0, 0.0, 0.0 }, //
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, }, //
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, -0.11, 0.0, }, //
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.33 }, //
+				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, //
 		});
 		final double EPS = 1.0e-8;
-		UncertainValues uvs = new UncertainValues(labels, vals, vars, corrCoeff);
-		UncertainValues uvss = uvs.sort();
-		
-		UncertainValues uvsd = uvss.blockDiagnonalize();
+		final UncertainValues uvs = new UncertainValues(labels, vals, vars, corrCoeff);
+		final UncertainValues uvss = uvs.sort();
+
+		final UncertainValues uvsd = uvss.blockDiagnonalize();
 		assertEquals(uvs.getEntry("A"), uvsd.getEntry("A"), EPS);
 		assertEquals(uvs.getEntry("F"), uvsd.getEntry("F"), EPS);
 		assertEquals(uvs.getEntry("G"), uvsd.getEntry("G"), EPS);
@@ -128,7 +127,7 @@ public class TestUncertainValues {
 
 		System.out.println(uvsd.getLabels());
 		System.out.println(uvsd.getCovariances());
-		
+
 	}
 
 }

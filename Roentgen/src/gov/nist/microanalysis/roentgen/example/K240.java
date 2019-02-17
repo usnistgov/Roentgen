@@ -13,9 +13,9 @@ import java.util.TreeMap;
 
 import org.apache.commons.math3.linear.RealVector;
 
+import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
-import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
@@ -24,14 +24,14 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
+import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -41,8 +41,8 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * {@link KRatioCorrectionModel2} to calculate the matrix correction with
  * associated uncertainties for K240 glass (O, Mg, Si, Ti, Zn, Zr, Ba). The
  * results are output as HTML pages.
- * 
- * 
+ *
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -56,8 +56,8 @@ public class K240 {
 		mRoughness = MatrixCorrectionDatum.roughness(10.0, 3.6);
 	}
 
-	public static void main(String[] args) {
-		K240 k240 = new K240();
+	public static void main(final String[] args) {
+		final K240 k240 = new K240();
 		try {
 			k240.simple();
 			k240.benitoite();
@@ -68,16 +68,16 @@ public class K240 {
 		}
 	}
 
-	public List<? extends Object> filter(List<? extends Object> labels, String name) {
+	public List<? extends Object> filter(final List<? extends Object> labels, final String name) {
 		final List<Object> res = new ArrayList<>();
-		for (Object label : labels)
+		for (final Object label : labels)
 			if (label.toString().startsWith(name))
 				res.add(label);
 		return res;
 	}
 
 	private Map<String, Collection<? extends Object>> extractLabelBlocks(final UncertainValues res) {
-		Map<String, Collection<? extends Object>> labels = new TreeMap<>();
+		final Map<String, Collection<? extends Object>> labels = new TreeMap<>();
 		labels.put("[µ/ρ]", filter(res.getLabels(), "[μ/ρ]"));
 		labels.put("dz", filter(res.getLabels(), "dz"));
 		labels.put("TOA", filter(res.getLabels(), "TOA"));
@@ -171,14 +171,16 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, mgoMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr, MatrixCorrectionModel2.allVariates());
+				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
+						MatrixCorrectionModel2.allVariates());
 				final UncertainValues input = cfk.buildInput(unk);
-				MatrixCorrectionModel2 mcm = cfk.getModel();
+				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				// Calculate the optimal k-ratios
-				RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
-				UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured);
-				for (Object label : krs.getLabels()) {
-					KRatioLabel krl = (KRatioLabel) label;
+				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
+						Method.Measured);
+				for (final Object label : krs.getLabels()) {
+					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
 					switch (krl.getXRaySet().getElement()) {
@@ -394,14 +396,16 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
-				KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr, MatrixCorrectionModel2.allVariates());
+				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
+						MatrixCorrectionModel2.allVariates());
 				final UncertainValues input = cfk.buildInput(unk);
-				MatrixCorrectionModel2 mcm = cfk.getModel();
+				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				// Calculate the optimal k-ratios
-				RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
-				UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured);
-				for (Object label : krs.getLabels()) {
-					KRatioLabel krl = (KRatioLabel) label;
+				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
+						Method.Measured);
+				for (final Object label : krs.getLabels()) {
+					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
 					switch (krl.getXRaySet().getElement()) {
@@ -624,12 +628,13 @@ public class K240 {
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
 						MatrixCorrectionModel2.allVariates());
 				final UncertainValues input = cfk.buildInput(unk);
-				MatrixCorrectionModel2 mcm = cfk.getModel();
+				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				// Calculate the optimal k-ratios
-				RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
-				UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured);
-				for (Object label : krs.getLabels()) {
-					KRatioLabel krl = (KRatioLabel) label;
+				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
+						Method.Measured);
+				for (final Object label : krs.getLabels()) {
+					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
 					switch (krl.getXRaySet().getElement()) {
@@ -856,12 +861,13 @@ public class K240 {
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
 						MatrixCorrectionModel2.allVariates());
 				final UncertainValues input = cfk.buildInput(unk);
-				MatrixCorrectionModel2 mcm = cfk.getModel();
+				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				// Calculate the optimal k-ratios
-				RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
-				UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured);
-				for (Object label : krs.getLabels()) {
-					KRatioLabel krl = (KRatioLabel) label;
+				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
+						Method.Measured);
+				for (final Object label : krs.getLabels()) {
+					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
 					switch (krl.getXRaySet().getElement()) {

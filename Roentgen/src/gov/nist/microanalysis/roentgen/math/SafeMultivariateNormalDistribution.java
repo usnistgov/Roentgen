@@ -152,7 +152,7 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 					System.err.println(cv + " is less than zero at column " + c);
 					result = false;
 				}
-				if (Math.abs(covs[r][c] - covs[c][r])>1.0e-6*Math.max(Math.abs(covs[r][c]), Math.abs(covs[c][r]))) {
+				if (Math.abs(covs[r][c] - covs[c][r]) > 1.0e-6 * Math.max(Math.abs(covs[r][c]), Math.abs(covs[c][r]))) {
 					System.err.println("Not symmetric at " + r + ", " + c + " -> " + covs[r][c] + " != " + covs[c][r]);
 					result = false;
 				}

@@ -23,11 +23,10 @@ public class StandardMatrixCorrectionDatum //
 		extends MatrixCorrectionDatum {
 
 	private final Composition mComposition;
-	
+
 	@Override
 	public int hashCode() {
-		return 37 * super.hashCode() + 
-				mComposition.hashCode();
+		return 37 * super.hashCode() + mComposition.hashCode();
 	}
 
 	@Override
@@ -41,7 +40,6 @@ public class StandardMatrixCorrectionDatum //
 		final StandardMatrixCorrectionDatum other = (StandardMatrixCorrectionDatum) obj;
 		return Objects.equals(mComposition, other.mComposition);
 	}
-
 
 	/**
 	 * @param comp
@@ -58,7 +56,7 @@ public class StandardMatrixCorrectionDatum //
 	}
 
 	/**
-	 * 
+	 *
 	 * @param comp
 	 * @param beamEnergy
 	 * @param takeOffAngle
@@ -75,7 +73,7 @@ public class StandardMatrixCorrectionDatum //
 	}
 
 	/**
-	 * 
+	 *
 	 * @param comp
 	 * @param beamEnergy
 	 * @param takeOffAngle
@@ -85,7 +83,7 @@ public class StandardMatrixCorrectionDatum //
 			final Composition comp, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle, //
-			final double roughness, Layer coating //
+			final double roughness, final Layer coating //
 	) {
 		super(beamEnergy, takeOffAngle, roughness, coating);
 		mComposition = comp;
@@ -95,7 +93,9 @@ public class StandardMatrixCorrectionDatum //
 	public String toHTML(final Mode mode) {
 		final BasicNumberFormat bnf = new BasicNumberFormat("0.0");
 		if (mode != Mode.VERBOSE)
-			return "Standard[" + mComposition.toHTML(Mode.TERSE)+"]"; // + " at " + bnf.formatHTML(mBeamEnergy.doubleValue()) + " keV";
+			return "Standard[" + mComposition.toHTML(Mode.TERSE) + "]"; // + " at " +
+																		// bnf.formatHTML(mBeamEnergy.doubleValue()) + "
+																		// keV";
 		else {
 			final Table t = new Table();
 			t.addRow(Table.td("Composition"), Table.td(mComposition.toHTML(Mode.VERBOSE)));
@@ -118,9 +118,12 @@ public class StandardMatrixCorrectionDatum //
 		final DecimalFormat df = new DecimalFormat("0.0");
 		return mComposition.toString() + " at " + df.format(mBeamEnergy.doubleValue()) + " keV";
 	}
-	
-	/* (non-Javadoc)
-	 * @see gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum#getMaterial()
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum#
+	 * getMaterial()
 	 */
 	@Override
 	public Material getMaterial() {

@@ -31,8 +31,8 @@ import gov.nist.microanalysis.roentgen.physics.composition.AtomFractionToMassFra
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.MixtureToComposition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialMassFraction;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
@@ -244,15 +244,15 @@ public class CompositionTest2 {
 		Assert.assertEquals(0.00529588, af.getMassFraction(Element.Calcium).uncertainty(), 1.0e-5);
 		Assert.assertEquals(0.00402649, af.getMassFraction(Element.Iron).uncertainty(), 1.0e-5);
 
-		Material mat = af.getMaterial();
-		MaterialLabel.MassFraction mft_o = MaterialLabel.buildMassFractionTag(mat, Element.Oxygen);
-		MaterialLabel.MassFraction mft_ca = MaterialLabel.buildMassFractionTag(mat, Element.Calcium);
-		MaterialLabel.MassFraction mft_mg = MaterialLabel.buildMassFractionTag(mat, Element.Magnesium);
-		MaterialLabel.MassFraction mft_fe = MaterialLabel.buildMassFractionTag(mat, Element.Iron);
-		MaterialLabel.MassFraction mft_si = MaterialLabel.buildMassFractionTag(mat, Element.Silicon);
-		MaterialLabel.MassFraction mft_al = MaterialLabel.buildMassFractionTag(mat, Element.Aluminum);
-		MaterialLabel.MassFraction mft_ag = MaterialLabel.buildMassFractionTag(mat, Element.Silver);
-		MaterialLabel.MassFraction mft_sb = MaterialLabel.buildMassFractionTag(mat, Element.Antimony);
+		final Material mat = af.getMaterial();
+		final MaterialLabel.MassFraction mft_o = MaterialLabel.buildMassFractionTag(mat, Element.Oxygen);
+		final MaterialLabel.MassFraction mft_ca = MaterialLabel.buildMassFractionTag(mat, Element.Calcium);
+		final MaterialLabel.MassFraction mft_mg = MaterialLabel.buildMassFractionTag(mat, Element.Magnesium);
+		final MaterialLabel.MassFraction mft_fe = MaterialLabel.buildMassFractionTag(mat, Element.Iron);
+		final MaterialLabel.MassFraction mft_si = MaterialLabel.buildMassFractionTag(mat, Element.Silicon);
+		final MaterialLabel.MassFraction mft_al = MaterialLabel.buildMassFractionTag(mat, Element.Aluminum);
+		final MaterialLabel.MassFraction mft_ag = MaterialLabel.buildMassFractionTag(mat, Element.Silver);
+		final MaterialLabel.MassFraction mft_sb = MaterialLabel.buildMassFractionTag(mat, Element.Antimony);
 		Assert.assertEquals(-0.0000857086, af.getCovariance(mft_o, mft_ca), 1.0e-7);
 		Assert.assertEquals(9.2027e-6, af.getCovariance(mft_mg, mft_fe), 1.0e-7);
 		Assert.assertEquals(9.68555e-6, af.getCovariance(mft_fe, mft_ca), 1.0e-7);
@@ -307,8 +307,8 @@ public class CompositionTest2 {
 		final Composition af = Composition.atomFraction("K412", atFracs);
 
 		final UncertainValues uv = af;
-		final UncertainValues mup = UncertainValues
-				.propagateMC(new AtomFractionToMassFraction(af.getMaterial()), uv, 160000);
+		final UncertainValues mup = UncertainValues.propagateMC(new AtomFractionToMassFraction(af.getMaterial()), uv,
+				160000);
 
 		// From DTSA-II
 		assertEquals(0.4312, af.getMassFraction(Element.Oxygen).doubleValue(), 0.0001);
@@ -319,7 +319,7 @@ public class CompositionTest2 {
 		assertEquals(0.0781, af.getMassFraction(Element.Iron).doubleValue(), 0.0001);
 
 		// Test MC against analytic
-		for (Object label : af.massFractionTags())
+		for (final Object label : af.massFractionTags())
 			assertEquals(af.getValue(label).uncertainty(), mup.getUncertainValue(label).uncertainty(), 0.001);
 
 		if (mHTML) {
@@ -351,7 +351,7 @@ public class CompositionTest2 {
 	@Test
 	public void testMixture() throws ArgumentException, ParseException, IOException {
 
-		String name = "K412";
+		final String name = "K412";
 
 		final double fSiO2 = 0.4535;
 		final double fFeO = 0.0996;
@@ -359,34 +359,34 @@ public class CompositionTest2 {
 		final double fCaO = 0.1525;
 		final double fAl2O3 = 0.0927;
 		final double unc = 0.0020;
-		Map<Composition, Number> mcn = new HashMap<>();
+		final Map<Composition, Number> mcn = new HashMap<>();
 		mcn.put(Composition.parse("SiO2"), new UncertainValue(fSiO2, unc));
 		mcn.put(Composition.parse("FeO"), new UncertainValue(fFeO, unc));
 		mcn.put(Composition.parse("MgO"), new UncertainValue(fMgO, unc));
 		mcn.put(Composition.parse("CaO"), new UncertainValue(fCaO, unc));
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
-		Composition mix = Composition.combine(name, mcn);
+		final Composition mix = Composition.combine(name, mcn);
 
-		MixtureToComposition m2c = new MixtureToComposition(name, Material.convert(mcn.keySet()));
-		List<UncertainValues> vs = new ArrayList<>();
-		for (Composition comp : mcn.keySet())
+		final MixtureToComposition m2c = new MixtureToComposition(name, Material.convert(mcn.keySet()));
+		final List<UncertainValues> vs = new ArrayList<>();
+		for (final Composition comp : mcn.keySet())
 			vs.add(comp);
-		Map<MaterialMassFraction, Number> aft = new HashMap<>();
-		for (Map.Entry<Composition, Number> me : mcn.entrySet())
+		final Map<MaterialMassFraction, Number> aft = new HashMap<>();
+		for (final Map.Entry<Composition, Number> me : mcn.entrySet())
 			aft.put(new MaterialMassFraction(me.getKey().getMaterial()), me.getValue());
 		vs.add(new UncertainValues(aft));
-		UncertainValues uvs = UncertainValues.combine(vs);
-		UncertainValues inp = UncertainValues.extract(m2c.getInputLabels(), uvs);
-		RealVector dinp = inp.getValues().mapMultiply(1.0e-3);
-		UncertainValues dres = UncertainValues.propagateDeltaOrdered(m2c, inp, dinp);
+		final UncertainValues uvs = UncertainValues.combine(vs);
+		final UncertainValues inp = UncertainValues.extract(m2c.getInputLabels(), uvs);
+		final RealVector dinp = inp.getValues().mapMultiply(1.0e-3);
+		final UncertainValues dres = UncertainValues.propagateDeltaOrdered(m2c, inp, dinp);
 
-		for (Object row : dres.getLabels()) {
+		for (final Object row : dres.getLabels()) {
 			final double mm = mix.getVariance(row);
 			final double dm = dres.getVariance(row);
 			if (mix.getVariance(row) > 1.0e-10) {
 				if (Math.abs(mm - dm) > 0.1 * Math.abs(mm))
 					System.out.println(row + " " + mm + " != " + dm);
-				for (Object col : dres.getLabels())
+				for (final Object col : dres.getLabels())
 					if (mix.getVariance(col) > 1.0e-10) {
 						final double mc = mix.getCorrelationCoefficient(row, col);
 						final double dc = dres.getCorrelationCoefficient(row, col);
@@ -412,11 +412,11 @@ public class CompositionTest2 {
 						unc * 0.396964 + // Mg
 						unc * 0.285309 + // Ca
 						unc * 0.470749)); // Al
-		Composition uv = Composition.massFraction(name, res);
+		final Composition uv = Composition.massFraction(name, res);
 
-		Report r = new Report("Mixture");
+		final Report r = new Report("Mixture");
 		r.addHeader("Mixture");
-		UncertainValues mixD = UncertainValues.extract(dres.getLabels(), mix);
+		final UncertainValues mixD = UncertainValues.extract(dres.getLabels(), mix);
 		r.add(mixD);
 		r.addHeader("Delta");
 		r.add(dres);
@@ -427,12 +427,11 @@ public class CompositionTest2 {
 		r.addHTML(uv.toSimpleHTML(new BasicNumberFormat("0.00E0")));
 		r.addHTML(uv.getAnalyticalTotal().toHTML(Mode.TERSE));
 		r.addHeader("Compare");
-		ValueToLog3 v2l = new ValueToLog3(1.0);
-		LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
+		final ValueToLog3 v2l = new ValueToLog3(1.0);
+		final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
 		r.addImage(dres.asCovarianceBitmap(8, v2l, l2c), "Delta");
 		r.addImage(mixD.asCovarianceBitmap(8, v2l, l2c), "Mixture");
-		r.addImage(UncertainValues.compareAsBitmap(dres, mixD, v2l, 8),
-				"Mass Fractions");
+		r.addImage(UncertainValues.compareAsBitmap(dres, mixD, v2l, 8), "Mass Fractions");
 
 		r.inBrowser(Mode.VERBOSE);
 	}

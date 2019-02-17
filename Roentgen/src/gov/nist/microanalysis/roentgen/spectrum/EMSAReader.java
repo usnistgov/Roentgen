@@ -295,7 +295,7 @@ public class EMSAReader implements ISpectrumReader {
 			try {
 				if (props.containsKey("##D2STDCMP")) // DTSA-II custom tag
 					spec.setComposition(parseComposition(props.get("##D2STDCMP")));
-			} catch (ArgumentException e) {
+			} catch (final ArgumentException e) {
 				System.err.println("Unable to parse: " + props.get("##D2STDCMP"));
 			}
 			// Cases: nextDatum then "," or nextDatum then EOL or EOL

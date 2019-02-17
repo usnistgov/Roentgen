@@ -24,5 +24,5 @@ public interface ILabeledMultivariateFunction {
 	 * @return {@link RealVector}
 	 */
 	public RealVector optimized(RealVector point);
-	
+
 }

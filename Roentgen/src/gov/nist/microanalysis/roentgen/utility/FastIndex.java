@@ -38,19 +38,23 @@ public class FastIndex<H> extends ArrayList<H> {
 		return res == null ? -1 : res.intValue();
 	}
 
-	public boolean add(H obj) {
+	@Override
+	public boolean add(final H obj) {
 		throw new UnsupportedOperationException("add is not supported by FastIndex.");
 	}
 
-	public boolean addAll(Collection<? extends H> hs) {
+	@Override
+	public boolean addAll(final Collection<? extends H> hs) {
 		throw new UnsupportedOperationException("addAll is not supported by FastIndex.");
 	}
-	
-	public H set(int index, H element) {
+
+	@Override
+	public H set(final int index, final H element) {
 		throw new UnsupportedOperationException("set is not supported by FastIndex.");
 	}
-	
-	public void add(int index, H element) {
+
+	@Override
+	public void add(final int index, final H element) {
 		throw new UnsupportedOperationException("add is not supported by FastIndex.");
 	}
 }

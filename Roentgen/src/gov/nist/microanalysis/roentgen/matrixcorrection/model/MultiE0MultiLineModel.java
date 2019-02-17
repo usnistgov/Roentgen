@@ -68,9 +68,9 @@ class MultiE0MultiLineModel //
 			final Set<KRatioLabel> kratios, //
 			final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
-		Map<MatrixCorrectionDatum, Set<AtomicShell>> allMcd = new HashMap<>();
+		final Map<MatrixCorrectionDatum, Set<AtomicShell>> allMcd = new HashMap<>();
 
-		for (KRatioLabel krl : kratios) {
+		for (final KRatioLabel krl : kratios) {
 			final Set<AtomicShell> shells = krl.getXRaySet().getSetOfInnerAtomicShells();
 			{
 				final MatrixCorrectionDatum mcd = krl.getStandard();
@@ -89,8 +89,8 @@ class MultiE0MultiLineModel //
 		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
 		{
 			final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
-			for (Map.Entry<MatrixCorrectionDatum, Set<AtomicShell>> me : allMcd.entrySet())
-				for (AtomicShell sh : me.getValue())
+			for (final Map.Entry<MatrixCorrectionDatum, Set<AtomicShell>> me : allMcd.entrySet())
+				for (final AtomicShell sh : me.getValue())
 					funcs.add(new IonizationCrossSection(me.getKey(), sh, variates));
 			res.add(LabeledMultivariateJacobianFunctionBuilder.join("ICXs", funcs));
 		}
@@ -263,8 +263,7 @@ class MultiE0MultiLineModel //
 			res.add(intensityLabel(krl.getUnknown(), krl.getXRaySet()));
 			res.add(intensityLabel(krl.getStandard(), krl.getXRaySet()));
 			res.add(MaterialLabel.buildMassFractionTag(krl.getUnknown().getMaterial(), krl.getXRaySet().getElement()));
-			res.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(),
-					krl.getXRaySet().getElement()));
+			res.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(), krl.getXRaySet().getElement()));
 			return res;
 		}
 
@@ -343,6 +342,7 @@ class MultiE0MultiLineModel //
 			return rv;
 		}
 
+		@Override
 		public String toString() {
 			return "kRatio[" + mKRatio + "]";
 		}
@@ -357,7 +357,7 @@ class MultiE0MultiLineModel //
 		private final MatrixCorrectionDatum mDatum;
 
 		static private List<Object> buildInputLabels(final MatrixCorrectionDatum mcd, final AtomicShell sh,
-				Set<Variate> variates) {
+				final Set<Variate> variates) {
 			final List<Object> res = new ArrayList<>();
 			if (variates.contains(Variate.IonizationExponent))
 				res.add(new MatrixCorrectionModel2.IonizationExponentLabel(sh));
@@ -370,7 +370,8 @@ class MultiE0MultiLineModel //
 			return Collections.singletonList(buildICXLabel(mcd, sh));
 		}
 
-		public IonizationCrossSection(final MatrixCorrectionDatum mcd, final AtomicShell sh, Set<Variate> variates) {
+		public IonizationCrossSection(final MatrixCorrectionDatum mcd, final AtomicShell sh,
+				final Set<Variate> variates) {
 			super(buildInputLabels(mcd, sh, variates), buildOutputLabels(mcd, sh));
 			mShell = sh;
 			mDatum = mcd;
@@ -415,6 +416,7 @@ class MultiE0MultiLineModel //
 			return rv;
 		}
 
+		@Override
 		public String toString() {
 			return "ICX2[" + mDatum + "," + mShell + "]";
 		}

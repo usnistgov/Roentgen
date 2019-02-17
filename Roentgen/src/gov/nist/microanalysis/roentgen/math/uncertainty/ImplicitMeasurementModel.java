@@ -42,8 +42,9 @@ public class ImplicitMeasurementModel //
 	public static abstract class HModel //
 			extends LabeledMultivariateJacobianFunction {
 
-		private static List<? extends Object> combine(List<? extends Object> inp, List<? extends Object> outp) {
-			List<Object> res = new ArrayList<>();
+		private static List<? extends Object> combine(final List<? extends Object> inp,
+				final List<? extends Object> outp) {
+			final List<Object> res = new ArrayList<>();
 			res.addAll(inp);
 			res.addAll(outp);
 			return res;
@@ -65,7 +66,7 @@ public class ImplicitMeasurementModel //
 			return res;
 		}
 
-		public HModel(List<? extends Object> inputLabels, List<? extends Object> outputLabels) {
+		public HModel(final List<? extends Object> inputLabels, final List<? extends Object> outputLabels) {
 			super(combine(inputLabels, outputLabels), buildHLabels(outputLabels));
 		}
 

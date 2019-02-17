@@ -134,10 +134,10 @@ public class TestMassAbsorptionCoefficient {
 		final Composition mf4 = Composition.parse("CaF2");
 		final Composition mf5 = Composition.parse("Fe");
 		final Composition mf6 = Composition.combine("K411", //
-						Pair.create(Composition.parse("SiO2"), new UncertainValue(0.5389, 0.0096)), //
-						Pair.create(Composition.parse("FeO"), new UncertainValue(0.1448, 0.0027)), //
-						Pair.create(Composition.parse("MgO"), new UncertainValue(0.1512, 0.0020)), //
-						Pair.create(Composition.parse("CaO"), new UncertainValue(0.1549, 0.0015)));
+				Pair.create(Composition.parse("SiO2"), new UncertainValue(0.5389, 0.0096)), //
+				Pair.create(Composition.parse("FeO"), new UncertainValue(0.1448, 0.0027)), //
+				Pair.create(Composition.parse("MgO"), new UncertainValue(0.1512, 0.0020)), //
+				Pair.create(Composition.parse("CaO"), new UncertainValue(0.1549, 0.0015)));
 		final Composition[] mfs = new Composition[] { k412, mf1, mf2, mf3, mf4, mf5, mf6 };
 		final CharacteristicXRay[] cxrs = { CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1),
 				CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA1),
@@ -147,21 +147,22 @@ public class TestMassAbsorptionCoefficient {
 				CharacteristicXRay.create(Element.Iron, XRayTransition.KA1) };
 		final Report r = new Report("Test K412");
 		try {
-			for (CharacteristicXRay cxr : cxrs) {
+			for (final CharacteristicXRay cxr : cxrs) {
 				final Pair<UncertainValues, MaterialMACFunction> pr = MaterialMACFunction
 						.buildCompute(Arrays.asList(mfs), cxr);
 				final UncertainValues uv = UncertainValues.propagate(pr.getSecond(), pr.getFirst());
-				//final UncertainValues mc = UncertainValues.propagateDeltaOrdered(pr.getSecond(), pr.getFirst(),
-				//		pr.getFirst().getValues().mapMultiply(0.001));
+				// final UncertainValues mc =
+				// UncertainValues.propagateDeltaOrdered(pr.getSecond(), pr.getFirst(),
+				// pr.getFirst().getValues().mapMultiply(0.001));
 				r.addHeader(cxr);
 				r.addSubHeader("Taylor");
 				r.add(uv);
 				r.addHTML(uv.toHTML(Mode.NORMAL));
-				//r.addSubHeader("Delta");
-				//r.add(mc);
+				// r.addSubHeader("Delta");
+				// r.add(mc);
 				final ValueToLog3 V2L3 = new ValueToLog3(1.0);
 				r.addImage(uv.asCovarianceBitmap(20, V2L3, V2L3), "Taylor");
-				//r.addImage(mc.asCovarianceBitmap(8, V2L3, L2C), "Delta");
+				// r.addImage(mc.asCovarianceBitmap(8, V2L3, L2C), "Delta");
 			}
 		} finally {
 			r.inBrowser(Mode.VERBOSE);

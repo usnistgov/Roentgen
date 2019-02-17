@@ -17,8 +17,9 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunc
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+
 /**
  * Compute the material mass absorption coefficient given the elemental mass
  * absorption coefficients.
@@ -32,8 +33,7 @@ public class MaterialMACFunction //
 
 	public static class MaterialMAC //
 			extends BaseLabel<Material, XRay, Object> {
-		
-		
+
 		public MaterialMAC(final Material mf, final XRay xr) {
 			super("[&mu;/&rho;]", mf, xr);
 		}

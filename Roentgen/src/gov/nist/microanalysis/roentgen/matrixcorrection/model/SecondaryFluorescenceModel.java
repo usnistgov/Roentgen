@@ -47,7 +47,7 @@ public class SecondaryFluorescenceModel //
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
 	 * value(org.apache.commons.math3.linear.RealVector)

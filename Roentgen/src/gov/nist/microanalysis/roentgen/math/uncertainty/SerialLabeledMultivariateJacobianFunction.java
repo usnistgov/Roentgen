@@ -187,9 +187,10 @@ public class SerialLabeledMultivariateJacobianFunction //
 		mFinalOutputs = new HashSet<>(getOutputLabels());
 		mFinalOutputs.retainAll(finalOutputs);
 	}
-	
+
+	@Override
 	public String toString() {
-		return mName+"["+getInputDimension()+","+getOutputDimension()+"]";
+		return mName + "[" + getInputDimension() + "," + getOutputDimension() + "]";
 	}
 
 	@Override

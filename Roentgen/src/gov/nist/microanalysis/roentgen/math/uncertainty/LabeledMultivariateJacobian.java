@@ -44,7 +44,7 @@ public class LabeledMultivariateJacobian //
 	 * The Jacobian at the evaluation point
 	 */
 	private final RealMatrix mJacobian;
-	
+
 	private final Map<Object, Double> mConstants;
 
 	/**
@@ -90,7 +90,8 @@ public class LabeledMultivariateJacobian //
 	 * {@link UncertainValues} object
 	 *
 	 * @param nmjf A {@link LabeledMultivariateJacobianFunction}
-	 * @param uvs   The evaluation point represented as an {@link UncertainValues} object
+	 * @param uvs  The evaluation point represented as an {@link UncertainValues}
+	 *             object
 	 * @return {@link LabeledMultivariateJacobian}
 	 */
 	public static LabeledMultivariateJacobian compute( //
@@ -99,8 +100,7 @@ public class LabeledMultivariateJacobian //
 	) {
 		return new LabeledMultivariateJacobian(nmjf, uvs);
 	}
-	
-	
+
 	/**
 	 * Computes the values and an estimate of the Jacobian using a finite difference
 	 * algorithm.
@@ -130,13 +130,12 @@ public class LabeledMultivariateJacobian //
 			pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
 			pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
 			final RealVector output0 = nmjf.compute(pt0), output1 = nmjf.compute(pt1);
-			for (int r = 0; r < nmjf.getOutputDimension(); ++r) 
+			for (int r = 0; r < nmjf.getOutputDimension(); ++r)
 				rm.setEntry(r, c, (output0.getEntry(r) - output1.getEntry(r)) / deltaX);
 		}
 		return new LabeledMultivariateJacobian(nmjf.getInputLabels(), nmjf.getOutputLabels(), inp,
 				Pair.create(vals, rm));
 	}
-	
 
 	/**
 	 * Construct a {@link LabeledMultivariateJacobian} from a
@@ -154,7 +153,8 @@ public class LabeledMultivariateJacobian //
 		this(nmjf.getInputLabels(), nmjf.getOutputLabels(), pt, nmjf.evaluate(pt));
 	}
 
-	private static final RealVector extractPoint(LabeledMultivariateJacobianFunction func, UncertainValues args) {
+	private static final RealVector extractPoint(final LabeledMultivariateJacobianFunction func,
+			final UncertainValues args) {
 		return args.extractValues(func.getInputLabels());
 	}
 
@@ -179,11 +179,11 @@ public class LabeledMultivariateJacobian //
 		mConstants.putAll(nmjf.getConstants());
 	}
 
-	public Map<Object, Double> getConstants(){
+	@Override
+	public Map<Object, Double> getConstants() {
 		return Collections.unmodifiableMap(mConstants);
 	}
-	
-	
+
 	/**
 	 * Returns a {@link RealVector} containing the point at which the
 	 * {@link LabeledMultivariateJacobianFunction} was evaluated.
@@ -335,8 +335,7 @@ public class LabeledMultivariateJacobian //
 			}
 			return jact.toHTML(Mode.NORMAL);
 		}
-		case VERBOSE:
-		{
+		case VERBOSE: {
 			final Table jact = new Table();
 			final List<Item> items = new ArrayList<>();
 			items.add(Table.td("Output"));

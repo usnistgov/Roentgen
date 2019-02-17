@@ -44,9 +44,9 @@ import gov.nist.microanalysis.roentgen.physics.XRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import joinery.DataFrame;
 
 /**
@@ -125,12 +125,13 @@ public class XPPMatrixCorrection2 //
 
 	/**
 	 * Ensure that the optimized and compute value are identical.
-	 * 
+	 *
 	 * @param lmjf     {@link ILabeledMultivariateFunction}
 	 * @param point    Evaluation point
 	 * @param computed Comparison value
 	 */
-	static private void checkOptimized(ILabeledMultivariateFunction lmjf, RealVector inp, RealVector computed) {
+	static private void checkOptimized(final ILabeledMultivariateFunction lmjf, final RealVector inp,
+			final RealVector computed) {
 		final RealVector optimized = lmjf.optimized(inp);
 		for (int i = 0; i < optimized.getDimension(); ++i) {
 			final double opt = optimized.getEntry(i);
@@ -140,15 +141,15 @@ public class XPPMatrixCorrection2 //
 	}
 
 	/**
-	 * 
-	 * 
+	 *
+	 *
 	 * @param lmjf
 	 * @param inp
 	 * @param dinp
 	 * @param computed
 	 */
-	static private void checkPartials(LabeledMultivariateJacobianFunction lmjf, RealVector inp, RealVector dinp,
-			RealMatrix computed) {
+	static private void checkPartials(final LabeledMultivariateJacobianFunction lmjf, final RealVector inp,
+			final RealVector dinp, final RealMatrix computed) {
 		final RealMatrix delta = lmjf.computeDelta(inp, dinp);
 		for (int r = 0; r < delta.getRowDimension(); r++)
 			for (int c = 0; c < delta.getColumnDimension(); ++c)
@@ -202,7 +203,7 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			ArrayList<Element> elms = new ArrayList<>(mMaterial.getElementSet());
+			final ArrayList<Element> elms = new ArrayList<>(mMaterial.getElementSet());
 			final Object[] tagCi = new Object[elms.size()];
 			final Object[] tagJi = new Object[elms.size()];
 			final Object[] tagAi = new Object[elms.size()];
@@ -400,7 +401,7 @@ public class XPPMatrixCorrection2 //
 			for (int k = 0; k < 3; ++k) {
 				final double u0tk = Math.pow(u0, T[k]);
 				final double v0ou0_pk = Math.pow(v0ou0, P[k]);
-				double OoSk = kk * D[k] * v0ou0_pk * (u0tk * (T[k] * logU0 - 1.0) + 1.0) / (T[k] * T[k]); // d
+				final double OoSk = kk * D[k] * v0ou0_pk * (u0tk * (T[k] * logU0 - 1.0) + 1.0) / (T[k] * T[k]); // d
 				OoS += OoSk;
 				dOoSdm += (kk * u0tk * v0ou0_pk * D[k] * logU0_2 - 2.0 * OoSk) * (dTdmk / T[k]); // d
 				dOoSdJ += (1.0 / J + dDdJ[k] / D[k] + Math.log(v0ou0) * dPdJ[k] + (P[k] / v0) * dv0dJ
@@ -1456,7 +1457,7 @@ public class XPPMatrixCorrection2 //
 			writeJacobian(oFx, tagRoughness, dFxddz, rm);
 			if (VALIDATE) {
 				checkOptimized(this, point, rv);
-				RealVector dpt = point.mapMultiply(1.0e-6);
+				final RealVector dpt = point.mapMultiply(1.0e-6);
 				final int itr = inputIndex(tagRoughness);
 				if (itr >= 0)
 					dpt.setEntry(itr, 1.0e-12);
@@ -1935,7 +1936,7 @@ public class XPPMatrixCorrection2 //
 	 * @return UncertainValues containing {@link MaterialMAC} tags
 	 * @throws ArgumentException
 	 */
-	public UncertainValues computeMaterialMACs(final UncertainValues elmMacs, Composition estUnknown) //
+	public UncertainValues computeMaterialMACs(final UncertainValues elmMacs, final Composition estUnknown) //
 			throws ArgumentException {
 		final Map<CharacteristicXRay, List<Material>> mclc = new HashMap<>();
 		final Set<Composition> comps = new HashSet<>();
@@ -1978,7 +1979,8 @@ public class XPPMatrixCorrection2 //
 	 * @return
 	 * @throws ArgumentException
 	 */
-	public UncertainValues buildInput(Composition estUnknown) //
+	@Override
+	public UncertainValues buildInput(final Composition estUnknown) //
 			throws ArgumentException {
 		final UncertainValues constants = buildParameters(false, estUnknown);
 		if (constants.getDimension() > 0) {
@@ -1990,7 +1992,6 @@ public class XPPMatrixCorrection2 //
 		return UncertainValues.extract(getInputLabels(), buildParameters(true, estUnknown));
 	}
 
-
 	/**
 	 * Many of the input parameters are computed or tabulated. Some are input as
 	 * experimental conditions like beam energy.
@@ -2001,7 +2002,7 @@ public class XPPMatrixCorrection2 //
 	 *         the constant quantities
 	 * @throws ArgumentException
 	 */
-	private UncertainValues buildParameters(final boolean withUnc, Composition estUnknown) //
+	private UncertainValues buildParameters(final boolean withUnc, final Composition estUnknown) //
 			throws ArgumentException {
 		final List<UncertainValues> results = new ArrayList<>();
 		if (isSet(Variate.MeanIonizationPotential) == withUnc)
@@ -2098,15 +2099,15 @@ public class XPPMatrixCorrection2 //
 		}
 		// Make sure that there are no replicated Compositions
 		final Set<Composition> allComps = new HashSet<>();
-		if(withUnc) {
-			assert estUnknown!=null;
+		if (withUnc) {
+			assert estUnknown != null;
 			allComps.add(estUnknown);
 		}
 		for (final KRatioLabel krl : mKRatios) {
 			if (isSet(Variate.StandardComposition) == withUnc)
 				allComps.add(krl.getStandard().getComposition());
 		}
-		for (Composition comp : allComps) {
+		for (final Composition comp : allComps) {
 			results.add(comp.toMassFraction());
 			results.add(comp.getAtomicWeights());
 		}
@@ -2120,7 +2121,7 @@ public class XPPMatrixCorrection2 //
 		return elms;
 	}
 
-	private UncertainValues buildMaterialMACs(final boolean withUnc, Composition estUnknown) //
+	private UncertainValues buildMaterialMACs(final boolean withUnc, final Composition estUnknown) //
 			throws ArgumentException {
 		final List<ElementalMAC.ElementMAC> elmMacs = new ArrayList<>();
 		final Map<Composition, CharacteristicXRaySet> comps = new HashMap<>();
@@ -2129,7 +2130,7 @@ public class XPPMatrixCorrection2 //
 			final Set<CharacteristicXRay> allCxr = new HashSet<>();
 			comps.put(estUnknown, new CharacteristicXRaySet());
 			for (final KRatioLabel krl : mKRatios) {
-				assert (estUnknown==null) || estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
+				assert (estUnknown == null) || estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
 				comps.get(estUnknown).addAll(krl.getXRaySet());
 				if (krl.getUnknown().hasCoating() && (isSet(Variate.Coating) == withUnc)) {
 					final Composition comp = krl.getUnknown().getCoating().getComposition();

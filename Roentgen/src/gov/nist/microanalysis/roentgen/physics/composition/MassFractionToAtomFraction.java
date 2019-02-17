@@ -14,7 +14,6 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 
 public class MassFractionToAtomFraction //
 		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {

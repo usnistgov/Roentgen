@@ -301,8 +301,9 @@ public class Composition //
 		assert elms.size() == vars.getDimension();
 		final Material mat = new Material(html, elms);
 		final Map<MassFraction, Number> meu = new HashMap<>();
-		for(int i=0;i<elms.size();++i)
-			meu.put(MaterialLabel.buildMassFractionTag(mat, elms.get(i)), new UncertainValue(vals.getEntry(i),Math.sqrt(vars.getEntry(i))));		
+		for (int i = 0; i < elms.size(); ++i)
+			meu.put(MaterialLabel.buildMassFractionTag(mat, elms.get(i)),
+					new UncertainValue(vals.getEntry(i), Math.sqrt(vars.getEntry(i))));
 		final UncertainValues mfracs = new UncertainValues(meu);
 		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
 		final UncertainValues input = UncertainValues.combine(mfracs, wgts);
@@ -352,7 +353,7 @@ public class Composition //
 		assert elms.size() == cov.getColumnDimension();
 		final Material mat = new Material(html, elms);
 		final List<MaterialLabel.MassFraction> labels = new ArrayList<>();
-		for(Element elm : elms)
+		for (final Element elm : elms)
 			labels.add(MaterialLabel.buildMassFractionTag(mat, elm));
 		final UncertainValues mfracs = new UncertainValues(labels, vals, cov);
 		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
@@ -415,7 +416,7 @@ public class Composition //
 		assert elms.size() == vals.getDimension();
 		final Material mat = new Material(html, elms);
 		final List<MaterialLabel.AtomFraction> labels = new ArrayList<>();
-		for(Element elm : elms)
+		for (final Element elm : elms)
 			labels.add(MaterialLabel.buildAtomFractionTag(mat, elm));
 		final UncertainValues sfrac = new UncertainValues(labels, vals, vals);
 		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));
@@ -446,7 +447,7 @@ public class Composition //
 		assert elms.size() == cov.getColumnDimension();
 		final Material mat = new Material(html, elms);
 		final List<MaterialLabel.AtomFraction> labels = new ArrayList<>();
-		for(Element elm : elms)
+		for (final Element elm : elms)
 			labels.add(MaterialLabel.buildAtomFractionTag(mat, elm));
 		final UncertainValues afrac = new UncertainValues(labels, vals, vals);
 		final UncertainValues wgts = new UncertainValues(buildAtomicWeights(mat, atomicWeights));

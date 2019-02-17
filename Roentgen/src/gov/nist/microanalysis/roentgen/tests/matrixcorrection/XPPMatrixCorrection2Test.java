@@ -49,9 +49,9 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -108,8 +108,8 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(krlSi);
 		skrl.add(krlO);
 
-		Set<Variate> variates = new HashSet<>();
-		variates.addAll(XPPMatrixCorrection2.defaultVariates());
+		final Set<Variate> variates = new HashSet<>();
+		variates.addAll(MatrixCorrectionModel2.defaultVariates());
 		variates.add(Variate.MeanIonizationPotential);
 
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, variates);
@@ -354,7 +354,7 @@ public class XPPMatrixCorrection2Test {
 		}
 	}
 
-	public static Composition buildK412(boolean combine) //
+	public static Composition buildK412(final boolean combine) //
 			throws ArgumentException, ParseException {
 		if (combine)
 			return Composition.combine("K412", //
@@ -375,7 +375,7 @@ public class XPPMatrixCorrection2Test {
 		}
 	}
 
-	public static Composition buildK411(boolean combine) //
+	public static Composition buildK411(final boolean combine) //
 			throws ArgumentException, ParseException {
 		if (combine)
 			return Composition.combine("K411", //
@@ -2143,7 +2143,7 @@ public class XPPMatrixCorrection2Test {
 		df.writeCsv("C:\\Users\\nicho\\OneDrive\\Desktop\\prz412.csv");
 	}
 
-	public void checkEquals(Object l1, Object l2, double v1, double v2, double dv) {
+	public void checkEquals(final Object l1, final Object l2, final double v1, final double v2, final double dv) {
 		if (Math.abs(v2 - v1) > Math.abs(dv)) {
 			System.err.println(l1.toString() + " and " + l2.toString() + " at (" + v1 + "," + v2 + ")");
 			// assertEquals(v1, v2, dv);
@@ -2479,7 +2479,7 @@ public class XPPMatrixCorrection2Test {
 
 		final Composition unk = buildK412(true);
 		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.5);
-		Layer coating = Layer.carbonCoating(new UncertainValue(10.0, 2.0));
+		final Layer coating = Layer.carbonCoating(new UncertainValue(10.0, 2.0));
 		final double roughness = MatrixCorrectionDatum.roughness(1.0e-8, 3.0);
 
 		final Report r = new Report("XPP Report - Test11()");
@@ -2492,7 +2492,7 @@ public class XPPMatrixCorrection2Test {
 			final Table valTable = new Table();
 			for (int i = MIN_E; i < MAX_E; ++i) {
 				final double e0 = i;
-				UncertainValue e0u = new UncertainValue(e0, 0.1);
+				final UncertainValue e0u = new UncertainValue(e0, 0.1);
 				final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum(std0, e0u, toa,
 						roughness, coating);
 
@@ -2548,7 +2548,7 @@ public class XPPMatrixCorrection2Test {
 				}
 			}
 			{
-				List<Item> row = new ArrayList<>();
+				final List<Item> row = new ArrayList<>();
 				row.add(Table.td("Output"));
 				row.add(Table.td("Abbrev."));
 				row.add(Table.td("Input"));
@@ -2567,7 +2567,7 @@ public class XPPMatrixCorrection2Test {
 					final MatrixCorrectionLabel mcl = (MatrixCorrectionLabel) outTag;
 					for (int ii = 0; ii < inLabels.size(); ++ii) {
 						final Object inTag = inLabels.get(ii);
-						List<Item> row = new ArrayList<>();
+						final List<Item> row = new ArrayList<>();
 						row.add(Table.td(mcl));
 						row.add(Table.td(mcl.getElementXRaySet()));
 						row.add(Table.td(inTag));
@@ -2611,18 +2611,18 @@ public class XPPMatrixCorrection2Test {
 		}
 	}
 
-	public double getComponentByName(UncertainValue uv, Object tag) {
+	public double getComponentByName(final UncertainValue uv, final Object tag) {
 		final String name = tag.toString();
-		for (Map.Entry<Object, Double> me : uv.getComponents().entrySet())
+		for (final Map.Entry<Object, Double> me : uv.getComponents().entrySet())
 			if (me.getKey().toString().equals(name))
 				return me.getValue().doubleValue();
 		return 0.0;
 	}
 
-	public UncertainValue getByXRT(Map<? extends Object, UncertainValue> oVals, MatrixCorrectionLabel mcl) {
-		for (Map.Entry<? extends Object, UncertainValue> me : oVals.entrySet()) {
+	public UncertainValue getByXRT(final Map<? extends Object, UncertainValue> oVals, final MatrixCorrectionLabel mcl) {
+		for (final Map.Entry<? extends Object, UncertainValue> me : oVals.entrySet()) {
 			if (me.getKey() instanceof MatrixCorrectionLabel) {
-				MatrixCorrectionLabel mcl2 = (MatrixCorrectionLabel) me.getKey();
+				final MatrixCorrectionLabel mcl2 = (MatrixCorrectionLabel) me.getKey();
 				if (mcl2.toString().equals(mcl.toString()))
 					return me.getValue();
 			}

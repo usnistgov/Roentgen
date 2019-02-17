@@ -32,9 +32,8 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -94,7 +93,7 @@ public class KRatioCorrectionModelTest {
 			}
 		}
 
-		KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(mouv.keySet(),
+		final KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(mouv.keySet(),
 				MatrixCorrectionModel2.defaultVariates());
 		final UncertainValues uvs = UncertainValues.combine(krcm.buildInput(unk), kuv);
 
@@ -181,7 +180,7 @@ public class KRatioCorrectionModelTest {
 		lkr.put(new KRatioLabel(unkMcd, std3Mcd, zrTrs, Method.Measured), new UncertainValue(0.051319, 0.001));
 		final UncertainValues kratios = new UncertainValues(lkr);
 
-		KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(lkr.keySet(),
+		final KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(lkr.keySet(),
 				MatrixCorrectionModel2.defaultVariates());
 		final UncertainValues uvs = UncertainValues.combine(krcm.buildInput(unk), kratios);
 
@@ -201,8 +200,7 @@ public class KRatioCorrectionModelTest {
 			final Map<? extends Object, UncertainValue> outVals = eval.getOutputValues(uvs);
 			t.addRow(Table.th("Element"), Table.td("Mass Fraction"));
 			for (final Element elm : unkMcd.getElementSet()) {
-				final MaterialLabel.MassFraction mft = MaterialLabel
-						.buildMassFractionTag(unkMcd.getMaterial(), elm);
+				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), elm);
 				final UncertainValue uv = outVals.get(mft);
 				t.addRow(Table.td(elm), Table.td(HTML.toHTML(uv, Mode.VERBOSE)));
 			}
@@ -291,7 +289,7 @@ public class KRatioCorrectionModelTest {
 
 		final UncertainValues kuv = new UncertainValues(lkr);
 
-		KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(lkr.keySet(),
+		final KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(lkr.keySet(),
 				MatrixCorrectionModel2.defaultVariates());
 		final UncertainValues uvs = UncertainValues.combine(krcm.buildInput(unk), kuv);
 
@@ -314,7 +312,8 @@ public class KRatioCorrectionModelTest {
 				if ((me.getKey() instanceof MaterialLabel.MassFraction) //
 						|| (me.getKey() instanceof KRatioLabel)) {
 					final UncertainValue uv = me.getValue();
-					t.addRow(Table.td(me.getKey()), Table.td(uv.toHTML(Mode.VERBOSE, new BasicNumberFormat("0.0000"))), Table.td(uv.toHTML(Mode.TERSE, new BasicNumberFormat("0.0000"))));
+					t.addRow(Table.td(me.getKey()), Table.td(uv.toHTML(Mode.VERBOSE, new BasicNumberFormat("0.0000"))),
+							Table.td(uv.toHTML(Mode.TERSE, new BasicNumberFormat("0.0000"))));
 				}
 			}
 			report.add(t);
@@ -376,7 +375,6 @@ public class KRatioCorrectionModelTest {
 			report.inBrowser(Mode.NORMAL);
 		}
 	}
-
 
 	@Test
 	public void iterationTest1() throws ArgumentException, ParseException {

@@ -9,10 +9,10 @@ import java.util.Set;
 
 import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresFactory;
-import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
-import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer.Optimum;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem.Evaluation;
+import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -32,8 +32,8 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrectio
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 
 /**
  * <p>
@@ -41,7 +41,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Material;
  * behind k-ratio-based compositional measurement - <i>k<sub>meas,z</sub> -
  * k<sub>calc,z</sub>(<b>C</b>)</i> = 0 for all <i>z</i>.
  * </p>
- * 
+ *
  * <p>
  * Since the <i>k<sub>calc,z</sub>(<b>C</b>)</i> are not solvable for
  * <b><i>C</i></b>, it is necessary to implement a scheme for determining the
@@ -52,7 +52,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Material;
  * "simple iteration", "alpha-factor", "PAP iteration", "Wegstein iteration"
  * although it is also possible to use other non-linear optimization algorithms.
  * </p>
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -110,7 +110,8 @@ public class KRatioCorrectionModel2 //
 				final Object mfStdTag = MaterialLabel.buildMassFractionTag(kMeasTag.getStandard().getMaterial(), elm);
 				final Object zafTag = new MatrixCorrectionLabel(kMeasTag.getUnknown(), kMeasTag.getStandard(),
 						kMeasTag.getXRaySet());
-				final Object hTag = new ImplicitMeasurementModel.HLabel(MaterialLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm));
+				final Object hTag = new ImplicitMeasurementModel.HLabel(
+						MaterialLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm));
 				final int iKMeas = inputIndex(kMeasTag);
 				final int iMFUnk = inputIndex(mfUnkTag);
 				final int iMFStd = inputIndex(mfStdTag);
@@ -132,7 +133,7 @@ public class KRatioCorrectionModel2 //
 		}
 
 		@Override
-		public RealVector optimized(RealVector point) {
+		public RealVector optimized(final RealVector point) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			for (final KRatioLabel kMeasTag : mKRatios) {
 				final Element elm = kMeasTag.getXRaySet().getElement();
@@ -170,12 +171,12 @@ public class KRatioCorrectionModel2 //
 		this(krs, new XPPMatrixCorrection2(krs, variates));
 	}
 
-	private static List<LabeledMultivariateJacobianFunction> buildSteps(Set<KRatioLabel> krs,
-			MatrixCorrectionModel2 mcm) //
+	private static List<LabeledMultivariateJacobianFunction> buildSteps(final Set<KRatioLabel> krs,
+			final MatrixCorrectionModel2 mcm) //
 			throws ArgumentException {
 		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
-		List<? extends Object> outputs = MaterialLabel.massFractionTags(unk.getMaterial());
-		List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
+		final List<? extends Object> outputs = MaterialLabel.massFractionTags(unk.getMaterial());
+		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
 		res.add(mcm);
 		res.add(new ImplicitMeasurementModel(new KR2HModel(krs), outputs));
 		return res;
@@ -184,7 +185,7 @@ public class KRatioCorrectionModel2 //
 
 	public KRatioCorrectionModel2(//
 			final Set<KRatioLabel> krs, //
-			MatrixCorrectionModel2 model //
+			final MatrixCorrectionModel2 model //
 	) throws ArgumentException {
 		super("K-Ratio Model[" + model.toString() + "]", buildSteps(krs, model));
 		mModel = model;
@@ -193,21 +194,21 @@ public class KRatioCorrectionModel2 //
 	/**
 	 * Returns an instance of the {@link MatrixCorrectionModel2} used to build this
 	 * {@link KRatioCorrectionModel2} instance.
-	 * 
+	 *
 	 * @return {@link MatrixCorrectionModel2}
 	 */
 	public MatrixCorrectionModel2 getModel() {
 		return mModel;
 	}
-	
+
 	/**
 	 * Builds the inputs to the {@link MatrixCorrectionModel2} instance. Requires
 	 * additional KRatioLabel related to measured items.
-	 * 
+	 *
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	public UncertainValues buildInput(Composition estUnknown) //
+	public UncertainValues buildInput(final Composition estUnknown) //
 			throws ArgumentException {
 		return mModel.buildInput(estUnknown);
 	}
@@ -219,9 +220,9 @@ public class KRatioCorrectionModel2 //
 	 * Pair&lt;SerialLabeledMultivariateJacobianFunction, UncertainValues&gt;. The
 	 * first return value is the model and the second is the input minus the
 	 * necessary measured k-ratio values.
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @param keySet
 	 * @param variates
 	 * @return Pair&lt;SerialLabeledMultivariateJacobianFunction,
@@ -258,7 +259,8 @@ public class KRatioCorrectionModel2 //
 				assert tag.isMeasured();
 				final ElementXRaySet xrs = tag.getXRaySet();
 				final Composition std = tag.getStandard().getComposition();
-				final MaterialLabel.MassFraction smfTag = MaterialLabel.buildMassFractionTag(std.getMaterial(), xrs.getElement());
+				final MaterialLabel.MassFraction smfTag = MaterialLabel.buildMassFractionTag(std.getMaterial(),
+						xrs.getElement());
 				final double cStd = std.getEntry(smfTag);
 				final double kR = me.getValue().doubleValue();
 				est.put(xrs.getElement(), kR * cStd);

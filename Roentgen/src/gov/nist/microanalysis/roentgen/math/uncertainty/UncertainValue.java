@@ -68,6 +68,7 @@ final public class UncertainValue //
 			mOneSigma = Math.abs(val);
 		}
 
+		@Override
 		public String toString() {
 			return mLabel + " = " + mOneSigma;
 		}
@@ -152,7 +153,7 @@ final public class UncertainValue //
 		return new UncertainValue(v, src, Math.sqrt(v));
 	}
 
-	public static UncertainValue toRadians(double degrees, double ddegrees) {
+	public static UncertainValue toRadians(final double degrees, final double ddegrees) {
 		return new UncertainValue(Math.toRadians(degrees), Math.toRadians(ddegrees));
 	}
 
@@ -368,7 +369,7 @@ final public class UncertainValue //
 
 	/**
 	 * A method to convert any Number into the equivalent UncertainValue.
-	 * 
+	 *
 	 * @param n
 	 * @return {@link UncertainValue}
 	 */

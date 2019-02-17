@@ -99,11 +99,11 @@ abstract public class LabeledMultivariateJacobianFunction //
 		return mOutputLabels;
 	}
 
-	public Object getOutputLabel(int idx) {
+	public Object getOutputLabel(final int idx) {
 		return mOutputLabels.get(idx);
 	}
 
-	public Object getInputLabel(int idx) {
+	public Object getInputLabel(final int idx) {
 		return mInputLabels.get(idx);
 	}
 
@@ -290,8 +290,8 @@ abstract public class LabeledMultivariateJacobianFunction //
 	/**
 	 * Get the resulting UncertainValue for each output quantity with sources
 	 * grouped according to the collect of labels.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param uvs
 	 * @param labels
 	 * @param tol
@@ -311,7 +311,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 		final List<? extends Object> outLabels = getOutputLabels();
 		for (int i = 0; i < outLabels.size(); ++i)
 			res.put(outLabels.get(i), new UncertainValue(vals.getEntry(i)));
-		for(Map.Entry<String, Collection<? extends Object>> me : labels.entrySet()) {
+		for (final Map.Entry<String, Collection<? extends Object>> me : labels.entrySet()) {
 			final UncertainValues zeroed = UncertainValues.zeroBut(me.getValue(), ordered);
 			final RealMatrix covLabel = jac.multiply(zeroed.getCovariances()).multiply(jac.transpose());
 			for (int outIdx = 0; outIdx < outLabels.size(); ++outIdx) {
@@ -376,8 +376,8 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 			@Override
 			public Pair<RealVector, RealMatrix> value(final RealVector point) {
-				RealVector rv = new ArrayRealVector(1);
-				RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
+				final RealVector rv = new ArrayRealVector(1);
+				final RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
 
 				double sum = 0.0;
 				for (int i = 0; i < point.getDimension(); ++i) {
@@ -406,8 +406,8 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 			@Override
 			public Pair<RealVector, RealMatrix> value(final RealVector point) {
-				RealVector rv = new ArrayRealVector(1);
-				RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
+				final RealVector rv = new ArrayRealVector(1);
+				final RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
 				for (int v = 0; v < point.getDimension(); ++v)
 					rm.setEntry(0, v, coeffs.getEntry(v));
 				rv.setEntry(0, point.dotProduct(coeffs));
@@ -494,7 +494,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 
 	/**
 	 * A value either with or without uncertainty has been defined for this label.
-	 * 
+	 *
 	 * @param label
 	 * @return true if a value has been defined.
 	 */

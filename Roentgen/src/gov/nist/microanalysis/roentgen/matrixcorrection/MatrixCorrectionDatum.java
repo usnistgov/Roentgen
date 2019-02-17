@@ -113,7 +113,7 @@ public abstract class MatrixCorrectionDatum //
 
 	/**
 	 * Returns the max(roughness, 1.0 nm g/cm<sup>3</cm>)
-	 * 
+	 *
 	 * @return double
 	 */
 	public double getRoughness() {
@@ -131,6 +131,6 @@ public abstract class MatrixCorrectionDatum //
 	public Layer getCoating() {
 		return mCoating.orElse(null);
 	}
-	
+
 	public abstract Material getMaterial();
 }

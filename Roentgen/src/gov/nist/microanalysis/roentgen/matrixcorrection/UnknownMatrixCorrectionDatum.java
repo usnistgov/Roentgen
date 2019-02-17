@@ -24,7 +24,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  */
 public class UnknownMatrixCorrectionDatum //
 		extends MatrixCorrectionDatum {
-	
+
 	private final Material mMaterial;
 
 	@Override
@@ -45,18 +45,18 @@ public class UnknownMatrixCorrectionDatum //
 	}
 
 	/**
-	 * @param comp Not null Material or Composition
-	 * @param beamEnergy Not null keV
+	 * @param comp         Not null Material or Composition
+	 * @param beamEnergy   Not null keV
 	 * @param takeOffAngle Not null radians
-	 * @param roughness g/cm<sup>2</sup>
-	 * @param coating Layer
+	 * @param roughness    g/cm<sup>2</sup>
+	 * @param coating      Layer
 	 */
 	public UnknownMatrixCorrectionDatum(//
 			final Material mat, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle, //
 			final double roughness, //
-			Layer coating) {
+			final Layer coating) {
 		super(beamEnergy, takeOffAngle, roughness, coating);
 		assert mat != null;
 		mMaterial = mat;
@@ -67,7 +67,7 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param takeOffAngle
 	 */
 	public UnknownMatrixCorrectionDatum(//
-			Material estimate, //
+			final Material estimate, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle//
 	) {
@@ -91,11 +91,11 @@ public class UnknownMatrixCorrectionDatum //
 		return Collections.unmodifiableSet(mMaterial.getElementSet());
 	}
 
+	@Override
 	public Material getMaterial() {
 		return mMaterial;
 	}
-	
-	
+
 	@Override
 	public String toHTML(final Mode mode) {
 		final BasicNumberFormat bnf = new BasicNumberFormat("0.0");

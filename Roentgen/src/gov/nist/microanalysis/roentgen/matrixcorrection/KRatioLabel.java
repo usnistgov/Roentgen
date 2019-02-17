@@ -89,7 +89,6 @@ public class KRatioLabel//
 		return super.hashCode() + 31 * mMethod.hashCode();
 	}
 
-
 	static public boolean areAllSameUnknownElements(final Set<KRatioLabel> krs) {
 		Set<Element> elms = null;
 		for (final KRatioLabel krl : krs) {
@@ -135,10 +134,11 @@ public class KRatioLabel//
 		}
 	}
 
+	@Override
 	public String toString() {
 		final String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
 		final String xrts = HTML.stripTags(getXRaySet().toHTML(Mode.TERSE));
-		return "k[" + xrts.substring(1, xrts.length()-1) + "," + meth + "]";
+		return "k[" + xrts.substring(1, xrts.length() - 1) + "," + meth + "]";
 	}
 
 	@Override
@@ -166,14 +166,16 @@ public class KRatioLabel//
 		return c;
 	}
 
-	public static UncertainValues extractKRatios(RealVector res, List<? extends Object> labels, Method meth) {
+	public static UncertainValues extractKRatios(final RealVector res, final List<? extends Object> labels,
+			final Method meth) {
 		final Map<Object, Number> vals = new HashMap<>();
 		for (int i = 0; i < labels.size(); ++i) {
-			Object label = labels.get(i);
+			final Object label = labels.get(i);
 			if (label instanceof KRatioLabel) {
-				KRatioLabel calc = (KRatioLabel) label;
+				final KRatioLabel calc = (KRatioLabel) label;
 				assert calc.isCalculated();
-				KRatioLabel meas = new KRatioLabel(calc.getUnknown(), calc.getStandard(), calc.getXRaySet(), meth);
+				final KRatioLabel meas = new KRatioLabel(calc.getUnknown(), calc.getStandard(), calc.getXRaySet(),
+						meth);
 				vals.put(meas, res.getEntry(i));
 			}
 		}

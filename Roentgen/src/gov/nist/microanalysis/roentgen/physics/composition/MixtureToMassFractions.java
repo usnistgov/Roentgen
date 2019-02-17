@@ -18,7 +18,7 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 /**
  * Converts a mixture of Composition objects into the mass fraction of the
  * constituent elements.
- * 
+ *
  * @author nicholas
  *
  */
@@ -59,11 +59,11 @@ final class MixtureToMassFractions //
 			elms.addAll(mat.getElementSet());
 		return elms;
 	}
-	
+
 	/**
 	 * Converts a mixture of Composition objects into the mass fraction of the
 	 * constituent elements.
-	 * 
+	 *
 	 * @param htmlName String
 	 * @param mats     Set&lt;Material&gt;
 	 */
@@ -75,8 +75,7 @@ final class MixtureToMassFractions //
 	public Material getNewMaterial() {
 		return mNewMaterial;
 	}
-	
-	
+
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());

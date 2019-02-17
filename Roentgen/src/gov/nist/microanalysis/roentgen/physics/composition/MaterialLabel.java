@@ -3,7 +3,6 @@ package gov.nist.microanalysis.roentgen.physics.composition;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 
@@ -11,15 +10,14 @@ import gov.nist.microanalysis.roentgen.physics.Element;
  * Labels to identify Composition-related properties like {@link MassFraction},
  * {@link AtomFraction}, {@link NormalizedMassFraction} and
  * {@link Stoichiometry}.
- * 
- * 
+ *
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
-public class MaterialLabel
-		extends BaseLabel<Element, Material, Object> {
-	
-	private MaterialLabel(final String prefix, Material material, final Element elm) {
+public class MaterialLabel extends BaseLabel<Element, Material, Object> {
+
+	private MaterialLabel(final String prefix, final Material material, final Element elm) {
 		super(prefix, elm, material);
 	}
 
@@ -42,7 +40,7 @@ public class MaterialLabel
 		return new MassFraction(mat, elm);
 	}
 
-	public static List<MassFraction> buildMassFractionTags(Material mat) {
+	public static List<MassFraction> buildMassFractionTags(final Material mat) {
 		final List<MassFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new MassFraction(mat, elm));
@@ -55,11 +53,11 @@ public class MaterialLabel
 		}
 	}
 
-	public static NormalizedMassFraction buildNormalizedMassFractionTag(Material mat, Element elm) {
+	public static NormalizedMassFraction buildNormalizedMassFractionTag(final Material mat, final Element elm) {
 		return new NormalizedMassFraction(mat, elm);
 	}
 
-	public static List<NormalizedMassFraction> buildNormMassFractionTags(Material mat) {
+	public static List<NormalizedMassFraction> buildNormMassFractionTags(final Material mat) {
 		final List<NormalizedMassFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new NormalizedMassFraction(mat, elm));
@@ -91,7 +89,6 @@ public class MaterialLabel
 		}
 	}
 
-
 	public static class Stoichiometry extends AtomType {
 		Stoichiometry(final Material mat, final Element elm) {
 			super("S", mat, elm);
@@ -112,7 +109,7 @@ public class MaterialLabel
 		return res;
 	}
 
-	public static MaterialMassFraction buildMaterialFractionTag(Material mat) {
+	public static MaterialMassFraction buildMaterialFractionTag(final Material mat) {
 		return new MaterialMassFraction(mat);
 	}
 
@@ -142,7 +139,7 @@ public class MaterialLabel
 	 *
 	 * @return List&lt;MassFractionTag&gt;
 	 */
-	public static List<MassFraction> massFractionTags(Material mat) {
+	public static List<MassFraction> massFractionTags(final Material mat) {
 		final List<MassFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new MassFraction(mat, elm));
@@ -155,7 +152,7 @@ public class MaterialLabel
 	 *
 	 * @return List&lt;AtomWeightTag&gt;
 	 */
-	public static List<AtomicWeight> atomWeightTags(Material mat) {
+	public static List<AtomicWeight> atomWeightTags(final Material mat) {
 		final List<AtomicWeight> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new AtomicWeight(mat, elm));
@@ -168,7 +165,7 @@ public class MaterialLabel
 	 *
 	 * @return List&lt;StoichiometryTag&gt;
 	 */
-	public static List<Stoichiometry> stoichiometryTags(Material mat) {
+	public static List<Stoichiometry> stoichiometryTags(final Material mat) {
 		final List<Stoichiometry> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new Stoichiometry(mat, elm));
@@ -181,7 +178,7 @@ public class MaterialLabel
 	 *
 	 * @return List&lt;AtomFractionTag&gt;
 	 */
-	public List<AtomFraction> atomFractionTags(Material mat) {
+	public List<AtomFraction> atomFractionTags(final Material mat) {
 		final List<AtomFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new AtomFraction(mat, elm));
@@ -194,7 +191,7 @@ public class MaterialLabel
 	 *
 	 * @return List&lt;NormalizedMassFractionTag&gt;
 	 */
-	public List<NormalizedMassFraction> normalizedMassFractionTags(Material mat) {
+	public List<NormalizedMassFraction> normalizedMassFractionTags(final Material mat) {
 		final List<NormalizedMassFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new NormalizedMassFraction(mat, elm));

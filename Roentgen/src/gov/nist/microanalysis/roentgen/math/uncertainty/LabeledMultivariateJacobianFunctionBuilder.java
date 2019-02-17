@@ -237,7 +237,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
 			final List<? extends Object> output = getOutputLabels();
 			final int oDim = output.size();
-			//assert oDim > 0 : "Output dimensions is zero in " + toString();
+			// assert oDim > 0 : "Output dimensions is zero in " + toString();
 			final int iDim = getInputDimension();
 			// assert iDim > 0 : "Input dimensions is zero in " + toString();
 			final RealVector vals = new ArrayRealVector(oDim);
