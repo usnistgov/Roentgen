@@ -1,5 +1,6 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -281,6 +282,43 @@ abstract public class LabeledMultivariateJacobianFunction //
 				final double sigma = Math.sqrt(covLabel.getEntry(outIdx, outIdx));
 				if (sigma > Math.abs(tol * val.doubleValue()))
 					val.assignComponent(inLabel, sigma);
+			}
+		}
+		return res;
+	}
+
+	/**
+	 * Get the resulting UncertainValue for each output quantity with sources
+	 * grouped according to the collect of labels.
+	 * 
+	 * 
+	 * @param uvs
+	 * @param labels
+	 * @param tol
+	 * @return
+	 * @throws ArgumentException
+	 */
+	public HashMap<? extends Object, UncertainValue> getOutputValues( //
+			final UncertainValues uvs, //
+			final Map<String, Collection<? extends Object>> labels, //
+			final double tol //
+	) throws ArgumentException {
+		final UncertainValues ordered = UncertainValues.build(this.getInputLabels(), uvs);
+		final Pair<RealVector, RealMatrix> pvm = evaluate(ordered.getValues());
+		final RealVector vals = pvm.getFirst();
+		final RealMatrix jac = pvm.getSecond();
+		final HashMap<Object, UncertainValue> res = new HashMap<>();
+		final List<? extends Object> outLabels = getOutputLabels();
+		for (int i = 0; i < outLabels.size(); ++i)
+			res.put(outLabels.get(i), new UncertainValue(vals.getEntry(i)));
+		for(Map.Entry<String, Collection<? extends Object>> me : labels.entrySet()) {
+			final UncertainValues zeroed = UncertainValues.zeroBut(me.getValue(), ordered);
+			final RealMatrix covLabel = jac.multiply(zeroed.getCovariances()).multiply(jac.transpose());
+			for (int outIdx = 0; outIdx < outLabels.size(); ++outIdx) {
+				final UncertainValue val = res.get(outLabels.get(outIdx));
+				final double sigma = Math.sqrt(covLabel.getEntry(outIdx, outIdx));
+				if (sigma > Math.abs(tol * val.doubleValue()))
+					val.assignComponent(me.getKey(), sigma);
 			}
 		}
 		return res;

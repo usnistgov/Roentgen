@@ -409,6 +409,28 @@ public class UncertainValues //
 		res.mCovariance.setEntry(idx, idx, input.getCovariance(idx, idx));
 		return res;
 	}
+	
+	/**
+	 * Return an {@link UncertainValues} object with the same dimension and values
+	 * as input except all the covariances except those associated with the labels are
+	 * zeroed.
+	 *
+	 * @param labels
+	 * @param input
+	 * @return {@link UncertainValues}
+	 */
+	public static UncertainValues zeroBut(final Collection<? extends Object> labels, final UncertainValues input) {
+		final UncertainValues res = new UncertainValues(input.getLabels(), input.getValues(), 0.0);
+		List<Integer> idxs = new ArrayList<>();
+		for(Object label : labels)
+			idxs.add(input.indexOf(label));
+		for(int ridx : idxs)
+			for(int cidx : idxs) 
+				res.mCovariance.setEntry(ridx, cidx, input.getCovariance(ridx, cidx));
+		return res;
+	}
+	
+	
 
 	/**
 	 * Returns an UncertainValues object with the labels in the order specified by
