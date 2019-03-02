@@ -47,23 +47,6 @@ public class MaterialLabel extends BaseLabel<Element, Material, Object> {
 		return res;
 	}
 
-	public static class NormalizedMassFraction extends MaterialLabel {
-		NormalizedMassFraction(final Material mat, final Element elm) {
-			super("N", mat, elm);
-		}
-	}
-
-	public static NormalizedMassFraction buildNormalizedMassFractionTag(final Material mat, final Element elm) {
-		return new NormalizedMassFraction(mat, elm);
-	}
-
-	public static List<NormalizedMassFraction> buildNormMassFractionTags(final Material mat) {
-		final List<NormalizedMassFraction> res = new ArrayList<>();
-		for (final Element elm : mat.getElementSet())
-			res.add(new NormalizedMassFraction(mat, elm));
-		return res;
-	}
-
 	public static class AtomType extends MaterialLabel {
 		private AtomType(final String name, final Material mat, final Element elm) {
 			super(name, mat, elm);
@@ -182,19 +165,6 @@ public class MaterialLabel extends BaseLabel<Element, Material, Object> {
 		final List<AtomFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			res.add(new AtomFraction(mat, elm));
-		return res;
-	}
-
-	/**
-	 * Returns a list of {@link NormalizedMassFraction} objects one for each element
-	 * in the material.
-	 *
-	 * @return List&lt;NormalizedMassFractionTag&gt;
-	 */
-	public List<NormalizedMassFraction> normalizedMassFractionTags(final Material mat) {
-		final List<NormalizedMassFraction> res = new ArrayList<>();
-		for (final Element elm : mat.getElementSet())
-			res.add(new NormalizedMassFraction(mat, elm));
 		return res;
 	}
 

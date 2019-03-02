@@ -288,14 +288,19 @@ abstract public class LabeledMultivariateJacobianFunction //
 	}
 
 	/**
+	 * <p>
 	 * Get the resulting UncertainValue for each output quantity with sources
-	 * grouped according to the collect of labels.
-	 *
+	 * grouped and named according to the map of names to a collection of labels.
+	 * </p>
+	 * </p>
+	 * Returns a map from output value to an UncertainValue with discretely broken
+	 * out uncertainty components according to the labels map.
+	 * </p>
 	 *
 	 * @param uvs
-	 * @param labels
-	 * @param tol
-	 * @return
+	 * @param labels  Group according to this mapping
+	 * @param tol Minimum size uncertainty to include
+	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
 	 * @throws ArgumentException
 	 */
 	public HashMap<? extends Object, UncertainValue> getOutputValues( //
@@ -322,42 +327,6 @@ abstract public class LabeledMultivariateJacobianFunction //
 			}
 		}
 		return res;
-	}
-
-	/**
-	 * Implements a {@link LabeledMultivariateJacobianFunction} that normalizes the
-	 * values in the inLabels and returns them as the outLabels.
-	 *
-	 * @param inLabels
-	 * @param outLabels
-	 * @return {@link LabeledMultivariateJacobianFunction}
-	 */
-	public static LabeledMultivariateJacobianFunction normalize( //
-			final List<? extends Object> inLabels, //
-			final List<? extends Object> outLabels //
-	) {
-		return new LabeledMultivariateJacobianFunction(inLabels, outLabels) {
-
-			private double computePartial(final int f, final int v, final double sum, final RealVector point) {
-				double res = (f == v ? 1.0 / sum : 0.0);
-				if (f != v)
-					res -= point.getEntry(v) / (sum * sum);
-				return res;
-			}
-
-			@Override
-			public Pair<RealVector, RealMatrix> value(final RealVector point) {
-				double sum = 0.0;
-				for (int i = 0; i < point.getDimension(); ++i)
-					sum += point.getEntry(i);
-				final double[][] jac = new double[point.getDimension()][point.getDimension()];
-				for (int f = 0; f < point.getDimension(); ++f)
-					for (int v = 0; v < point.getDimension(); ++v)
-						jac[f][v] = computePartial(f, v, sum, point);
-				return Pair.create(point.mapMultiply(1.0 / sum), MatrixUtils.createRealMatrix(jac));
-			}
-
-		};
 	}
 
 	/**

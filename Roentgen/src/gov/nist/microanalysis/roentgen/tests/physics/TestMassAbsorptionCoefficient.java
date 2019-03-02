@@ -122,7 +122,7 @@ public class TestMassAbsorptionCoefficient {
 	@Test
 	public void testK412() throws ParseException, IOException, ArgumentException {
 
-		final Composition k412 = Composition.combine("K412", //
+		final Composition k412 = Composition.combine("K412", false, //
 				Pair.create(Composition.parse("SiO2"), new UncertainValue(0.4541, 0.0077)), //
 				Pair.create(Composition.parse("FeO"), new UncertainValue(0.0994, 0.0018)), //
 				Pair.create(Composition.parse("MgO"), new UncertainValue(0.1966, 0.0025)), //
@@ -133,7 +133,7 @@ public class TestMassAbsorptionCoefficient {
 		final Composition mf3 = Composition.parse("SiO2");
 		final Composition mf4 = Composition.parse("CaF2");
 		final Composition mf5 = Composition.parse("Fe");
-		final Composition mf6 = Composition.combine("K411", //
+		final Composition mf6 = Composition.combine("K411", false, //
 				Pair.create(Composition.parse("SiO2"), new UncertainValue(0.5389, 0.0096)), //
 				Pair.create(Composition.parse("FeO"), new UncertainValue(0.1448, 0.0027)), //
 				Pair.create(Composition.parse("MgO"), new UncertainValue(0.1512, 0.0020)), //

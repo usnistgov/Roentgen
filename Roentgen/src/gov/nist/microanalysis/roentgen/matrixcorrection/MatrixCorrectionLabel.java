@@ -1,6 +1,3 @@
-/**
- *
- */
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;

@@ -365,9 +365,9 @@ public class CompositionTest2 {
 		mcn.put(Composition.parse("MgO"), new UncertainValue(fMgO, unc));
 		mcn.put(Composition.parse("CaO"), new UncertainValue(fCaO, unc));
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
-		final Composition mix = Composition.combine(name, mcn);
+		final Composition mix = Composition.combine(name, mcn, false);
 
-		final MixtureToComposition m2c = new MixtureToComposition(name, Material.convert(mcn.keySet()));
+		final MixtureToComposition m2c = new MixtureToComposition(name, Material.convert(mcn.keySet()), false);
 		final List<UncertainValues> vs = new ArrayList<>();
 		for (final Composition comp : mcn.keySet())
 			vs.add(comp);
@@ -435,4 +435,27 @@ public class CompositionTest2 {
 
 		r.inBrowser(Mode.VERBOSE);
 	}
+	
+	@Test
+	public void testAnorthoclase() throws ArgumentException, ParseException, IOException {
+
+		final String name = "Anorthoclase";
+		final Map<Composition, Number> mcn = new HashMap<>();
+		final Composition sanidine = Composition.parse("K(AlSi3O8)");
+		mcn.put(sanidine, new UncertainValue(0.40, 0.01));
+		final Composition albite = Composition.parse("Na(AlSi3O8)");
+		mcn.put(albite, new UncertainValue(0.60, 0.01));
+		final Composition mix = Composition.combine(name, mcn, true);
+		
+		final Report r = new Report("Anorthoclase");
+		r.addHeader("Mixture");
+		r.add(albite);
+		r.add(sanidine);
+		r.add(mix);
+		r.inBrowser(Mode.VERBOSE);
+	}
+	
+	
+	
+	
 }

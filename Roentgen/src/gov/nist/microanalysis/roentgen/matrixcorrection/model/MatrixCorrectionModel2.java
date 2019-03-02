@@ -164,6 +164,8 @@ abstract public class MatrixCorrectionModel2 //
 	protected final Set<KRatioLabel> mKRatios;
 	// The types of variables to compute Jacobian elements.
 	private final Set<MatrixCorrectionModel2.Variate> mVariates;
+	
+	private final Material mUnknownMaterial;
 
 	public MatrixCorrectionModel2(//
 			final String name, //
@@ -174,10 +176,14 @@ abstract public class MatrixCorrectionModel2 //
 		super(name, steps);
 		mKRatios = kratios;
 		mVariates = Collections.unmodifiableSet(new TreeSet<>(variates));
+		mUnknownMaterial = mKRatios.iterator().next().getUnknown().getMaterial(); 
 		// Validate the inputs...
 		final List<? extends Object> outputTags = getOutputLabels();
 		final List<? extends Object> inputTags = getInputLabels();
+		
 		for (final KRatioLabel krl : mKRatios) {
+			if(!krl.getUnknown().getMaterial().equals(mUnknownMaterial))
+				throw new ArgumentException("The k-ratios can only be associated with one material.");
 			final MatrixCorrectionLabel mct = new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(),
 					krl.getXRaySet());
 			if (!outputTags.contains(mct))
@@ -200,11 +206,15 @@ abstract public class MatrixCorrectionModel2 //
 	public Set<KRatioLabel> getKRatios() {
 		return Collections.unmodifiableSet(mKRatios);
 	}
+	
+	public Material getUnknownMaterial() {
+		return mUnknownMaterial;
+	}
 
 	public Set<KRatioLabel> getKRatios(final Element elm) {
 		final Set<KRatioLabel> res = new HashSet<>();
 		for (final KRatioLabel krl : mKRatios)
-			if (krl.getXRaySet().getElement().equals(elm))
+			if (krl.getElement().equals(elm))
 				res.add(krl);
 		return Collections.unmodifiableSet(res);
 	}
@@ -212,7 +222,7 @@ abstract public class MatrixCorrectionModel2 //
 	public Set<Element> getElementSet() {
 		final Set<Element> res = new HashSet<>();
 		for (final KRatioLabel krl : mKRatios)
-			res.add(krl.getXRaySet().getElement());
+			res.add(krl.getElement());
 		return Collections.unmodifiableSet(res);
 	}
 

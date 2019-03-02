@@ -30,7 +30,7 @@ import org.apache.commons.math3.util.Pair;
  *
  */
 public class ImplicitMeasurementModel //
-		extends LabeledMultivariateJacobianFunction {
+		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 	public static class HLabel extends BaseLabel<Object, Object, Object> {
 
@@ -69,7 +69,6 @@ public class ImplicitMeasurementModel //
 		public HModel(final List<? extends Object> inputLabels, final List<? extends Object> outputLabels) {
 			super(combine(inputLabels, outputLabels), buildHLabels(outputLabels));
 		}
-
 	}
 
 	private final HModel mHFunction;
@@ -89,6 +88,10 @@ public class ImplicitMeasurementModel //
 	) {
 		super(buildInputs(h, outputLabels), outputLabels);
 		mHFunction = h;
+	}
+
+	public String toString() {
+		return "Implicit[" + mHFunction + "]";
 	}
 
 	/**
@@ -129,5 +132,24 @@ public class ImplicitMeasurementModel //
 		for (int r = 0; r < rv.getDimension(); ++r)
 			rv.setEntry(r, getConstant(outputLabels.get(r)));
 		return Pair.create(rv, mcyInv.multiply(mcx));
+	}
+
+	/**
+	 * Implements value(...) for an implicit measurement model by evaluating the
+	 * h-function splitting it apart into <b>J<sub>y</sub></b> and
+	 * <b>J<sub>x</sub></b> parts from which is computed <b>J</b> =
+	 * <b>J<sub>y</sub></b><sup>-1</sup><b>J<sub>x</sub></b>
+	 *
+	 * @see org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
+	 *      value(org.apache.commons.math3.linear.RealVector)
+	 */
+	@Override
+	public RealVector optimized(RealVector point) {
+		final int outDim = getOutputDimension();
+		final List<? extends Object> outputLabels = getOutputLabels();
+		final RealVector rv = new ArrayRealVector(outDim);
+		for (int r = 0; r < outDim; ++r)
+			rv.setEntry(r, getConstant(outputLabels.get(r)));
+		return rv;
 	}
 }

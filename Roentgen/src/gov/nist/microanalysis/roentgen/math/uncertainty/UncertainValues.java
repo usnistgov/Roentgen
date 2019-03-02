@@ -974,6 +974,24 @@ public class UncertainValues //
 		return res;
 	}
 
+	/**
+	 * Returns a RealMatrix of the variance and covariances relative to the
+	 * specified list of labels.
+	 *
+	 * @param label
+	 * @return Map&lt;Object, Double&gt;
+	 */
+	public RealMatrix getCovariances(final List<? extends Object> labels) {
+		int[] idx = new int[labels.size()];
+		for (int i = 0; i < idx.length; ++i)
+			idx[i] = indexOf(labels.get(i));
+		RealMatrix res = MatrixUtils.createRealMatrix(idx.length, idx.length);
+		for (int i = 0; i < idx.length; ++i)
+			for (int j = 0; j < idx.length; ++j)
+				res.setEntry(i, j, mCovariance.getEntry(idx[i], idx[j]));
+		return res;
+	}
+
 	public Map<Object, Double> getValueMap() {
 		final Map<Object, Double> res = new HashMap<>();
 		for (final Object label : getLabels())
@@ -1521,6 +1539,17 @@ public class UncertainValues //
 		return extract(idx);
 	}
 
+	public static UncertainValues normalized(UncertainValues uvs) //
+			throws ArgumentException {
+		final Normalize norm = new Normalize(uvs.getLabels());
+		return UncertainValues.propagate(norm, uvs);
+	}
+
+	public static UncertainValues normalized(Map<? extends Object, Number> vals) //
+			throws ArgumentException {
+		return normalized(new UncertainValues(vals));
+	}
+
 	public static boolean testEquality(final UncertainValues uvs1, final UncertainValues uvs2) {
 		if (uvs1.getDimension() != uvs2.getDimension())
 			return false;
@@ -1539,7 +1568,8 @@ public class UncertainValues //
 		final List<Object> labels = new ArrayList<>();
 		for (int i = 0; (i < mLabels.size()) && (i < 5); ++i)
 			labels.add(mLabels.get(i));
-		return "UVS[" + labels.toString()
+		String lblStr = labels.toString();
+		return "UVS[" + lblStr.substring(1, lblStr.length()-1)
 				+ (labels.size() < mLabels.size() ? "+" + (mLabels.size() - labels.size()) + " more" : "") + "]";
 	}
 

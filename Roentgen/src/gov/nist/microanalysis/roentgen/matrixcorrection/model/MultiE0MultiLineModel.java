@@ -262,8 +262,8 @@ class MultiE0MultiLineModel //
 			final List<Object> res = new ArrayList<>();
 			res.add(intensityLabel(krl.getUnknown(), krl.getXRaySet()));
 			res.add(intensityLabel(krl.getStandard(), krl.getXRaySet()));
-			res.add(MaterialLabel.buildMassFractionTag(krl.getUnknown().getMaterial(), krl.getXRaySet().getElement()));
-			res.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(), krl.getXRaySet().getElement()));
+			res.add(MaterialLabel.buildMassFractionTag(krl.getUnknown().getMaterial(), krl.getElement()));
+			res.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(), krl.getElement()));
 			return res;
 		}
 

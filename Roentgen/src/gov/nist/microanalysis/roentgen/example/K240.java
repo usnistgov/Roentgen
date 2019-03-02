@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -171,10 +172,12 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, mgoMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
-						MatrixCorrectionModel2.allVariates());
-				final UncertainValues input = cfk.buildInput(unk);
+				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
+						lkr, //
+						MatrixCorrectionModel2.allVariates(), //
+						Collections.emptyList());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
+				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -183,7 +186,7 @@ public class K240 {
 					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
-					switch (krl.getXRaySet().getElement()) {
+					switch (krl.getElement()) {
 					case Oxygen:
 						dk = v * dkO[ie0 - MIN_E];
 						break;
@@ -213,7 +216,7 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = UncertainValues.combine(cfk.buildInput(unk), krs);
+				final UncertainValues msInp = cfk.buildInput(unk, krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
@@ -396,10 +399,12 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
-				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
-						MatrixCorrectionModel2.allVariates());
-				final UncertainValues input = cfk.buildInput(unk);
+				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
+						lkr, //
+						MatrixCorrectionModel2.allVariates(), //
+						Collections.emptyList());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
+				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -408,7 +413,7 @@ public class K240 {
 					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
-					switch (krl.getXRaySet().getElement()) {
+					switch (krl.getElement()) {
 					case Oxygen:
 						dk = v * dkO[ie0 - MIN_E];
 						break;
@@ -438,7 +443,7 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = UncertainValues.combine(cfk.buildInput(unk), krs);
+				final UncertainValues msInp = cfk.buildInput(unk, krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
@@ -625,10 +630,11 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, oMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
-						MatrixCorrectionModel2.allVariates());
-				final UncertainValues input = cfk.buildInput(unk);
+				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
+						lkr, MatrixCorrectionModel2.allVariates(), //
+						Collections.emptyList());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
+				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -637,7 +643,7 @@ public class K240 {
 					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
-					switch (krl.getXRaySet().getElement()) {
+					switch (krl.getElement()) {
 					case Oxygen:
 						dk = v * dkO[ie0 - MIN_E];
 						break;
@@ -667,7 +673,7 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = UncertainValues.combine(cfk.buildInput(unk), krs);
+				final UncertainValues msInp = cfk.buildInput(unk, krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
@@ -858,10 +864,11 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, oMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(lkr,
-						MatrixCorrectionModel2.allVariates());
-				final UncertainValues input = cfk.buildInput(unk);
+				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
+						lkr, MatrixCorrectionModel2.allVariates(), //
+						Collections.emptyList());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
+				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -870,7 +877,7 @@ public class K240 {
 					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
 					double dk = 0.0;
-					switch (krl.getXRaySet().getElement()) {
+					switch (krl.getElement()) {
 					case Oxygen:
 						dk = v * dkO[ie0 - MIN_E];
 						break;
@@ -900,7 +907,7 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = UncertainValues.combine(cfk.buildInput(unk), krs);
+				final UncertainValues msInp = cfk.buildInput(unk, krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())

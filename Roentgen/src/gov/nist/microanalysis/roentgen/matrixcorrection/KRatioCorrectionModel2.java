@@ -1,11 +1,13 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresFactory;
@@ -34,6 +36,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
  * <p>
@@ -66,38 +69,54 @@ public class KRatioCorrectionModel2 //
 			implements ILabeledMultivariateFunction {
 
 		private final Set<KRatioLabel> mKRatios;
+		private final List<UnmeasuredElementRule> mUnmeasured;
 
-		static List<? extends Object> buildOutputs(//
-				final Set<KRatioLabel> kratios //
+		static List<MassFraction> buildOutputs(//
+				final Set<KRatioLabel> kratios, //
+				List<UnmeasuredElementRule> unmeasured //
 		) throws ArgumentException {
 			Material unk = null;
+			Set<Element> elms = new TreeSet<Element>();
 			for (final KRatioLabel krl : kratios) {
 				if (unk == null)
 					unk = krl.getUnknown().getMaterial();
 				if (!unk.equals(krl.getUnknown().getMaterial()))
 					throw new ArgumentException("More than one unknown in KRatioCorrectionModel2.HModel");
+				elms.add(krl.getElement());
 			}
-			return MaterialLabel.massFractionTags(unk);
-		}
-
-		static List<? extends Object> buildInputs(//
-				final Set<KRatioLabel> kratios //
-		) {
-			final List<Object> res = new ArrayList<>();
-			for (final KRatioLabel krl : kratios) {
-				res.add(krl);
-				res.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(),
-						krl.getXRaySet().getElement()));
-				res.add(new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet()));
+			for (UnmeasuredElementRule uer : unmeasured) {
+				for (Element elm : uer.getElements())
+					if (elms.contains(elm))
+						throw new ArgumentException("The element " + elm + " is both measured and calculated.");
+				elms.addAll(uer.getElements());
 			}
+			List<MassFraction> res = new ArrayList<>();
+			for (Element elm : elms)
+				res.add(MaterialLabel.buildMassFractionTag(unk, elm));
 			return res;
 		}
 
+		static List<? extends Object> buildInputs(//
+				final Set<KRatioLabel> kratios, //
+				List<UnmeasuredElementRule> unmeasured //
+		) {
+			final Set<Object> res = new HashSet<>();
+			for (final KRatioLabel krl : kratios) {
+				res.add(krl);
+				res.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(), krl.getElement()));
+				res.add(new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet()));
+			}
+			for (UnmeasuredElementRule uer : unmeasured)
+				res.addAll(uer.getInputLabels());
+			return new ArrayList<>(res);
+		}
+
 		private KR2HModel(//
-				final Set<KRatioLabel> kratios //
-		) throws ArgumentException {
-			super(buildInputs(kratios), buildOutputs(kratios));
+				final Set<KRatioLabel> kratios, //
+				final List<UnmeasuredElementRule> unmeasured) throws ArgumentException {
+			super(buildInputs(kratios, unmeasured), buildOutputs(kratios, unmeasured));
 			mKRatios = new HashSet<>(kratios);
+			mUnmeasured = unmeasured;
 		}
 
 		@Override
@@ -105,13 +124,15 @@ public class KRatioCorrectionModel2 //
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 			for (final KRatioLabel kMeasTag : mKRatios) {
-				final Element elm = kMeasTag.getXRaySet().getElement();
-				final Object mfUnkTag = MaterialLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm);
-				final Object mfStdTag = MaterialLabel.buildMassFractionTag(kMeasTag.getStandard().getMaterial(), elm);
-				final Object zafTag = new MatrixCorrectionLabel(kMeasTag.getUnknown(), kMeasTag.getStandard(),
-						kMeasTag.getXRaySet());
-				final Object hTag = new ImplicitMeasurementModel.HLabel(
-						MaterialLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm));
+				final Element elm = kMeasTag.getElement();
+				final UnknownMatrixCorrectionDatum unknown = kMeasTag.getUnknown();
+				final StandardMatrixCorrectionDatum standard = kMeasTag.getStandard();
+				final Material unkMat = unknown.getMaterial();
+				final Material stdMat = standard.getMaterial();
+				final Object mfUnkTag = MaterialLabel.buildMassFractionTag(unkMat, elm);
+				final Object mfStdTag = MaterialLabel.buildMassFractionTag(stdMat, elm);
+				final Object zafTag = new MatrixCorrectionLabel(unknown, standard, kMeasTag.getXRaySet());
+				final Object hTag = new ImplicitMeasurementModel.HLabel(mfUnkTag);
 				final int iKMeas = inputIndex(kMeasTag);
 				final int iMFUnk = inputIndex(mfUnkTag);
 				final int iMFStd = inputIndex(mfStdTag);
@@ -129,6 +150,28 @@ public class KRatioCorrectionModel2 //
 				rm.setEntry(oHTag, iMFStd, (cUnk / (cStd * cStd)) * zaf);
 				rm.setEntry(oHTag, iZAF, -(cUnk / cStd));
 			}
+			for(UnmeasuredElementRule uer : mUnmeasured) {
+				// Function of form hi = C_i - uer_i for i=0..n-1
+				RealVector uerPoint=new ArrayRealVector(uer.getInputDimension());
+				for(int i=0;i<uer.getInputDimension();++i)
+					uerPoint.setEntry(i, getValue(uer.getInputLabel(i), point));
+				Pair<RealVector, RealMatrix> uerRes = uer.value(uerPoint);
+				RealVector uerRv=uerRes.getFirst();
+				RealMatrix uerRm=uerRes.getSecond();
+				for(int o=0;o<uer.getOutputDimension();++o) {
+					final MassFraction mfUnkTag = uer.getMFOutput(o);
+					final Object hTag = new ImplicitMeasurementModel.HLabel(mfUnkTag);
+					final int iMFUnk = inputIndex(mfUnkTag);
+					final int oHTag = outputIndex(hTag);
+					final int oIdx=this.outputIndex(oHTag);
+					rv.setEntry(oIdx, point.getEntry(iMFUnk) - uerRv.getEntry(o));
+					rm.setEntry(oIdx, iMFUnk, 1.0);
+					for(int i=0;i<uer.getInputDimension();++i) {
+						final int iIdx = this.inputIndex(uer.getInputLabel(i));
+						writeJacobian(oIdx, iIdx, -uerRm.getEntry(o, i), rm);
+					}
+				}
+			}
 			return Pair.create(rv, rm);
 		}
 
@@ -136,7 +179,7 @@ public class KRatioCorrectionModel2 //
 		public RealVector optimized(final RealVector point) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			for (final KRatioLabel kMeasTag : mKRatios) {
-				final Element elm = kMeasTag.getXRaySet().getElement();
+				final Element elm = kMeasTag.getElement();
 				final Object mfUnkTag = MaterialLabel.buildMassFractionTag(kMeasTag.getUnknown().getMaterial(), elm);
 				final Object mfStdTag = MaterialLabel.buildMassFractionTag(kMeasTag.getStandard().getMaterial(), elm);
 				final Object zafTag = new MatrixCorrectionLabel(kMeasTag.getUnknown(), kMeasTag.getStandard(),
@@ -156,41 +199,71 @@ public class KRatioCorrectionModel2 //
 				// assert Math.abs(hi) < 1.0e-6 : "h["+kMeasTag + "] = " + hi;
 				rv.setEntry(oHTag, hi);
 			}
+			for(UnmeasuredElementRule uer : mUnmeasured) {
+				// Function of form hi = C_i - uer_i for i=0..n-1
+				RealVector uerPoint=new ArrayRealVector(uer.getInputDimension());
+				for(int i=0;i<uer.getInputDimension();++i)
+					uerPoint.setEntry(i, getValue(uer.getInputLabel(i), point));
+				RealVector uerRv=uer.compute(uerPoint);
+				for(int o=0;o<uer.getOutputDimension();++o) {
+					final MassFraction mfUnkTag = uer.getMFOutput(o);
+					final Object hTag = new ImplicitMeasurementModel.HLabel(mfUnkTag);
+					final int iMFUnk = inputIndex(mfUnkTag);
+					final int oHTag = outputIndex(hTag);
+					final int oIdx=this.outputIndex(oHTag);
+					rv.setEntry(oIdx, point.getEntry(iMFUnk) - uerRv.getEntry(o));
+				}
+			}
 			return rv;
 		}
 
 		@Override
 		public String toString() {
-			return "H-model";
+			return "K-to-C";
 		}
 	}
 
 	public KRatioCorrectionModel2(//
 			final Set<KRatioLabel> krs, //
-			final Set<MatrixCorrectionModel2.Variate> variates) throws ArgumentException {
-		this(krs, new XPPMatrixCorrection2(krs, variates));
+			final Set<MatrixCorrectionModel2.Variate> variates, //
+			final List<UnmeasuredElementRule> unmeasured //
+	) throws ArgumentException {
+		this(krs, new XPPMatrixCorrection2(krs, variates), unmeasured);
 	}
 
-	private static List<LabeledMultivariateJacobianFunction> buildSteps(final Set<KRatioLabel> krs,
-			final MatrixCorrectionModel2 mcm) //
-			throws ArgumentException {
+	private static List<LabeledMultivariateJacobianFunction> buildSteps(//
+			final Set<KRatioLabel> krs, //
+			final MatrixCorrectionModel2 mcm, //
+			final List<UnmeasuredElementRule> unmeasured //
+	) throws ArgumentException {
 		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
 		final List<? extends Object> outputs = MaterialLabel.massFractionTags(unk.getMaterial());
 		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
+		// Perform the matrix correction model to calculate Ci from ki
 		res.add(mcm);
-		res.add(new ImplicitMeasurementModel(new KR2HModel(krs), outputs));
+		// Perform additional unmeasured element rules to calculate Cj from other Ci
+		res.addAll(unmeasured);
+		// Perform the implicit model to propagate uncertainty in the Ci
+		res.add(new ImplicitMeasurementModel(new KR2HModel(krs, unmeasured), outputs));
 		return res;
+	}
 
+	public KRatioCorrectionModel2(//
+			final Set<KRatioLabel> krs, //
+			final MatrixCorrectionModel2 model, //
+			final List<UnmeasuredElementRule> unmeasured //
+	) throws ArgumentException {
+		super("K-Ratio Model[" + model.toString() + "]", buildSteps(krs, model, unmeasured));
+		mModel = model;
 	}
 
 	public KRatioCorrectionModel2(//
 			final Set<KRatioLabel> krs, //
 			final MatrixCorrectionModel2 model //
 	) throws ArgumentException {
-		super("K-Ratio Model[" + model.toString() + "]", buildSteps(krs, model));
-		mModel = model;
+		this(krs, model, Collections.emptyList());
 	}
-
+	
 	/**
 	 * Returns an instance of the {@link MatrixCorrectionModel2} used to build this
 	 * {@link KRatioCorrectionModel2} instance.
@@ -202,15 +275,18 @@ public class KRatioCorrectionModel2 //
 	}
 
 	/**
-	 * Builds the inputs to the {@link MatrixCorrectionModel2} instance. Requires
-	 * additional KRatioLabel related to measured items.
+	 * Builds the inputs to the {@link MatrixCorrectionModel2} instance.
 	 *
+	 * @param estUnknown  An estimate of the composition of the unknown
+	 * @param measKratios The measured k-ratios
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	public UncertainValues buildInput(final Composition estUnknown) //
+	public UncertainValues buildInput(final Composition estUnknown, UncertainValues measKratios) //
 			throws ArgumentException {
-		return mModel.buildInput(estUnknown);
+		assert measKratios.getLabels(KRatioLabel.class).size() == measKratios
+				.getDimension() : "Not all the measured k-ratios are k-ratios";
+		return UncertainValues.combine(mModel.buildInput(estUnknown), measKratios);
 	}
 
 	/**
@@ -225,14 +301,17 @@ public class KRatioCorrectionModel2 //
 	 *
 	 * @param keySet
 	 * @param variates
+	 * @param unmeasured A list of UnmeasuredElementRule functions
 	 * @return Pair&lt;SerialLabeledMultivariateJacobianFunction,
 	 *         UncertainValues&gt;
 	 * @throws ArgumentException
 	 */
 	static public KRatioCorrectionModel2 buildXPPModel( //
-			final Set<KRatioLabel> keySet, final Set<MatrixCorrectionModel2.Variate> variates //
+			final Set<KRatioLabel> keySet, //
+			final Set<MatrixCorrectionModel2.Variate> variates, //
+			final List<UnmeasuredElementRule> unmeasured //
 	) throws ArgumentException {
-		return new KRatioCorrectionModel2(keySet, variates);
+		return new KRatioCorrectionModel2(keySet, variates, unmeasured);
 	}
 
 	public UncertainValues getInputs(final MatrixCorrectionModel2 mcm, final UncertainValues inputs,
@@ -249,7 +328,8 @@ public class KRatioCorrectionModel2 //
 	 * @return {@link Composition}
 	 * @throws ArgumentException
 	 */
-	public Composition computeEstimate(final UncertainValues kratios) throws ArgumentException {
+	public static Map<Element, Number> computeFirstEstimate(final UncertainValues kratios) //
+			throws ArgumentException {
 		final Map<Object, Double> krm = kratios.getValueMap();
 		final Map<Element, Number> est = new HashMap<>();
 		for (final Map.Entry<Object, Double> me : krm.entrySet()) {
@@ -266,7 +346,11 @@ public class KRatioCorrectionModel2 //
 				est.put(xrs.getElement(), kR * cStd);
 			}
 		}
-		return Composition.massFraction("Estimate[0]", est);
+		return est;
+	}
+
+	public Material getUnknownMaterial() {
+		return mModel.getUnknownMaterial();
 	}
 
 	/**
@@ -280,19 +364,40 @@ public class KRatioCorrectionModel2 //
 	 */
 	public Composition optimize(final UncertainValues kratios) //
 			throws ArgumentException {
-		final Composition unk = computeEstimate(kratios);
-		final Set<Element> elms = unk.getElementSet();
+		final Map<Element, Number> unk = computeFirstEstimate(kratios);
+		final Material unkMat = mModel.getUnknownMaterial();
+		assert unk.keySet().equals(unkMat.getElementSet());
 		// Figure out which elements are in the unknown
-		final List<MaterialLabel.MassFraction> compInp = MaterialLabel.massFractionTags(unk.getMaterial());
+		final List<MassFraction> compInp = MaterialLabel.buildMassFractionTags(unkMat);
+		RealVector goal = new ArrayRealVector(kratios.getDimension());
+		List<KRatioLabel> kCalc = new ArrayList<KRatioLabel>();
+		int j = 0;
+		for (Object krl : kratios.getLabels()) {
+			assert krl instanceof KRatioLabel;
+			kCalc.add(((KRatioLabel) krl).asCalculated());
+			goal.setEntry(j, kratios.getEntry(krl));
+			++j;
+		}
 		// Trim the inputs down to only the elements in the unknown...
 		final TrimmedNamedMultivariateJacobianFunction trimmed = //
-				new TrimmedNamedMultivariateJacobianFunction(mModel, compInp, mModel.getOutputLabels());
+				new TrimmedNamedMultivariateJacobianFunction(mModel, compInp, kCalc);
+		UncertainValues inputs = mModel.buildInput(Composition.massFraction(unkMat, unk));
+		trimmed.initializeConstants(inputs.getValueMap());
+		RealVector start = new ArrayRealVector(trimmed.getInputDimension());
+		int i = 0;
+		final List<Element> elms = new ArrayList<>();
+		for (Object inLab : trimmed.getInputLabels()) {
+			assert inLab instanceof MassFraction;
+			MassFraction mf = (MassFraction) inLab;
+			elms.add(mf.getElement());
+			start.setEntry(i, unk.get(mf.getElement()).doubleValue());
+			++i;
+		}
 		final ConvergenceChecker<Evaluation> checker = new EvaluationRmsChecker(1.0e-3);
-		final List<? extends Object> trOutTags = trimmed.getOutputLabels();
 		final LeastSquaresProblem lsm = LeastSquaresFactory.create( //
 				trimmed, // The trimmed model
-				new ArrayRealVector(trOutTags.size()), // Goal of zero
-				unk.extractValues(trimmed.getInputLabels()), // Starting estimate
+				goal, // Goal of zero
+				start, // Starting estimate
 				checker, 100, 100);
 		final LevenbergMarquardtOptimizer lmo = new LevenbergMarquardtOptimizer();
 		final Optimum res = lmo.optimize(lsm);

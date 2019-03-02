@@ -41,7 +41,7 @@ public class TrimmedNamedMultivariateJacobianFunction //
 		assert base.getOutputLabels().containsAll(outputLabels);
 		if (!base.getInputLabels().containsAll(inputLabels))
 			throw new ArgumentException("Some of the requested input labels are not in the base function's inputs.");
-		if (base.getOutputLabels().containsAll(outputLabels))
+		if (!base.getOutputLabels().containsAll(outputLabels))
 			throw new ArgumentException("Some of the requested output labels are not in the base function's outputs.");
 		mBase = base;
 	}
@@ -56,7 +56,7 @@ public class TrimmedNamedMultivariateJacobianFunction //
 			final double value = idx != -1 ? point.getEntry(idx) : getConstant(baseInputs.get(i));
 			basePoint.setEntry(i, value);
 		}
-		final Pair<RealVector, RealMatrix> tmp = mBase.evaluate(point);
+		final Pair<RealVector, RealMatrix> tmp = mBase.evaluate(basePoint);
 		final List<? extends Object> outLabels = getOutputLabels();
 		final int[] outIdx = new int[outLabels.size()];
 		for (int i = 0; i < outIdx.length; ++i)

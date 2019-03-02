@@ -536,8 +536,7 @@ public class XPPMatrixCorrection2 //
 			final double opq = 1.0 + q;
 			final double Gu0 = (u0 * opq - (2.0 + q) + Math.pow(u0, -1.0 - q)) / //
 					(opq * (2.0 + q) * Ju0); // Ok!
-			assert Math.abs(Gu0 - ((u0 - 1.0 - (1.0 - Math.pow(u0, -1.0 - q)) / opq) / ((2.0 + q) * Ju0))) //
-			< Math.abs(1.0e-6 * Gu0);
+			// assert Math.abs(Gu0 - ((u0 - 1.0 - (1.0 - Math.pow(u0, -1.0 - q)) / opq) / ((2.0 + q) * Ju0))) < Math.abs(1.0e-6 * Gu0);
 			final double dGu0du0 = (1.0 - Math.pow(u0, -2.0 - q)) / ((2.0 + q) * Ju0) //
 					- ((dJu0du0 / Ju0) * Gu0); // Ok!
 			final double dGu0de0 = dGu0du0 * du0de0; // Ok!
@@ -2117,7 +2116,7 @@ public class XPPMatrixCorrection2 //
 	public Set<Element> getElements() {
 		final Set<Element> elms = new TreeSet<>();
 		for (final KRatioLabel krl : mKRatios)
-			elms.add(krl.getXRaySet().getElement());
+			elms.add(krl.getElement());
 		return elms;
 	}
 

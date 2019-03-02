@@ -5,12 +5,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
+import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.physics.Element;
 
@@ -26,6 +28,8 @@ public class Material //
 
 	private final SortedSet<Element> mElements;
 	private final String mHTMLName;
+	private final Optional<Conductivity> mConductivity;
+
 	private final int mHashCode;
 
 	@Override
@@ -42,7 +46,8 @@ public class Material //
 		if (getClass() != obj.getClass())
 			return false;
 		final Material other = (Material) obj;
-		return mHTMLName.equals(other.mHTMLName) && mElements.equals(other.mElements);
+		return mHTMLName.equals(other.mHTMLName) && mElements.equals(other.mElements) //
+				&& mConductivity.equals(other.mConductivity);
 	}
 
 	public static Set<Material> convert(final Collection<Composition> comps) {
@@ -55,10 +60,15 @@ public class Material //
 	/**
 	 *
 	 */
-	public Material(final String htmlName, final Collection<Element> elms) {
+	public Material(final String htmlName, final Collection<Element> elms, Conductivity conduct) {
 		mHTMLName = htmlName;
 		mElements = Collections.unmodifiableSortedSet(new TreeSet<>(elms));
-		mHashCode = Objects.hash(mElements, mHTMLName);
+		mConductivity = Optional.ofNullable(conduct);
+		mHashCode = Objects.hash(mElements, mHTMLName, mConductivity);
+	}
+
+	public Material(final String htmlName, final Collection<Element> elms) {
+		this(htmlName, elms, null);
 	}
 
 	public Material(final String htmlName, final Element... elms) {
@@ -85,11 +95,10 @@ public class Material //
 	@Override
 	public String toHTML(final Mode mode) {
 		switch (mode) {
+		default:
 		case TERSE:
 			return mHTMLName;
-		case NORMAL:
-		case VERBOSE:
-		default:
+		case NORMAL: {
 			final StringBuffer sb = new StringBuffer();
 			for (final Element elm : getElementSet()) {
 				if (sb.length() > 0)
@@ -97,6 +106,22 @@ public class Material //
 				sb.append(elm.getAbbrev());
 			}
 			return mHTMLName + "[" + sb.toString() + "]";
+		}
+		case VERBOSE: {
+			Table t = new Table();
+			t.addRow(Table.th("Item"), Table.th("Value"));
+			final StringBuffer sb = new StringBuffer();
+			for (final Element elm : getElementSet()) {
+				if (sb.length() > 0)
+					sb.append(",");
+				sb.append(elm.getAbbrev());
+			}
+			t.addRow(Table.td("Name"), Table.td(mHTMLName));
+			t.addRow(Table.td("Elements"), Table.td(sb.toString()));
+			if (mConductivity.isPresent())
+				t.addRow(Table.td("Conductivity"), Table.td(mConductivity.toString()));
+			return t.toHTML(Mode.NORMAL);
+		}
 		}
 	}
 }

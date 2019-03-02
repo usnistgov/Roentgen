@@ -87,7 +87,7 @@ public class MassFractionToAtomFraction //
 					final MaterialLabel.MassFraction mft2 = MaterialLabel.buildMassFractionTag(awt2.getMaterial(),
 							awt2.getElement());
 					final double c2 = getValue(mft2, point);
-					assert (w1 - w2) * delta(aft1, mft2) == 0.0;
+					assert (w1 - w2) * delta(aft1, mft2) == 0.0 : w1 + "!=" + w2;
 					jac.setEntry(i1, i2, (c2 / (den * w2 * w2)) * (c1 / (w1 * den) - delta(aft1, mft2)));
 				}
 			}

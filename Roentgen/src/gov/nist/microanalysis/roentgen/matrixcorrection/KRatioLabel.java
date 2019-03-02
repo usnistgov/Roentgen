@@ -71,9 +71,27 @@ public class KRatioLabel//
 	public ElementXRaySet getXRaySet() {
 		return getObject3();
 	}
+	
+	public Element getElement() {
+		return getObject3().getElement();
+	}
 
 	public Method getMethod() {
 		return mMethod;
+	}
+
+	public KRatioLabel asMeasured() {
+		if (isMeasured())
+			return this;
+		else
+			return new KRatioLabel(getUnknown(), getStandard(), getXRaySet(), Method.Measured);
+	}
+
+	public KRatioLabel asCalculated() {
+		if (isCalculated())
+			return this;
+		else
+			return new KRatioLabel(getUnknown(), getStandard(), getXRaySet(), Method.Calculated);
 	}
 
 	public boolean isMeasured() {

@@ -13,6 +13,7 @@ import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.Normalize;
 import gov.nist.microanalysis.roentgen.physics.Element;
 
 /**
@@ -27,6 +28,7 @@ final class MixtureToMassFractions //
 		implements ILabeledMultivariateFunction {
 
 	private final Material mNewMaterial;
+	private final List<Object> mInputs;
 
 	static private List<? extends Object> buildOutputs(//
 			final Material newMat, //
@@ -42,13 +44,17 @@ final class MixtureToMassFractions //
 	}
 
 	static private List<Object> buildInputs(//
-			final Set<Material> mats //
+			final Set<Material> mats, //
+			boolean normalize //
 	) {
 		final List<Object> res = new ArrayList<>();
 		for (final Material mat : mats) {
 			res.addAll(MaterialLabel.massFractionTags(mat));
 			res.addAll(MaterialLabel.atomWeightTags(mat));
-			res.add(MaterialLabel.buildMaterialFractionTag(mat));
+			if (normalize)
+				res.add(Normalize.buildNormalized(MaterialLabel.buildMaterialFractionTag(mat)));
+			else
+				res.add(MaterialLabel.buildMaterialFractionTag(mat));
 		}
 		return res;
 	}
@@ -64,12 +70,18 @@ final class MixtureToMassFractions //
 	 * Converts a mixture of Composition objects into the mass fraction of the
 	 * constituent elements.
 	 *
-	 * @param htmlName String
-	 * @param mats     Set&lt;Material&gt;
+	 * @param htmlName  String
+	 * @param mats      Set&lt;Material&gt;
+	 * @param normalize
 	 */
-	public MixtureToMassFractions(final String htmlName, final Set<Material> mats) {
-		super(buildInputs(mats), buildOutputs(new Material(htmlName, buildElements(mats)), mats));
+	public MixtureToMassFractions(final String htmlName, final Set<Material> mats, boolean normalize) {
+		super(buildInputs(mats, normalize), buildOutputs(new Material(htmlName, buildElements(mats)), mats));
 		mNewMaterial = new Material(htmlName, buildElements(mats));
+		mInputs = new ArrayList<>();
+		for (final Material mat : mats) {
+			final MaterialMassFraction mmft = MaterialLabel.buildMaterialFractionTag(mat);
+			mInputs.add(normalize ? Normalize.buildNormalized(mmft) : mmft);
+		}
 	}
 
 	public Material getNewMaterial() {
@@ -80,18 +92,14 @@ final class MixtureToMassFractions //
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		final List<MaterialMassFraction> mmfts = new ArrayList<>();
-		for (final Object inTag : getInputLabels())
-			if (inTag instanceof MaterialMassFraction)
-				mmfts.add((MaterialMassFraction) inTag);
 		for (final Element elm : mNewMaterial.getElementSet()) {
 			double tmpCz = 0.0, tmpAz = 0.0;
 			final MaterialLabel.MassFraction resCz = MaterialLabel.buildMassFractionTag(mNewMaterial, elm);
 			final MaterialLabel.AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (final MaterialMassFraction mmft : mmfts) {
-				final Material mat = mmft.getMaterial();
+			for (final Object mmft : mInputs) {
+				final Material mat = ((MaterialMassFraction) Normalize.unwrap(mmft)).getMaterial();
 				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
 				// The material may or may not have the element...
 				final double mmf = getValue(mmft, point);
@@ -106,8 +114,8 @@ final class MixtureToMassFractions //
 			}
 			final double cZ = tmpCz;
 			final double aZ = tmpCz / tmpAz;
-			for (final MaterialMassFraction mmft : mmfts) {
-				final Material mat = mmft.getMaterial();
+			for (final Object mmft : mInputs) {
+				final Material mat = ((MaterialMassFraction) Normalize.unwrap(mmft)).getMaterial();
 				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
 				// The material may or may not have the element...
 				final double mI = getValue(mmft, point);
@@ -167,5 +175,9 @@ final class MixtureToMassFractions //
 
 		}
 		return rv;
+	}
+
+	public String toString() {
+		return "To" + mNewMaterial.toString();
 	}
 }
