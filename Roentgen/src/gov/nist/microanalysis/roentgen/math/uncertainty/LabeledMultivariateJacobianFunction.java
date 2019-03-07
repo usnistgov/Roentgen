@@ -5,12 +5,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
 import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -330,62 +330,6 @@ abstract public class LabeledMultivariateJacobianFunction //
 	}
 
 	/**
-	 * Implements a {@link LabeledMultivariateJacobianFunction} that sum the values
-	 * in the inLabels and returns them as the outLabel.
-	 *
-	 * @param inLabels
-	 * @param outLabels
-	 * @return {@link LabeledMultivariateJacobianFunction}
-	 */
-	public static LabeledMultivariateJacobianFunction sum( //
-			final List<? extends Object> inLabels, //
-			final Object outLabel //
-	) {
-		return new LabeledMultivariateJacobianFunction(inLabels, Collections.singletonList(outLabel)) {
-
-			@Override
-			public Pair<RealVector, RealMatrix> value(final RealVector point) {
-				final RealVector rv = new ArrayRealVector(1);
-				final RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
-
-				double sum = 0.0;
-				for (int i = 0; i < point.getDimension(); ++i) {
-					sum += point.getEntry(i);
-					rm.setEntry(0, i, 1.0);
-				}
-				rv.setEntry(0, sum);
-				return Pair.create(rv, rm);
-			}
-
-		};
-	}
-
-	/**
-	 * Implements a linear function of the inLabels quantities which is returned as
-	 * outLabel.
-	 *
-	 * @param inLabels Labels for the input values
-	 * @param coeffs   A vector of linear parameters of length inLabels.size()
-	 * @param outLabel The label for the output value.
-	 * @return {@link LabeledMultivariateJacobianFunction}
-	 */
-	public static LabeledMultivariateJacobianFunction linear(final List<? extends Object> inLabels,
-			final RealVector coeffs, final Object outLabel) {
-		return new LabeledMultivariateJacobianFunction(inLabels, Collections.singletonList(outLabel)) {
-
-			@Override
-			public Pair<RealVector, RealMatrix> value(final RealVector point) {
-				final RealVector rv = new ArrayRealVector(1);
-				final RealMatrix rm = MatrixUtils.createRealMatrix(1, point.getDimension());
-				for (int v = 0; v < point.getDimension(); ++v)
-					rm.setEntry(0, v, coeffs.getEntry(v));
-				rv.setEntry(0, point.dotProduct(coeffs));
-				return Pair.create(rv, rm);
-			}
-		};
-	}
-
-	/**
 	 * Initializes the constant labels with the specified values. The label for
 	 * value <code>vals.getEntry(i)</code> is <code>list.get(i)</code>. Checks first
 	 * to see is the label is being used as an input variable and won't define it as
@@ -403,10 +347,12 @@ abstract public class LabeledMultivariateJacobianFunction //
 	/**
 	 * Initializes the constant labels with the associated values.
 	 *
-	 * @param mod Map&lt;Object,Double&gt; where Object is a label
+	 * @param consts Map&lt;Object,Double&gt; where Object is a label
 	 */
-	public void initializeConstants(final Map<Object, Double> mod) {
-		mConstants.putAll(mod);
+	public void initializeConstants(final Map<Object, ? extends Number> consts) {
+		for(Entry<Object,? extends Number> me : consts.entrySet())
+			if (inputIndex(me.getKey()) == -1)
+				mConstants.put(me.getKey(), me.getValue().doubleValue());
 	}
 
 	/**

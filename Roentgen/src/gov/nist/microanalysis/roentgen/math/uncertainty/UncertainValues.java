@@ -3,7 +3,6 @@ package gov.nist.microanalysis.roentgen.math.uncertainty;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,9 +32,11 @@ import com.duckandcover.html.Transforms;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
+import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.swing.IValueToColor;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
+import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * <p>
@@ -441,7 +442,7 @@ public class UncertainValues //
 	 * @throws ArgumentException
 	 */
 	public UncertainValues reorder(final List<? extends Object> labels) {
-		assert labels.size() <= mLabels.size();
+		assert labels.size() <= mLabels.size() : toString() + mLabels + " -- " + labels;
 		if (mLabels.size() == labels.size()) {
 			// Check if already in correct order...
 			boolean eq = true;
@@ -926,9 +927,11 @@ public class UncertainValues //
 		else {
 			final double c11 = mCovariance.getEntry(p1, p1);
 			final double c22 = mCovariance.getEntry(p2, p2);
-			if (c11 * c22 > 0)
-				return c12 / Math.sqrt(c11 * c22);
-			else
+			if (c11 * c22 > 0) {
+				final double rho = c12 / Math.sqrt(c11 * c22);
+				assert (rho > -1.00000001) && (rho < 1.00000001) : rho;
+				return Math.min(1.0, Math.max(-1.0, rho));
+			} else
 				return Double.NaN;
 		}
 	}
@@ -1144,7 +1147,7 @@ public class UncertainValues //
 			for (final Object tag : tmp.keySet())
 				tagMap.put(HTML.toHTML(tag, Mode.TERSE), tag);
 			t.addRow(Table.th("Label"), Table.th("Value"), Table.th("Uncertainty"), Table.th("Fractional"));
-			final DecimalFormat df = new DecimalFormat("0.0%");
+			final HalfUpFormat df = new HalfUpFormat("0.0%");
 			for (final Map.Entry<String, Object> me : tagMap.entrySet()) {
 				final UncertainValue uv = tmp.get(me.getValue());
 				t.addRow(Table.td(me.getKey()), Table.td(uv.doubleValue()), Table.td(uv.uncertainty()),
@@ -1569,7 +1572,7 @@ public class UncertainValues //
 		for (int i = 0; (i < mLabels.size()) && (i < 5); ++i)
 			labels.add(mLabels.get(i));
 		String lblStr = labels.toString();
-		return "UVS[" + lblStr.substring(1, lblStr.length()-1)
+		return "UVS[" + lblStr.substring(1, lblStr.length() - 1)
 				+ (labels.size() < mLabels.size() ? "+" + (mLabels.size() - labels.size()) + " more" : "") + "]";
 	}
 

@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
-import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -13,6 +12,7 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
+import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * A MatrixCorrectionDatum associated with an unknown. A list of candidate
@@ -123,7 +123,7 @@ public class UnknownMatrixCorrectionDatum //
 
 	@Override
 	public String toString() {
-		final DecimalFormat df = new DecimalFormat("0.0");
+		final HalfUpFormat df = new HalfUpFormat("0.0");
 		final String elms = getElementSet().stream().map((final Element elm) -> elm.getAbbrev())
 				.collect(Collectors.joining(", "));
 		return "Unknown[" + elms + "] at " + df.format(mBeamEnergy.doubleValue()) + " keV";

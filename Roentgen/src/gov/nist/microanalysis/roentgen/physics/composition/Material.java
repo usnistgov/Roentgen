@@ -66,11 +66,21 @@ public class Material //
 		mConductivity = Optional.ofNullable(conduct);
 		mHashCode = Objects.hash(mElements, mHTMLName, mConductivity);
 	}
+	
 
 	public Material(final String htmlName, final Collection<Element> elms) {
 		this(htmlName, elms, null);
 	}
 
+	public Material(Element elm) {
+		this("Pure "+elm.getAbbrev(), Collections.singletonList(elm));
+	}
+
+	public Material(Element elm, Conductivity cond) {
+		this("Pure "+elm.getAbbrev(), Collections.singletonList(elm), cond);
+	}
+
+	
 	public Material(final String htmlName, final Element... elms) {
 		this(htmlName, Arrays.asList(elms));
 	}

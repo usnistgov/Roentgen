@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,15 +25,41 @@ public class Report implements IToHTMLExt {
 
 	private final String mName;
 	private final List<IToHTML> mItems;
-	private final Map<IToHTML, IToHTML.Mode> mCustomMode;
 
+	private class ForceMode implements IToHTML, IToHTMLExt {
+		
+		private final IToHTML mBase;
+		private final Mode mMode;
+		
+		ForceMode(IToHTML base, Mode mode){
+			mBase = base;
+			mMode = mode;
+		}
+		
+
+		@Override
+		public String toHTML(Mode mode) {
+			return mBase.toHTML(mMode);
+		}
+
+		@Override
+		public String toHTML(Mode mode, File base, String dir) throws IOException {
+			if(mBase instanceof IToHTMLExt)
+				return ((IToHTMLExt)mBase).toHTML(mMode,base,dir);
+			else
+				return mBase.toHTML(mMode);
+		}
+		
+		
+		
+	}
+	
 	/**
 	 * Constructs a HTMLReport
 	 */
 	public Report(final String name) {
 		mName = name;
 		mItems = new ArrayList<>();
-		mCustomMode = new HashMap<>();
 	}
 
 	public void addHeader(final IToHTML item) {
@@ -96,8 +121,7 @@ public class Report implements IToHTMLExt {
 	}
 
 	public void add(final IToHTML item, final IToHTML.Mode mode) {
-		mItems.add(item);
-		mCustomMode.put(item, mode);
+		mItems.add(new ForceMode(item,mode));
 	}
 
 	public void add(final IToHTML item) {
@@ -112,15 +136,15 @@ public class Report implements IToHTMLExt {
 	public String toHTML(final Mode mode) {
 		final StringBuffer sb = new StringBuffer();
 		for (final IToHTML item : mItems)
-			sb.append(item.toHTML(mCustomMode.getOrDefault(item, mode)));
+			sb.append(HTML.toHTML(item, mode));
 		return sb.toString();
 	}
 
 	public String highest(final IToHTML item, final Mode mode, final File base, final String dir) throws IOException {
 		if (item instanceof IToHTMLExt)
-			return ((IToHTMLExt) item).toHTML(mCustomMode.getOrDefault(item, mode), base, dir);
+			return ((IToHTMLExt) item).toHTML(mode, base, dir);
 		else
-			return item.toHTML(mCustomMode.getOrDefault(item, mode));
+			return item.toHTML(mode);
 	}
 
 	@Override

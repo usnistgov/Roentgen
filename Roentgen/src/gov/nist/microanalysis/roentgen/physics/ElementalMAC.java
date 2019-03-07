@@ -3,7 +3,6 @@ package gov.nist.microanalysis.roentgen.physics;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -18,6 +17,7 @@ import gov.nist.microanalysis.roentgen.Globals;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * <p>
@@ -200,7 +200,7 @@ public class ElementalMAC {
 	 */
 	public String fractionalUncertaintySource(final Element el, final double eV) {
 		String result = "None";
-		final DecimalFormat df = new DecimalFormat("0.0%");
+		final HalfUpFormat df = new HalfUpFormat("0.0%");
 		double err = 0.0;
 		if (eV < 200.0) {
 			result = "eV < 200.0"; // 100-200%

@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
-import java.text.DecimalFormat;
 import java.util.Objects;
 
 import com.duckandcover.html.Table;
@@ -11,6 +10,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition.Represent
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
+import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * A MatrixCorrectionDatum associated with a Standard (specifies the
@@ -115,7 +115,7 @@ public class StandardMatrixCorrectionDatum //
 
 	@Override
 	public String toString() {
-		final DecimalFormat df = new DecimalFormat("0.0");
+		final HalfUpFormat df = new HalfUpFormat("0.0");
 		return mComposition.toString() + " at " + df.format(mBeamEnergy.doubleValue()) + " keV";
 	}
 

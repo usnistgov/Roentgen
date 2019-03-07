@@ -51,20 +51,20 @@ public class BasicNumberFormat extends DecimalFormat {
 
 	public BasicNumberFormat() {
 		super();
-		final DecimalFormatSymbols dfs = createDefaultDecimalFormatSymbols();
+		final DecimalFormatSymbols dfs = createDefaultHalfUpFormatSymbols();
 		setDecimalFormatSymbols(dfs);
 		setGroupingSize(3);
 		setRoundingMode(RoundingMode.HALF_UP);
 	}
 
-	public static DecimalFormatSymbols createDefaultDecimalFormatSymbols() {
+	public static DecimalFormatSymbols createDefaultHalfUpFormatSymbols() {
 		final DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
 		dfs.setGroupingSeparator(THIN_SPACE);
 		return dfs;
 	}
 
 	public BasicNumberFormat(final String fmt) {
-		super(fmt, createDefaultDecimalFormatSymbols());
+		super(fmt, createDefaultHalfUpFormatSymbols());
 		setGroupingSize(3);
 		setRoundingMode(RoundingMode.HALF_UP);
 	}
@@ -107,6 +107,43 @@ public class BasicNumberFormat extends DecimalFormat {
 		return sb.toString();
 	}
 
+	/**
+	 * Uses the SIUnits package to format Number instances in LaTeX format.
+	 * 
+	 * @param num
+	 * @return String in LaTeX format
+	 */
+	public String formatLaTeX(final Number num) {
+		StringBuffer res=new StringBuffer();
+		res.append("\\num{");
+		if(num instanceof UncertainValue) {
+			res.append(format(num.doubleValue()));
+			res.append("\\pm");
+			res.append(format(((UncertainValue) num).uncertainty()));
+		} else {
+			if((num instanceof Integer) || (num instanceof Long) || (num instanceof Byte))
+				res.append(format(num.longValue()));
+			else 
+				res.append(format(num.doubleValue()));
+		}
+		res.append("}");
+		return res.toString().replace(Character.toString(THIN_SPACE),"");
+	}
+	
+	/**
+	 * Uses the SIUnits package to format a double in LaTeX format.
+	 * 
+	 * @param num
+	 * @return String in LaTeX format
+	 */
+	public String formatLaTeX(final double num) {
+		StringBuffer res=new StringBuffer();
+		res.append("\\num{");
+		res.append(format(num));
+		res.append("}");
+		return res.toString().replace(Character.toString(THIN_SPACE),"");
+	}
+	
 	public String format(final Number num) {
 		if (num instanceof UncertainValue) {
 			final UncertainValue uv = (UncertainValue) num;

@@ -13,7 +13,7 @@ import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.Normalize;
+import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.Element;
 
 /**
@@ -144,18 +144,14 @@ final class MixtureToMassFractions //
 	@Override
 	public RealVector optimized(final RealVector point) {
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		final List<MaterialMassFraction> mmfts = new ArrayList<>();
-		for (final Object inTag : getInputLabels())
-			if (inTag instanceof MaterialMassFraction)
-				mmfts.add((MaterialMassFraction) inTag);
 		for (final Element elm : mNewMaterial.getElementSet()) {
 			double tmpCz = 0.0, tmpAz = 0.0;
 			final MaterialLabel.MassFraction resCz = MaterialLabel.buildMassFractionTag(mNewMaterial, elm);
 			final MaterialLabel.AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (final MaterialMassFraction mmft : mmfts) {
-				final Material mat = mmft.getMaterial();
+			for (final Object mmft : mInputs) {
+				final Material mat = ((MaterialMassFraction) Normalize.unwrap(mmft)).getMaterial();
 				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
 				// The material may or may not have the element...
 				final double mmf = getValue(mmft, point);

@@ -296,7 +296,8 @@ public class CompositionTest2 {
 	}
 
 	@Test
-	public void testAtomicFractionMC() throws ArgumentException {
+	public void testAtomicFractionMC() //
+			throws ArgumentException {
 		final Map<Element, UncertainValue> atFracs = new HashMap<>();
 		atFracs.put(Element.Oxygen, new UncertainValue(0.593981, "dO", 0.05));
 		atFracs.put(Element.Magnesium, new UncertainValue(0.106595, "dMg", 0.005));
@@ -435,10 +436,10 @@ public class CompositionTest2 {
 
 		r.inBrowser(Mode.VERBOSE);
 	}
-	
-	@Test
-	public void testAnorthoclase() throws ArgumentException, ParseException, IOException {
 
+	@Test
+	public void runAnorthoclase() //
+			throws ArgumentException, ParseException, IOException {
 		final String name = "Anorthoclase";
 		final Map<Composition, Number> mcn = new HashMap<>();
 		final Composition sanidine = Composition.parse("K(AlSi3O8)");
@@ -446,16 +447,23 @@ public class CompositionTest2 {
 		final Composition albite = Composition.parse("Na(AlSi3O8)");
 		mcn.put(albite, new UncertainValue(0.60, 0.01));
 		final Composition mix = Composition.combine(name, mcn, true);
-		
+
 		final Report r = new Report("Anorthoclase");
 		r.addHeader("Mixture");
+		r.addSubHeader("Jacobian");
 		r.add(albite);
 		r.add(sanidine);
 		r.add(mix);
+		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
+		r.addSubHeader("Delta");
+		final Composition dmix = Composition.combineDelta(name, mcn, true);
+		r.add(dmix);
+		r.addImage(
+				UncertainValues.compareAsBitmap(UncertainValues.extract(dmix.getLabels(), mix), dmix,
+						new LinearToColor(1.0, Color.blue, Color.red), 8),
+				"Comparing analytical with finite difference.");
+
 		r.inBrowser(Mode.VERBOSE);
 	}
-	
-	
-	
-	
+
 }

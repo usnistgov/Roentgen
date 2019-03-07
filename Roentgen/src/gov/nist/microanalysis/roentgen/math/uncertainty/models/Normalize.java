@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.math.uncertainty;
+package gov.nist.microanalysis.roentgen.math.uncertainty.models;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +8,10 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
+
+import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 
 /**
  * Normalize takes the input values and normalizes them to a sum of unity.
@@ -24,6 +28,10 @@ public class Normalize //
 
 		private Normalized(Object obj) {
 			super("N", obj);
+		}
+		
+		public Object getBase() {
+			return getObject1();
 		}
 	}
 
@@ -63,7 +71,7 @@ public class Normalize //
 	 */
 	public static Object unwrap(Object obj) {
 		if (obj instanceof Normalized)
-			return ((Normalized) obj).getObject1();
+			return ((Normalized) obj).getBase();
 		else
 			return obj;
 	}
@@ -90,9 +98,10 @@ public class Normalize //
 			RealVector resV = new ArrayRealVector(dim);
 			for (int r = 0; r < dim; ++r) {
 				final double a = point.getEntry(r);
+				final double n = a / norm;
 				if (a > 0.0) {
-					final double dnadx = -a / (norm * norm);
-					final double dnada = 1.0 / norm + dnadx;
+					final double dnadx = -(n * n) / a;
+					final double dnada = (n * (1.0 - n)) / a;
 					for (int c = 0; c < dim; ++c)
 						j.setEntry(r, c, r == c ? dnada : dnadx);
 				}

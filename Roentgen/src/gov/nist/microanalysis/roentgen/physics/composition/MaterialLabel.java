@@ -15,7 +15,8 @@ import gov.nist.microanalysis.roentgen.physics.Element;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class MaterialLabel extends BaseLabel<Element, Material, Object> {
+public class MaterialLabel //
+		extends BaseLabel<Element, Material, Object> {
 
 	private MaterialLabel(final String prefix, final Material material, final Element elm) {
 		super(prefix, elm, material);
@@ -47,6 +48,18 @@ public class MaterialLabel extends BaseLabel<Element, Material, Object> {
 		return res;
 	}
 
+	public static class IntermediateMassFraction //
+			extends MaterialLabel {
+		private IntermediateMassFraction(final Material mat, final Element elm) {
+			super("C<sub>i</sub>", mat, elm);
+		}
+	}
+
+	public static IntermediateMassFraction buildIntermediateMFTag(final Material mat, final Element elm) {
+		return new IntermediateMassFraction(mat, elm);
+	}
+
+
 	public static class AtomType extends MaterialLabel {
 		private AtomType(final String name, final Material mat, final Element elm) {
 			super(name, mat, elm);
@@ -55,7 +68,7 @@ public class MaterialLabel extends BaseLabel<Element, Material, Object> {
 
 	public static class AtomicWeight extends MaterialLabel {
 		private AtomicWeight(final Material mat, final Element elm) {
-			super("A", mat, elm);
+			super("A<sub>Z</sub>", mat, elm);
 		}
 	}
 
@@ -68,7 +81,7 @@ public class MaterialLabel extends BaseLabel<Element, Material, Object> {
 
 	public static class AtomFraction extends AtomType {
 		private AtomFraction(final Material mat, final Element elm) {
-			super("f<sub>Atom</sub>", mat, elm);
+			super("A", mat, elm);
 		}
 	}
 
@@ -166,6 +179,51 @@ public class MaterialLabel extends BaseLabel<Element, Material, Object> {
 		for (final Element elm : mat.getElementSet())
 			res.add(new AtomFraction(mat, elm));
 		return res;
+	}
+
+	public static class MeanZTag extends BaseLabel<Material, Object, Object> {
+
+		public MeanZTag(final Material mat) {
+			super("MeanZ", mat);
+		}
+
+		public Material getMaterial() {
+			return getObject1();
+		}
+	}
+
+	public static Object buildMeanAtomicNumberTag(final Material mat) {
+		return new MeanZTag(mat);
+	}
+
+	public static class MeanATag extends BaseLabel<Material, Object, Object> {
+
+		public MeanATag(final Material mat) {
+			super("MeanA", mat);
+		}
+
+		public Material getMaterial() {
+			return getObject1();
+		}
+	}
+
+	public static Object buildMeanAtomicWeighTag(final Material mat) {
+		return new MeanATag(mat);
+	}
+
+	public static class AnalyticalTotalTag extends BaseLabel<Material, Object, Object> {
+
+		private AnalyticalTotalTag(final Material mat) {
+			super("Total", mat);
+		}
+
+		public Material getMaterial() {
+			return getObject1();
+		}
+	}
+
+	public static Object buildAnalyticalTotalTag(final Material mat) {
+		return new AnalyticalTotalTag(mat);
 	}
 
 }

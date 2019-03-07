@@ -18,7 +18,7 @@ import java.text.NumberFormat;
 public class HalfUpFormat extends DecimalFormat {
 
 	private static final long serialVersionUID = -2503012670987467760L;
-	private final static char MEDIUM_MATHEMATICAL_SPACE = '\u2006';
+	public final static char MEDIUM_MATHEMATICAL_SPACE = '\u2006';
 
 	/**
 	 * Like DecimalFormat but rounds up
