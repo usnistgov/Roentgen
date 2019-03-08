@@ -15,7 +15,6 @@ import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
@@ -29,7 +28,7 @@ public class CompExamples {
 			throws ArgumentException, ParseException, IOException {
 		runAnorthoclase();
 		runStainless1();
-		if (false) {
+		if (true) {
 			runNormalization1();
 			runNormalization2();
 			runNormalization3();
@@ -68,8 +67,8 @@ public class CompExamples {
 	public void runNormalization1() //
 			throws IOException, ArgumentException {
 		final Map<Element, Number> men = new HashMap<>();
-		men.put(Element.Gold, new UncertainValue(0.60, 0.06));
-		men.put(Element.Silver, new UncertainValue(0.40, 0.04));
+		men.put(Element.Gold, new UncertainValue(0.595, 0.012));
+		men.put(Element.Silver, new UncertainValue(0.402, 0.009));
 		final Composition comp = Composition.massFraction("Au(60)Ag", men);
 		final Report r = new Report(comp.toString());
 		r.addHeader(comp.toHTML(Mode.TERSE));
@@ -80,6 +79,25 @@ public class CompExamples {
 		r.addSubHeader("Verbose");
 		r.add(comp, Mode.VERBOSE);
 		r.inBrowser(Mode.VERBOSE);
+		
+		WriteToLaTeX wtl = new WriteToLaTeX();
+		try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\Au(60)Ag.tex")) {
+			pw.write("% TERSE\n");
+			wtl.write(pw, comp, WriteToLaTeX.Mode.TERSE);
+			pw.write("\n\n% NORMAL\n");
+			wtl.write(pw, comp, WriteToLaTeX.Mode.NORMAL);
+			pw.write("\n\n% VERBOSE\n");
+			wtl.write(pw, comp, WriteToLaTeX.Mode.VERBOSE);
+			pw.write("\n\n% CUSTOM\n");
+			List<Object> labels = new ArrayList<>();
+			labels.addAll(MaterialLabel.buildMassFractionTags(comp.getMaterial()));
+			// labels.addAll(Normalize.buildNormalized(MaterialLabel.buildMassFractionTags(comp.getMaterial())));
+			// labels.addAll(MaterialLabel.buildAtomFractionTags(comp.getMaterial()));
+			// labels.add(MaterialLabel.buildAnalyticalTotalTag(comp.getMaterial()));
+			// labels.add(MaterialLabel.buildMeanAtomicNumberTag(comp.getMaterial()));
+			// labels.add(MaterialLabel.buildMeanAtomicWeighTag(comp.getMaterial()));
+			wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);;
+		}
 	}
 
 	public void runNormalization2() //
@@ -142,13 +160,13 @@ public class CompExamples {
 		men.put(Element.Chromium, new UncertainValue(0.19, 0.01));
 		men.put(Element.Nickel, new UncertainValue(0.0925, 0.0125));
 		final Report r = new Report("Element-by-Difference");
+		WriteToLaTeX wtl = new WriteToLaTeX();
 		try {
 			{
 				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap(),
 						false);
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
-				WriteToLaTeX wtl = new WriteToLaTeX();
 				try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\SS304.tex")) {
 					pw.write("% TERSE\n");
 					wtl.write(pw, comp, WriteToLaTeX.Mode.TERSE);
@@ -173,6 +191,31 @@ public class CompExamples {
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 			}
+			{
+				r.addHeader("Naive - mass fraction model");
+				men.put(Element.Iron, new UncertainValue(0.7175,0.0160));
+				final Composition comp = Composition.massFraction(mat, men);
+				r.add(comp, Mode.NORMAL);
+				r.add(comp, Mode.VERBOSE);
+				try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\SS304_naive.tex")) {
+					pw.write("% TERSE\n");
+					wtl.write(pw, comp, WriteToLaTeX.Mode.TERSE);
+					pw.write("\n\n% NORMAL\n");
+					wtl.write(pw, comp, WriteToLaTeX.Mode.NORMAL);
+					pw.write("\n\n% VERBOSE\n");
+					wtl.write(pw, comp, WriteToLaTeX.Mode.VERBOSE);
+					pw.write("\n\n% CUSTOM\n");
+					List<Object> labels = new ArrayList<>();
+					labels.addAll(MaterialLabel.buildMassFractionTags(comp.getMaterial()));
+					// labels.addAll(Normalize.buildNormalized(MaterialLabel.buildMassFractionTags(comp.getMaterial())));
+					// labels.addAll(MaterialLabel.buildAtomFractionTags(comp.getMaterial()));
+					// labels.add(MaterialLabel.buildAnalyticalTotalTag(comp.getMaterial()));
+					// labels.add(MaterialLabel.buildMeanAtomicNumberTag(comp.getMaterial()));
+					// labels.add(MaterialLabel.buildMeanAtomicWeighTag(comp.getMaterial()));
+					wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);;
+				}
+			}
+			
 		} finally
 		{
 			r.inBrowser(Mode.VERBOSE);

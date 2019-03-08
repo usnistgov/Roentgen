@@ -168,7 +168,7 @@ public class WriteToLaTeX {
 	}
 
 	private String stripName(final String label) {
-		return label.substring(label.indexOf('['), label.length() - 1);
+		return label.substring(label.indexOf('[')+1, label.length() - 1);
 	}
 
 	public BasicNumberFormat getMassFractionFormat() {
