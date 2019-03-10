@@ -357,6 +357,25 @@ public class Composition //
 		}
 		return null;
 	}
+	
+	public static Composition genericBuilder(//
+			Material mat, //
+			Map<Element, Number> massFracs, //
+			Map<Element,Number> atomicWeights, //
+			LabeledMultivariateJacobianFunction builder //
+			) throws ArgumentException {
+		Map<Object, Number> valMap = new HashMap<>();
+		for(Element elm : massFracs.keySet())
+			valMap.put(MaterialLabel.buildMassFractionTag(mat, elm), massFracs.get(elm));
+		for(Element elm : mat.getElementSet()) {
+			final Number aw = atomicWeights.getOrDefault(elm, elm.getAtomicWeight());
+			valMap.put(MaterialLabel.buildAtomicWeightTag(mat, elm), aw);
+		}
+		UncertainValues uvs = new UncertainValues(valMap);
+		UncertainValues eval = UncertainValues.propagate(builder, uvs);
+		return new Composition(Representation.MassFraction, mat, UncertainValues.combine(eval, uvs));
+	}	
+	
 
 	public static Composition massFraction(final String html, //
 			final List<Element> elms, //
@@ -810,7 +829,7 @@ public class Composition //
 		final Map<Object, Number> tmp = new HashMap<>();
 		for (final Element elm : men.keySet())
 			if (!elm.equals(diffElm))
-				tmp.put(MaterialLabel.buildIntermediateMFTag(mat, elm), men.get(elm));
+				tmp.put(MaterialLabel.buildMassFractionTag(mat, elm), men.get(elm));
 		for (final Element elm : mat.getElementSet())
 			tmp.put(MaterialLabel.buildAtomicWeightTag(mat, elm), weights.getOrDefault(elm, elm.getAtomicWeight()));
 		final UncertainValues inp = new UncertainValues(tmp);

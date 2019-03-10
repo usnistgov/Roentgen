@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -173,9 +172,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, //
-						MatrixCorrectionModel2.allVariates(), //
-						Collections.emptyList());
+						lkr, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios
@@ -400,9 +397,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, //
-						MatrixCorrectionModel2.allVariates(), //
-						Collections.emptyList());
+						lkr, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios
@@ -631,8 +626,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, MatrixCorrectionModel2.allVariates(), //
-						Collections.emptyList());
+						lkr, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios
@@ -865,8 +859,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, MatrixCorrectionModel2.allVariates(), //
-						Collections.emptyList());
+						lkr, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValues input = mcm.buildInput(unk);
 				// Calculate the optimal k-ratios

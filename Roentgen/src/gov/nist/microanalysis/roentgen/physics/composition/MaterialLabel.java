@@ -48,18 +48,6 @@ public class MaterialLabel //
 		return res;
 	}
 
-	public static class IntermediateMassFraction //
-			extends MaterialLabel {
-		private IntermediateMassFraction(final Material mat, final Element elm) {
-			super("C<sub>i</sub>", mat, elm);
-		}
-	}
-
-	public static IntermediateMassFraction buildIntermediateMFTag(final Material mat, final Element elm) {
-		return new IntermediateMassFraction(mat, elm);
-	}
-
-
 	public static class AtomType extends MaterialLabel {
 		private AtomType(final String name, final Material mat, final Element elm) {
 			super(name, mat, elm);

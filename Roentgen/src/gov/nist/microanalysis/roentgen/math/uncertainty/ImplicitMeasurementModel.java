@@ -22,7 +22,7 @@ import org.apache.commons.math3.util.Pair;
  *
  * <p>
  * The values associated with the output labels are passed in as constant values
- * to conform to ensure that the input and output labels are disjoint.
+ * to ensure that the input and output labels are disjoint.
  * </p>
  *
  *
@@ -93,6 +93,10 @@ public class ImplicitMeasurementModel //
 	public String toString() {
 		return "Implicit[" + mHFunction + "]";
 	}
+	
+	public HModel getHModel() {
+		return mHFunction;
+	}
 
 	/**
 	 * Implements value(...) for an implicit measurement model by evaluating the
@@ -118,6 +122,7 @@ public class ImplicitMeasurementModel //
 		final List<? extends Object> outputLabels = getOutputLabels();
 		for (int c = 0; c < outDim; ++c) {
 			final int cIdx = hIn.indexOf(outputLabels.get(c));
+			assert cIdx >= 0 : outputLabels.get(c);
 			for (int r = 0; r < outDim; ++r)
 				mcy.setEntry(r, c, hrm.getEntry(r, cIdx));
 		}

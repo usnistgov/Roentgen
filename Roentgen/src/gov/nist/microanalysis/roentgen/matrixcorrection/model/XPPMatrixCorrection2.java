@@ -2129,7 +2129,7 @@ public class XPPMatrixCorrection2 //
 			final Set<CharacteristicXRay> allCxr = new HashSet<>();
 			comps.put(estUnknown, new CharacteristicXRaySet());
 			for (final KRatioLabel krl : mKRatios) {
-				assert (estUnknown == null) || estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
+				// assert (estUnknown == null) || estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
 				comps.get(estUnknown).addAll(krl.getXRaySet());
 				if (krl.getUnknown().hasCoating() && (isSet(Variate.Coating) == withUnc)) {
 					final Composition comp = krl.getUnknown().getCoating().getComposition();
