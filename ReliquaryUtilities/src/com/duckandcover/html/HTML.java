@@ -35,14 +35,17 @@ import com.duckandcover.html.IToHTML.Mode;
 public class HTML {
 
 	public static String escape(final String html) {
-		if (html.startsWith("<html>") || html.startsWith("<HTML>"))
-			return html.substring(6);
-		else
-			return StringEscapeUtils.escapeHtml4(html);
+		if (html != null) {
+			if (html.startsWith("<html>") || html.startsWith("<HTML>"))
+				return html.substring(6);
+			else
+				return StringEscapeUtils.escapeHtml4(html);
+		} else
+			return "NULL";
 	}
 
 	/**
-	 * Prepend "<html>" onto this string if not already.  
+	 * Prepend "<html>" onto this string if not already.
 	 * 
 	 * @param html
 	 * @return String
@@ -54,7 +57,7 @@ public class HTML {
 	public static boolean isMarked(final String html) {
 		return html.startsWith("<html>") || html.startsWith("<HTML>");
 	}
-	
+
 	public static String removeMark(final String html) {
 		return isMarked(html) ? html.substring(6) : html;
 	}

@@ -334,6 +334,7 @@ public class Composition //
 		assert elms.size() == vars.getDimension();
 		assert mat.getElementSet().containsAll(elms);
 		assert elms.containsAll(mat.getElementSet());
+		assert elms.size()==mat.getElementSet().size();
 		final Map<MassFraction, Number> meu = new HashMap<>();
 		for (int i = 0; i < elms.size(); ++i)
 			meu.put(MaterialLabel.buildMassFractionTag(mat, elms.get(i)),

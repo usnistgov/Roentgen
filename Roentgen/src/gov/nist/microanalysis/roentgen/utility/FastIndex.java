@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,11 +23,11 @@ public class FastIndex<H> extends ArrayList<H> {
 		this(Collections.emptyList());
 	}
 
-	public FastIndex(final List<H> list) {
-		super(list);
+	public FastIndex(final Collection<H> list) {
+		super();
 		mIndex = new HashMap<>();
-		for (int i = 0; i < list.size(); ++i)
-			mIndex.put(list.get(i), i);
+		for (final H h : list)
+			add(h);
 	}
 
 	@Override
@@ -40,11 +39,14 @@ public class FastIndex<H> extends ArrayList<H> {
 
 	@Override
 	public boolean add(final H obj) {
-		final int len = super.size();
-		if (super.add(obj)) {
-			assert super.indexOf(obj) == len;
-			mIndex.put(obj, len);
-			return true;
+		if (indexOf(obj) == -1) {
+			final int len = super.size();
+			if (super.add(obj)) {
+				assert super.indexOf(obj) == len : obj + " " + super.indexOf(obj) + "!=" + len;
+				mIndex.put(obj, len);
+				return true;
+			} else
+				return false;
 		} else
 			return false;
 	}
@@ -52,26 +54,20 @@ public class FastIndex<H> extends ArrayList<H> {
 	@Override
 	public boolean addAll(final Collection<? extends H> hs) {
 		boolean added = false;
-		for (H h : hs)
+		for (final H h : hs)
 			added |= add(h);
 		return added;
 	}
 
 	@Override
 	public H set(final int index, final H element) {
-		// Remove the element at index and replace with H
-		H old = super.set(index,element);
-		mIndex.remove(old);
-		mIndex.put(element, index);
-		return old;
+		// It is not possible to support this in a self-consistent manner
+		throw new UnsupportedOperationException("This method is not supported");
 	}
 
 	@Override
 	public void add(final int index, final H element) {
-		// Add and reindex...
-		super.add(index,element);
-		mIndex.clear();
-		for(int i=0;i<super.size();++i)
-			mIndex.put(super.get(i), i);
+		// It is not possible to support this in a self-consistent manner
+		throw new UnsupportedOperationException("This method is not supported");
 	}
 }
