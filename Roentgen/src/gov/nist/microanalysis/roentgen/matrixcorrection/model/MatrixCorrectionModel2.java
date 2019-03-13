@@ -176,7 +176,7 @@ abstract public class MatrixCorrectionModel2 //
 			final List<LabeledMultivariateJacobianFunction> steps, //
 			final Set<Variate> variates //
 	) throws ArgumentException {
-		super(name, steps, false);
+		super(name, steps);
 		mKRatios = kratios;
 		mVariates = Collections.unmodifiableSet(new TreeSet<>(variates));
 		mUnknownMaterial = mKRatios.iterator().next().getUnknown().getMaterial(); 

@@ -24,7 +24,6 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
-import gov.nist.microanalysis.roentgen.matrixcorrection.Iteration;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
@@ -199,7 +198,6 @@ public class KRatioCorrectionModelTest {
 			report.add(uvs);
 			report.addSubHeader("Function");
 			report.add(krcm);
-			// UncertainValuesBase res = UncertainValues.propagate(ms, msInp);
 			final UncertainValuesCalculator eval = new UncertainValuesCalculator(krcm, uvs);
 			report.addSubHeader("Jacobian");
 			report.add(eval);
@@ -444,11 +442,10 @@ public class KRatioCorrectionModelTest {
 		final UncertainValuesBase kratios = new UncertainValues(vals);
 
 		List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final KRatioCorrectionModel2 krc = KRatioCorrectionModel2.buildXPPModel(//
+		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(//
 				vals.keySet(), preComps, MatrixCorrectionModel2.defaultVariates());
-		final Iteration iter = new Iteration(krc);
 		final UncertainValuesBase uvs = iter.compute(kratios);
-		final Composition comp = Composition.massFraction(krc.getUnknownMaterial(), uvs);
+		final Composition comp = Composition.massFraction(iter.getUnknownMaterial(), uvs);
 
 		final Report rep = new Report("K240 Iteration");
 		rep.addSubHeader("Unknown");
@@ -522,11 +519,10 @@ public class KRatioCorrectionModelTest {
 		
 		List<LabeledMultivariateJacobianFunction> preComps = Collections.singletonList(elmByDiff);
 		
-		final KRatioCorrectionModel2 krc = KRatioCorrectionModel2.buildXPPModel(//
+		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(//
 				vals.keySet(), preComps, MatrixCorrectionModel2.defaultVariates());
-		final Iteration iter = new Iteration(krc);
 		final UncertainValuesBase uvs = iter.compute(kratios);
-		final Composition comp = Composition.massFraction(krc.getUnknownMaterial(), uvs);
+		final Composition comp = Composition.massFraction(iter.getUnknownMaterial(), uvs);
 
 		final Report rep = new Report("K240 Iteration - O by differences");
 		rep.addSubHeader("Unknown");

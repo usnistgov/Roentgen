@@ -19,9 +19,11 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  */
 public class TrimmedNamedMultivariateJacobianFunction //
-		extends LabeledMultivariateJacobianFunction {
+		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 	private final LabeledMultivariateJacobianFunction mBase;
+	private RealVector mBaseInputs;
+	
 
 	/**
 	 * @param base         The base {@link LabeledMultivariateJacobianFunction}
@@ -45,34 +47,71 @@ public class TrimmedNamedMultivariateJacobianFunction //
 			throw new ArgumentException("Some of the requested output labels are not in the base function's outputs.");
 		mBase = base;
 	}
+	
+	/**
+	 * The set of inputs from which the full set of inputs required
+	 * by the base {@link LabeledMultivariateJacobianFunction} is
+	 * constructed.  
+	 * 
+	 * @param point
+	 */
+	public void setBaseInputs(RealVector point) {
+		assert point.getDimension()==mBase.getInputDimension();
+		mBaseInputs = point.copy();
+	}
+	
+	public void setBaseInputs(UncertainValuesBase uvb) {
+		RealVector basePt = new ArrayRealVector(mBase.getInputDimension());
+		for(int i=0;i<mBase.getInputDimension();++i) {
+			Object lbk = mBase.getInputLabel(i);
+			basePt.setEntry(i, uvb.getEntry(lbk));
+		}
+		setBaseInputs(basePt);
+	}
+	
+	private final RealVector buildBaseInput(final RealVector point) {
+		RealVector basePt = mBaseInputs.copy();
+		assert point.getDimension()==getInputDimension();
+		for(int i=0;i<getInputDimension();++i) {
+			Object lbl = getInputLabel(i);
+			basePt.setEntry(mBase.inputIndex(lbl), point.getEntry(i));
+		}
+		return basePt;	
+	}
+	
 
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
-		final List<? extends Object> baseInputs = mBase.getInputLabels();
-		final RealVector basePoint = new ArrayRealVector(baseInputs.size());
-		for (int i = 0; i < baseInputs.size(); ++i) {
-			final int idx = inputIndex(baseInputs.get(i));
-			assert !((idx == -1) && (!getConstants().containsKey(baseInputs.get(i))));
-			final double value = idx != -1 ? point.getEntry(idx) : getConstant(baseInputs.get(i));
-			basePoint.setEntry(i, value);
-		}
+		final RealVector basePoint = buildBaseInput(point);
 		final Pair<RealVector, RealMatrix> tmp = mBase.evaluate(basePoint);
+		final RealVector rv1 = tmp.getFirst();
+		final RealMatrix rm1 = tmp.getSecond();
 		final List<? extends Object> outLabels = getOutputLabels();
-		final int[] outIdx = new int[outLabels.size()];
-		for (int i = 0; i < outIdx.length; ++i)
-			outIdx[i] = outputIndex(outLabels.get(i));
+		final int[] rIdx = new int[outLabels.size()];
+		for (int i = 0; i < rIdx.length; ++i)
+			rIdx[i] = outputIndex(outLabels.get(i));
 		final List<? extends Object> inLabels = getInputLabels();
-		final int[] inIdx = new int[inLabels.size()];
-		for (int i = 0; i < inIdx.length; ++i)
-			inIdx[i] = inputIndex(inLabels.get(i));
-		final RealVector rv = new ArrayRealVector(outIdx.length);
-		final RealMatrix rm = MatrixUtils.createRealMatrix(outIdx.length, inIdx.length);
-		for (int r = 0; r < outIdx.length; ++r) {
-			rv.setEntry(r, tmp.getFirst().getEntry(outIdx[r]));
-			for (int c = 0; c < inIdx.length; ++c)
-				rm.setEntry(r, c, tmp.getSecond().getEntry(outIdx[r], inIdx[c]));
+		final int[] cIdx = new int[inLabels.size()];
+		for (int i = 0; i < cIdx.length; ++i)
+			cIdx[i] = inputIndex(inLabels.get(i));
+		final RealVector rv2 = new ArrayRealVector(rIdx.length);
+		final RealMatrix rm2 = MatrixUtils.createRealMatrix(rIdx.length, cIdx.length);
+		for (int r = 0; r < rIdx.length; ++r) {
+			rv2.setEntry(r, rv1.getEntry(rIdx[r]));
+			for (int c = 0; c < cIdx.length; ++c)
+				rm2.setEntry(r, c, rm1.getEntry(rIdx[r], cIdx[c]));
 		}
-		return Pair.create(rv, rm);
+		return Pair.create(rv2, rm2);
+	}
+
+	@Override
+	public RealVector optimized(RealVector point) {
+		final RealVector basePoint = buildBaseInput(point);
+		final RealVector rv1 = mBase.compute(basePoint);
+		final RealVector rv = new ArrayRealVector(getOutputDimension());
+		for (int r = 0; r < rv.getDimension(); ++r)
+			rv.setEntry(r, rv1.getEntry(outputIndex(getOutputLabel(r))));
+		return rv;
 	}
 
 }
