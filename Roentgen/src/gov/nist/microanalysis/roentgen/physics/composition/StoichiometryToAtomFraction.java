@@ -65,5 +65,9 @@ public class StoichiometryToAtomFraction //
 		}
 		return vals;
 	}
+	
+	public String toString() {
+		return "Stoichiometry-to-Atom Fraction";
+	}
 
 }

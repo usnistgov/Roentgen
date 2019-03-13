@@ -15,7 +15,7 @@ import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
 /**
  * A simple class for facilitating the evaluation of an uncertainty problem
  * using a Monte Carlo approach. The problem is defined by a
- * {@link LabeledMultivariateJacobianFunction}. A {@link UncertainValues} object
+ * {@link LabeledMultivariateJacobianFunction}. A {@link UncertainValuesBase} object
  * provides the initial values and associated uncertainties. A
  * {@link MultivariateRealDistribution} object or the default
  * {@link SafeMultivariateNormalDistribution} object provides the random
@@ -28,7 +28,7 @@ public class MCPropagator {
 	private final LabeledMultivariateJacobianFunction mFunction;
 	private final MultivariateRealDistribution mDistribution;
 	private final Constraint[] mConstraints;
-	private final UncertainValues mValues;
+	private final UncertainValuesBase mValues;
 	private final EstimateUncertainValues mOutputs;
 	private final EstimateUncertainValues mInputs;
 
@@ -101,7 +101,7 @@ public class MCPropagator {
 		return res;
 	}
 
-	private static Constraint[] buildSigma(final double sigma, final UncertainValues uv) {
+	private static Constraint[] buildSigma(final double sigma, final UncertainValuesBase uv) {
 		final int n = uv.getDimension();
 		final Constraint[] res = new Constraint[n];
 		for (int i = 0; i < n; ++i) {
@@ -163,7 +163,7 @@ public class MCPropagator {
 	 */
 	private MCPropagator( //
 			final LabeledMultivariateJacobianFunction nmvjf, //
-			final UncertainValues inputs, //
+			final UncertainValuesBase inputs, //
 			final Constraint[] constraints, //
 			final MultivariateRealDistribution mrd//
 	) {
@@ -188,7 +188,7 @@ public class MCPropagator {
 	 */
 	public MCPropagator( //
 			final LabeledMultivariateJacobianFunction nmvjf, //
-			final UncertainValues uv, //
+			final UncertainValuesBase uv, //
 			final MultivariateRealDistribution mrd //
 	) {
 		this(nmvjf, uv, buildNone(uv.getDimension()), mrd);
@@ -205,7 +205,7 @@ public class MCPropagator {
 	 * @param inputs The input values and associated covariance matrix in the same
 	 *               order as the nmvjf input labels.
 	 */
-	public MCPropagator(final LabeledMultivariateJacobianFunction nmvjf, final UncertainValues uv) {
+	public MCPropagator(final LabeledMultivariateJacobianFunction nmvjf, final UncertainValuesBase uv) {
 		this(nmvjf, uv, buildNone(uv.getDimension()),
 				new SafeMultivariateNormalDistribution(uv.getValues(), uv.getCovariances()));
 		assert nmvjf.getInputLabels().equals(uv.getLabels());
@@ -225,7 +225,7 @@ public class MCPropagator {
 	 */
 	public MCPropagator( //
 			final LabeledMultivariateJacobianFunction nmvjf, //
-			final UncertainValues uv, //
+			final UncertainValuesBase uv, //
 			final double sigma, //
 			final MultivariateRealDistribution mrd //
 	) {
@@ -243,7 +243,7 @@ public class MCPropagator {
 	 * @param sigma  Constrain the inputs to within sigma of the mean
 	 */
 
-	public MCPropagator(final LabeledMultivariateJacobianFunction nmvjf, final UncertainValues uv, final double sigma) {
+	public MCPropagator(final LabeledMultivariateJacobianFunction nmvjf, final UncertainValuesBase uv, final double sigma) {
 		this(nmvjf, uv, sigma, new SafeMultivariateNormalDistribution(uv.getValues(), uv.getCovariances()));
 	}
 
@@ -293,7 +293,7 @@ public class MCPropagator {
 	 *
 	 * @return {@link UncertainValues}
 	 */
-	public UncertainValues getInputDistribution() {
+	public UncertainValuesBase getInputDistribution() {
 		return mValues;
 	}
 

@@ -61,7 +61,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 *
 	 * @param labels
 	 */
-	public void validateLabels(final List<? extends Object> labels) {
+	private void validateLabels(final List<? extends Object> labels) {
 		for (int i = 0; i < labels.size(); ++i)
 			for (int j = i + 1; j < labels.size(); ++j)
 				if (labels.get(i).equals(labels.get(j)))
@@ -73,7 +73,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 			final List<? extends Object> outputLabels //
 	) {
 		validateLabels(inputLabels);
-		assert inputLabels != outputLabels;
+		// assert inputLabels != outputLabels;
 		mInputLabels = new FastIndex<>(inputLabels);
 		validateLabels(outputLabels);
 		mOutputLabels = new FastIndex<>(outputLabels);
@@ -246,7 +246,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
 	 * @throws ArgumentException
 	 */
-	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValues uvs)
+	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValuesBase uvs)
 			throws ArgumentException {
 		return getOutputValues(uvs, 1.0e-6);
 	}
@@ -261,7 +261,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * @throws ArgumentException
 	 */
 	public HashMap<? extends Object, UncertainValue> getOutputValues( //
-			final UncertainValues uvs, //
+			final UncertainValuesBase uvs, //
 			final double tol//
 	) throws ArgumentException {
 		final UncertainValues ordered = UncertainValues.build(this.getInputLabels(), uvs);
@@ -429,8 +429,10 @@ abstract public class LabeledMultivariateJacobianFunction //
 			pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
 			pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
 			final RealVector output0 = compute(pt0), output1 = compute(pt1);
-			for (int r = 0; r < getOutputDimension(); ++r)
-				rm.setEntry(r, c, (output0.getEntry(r) - output1.getEntry(r)) / deltaX);
+			for (int r = 0; r < getOutputDimension(); ++r) {
+				final double value = (output0.getEntry(r) - output1.getEntry(r)) / deltaX;
+				rm.setEntry(r, c, Double.isNaN(value) ? 0.0 : value);
+			}
 		}
 		return rm;
 	}

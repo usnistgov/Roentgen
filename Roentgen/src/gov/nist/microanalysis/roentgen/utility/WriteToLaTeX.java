@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -40,7 +40,7 @@ public class WriteToLaTeX {
 		TERSE, NORMAL, VERBOSE
 	};
 
-	public void write(final PrintWriter wr, final UncertainValues uvs, final BasicNumberFormat bnf,
+	public void write(final PrintWriter wr, final UncertainValuesBase uvs, final BasicNumberFormat bnf,
 			final List<Object> labels) {
 		wr.write("\\begin{equation}\n");
 		wr.write("\\begin{matrix}\n");

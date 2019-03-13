@@ -109,4 +109,8 @@ public class MassFractionToAtomFraction //
 		}
 		return vals;
 	}
+	
+	public String toString() {
+		return "Mass Fraction to Atom Fraction";
+	}
 }

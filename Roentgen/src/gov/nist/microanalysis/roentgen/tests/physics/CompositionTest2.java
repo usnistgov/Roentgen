@@ -8,9 +8,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,14 +24,13 @@ import com.duckandcover.html.Table;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.AtomFractionToMassFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.Composition.MixtureToComposition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialMassFraction;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -307,10 +304,6 @@ public class CompositionTest2 {
 		atFracs.put(Element.Iron, new UncertainValue(0.0308124, "dFe", 0.0012));
 		final Composition af = Composition.atomFraction("K412", atFracs);
 
-		final UncertainValues uv = af;
-		final UncertainValues mup = UncertainValues.propagateMC(new AtomFractionToMassFraction(af.getMaterial()), uv,
-				160000);
-
 		// From DTSA-II
 		assertEquals(0.4312, af.getMassFraction(Element.Oxygen).doubleValue(), 0.0001);
 		assertEquals(0.1176, af.getMassFraction(Element.Magnesium).doubleValue(), 0.0001);
@@ -320,8 +313,9 @@ public class CompositionTest2 {
 		assertEquals(0.0781, af.getMassFraction(Element.Iron).doubleValue(), 0.0001);
 
 		// Test MC against analytic
+		final UncertainValues mup = af.propagateMC(160000);
 		for (final Object label : af.massFractionTags())
-			assertEquals(af.getValue(label).uncertainty(), mup.getUncertainValue(label).uncertainty(), 0.001);
+			assertEquals(af.getValue(label).fractionalUncertainty(), mup.getUncertainValue(label).fractionalUncertainty(), 0.001);
 
 		if (mHTML) {
 			final Report rep = new Report("Atomic Fraction MC");
@@ -336,6 +330,12 @@ public class CompositionTest2 {
 				rep.addHTML(af.toHTML(Representation.MassFraction, Mode.VERBOSE));
 				rep.addSubHeader("VERBOSE - Monte Carlo");
 				rep.addHTML(mup.toHTML(Mode.VERBOSE, Composition.MASS_FRACTION_FORMAT));
+				
+				final ValueToLog3 v2l = new ValueToLog3(1.0);
+				final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
+				rep.addImage(af.reorder(mup.getLabels()).asCovarianceBitmap(8, v2l, l2c), "Jacobian");
+				rep.addImage(mup.asCovarianceBitmap(8, v2l, l2c), "Monte Carlo");
+				
 			}
 
 			catch (final Exception e) {
@@ -368,18 +368,13 @@ public class CompositionTest2 {
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
 		final Composition mix = Composition.combine(name, mcn, false);
 
-		final MixtureToComposition m2c = new MixtureToComposition(name, Material.convert(mcn.keySet()), false);
-		final List<UncertainValues> vs = new ArrayList<>();
-		for (final Composition comp : mcn.keySet())
-			vs.add(comp);
-		final Map<MaterialMassFraction, Number> aft = new HashMap<>();
-		for (final Map.Entry<Composition, Number> me : mcn.entrySet())
-			aft.put(new MaterialMassFraction(me.getKey().getMaterial()), me.getValue());
-		vs.add(new UncertainValues(aft));
-		final UncertainValues uvs = UncertainValues.combine(vs);
-		final UncertainValues inp = UncertainValues.extract(m2c.getInputLabels(), uvs);
-		final RealVector dinp = inp.getValues().mapMultiply(1.0e-3);
-		final UncertainValues dres = UncertainValues.propagateDeltaOrdered(m2c, inp, dinp);
+		final UncertainValues jres = UncertainValues.force(mix);
+
+		final RealVector dinp = mix.getValues().mapMultiply(0.0001);
+		mix.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
+		final UncertainValues dres = UncertainValues.force(mix);
+
+		final UncertainValues mcres = mix.propagateMC(160000);
 
 		for (final Object row : dres.getLabels()) {
 			final double mm = mix.getVariance(row);
@@ -416,11 +411,12 @@ public class CompositionTest2 {
 		final Composition uv = Composition.massFraction(name, res);
 
 		final Report r = new Report("Mixture");
-		r.addHeader("Mixture");
-		final UncertainValues mixD = UncertainValues.extract(dres.getLabels(), mix);
-		r.add(mixD);
+		r.addHeader("Jacobian");
+		r.add(jres, Mode.NORMAL);
 		r.addHeader("Delta");
-		r.add(dres);
+		r.add(dres, Mode.NORMAL);
+		r.addHeader("Monte Carlo");
+		r.add(mcres, Mode.NORMAL);
 		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
 		r.addHTML(mix.getAnalyticalTotal().toHTML(Mode.TERSE));
 		r.addHeader("Mass Fractions");
@@ -431,8 +427,8 @@ public class CompositionTest2 {
 		final ValueToLog3 v2l = new ValueToLog3(1.0);
 		final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
 		r.addImage(dres.asCovarianceBitmap(8, v2l, l2c), "Delta");
-		r.addImage(mixD.asCovarianceBitmap(8, v2l, l2c), "Mixture");
-		r.addImage(UncertainValues.compareAsBitmap(dres, mixD, v2l, 8), "Mass Fractions");
+		r.addImage(jres.asCovarianceBitmap(8, v2l, l2c), "Mixture");
+		r.addImage(UncertainValues.compareAsBitmap(dres, jres, v2l, 8), "Mass Fractions");
 
 		r.inBrowser(Mode.VERBOSE);
 	}

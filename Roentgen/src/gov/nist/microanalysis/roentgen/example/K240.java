@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,9 +20,11 @@ import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
@@ -29,6 +32,7 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
@@ -76,7 +80,7 @@ public class K240 {
 		return res;
 	}
 
-	private Map<String, Collection<? extends Object>> extractLabelBlocks(final UncertainValues res) {
+	private Map<String, Collection<? extends Object>> extractLabelBlocks(final UncertainValuesBase res) {
 		final Map<String, Collection<? extends Object>> labels = new TreeMap<>();
 		labels.put("[µ/ρ]", filter(res.getLabels(), "[μ/ρ]"));
 		labels.put("dz", filter(res.getLabels(), "dz"));
@@ -142,7 +146,7 @@ public class K240 {
 		final Composition si = Composition.parse("Si");
 
 		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
-		final Map<Integer, UncertainValues> resVals = new TreeMap<>();
+		final Map<Integer, UncertainValuesBase> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
 		List<? extends Object> outLabels = null, inLabels = null;
 		Map<String, Collection<? extends Object>> labels = null;
@@ -171,14 +175,15 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, mgoMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
+				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, MatrixCorrectionModel2.allVariates());
+						lkr, preComps, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValues input = mcm.buildInput(unk);
+				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
-				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
-						Method.Measured);
+				final UncertainValues krs = UncertainValues.force(//
+						KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Measured));
 				for (final Object label : krs.getLabels()) {
 					final KRatioLabel krl = (KRatioLabel) label;
 					final double v = krs.getEntry(krl);
@@ -213,25 +218,21 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = cfk.buildInput(unk, krs);
+				final UncertainValuesBase msInp = cfk.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class), krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
 					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
-				// cfk.trimOutputs(finalOutputs);
-				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
-				final UncertainValues res = UncertainValues.propagate(cfk, msInp);
+				final UncertainValuesCalculator res = UncertainValuesBase.propagate(cfk, msInp);
 				labels = extractLabelBlocks(msInp);
 				if (ie0 % 5 == 0) {
 					initReport.addSubHeader("Inputs");
 					initReport.add(msInp.sort(), Mode.VERBOSE);
-					initReport.addSubHeader("Jacobian");
-					initReport.addHTML(eval.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 					initReport.addSubHeader("Output");
 					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 				}
-				outVals.put(ie0, eval.getOutputValues(msInp, labels, 0.0));
+				outVals.put(ie0, res.getOutputValues(labels, 0.0));
 				resVals.put(ie0, res);
 				if (ie0 == MIN_E)
 					for (final Object label : cfk.getOutputLabels())
@@ -312,7 +313,7 @@ public class K240 {
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
 						row.add(Table.td(bnf.format(resVals.get(ie0).getUncertainty(outTag))));
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-						final UncertainValues uvs = resVals.get(ie0);
+						final UncertainValuesBase uvs = resVals.get(ie0);
 						row.add(Table.td(bnf.format(100.0 * uvs.getUncertainty(outTag) / uvs.getEntry(outTag))));
 					}
 					valTable.addRow(row);
@@ -372,7 +373,7 @@ public class K240 {
 		final Composition benitoite = Composition.parse("BaTiSi3O9");
 
 		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
-		final Map<Integer, UncertainValues> resVals = new TreeMap<>();
+		final Map<Integer, UncertainValuesBase> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
 		List<? extends Object> outLabels = null, inLabels = null;
 		{
@@ -396,10 +397,11 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
+				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, MatrixCorrectionModel2.allVariates());
+						lkr, preComps, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValues input = mcm.buildInput(unk);
+				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -438,27 +440,24 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = cfk.buildInput(unk, krs);
+				final UncertainValuesBase msInp = cfk.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class), krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
 					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
-				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
-				final UncertainValues res = UncertainValues.propagate(cfk, msInp);
+				final UncertainValuesCalculator res = UncertainValuesBase.propagate(cfk, msInp);
 				final Map<String, Collection<? extends Object>> labels = extractLabelBlocks(msInp);
 				resVals.put(ie0, res);
 				if ((ie0 - MIN_E) % 5 == 0) {
 					initReport.addHeader("E<sub>0</sub> = " + ie0);
 					initReport.addSubHeader("Inputs");
 					initReport.add(msInp.sort(), Mode.VERBOSE);
-					initReport.addSubHeader("Jacobian");
-					initReport.addHTML(eval.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 					initReport.addSubHeader("Output");
 					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 				}
-				outVals.put(ie0, eval.getOutputValues(msInp, labels, 0.0));
+				outVals.put(ie0, res.getOutputValues(labels, 0.0));
 				if (ie0 == MIN_E) {
 					outLabels = cfk.getOutputLabels();
 					inLabels = new ArrayList<>(labels.keySet());
@@ -535,7 +534,7 @@ public class K240 {
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
 						row.add(Table.td(bnf.format(resVals.get(ie0).getUncertainty(outTag))));
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-						final UncertainValues uvs = resVals.get(ie0);
+						final UncertainValuesBase uvs = resVals.get(ie0);
 						row.add(Table.td(bnf.format(100.0 * uvs.getUncertainty(outTag) / uvs.getEntry(outTag))));
 					}
 					valTable.addRow(row);
@@ -598,7 +597,7 @@ public class K240 {
 		final Composition o = Composition.parse("O");
 
 		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
-		final Map<Integer, UncertainValues> resVals = new TreeMap<>();
+		final Map<Integer, UncertainValuesBase> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
 		List<? extends Object> outLabels = null, inLabels = null;
 		{
@@ -625,10 +624,11 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, oMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
+				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, MatrixCorrectionModel2.allVariates());
+						lkr, preComps, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValues input = mcm.buildInput(unk);
+				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -667,25 +667,22 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = cfk.buildInput(unk, krs);
+				final UncertainValuesBase msInp = cfk.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class), krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
 					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
-				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
-				final UncertainValues res = UncertainValues.propagate(cfk, msInp);
+				final UncertainValuesCalculator res = new UncertainValuesCalculator(cfk, msInp);
 				final Map<String, Collection<? extends Object>> labels = extractLabelBlocks(msInp);
 				if (ie0 % 5 == 0) {
 					initReport.addSubHeader("Inputs");
 					initReport.add(msInp.sort(), Mode.VERBOSE);
-					initReport.addSubHeader("Jacobian");
-					initReport.addHTML(eval.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 					initReport.addSubHeader("Output");
 					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 				}
-				outVals.put(ie0, eval.getOutputValues(msInp, labels, 0.0));
+				outVals.put(ie0, res.getOutputValues(labels, 0.0));
 				resVals.put(ie0, res);
 				if (ie0 == MIN_E)
 					for (final Object label : cfk.getOutputLabels())
@@ -768,7 +765,7 @@ public class K240 {
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
 						row.add(Table.td(bnf.format(resVals.get(ie0).getUncertainty(outTag))));
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-						final UncertainValues uvs = resVals.get(ie0);
+						final UncertainValuesBase uvs = resVals.get(ie0);
 						row.add(Table.td(bnf.format(100.0 * uvs.getUncertainty(outTag) / uvs.getEntry(outTag))));
 					}
 					valTable.addRow(row);
@@ -825,7 +822,7 @@ public class K240 {
 		final Composition std = Composition.massFraction("K240s", buildK240());
 
 		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
-		final Map<Integer, UncertainValues> resVals = new TreeMap<>();
+		final Map<Integer, UncertainValuesBase> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
 		List<? extends Object> outLabels = null, inLabels = null;
 		{
@@ -858,10 +855,11 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, oMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
+				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, MatrixCorrectionModel2.allVariates());
+						lkr, preComps, MatrixCorrectionModel2.allVariates());
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValues input = mcm.buildInput(unk);
+				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -900,25 +898,22 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValues msInp = cfk.buildInput(unk, krs);
+				final UncertainValuesBase msInp = cfk.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class), krs);
 
 				final Set<Object> finalOutputs = new HashSet<>();
 				for (final Object output : cfk.getOutputLabels())
 					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
-				final LabeledMultivariateJacobian eval = new LabeledMultivariateJacobian(cfk, msInp);
-				final UncertainValues res = UncertainValues.propagate(cfk, msInp);
+				final UncertainValuesCalculator res = UncertainValuesBase.propagate(cfk, msInp);
 				final Map<String, Collection<? extends Object>> labels = extractLabelBlocks(msInp);
 				if (ie0 % 5 == 0) {
 					initReport.addSubHeader("Inputs");
 					initReport.add(msInp.sort(), Mode.VERBOSE);
-					initReport.addSubHeader("Jacobian");
-					initReport.addHTML(eval.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 					initReport.addSubHeader("Output");
 					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
 				}
-				outVals.put(ie0, eval.getOutputValues(msInp, labels, 0.0));
+				outVals.put(ie0, res.getOutputValues(labels, 0.0));
 				resVals.put(ie0, res);
 				if (ie0 == MIN_E)
 					for (final Object label : cfk.getOutputLabels())
@@ -1001,7 +996,7 @@ public class K240 {
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0)
 						row.add(Table.td(bnf.format(resVals.get(ie0).getUncertainty(outTag))));
 					for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-						final UncertainValues uvs = resVals.get(ie0);
+						final UncertainValuesBase uvs = resVals.get(ie0);
 						row.add(Table.td(bnf.format(100.0 * uvs.getUncertainty(outTag) / uvs.getEntry(outTag))));
 					}
 					valTable.addRow(row);

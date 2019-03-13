@@ -3,7 +3,9 @@ package gov.nist.microanalysis.roentgen.physics.composition;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +29,7 @@ public class Material //
 		implements IToHTML {
 
 	private final SortedSet<Element> mElements;
+	private final Map<Element, Number> mAtomicWeights;
 	private final String mHTMLName;
 	private final Optional<Conductivity> mConductivity;
 
@@ -65,6 +68,7 @@ public class Material //
 		mElements = Collections.unmodifiableSortedSet(new TreeSet<>(elms));
 		mConductivity = Optional.ofNullable(conduct);
 		mHashCode = Objects.hash(mElements, mHTMLName, mConductivity);
+		mAtomicWeights=new HashMap<>();
 	}
 	
 
@@ -90,12 +94,20 @@ public class Material //
 	}
 
 	public String getHTMLName() {
-		return mHTMLName;
+		return mHTMLName.toString();
+	}
+	
+	public Number getAtomicWeight(Element elm) {
+		return mAtomicWeights.getOrDefault(elm, elm.getAtomicWeight());
+	}
+	
+	public void setAtomicWeight(Element elm, Number value) {
+		mAtomicWeights.put(elm, value);
 	}
 
 	@Override
 	public String toString() {
-		return HTML.stripTags(mHTMLName);
+		return HTML.stripTags(mHTMLName.toString());
 	}
 
 	public boolean contains(final Element elm) {
@@ -107,7 +119,7 @@ public class Material //
 		switch (mode) {
 		default:
 		case TERSE:
-			return mHTMLName;
+			return mHTMLName.toString();
 		case NORMAL: {
 			final StringBuffer sb = new StringBuffer();
 			for (final Element elm : getElementSet()) {

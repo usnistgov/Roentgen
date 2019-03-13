@@ -13,6 +13,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.SingularMatrixException;
 import org.apache.commons.math3.random.RandomGeneratorFactory;
 
 /**
@@ -127,10 +128,17 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 			}
 			assert MatrixUtils.isSymmetric(MatrixUtils.createRealMatrix(covariances), 1.0e-9);
 			assert validateCovariances(covariances);
-			// System.err.println("Means[" + groupIdx + "] = " + Arrays.toString(means));
-			// System.err.println("Covariances[" + groupIdx + "] = " +
-			// MatrixUtils.createRealMatrix(covariances).toString());
-			mDistribution[groupIdx] = new MultivariateNormalDistribution(random, means, covariances);
+			try  {
+				mDistribution[groupIdx] = new MultivariateNormalDistribution(random, means, covariances);
+			}
+			catch(SingularMatrixException sex) {
+				System.err.println(groups.get(groupIdx));
+				System.err.println("Means[" + groupIdx + "] = " + Arrays.toString(means));
+				System.err
+						.println("Covariances[" + groupIdx + "] = " + MatrixUtils.createRealMatrix(covariances).toString());
+				sex.printStackTrace();
+				throw sex;
+			}
 		}
 		mNormal = new NormalDistribution[mDistIndex.length];
 		for (int i = 0; i < mDistIndex.length; ++i)

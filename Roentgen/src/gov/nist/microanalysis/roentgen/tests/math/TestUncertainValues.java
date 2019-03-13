@@ -12,6 +12,7 @@ import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 
 /**
  * @author Nicholas W. M. Ritchie
@@ -60,7 +61,7 @@ public class TestUncertainValues {
 		assertEquals(0.4 * 0.27 * -0.3, covCG, EPS);
 		assertEquals(0.3 * 0.27 * -0.8, covBG, EPS);
 
-		final UncertainValues uvss = uvs.sort();
+		final UncertainValuesBase uvss = uvs.sort();
 
 		assertEquals(2.0, uvss.getEntry("A"), EPS);
 		assertEquals(4.0, uvss.getEntry("F"), EPS);
@@ -81,7 +82,7 @@ public class TestUncertainValues {
 		assertEquals(-0.3, uvss.getCorrelationCoefficient("C", "A"), EPS);
 		assertEquals(-0.3, uvs.getCorrelationCoefficient("C", "A"), EPS);
 
-		final UncertainValues uvsd = uvs.blockDiagnonalize();
+		final UncertainValuesBase uvsd = uvs.blockDiagnonalize();
 		assertEquals(2.0, uvsd.getEntry("A"), EPS);
 		assertEquals(4.0, uvsd.getEntry("F"), EPS);
 		assertEquals(7.0, uvsd.getEntry("G"), EPS);
@@ -112,10 +113,10 @@ public class TestUncertainValues {
 				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, //
 		});
 		final double EPS = 1.0e-8;
-		final UncertainValues uvs = new UncertainValues(labels, vals, vars, corrCoeff);
-		final UncertainValues uvss = uvs.sort();
+		final UncertainValuesBase uvs = new UncertainValues(labels, vals, vars, corrCoeff);
+		final UncertainValuesBase uvss = uvs.sort();
 
-		final UncertainValues uvsd = uvss.blockDiagnonalize();
+		final UncertainValuesBase uvsd = uvss.blockDiagnonalize();
 		assertEquals(uvs.getEntry("A"), uvsd.getEntry("A"), EPS);
 		assertEquals(uvs.getEntry("F"), uvsd.getEntry("F"), EPS);
 		assertEquals(uvs.getEntry("G"), uvsd.getEntry("G"), EPS);

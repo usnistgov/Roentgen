@@ -125,5 +125,10 @@ public class CompositionStatistics //
 		rv.setEntry(mzIdx, meanZ);
 		return rv;
 	}
+	
+	public String toString() {
+		return "Composition Statistics";
+	}
+
 
 }

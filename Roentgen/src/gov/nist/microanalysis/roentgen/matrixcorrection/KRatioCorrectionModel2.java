@@ -28,6 +28,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.TrimmedNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -212,9 +213,10 @@ public class KRatioCorrectionModel2 //
 
 	public KRatioCorrectionModel2(//
 			final Set<KRatioLabel> krs, //
+			final List<LabeledMultivariateJacobianFunction> preComps, //
 			final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
-		this(krs, new XPPMatrixCorrection2(krs, variates));
+		this(krs, new XPPMatrixCorrection2(krs, preComps, variates));
 	}
 
 
@@ -223,7 +225,10 @@ public class KRatioCorrectionModel2 //
 			final MatrixCorrectionModel2 mcm //
 	) throws ArgumentException {
 		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
-		final List<? extends Object> outputs = MaterialLabel.massFractionTags(unk.getMaterial());
+		final Material unkMat = unk.getMaterial();
+		final List<Object> outputs = new ArrayList<>();
+		for(KRatioLabel krl : krs) 
+			outputs.add(MaterialLabel.buildMassFractionTag(unkMat, krl.getElement()));
 		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
 		// Perform the matrix correction model to calculate Ci from ki
 		res.add(mcm);
@@ -258,11 +263,11 @@ public class KRatioCorrectionModel2 //
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	public UncertainValues buildInput(final Composition estUnknown, final UncertainValues measKratios) //
+	public UncertainValuesBase buildInput(final Map<MassFraction, ? extends Number> estUnknown, final UncertainValuesBase measKratios) //
 			throws ArgumentException {
 		assert measKratios.getLabels(KRatioLabel.class).size() == measKratios
 				.getDimension() : "Not all the measured k-ratios are k-ratios";
-		return UncertainValues.combine(mModel.buildInput(estUnknown), measKratios);
+		return UncertainValues.combine(false,mModel.buildInput(estUnknown), measKratios);
 	}
 
 	/**
@@ -284,9 +289,10 @@ public class KRatioCorrectionModel2 //
 	 */
 	static public KRatioCorrectionModel2 buildXPPModel( //
 			final Set<KRatioLabel> keySet, //
+			final List<LabeledMultivariateJacobianFunction> preComps, //
 			final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
-		return new KRatioCorrectionModel2(keySet, variates);
+		return new KRatioCorrectionModel2(keySet, preComps, variates);
 	}
 
 	public UncertainValues getInputs(//
@@ -357,7 +363,8 @@ public class KRatioCorrectionModel2 //
 		// Trim the inputs down to only the elements in the unknown...
 		final TrimmedNamedMultivariateJacobianFunction trimmed = //
 				new TrimmedNamedMultivariateJacobianFunction(mModel, compInp, kCalc);
-		final UncertainValues inputs = mModel.buildInput(Composition.massFraction(unkMat, unk));
+		final Map<MassFraction, Double> mfMap = Composition.massFraction(unkMat, unk).getValueMap(MaterialLabel.MassFraction.class);
+		final UncertainValuesBase inputs = mModel.buildInput(mfMap);
 		trimmed.initializeConstants(inputs.getValueMap());
 		final RealVector start = new ArrayRealVector(trimmed.getInputDimension());
 		int i = 0;

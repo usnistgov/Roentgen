@@ -15,6 +15,7 @@ import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
@@ -163,8 +164,7 @@ public class CompExamples {
 		WriteToLaTeX wtl = new WriteToLaTeX();
 		try {
 			{
-				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap(),
-						false);
+				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap());
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 				try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\SS304.tex")) {
@@ -186,8 +186,8 @@ public class CompExamples {
 				}
 			}
 			{
-				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap(),
-						true);
+				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap());
+				comp.setCalculator(new UncertainValuesCalculator.FiniteDifference(comp.getInputs().getValues().mapMultiply(0.001)));
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 			}

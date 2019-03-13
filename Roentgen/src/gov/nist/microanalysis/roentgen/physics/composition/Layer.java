@@ -4,19 +4,23 @@ import java.util.Objects;
 
 import com.duckandcover.html.IToHTML;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 public class Layer //
 		implements IToHTML {
 
+	private final UniqueString mName;
 	private final Composition mComposition;
 	private final UncertainValue mThickness; // In cm
 	private final UncertainValue mDensity; // In g/cm^3
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(mComposition, mDensity, mThickness);
+		return Objects.hash(mComposition, mDensity, mThickness, mName);
 	}
 
 	@Override
@@ -28,9 +32,10 @@ public class Layer //
 		if (getClass() != obj.getClass())
 			return false;
 		final Layer other = (Layer) obj;
-		return Objects.equals(mComposition, other.mComposition) //
-				&& Objects.equals(mDensity, other.mDensity) //
-				&& Objects.equals(mThickness, other.mThickness);
+		return Objects.equals(mDensity, other.mDensity) //
+				&& Objects.equals(mThickness, other.mThickness) //
+				&& Objects.equals(mName, other.mName) //
+				&& Objects.equals(mComposition, other.mComposition); //
 	}
 
 	/**
@@ -45,16 +50,21 @@ public class Layer //
 		mComposition = comp;
 		mThickness = thickness_nm.multiply(1.0e-7); // 1 nm = 1.0e-7 cm
 		mDensity = density;
+		final HalfUpFormat nf = new HalfUpFormat("0.0");
+		final String name = mComposition.toString() + "[" + nf.format(1.0e7 * mThickness.doubleValue()) + " nm, "
+				+ nf.format(mDensity.doubleValue()) + " g/cm^3]";
+		mName = new UniqueString(name);
 	}
 
 	/**
 	 * Makes a Layer consisting of thickness_nm (in nanometers) of carbon with
 	 * density of 1.5 &pm; 0.1 g/cm<sup>3</sup>.
 	 *
-	 * @param thickness_nm
+	 * @param thickness_nm Thickness in nanometers
 	 * @return Layer object
+	 * @throws ArgumentException
 	 */
-	public static Layer carbonCoating(final UncertainValue thickness_nm) {
+	public static Layer carbonCoating(final UncertainValue thickness_nm) throws ArgumentException {
 		return new Layer(Composition.pureElement(Element.Carbon), thickness_nm, new UncertainValue(1.5, 0.1));
 	}
 
@@ -64,8 +74,9 @@ public class Layer //
 	 *
 	 * @param thickness_nm
 	 * @return Layer object
+	 * @throws ArgumentException
 	 */
-	public static Layer goldCoating(final UncertainValue thickness_nm) {
+	public static Layer goldCoating(final UncertainValue thickness_nm) throws ArgumentException {
 		return new Layer(Composition.pureElement(Element.Gold), thickness_nm, new UncertainValue(19.3, 0.1));
 	}
 
@@ -93,6 +104,10 @@ public class Layer //
 		return mDensity;
 	}
 
+	public UniqueString getName() {
+		return mName;
+	}
+
 	public UncertainValue getMassThickness() {
 		return new UncertainValue(mThickness.doubleValue() * mDensity.doubleValue(), //
 				(mThickness.doubleValue() * mDensity.uncertainty()
@@ -101,13 +116,15 @@ public class Layer //
 
 	@Override
 	public String toHTML(final Mode mode) {
-		return mComposition.toHTML(mode.demote()) + "[" + mThickness.toHTML(mode) + "cm," + mDensity.toHTML(mode)
-				+ " g/cm<sup>3</sup>]";
+
+		final HalfUpFormat nf = new HalfUpFormat("0.0");
+		return mComposition.toHTML(mode.demote()) + "[" + nf.format(1.0e7 * mThickness.doubleValue()) + " nm, "
+				+ nf.format(mDensity.doubleValue()) + " g/cm^3]";
 	}
 
 	@Override
 	public String toString() {
-		return mComposition.toString() + "[" + mThickness.toString() + "cm," + mDensity.toString() + " g/cm^3]";
+		return mName.toString();
 	}
 
 }

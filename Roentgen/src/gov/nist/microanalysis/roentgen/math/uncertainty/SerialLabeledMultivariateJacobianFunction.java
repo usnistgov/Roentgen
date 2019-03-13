@@ -59,11 +59,16 @@ public class SerialLabeledMultivariateJacobianFunction //
 
 	private Set<? extends Object> mFinalOutputs;
 
+	private final boolean mRetainInputs;
+
 	private final static List<? extends Object> computeOutputs( //
-			final List<LabeledMultivariateJacobianFunction> steps //
+			final List<LabeledMultivariateJacobianFunction> steps, //
+			final boolean copyInputs //
 	) throws ArgumentException {
 		final Set<Object> sob = new HashSet<>();
 		final List<Object> res = new ArrayList<>();
+		if (copyInputs)
+			res.addAll(computeInputs(steps));
 		for (final LabeledMultivariateJacobianFunction nmjf : steps) {
 			final List<? extends Object> labels = nmjf.getOutputLabels();
 			for (final Object label : labels) {
@@ -117,14 +122,41 @@ public class SerialLabeledMultivariateJacobianFunction //
 	 * steps in order, where the output values for earlier steps become available as
 	 * input values to later steps.
 	 *
+	 * @param name
 	 * @param steps
+	 * @param copyInputs Copy the input values into the output
 	 * @throws ArgumentException
 	 */
-	public SerialLabeledMultivariateJacobianFunction(final String name,
-			final List<LabeledMultivariateJacobianFunction> steps) throws ArgumentException {
-		super(computeInputs(steps), computeOutputs(steps));
+	public SerialLabeledMultivariateJacobianFunction(//
+			final String name, //
+			final List<LabeledMultivariateJacobianFunction> steps, //
+			final boolean copyInputs //
+	) throws ArgumentException {
+		super(computeInputs(steps), computeOutputs(steps, copyInputs));
 		mName = name;
 		mSteps.addAll(steps);
+		mRetainInputs = copyInputs;
+	}
+
+	public boolean isKeepingInputs() {
+		return mRetainInputs;
+	}
+
+	/**
+	 * Create a MultiStepNamedMultivariateJacobianFunction object to compute the
+	 * steps in order, where the output values for earlier steps become available as
+	 * input values to later steps.
+	 *
+	 * @param name
+	 * @param steps
+	 * @param copyInputs Copy the input values into the output
+	 * @throws ArgumentException
+	 */
+	public SerialLabeledMultivariateJacobianFunction(//
+			final String name, //
+			final List<LabeledMultivariateJacobianFunction> steps //
+	) throws ArgumentException {
+		this(name, steps, false);
 	}
 
 	/**
@@ -242,8 +274,9 @@ public class SerialLabeledMultivariateJacobianFunction //
 						valLabels.put(outlabel, i + 1);
 						usage.put(outlabel, 0);
 					} else {
-						report.addHTML(HTML.error("Output error in Step " + Integer.toString(i + 1)
-								+ ": Attempting to redefine " + HTML.toHTML(outlabel, Mode.TERSE) + "."));
+						report.addHTML(
+								HTML.error("Output error in Step " + Integer.toString(i + 1) + " - " + func.toString()
+										+ ": Attempting to redefine " + HTML.toHTML(outlabel, Mode.TERSE) + "."));
 					}
 				}
 			}
@@ -327,6 +360,7 @@ public class SerialLabeledMultivariateJacobianFunction //
 			// (ovals, ojac) = func.evaluate(funcPoint)
 			// ovals[fout], ojac[fout][fin]
 			// expJac[expRows][expCols]
+			assert fout.size() == ovals.getDimension();
 			for (int i = 0; i < ovals.getDimension(); ++i)
 				inputs.put(fout.get(i), ovals.getEntry(i));
 			{ // Build the resulting Jacobian
@@ -346,7 +380,8 @@ public class SerialLabeledMultivariateJacobianFunction //
 					// Add the output label to the end off currRows
 					for (int i = 0; i < fout.size(); ++i) {
 						final Object label = fout.get(i);
-						assert prevRows.indexOf(label) == -1 : label + " was already calculated.";
+						assert (prevRows.indexOf(label) == -1) || (inpLabels.indexOf(label) != -1) : //
+						label + " was previously calculated.";
 						currRows.add(label);
 						foutRow[i] = currRows.size() - 1;
 					}
@@ -403,8 +438,9 @@ public class SerialLabeledMultivariateJacobianFunction //
 		final RealVector resVals = new ArrayRealVector(outs.size());
 		final RealMatrix resJac = NullableRealMatrix.build(outs.size(), inpLabels.size());
 		{ // Ensure the output rows are ordered correctly.
-			assert inputs.size() == cumJac.getRowDimension();
 			assert cumJac.getColumnDimension() == inpLabels.size();
+			assert inputs.size() == cumJac.getRowDimension() : //
+			inputs.size() + "!=" + cumJac.getRowDimension();
 			for (int row = outs.size() - 1; row >= 0; --row) {
 				final Object rowLabel = outs.get(row);
 				resVals.setEntry(row, inputs.get(rowLabel));

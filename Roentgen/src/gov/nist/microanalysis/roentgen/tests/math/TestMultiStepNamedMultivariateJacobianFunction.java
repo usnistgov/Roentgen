@@ -15,10 +15,10 @@ import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import junit.framework.TestCase;
 
 /**
@@ -107,12 +107,12 @@ public class TestMultiStepNamedMultivariateJacobianFunction extends TestCase {
 	private final UncertainValues mInput1 = new UncertainValues(mInputs, mValues1, mCov1);
 
 	public void test1() throws IOException {
-		final UncertainValues uv = UncertainValues.propagateOrdered(mStep1, mInput0);
+		final UncertainValuesBase uv = UncertainValues.propagateOrdered(mStep1, mInput0);
 		final Report rep = new Report("Step 1");
 		rep.addHeader("Inputs");
 		rep.add(mInput0);
-		rep.addHeader("Jacobian");
-		rep.add(new LabeledMultivariateJacobian(mStep1, mValues0));
+		// rep.addHeader("Jacobian");
+		// rep.add(new LabeledMultivariateJacobian(mStep1, mValues0));
 		rep.addHeader("Outputs 1");
 		rep.add(uv);
 		rep.inBrowser(Mode.NORMAL);
@@ -120,7 +120,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction extends TestCase {
 		final double[] rv = new double[] { 100.812, 110.18, 42.1803 };
 		final double[][] rc = new double[][] { { 533.887, 483.696, 455.926 }, { 483.696, 1438.36, 1330.66 },
 				{ 455.926, 1330.66, 1305.74 } };
-		final UncertainValues res = new UncertainValues(mOut1, new ArrayRealVector(rv),
+		final UncertainValuesBase res = new UncertainValues(mOut1, new ArrayRealVector(rv),
 				MatrixUtils.createRealMatrix(rc));
 		assertTrue(uv.equals(res, 0.01));
 	}
@@ -130,12 +130,12 @@ public class TestMultiStepNamedMultivariateJacobianFunction extends TestCase {
 				mStep2 };
 		final SerialLabeledMultivariateJacobianFunction msnmjf = new SerialLabeledMultivariateJacobianFunction("Test1",
 				Arrays.asList(steps));
-		final UncertainValues uv = UncertainValues.propagate(msnmjf, mInput1);
+		final UncertainValuesBase uv = UncertainValues.propagate(msnmjf, mInput1);
 		final Report rep = new Report("Step 1 and 2");
 		rep.addHeader("Inputs");
 		rep.add(mInput1);
-		rep.addHeader("Jacobian");
-		rep.add(LabeledMultivariateJacobian.compute(msnmjf, mValues0));
+		// rep.addHeader("Jacobian");
+		// rep.add(LabeledMultivariateJacobian.compute(msnmjf, mValues0));
 		rep.addHeader("Outputs 1 and 2");
 		rep.add(uv);
 		rep.addHeader("MC Outputs 1 and 2");
@@ -149,7 +149,7 @@ public class TestMultiStepNamedMultivariateJacobianFunction extends TestCase {
 		// 483.696,
 		// 1438.36, 1330.66 },
 		// { 455.926, 1330.66, 1305.74 } };
-		// UncertainValues res = new UncertainValues(mOut1, new
+		// UncertainValuesBase res = new UncertainValues(mOut1, new
 		// ArrayRealVector(rv),
 		// MatrixUtils.createRealMatrix(rc));
 		// assertTrue(uv.equals(res, 0.01));

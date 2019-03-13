@@ -128,4 +128,9 @@ public class Normalize //
 			norm += Math.max(0.0, point.getEntry(i));
 		return point.mapDivide(norm);
 	}
+	
+	public String toString() {
+		return "Normalize"+getInputLabels();
+	}
+
 }

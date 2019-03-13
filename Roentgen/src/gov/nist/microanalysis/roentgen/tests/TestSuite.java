@@ -22,12 +22,25 @@ import gov.nist.microanalysis.roentgen.tests.spectrum.TestReadSpectrum;
 import gov.nist.microanalysis.roentgen.tests.spectrum.TestSpectrumFileReader;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestIntInterval.class, TestMultiStepNamedMultivariateJacobianFunction.class,
-		TestNamedMultivariateJacobianFuntion.class, TestSafeMultivariateNormalDistribution.class,
-		TestUncertainValue.class, TestUncertainValues.class, TestUtility.class, TwoPointContinuumModelTest.class,
-		TestMassAbsorptionCoefficient.class, TestReadSpectrum.class, TestEDSFittingFilter.class,
-		TestLinearSpectrumFit.class, TestLineshapeCalibration.class, TestSpectrumFileReader.class,
-		CompositionTest2.class, XPPMatrixCorrection2Test.class, KRatioCorrectionModelTest.class })
+@Suite.SuiteClasses({ //
+		TestIntInterval.class, //
+		TestMultiStepNamedMultivariateJacobianFunction.class, //
+		TestNamedMultivariateJacobianFuntion.class, //
+		TestSafeMultivariateNormalDistribution.class, //
+		TestUncertainValue.class, //
+		TestUncertainValues.class, //
+		TestUtility.class, //
+		CompositionTest2.class, //
+		TwoPointContinuumModelTest.class, //
+		TestMassAbsorptionCoefficient.class, //
+		TestReadSpectrum.class, //
+		TestEDSFittingFilter.class, //
+		TestLinearSpectrumFit.class, //
+		TestLineshapeCalibration.class, //
+		TestSpectrumFileReader.class, //
+		XPPMatrixCorrection2Test.class, //
+		KRatioCorrectionModelTest.class //
+})
 
 public class TestSuite {
 

@@ -13,6 +13,7 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
  * Computes a single element by assuming the mass total is unity and that all
@@ -59,6 +60,10 @@ public class ElementByDifference //
 			sum += point.getEntry(i);
 		rv.setEntry(0, 1.0 - sum);
 		return rv;
+	}
+
+	public String toString() {
+		return ((MassFraction) getOutputLabel(0)).getElement() + "-by-Stoichiometry";
 	}
 
 }

@@ -6,13 +6,13 @@ import java.util.Map;
 import org.apache.commons.math3.linear.RealVector;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
-import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
  * @author Nicholas W. M. Ritchie
@@ -29,13 +29,14 @@ public class Iteration {
 	 * Calculate the first estimate of the composition and build a
 	 * {@link MatrixCorrectionDatum} from the data.
 	 *
-	 * @param kratios
+	 * @param measKratios
 	 * @return {@link Composition}
 	 * @throws ArgumentException
 	 */
-	public Map<Element, Number> computeFirstEstimate(final UncertainValues kratios) {
-		final Map<Object, Double> krm = kratios.getValueMap();
-		final Map<Element, Number> est = new HashMap<>();
+	public Map<MassFraction, Number> computeFirstEstimate(final Material unkMat,
+			final UncertainValuesBase measKratios) {
+		final Map<Object, Double> krm = measKratios.getValueMap();
+		final Map<MassFraction, Number> est = new HashMap<>();
 		for (final Map.Entry<Object, Double> me : krm.entrySet()) {
 			assert me.getKey() instanceof KRatioLabel;
 			if (me.getKey() instanceof KRatioLabel) {
@@ -47,38 +48,37 @@ public class Iteration {
 						xrs.getElement());
 				final double cStd = std.getEntry(smfTag);
 				final double kR = me.getValue().doubleValue();
-				est.put(xrs.getElement(), kR * cStd);
+				est.put(MaterialLabel.buildMassFractionTag(unkMat, xrs.getElement()), kR * cStd);
 			}
 		}
 		return est;
 	}
 
-	public boolean meetsThreshold(final UncertainValues meas, final UncertainValues calc, final double thresh) {
+	public boolean meetsThreshold(final UncertainValuesBase measKratios, final UncertainValuesBase calcKratios,
+			final double thresh) {
 		double total = 0.0;
-		for (final Object lbl : meas.getLabels()) {
+		for (final Object lbl : measKratios.getLabels()) {
 			assert lbl instanceof KRatioLabel;
 			final KRatioLabel measKrl = (KRatioLabel) lbl;
-			final double delta = meas.getEntry(measKrl) - calc.getEntry(measKrl.asCalculated());
+			final double delta = measKratios.getEntry(measKrl) - calcKratios.getEntry(measKrl.asCalculated());
 			total += delta * delta;
 		}
 		System.out.println("Err = " + Math.sqrt(total));
 		return total < thresh * thresh;
 	}
 
-	public Map<Element, Number> updateEstimate(//
-			final Map<Element, Number> est, //
-			final UncertainValues measKratios, //
-			final UncertainValues calcKRatios //
-	) {
-		final Map<Element, Number> res = new HashMap<>();
-		for (final Object lbl : measKratios.getLabels()) {
-			assert lbl instanceof KRatioLabel;
-			final KRatioLabel measKrl = (KRatioLabel) lbl;
-			final Element elm = measKrl.getElement();
-			final double cEst = est.get(elm).doubleValue();
+	public Map<MassFraction, Number> updateEstimate(//
+			final Map<MassFraction, Number> est, //
+			final UncertainValuesBase measKratios, //
+			final UncertainValuesBase calcKratios) {
+		final Map<MassFraction, Number> res = new HashMap<>();
+		for (final KRatioLabel measKrl : measKratios.getLabels(KRatioLabel.class)) {
+			final Material unkMat = measKrl.getUnknown().getMaterial();
+			final MassFraction mf = MaterialLabel.buildMassFractionTag(unkMat, measKrl.getElement());
+			final double cEst = est.get(mf).doubleValue();
 			final double cNext = cEst * measKratios.getEntry(measKrl) //
-					/ calcKRatios.getEntry(measKrl.asCalculated());
-			res.put(elm, cNext);
+					/ calcKratios.getEntry(measKrl.asCalculated());
+			res.put(mf, cNext);
 		}
 		System.out.println(est + " -> " + res);
 		return res;
@@ -92,15 +92,14 @@ public class Iteration {
 		mModel = krc;
 	}
 
-	final Map<Element, Number> iterate(final UncertainValues measKratios) //
+	final Map<MassFraction, Number> iterate(final UncertainValuesBase measKratios) //
 			throws ArgumentException {
 		final Material unkMat = mModel.getModel().getUnknownMaterial();
-		Map<Element, Number> est = computeFirstEstimate(measKratios);
+		Map<MassFraction, Number> est = computeFirstEstimate(unkMat, measKratios);
 		for (int iteration = 0; iteration < MAX_ITERATIONS; ++iteration) {
-			final Composition comp = Composition.massFraction(unkMat, est);
-			final UncertainValues inps = mModel.buildInput(comp, measKratios);
+			final UncertainValuesBase inps = mModel.buildInput(est, measKratios);
 			final RealVector res = mModel.compute(inps.getValues(mModel.getInputLabels()));
-			final UncertainValues calcKratios = KRatioLabel.extractKRatios( //
+			final UncertainValuesBase calcKratios = KRatioLabel.extractKRatios( //
 					res, mModel.getOutputLabels(), Method.Calculated);
 			if (meetsThreshold(measKratios, calcKratios, THRESH))
 				break;
@@ -110,7 +109,7 @@ public class Iteration {
 	}
 
 	/**
-	 * This method performs the iteration and then computes an UncertainValues
+	 * This method performs the iteration and then computes an UncertainValuesBase
 	 * object containing the full results of the measurement.
 	 *
 	 *
@@ -118,13 +117,11 @@ public class Iteration {
 	 * @return
 	 * @throws ArgumentException
 	 */
-	public final UncertainValues compute(final UncertainValues measKratios) //
+	public final UncertainValuesBase compute(final UncertainValuesBase measKratios) //
 			throws ArgumentException {
-		final Map<Element, Number> men = iterate(measKratios);
-		final Material unkMat = mModel.getModel().getUnknownMaterial();
-		final Composition comp = Composition.massFraction(unkMat, men);
-		final UncertainValues inps = mModel.buildInput(comp, measKratios);
-		return UncertainValues.propagate(mModel, inps);
+		final Map<MassFraction, Number> men = iterate(measKratios);
+		final UncertainValuesBase inps = mModel.buildInput(men, measKratios);
+		return UncertainValuesBase.propagate(mModel, inps);
 	}
 
 }

@@ -20,6 +20,7 @@ import com.duckandcover.html.Table;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
@@ -102,7 +103,7 @@ public class TwoPointContinuumModelTest {
 				l.addAll(tpcm.getOutputLabels());
 				r.addHTML(l.toHTML(Mode.NORMAL));
 			}
-			final UncertainValues res = UncertainValues.propagate(tpcm, uvs);
+			final UncertainValuesBase res = UncertainValues.propagate(tpcm, uvs);
 			r.add(res);
 
 			final HashMap<? extends Object, UncertainValue> ovals = tpcm.getOutputValues(uvs, 0.0);

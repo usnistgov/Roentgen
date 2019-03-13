@@ -23,12 +23,12 @@ import com.duckandcover.html.Table;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunctionBuilder;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
@@ -39,7 +39,6 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.ElementalMAC;
 import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
-import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction.MaterialMAC;
 import gov.nist.microanalysis.roentgen.physics.XRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
@@ -47,6 +46,9 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import joinery.DataFrame;
 
 /**
@@ -536,7 +538,8 @@ public class XPPMatrixCorrection2 //
 			final double opq = 1.0 + q;
 			final double Gu0 = (u0 * opq - (2.0 + q) + Math.pow(u0, -1.0 - q)) / //
 					(opq * (2.0 + q) * Ju0); // Ok!
-			// assert Math.abs(Gu0 - ((u0 - 1.0 - (1.0 - Math.pow(u0, -1.0 - q)) / opq) / ((2.0 + q) * Ju0))) < Math.abs(1.0e-6 * Gu0);
+			// assert Math.abs(Gu0 - ((u0 - 1.0 - (1.0 - Math.pow(u0, -1.0 - q)) / opq) /
+			// ((2.0 + q) * Ju0))) < Math.abs(1.0e-6 * Gu0);
 			final double dGu0du0 = (1.0 - Math.pow(u0, -2.0 - q)) / ((2.0 + q) * Ju0) //
 					- ((dJu0du0 / Ju0) * Gu0); // Ok!
 			final double dGu0de0 = dGu0du0 * du0de0; // Ok!
@@ -1381,11 +1384,6 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.chiLabel(datum, cxr));
 			if (variates.contains(MatrixCorrectionModel2.Variate.SurfaceRoughness))
 				res.add(MatrixCorrectionModel2.roughnessLabel(datum));
-			if (variates.contains(MatrixCorrectionModel2.Variate.Coating) && (datum.hasCoating())) {
-				res.add(MatrixCorrectionModel2.coatingMassThickness(datum));
-				res.add(MatrixCorrectionModel2.takeOffAngleLabel(datum));
-				res.add(MatrixCorrectionModel2.matMacLabel(datum.getCoating().getMaterial(), cxr));
-			}
 			return res;
 		}
 
@@ -1514,7 +1512,7 @@ public class XPPMatrixCorrection2 //
 				final CharacteristicXRay cxr, final Set<Variate> variates) {
 			final List<Object> res = new ArrayList<>();
 			if (variates.contains(MatrixCorrectionModel2.Variate.Coating) && (datum.hasCoating())) {
-				res.add(MatrixCorrectionModel2.coatingMassThickness(datum));
+				res.add(MatrixCorrectionModel2.coatingMassThickness(datum.getCoating()));
 				res.add(MatrixCorrectionModel2.takeOffAngleLabel(datum));
 				res.add(MatrixCorrectionModel2.matMacLabel(datum.getCoating().getMaterial(), cxr));
 			}
@@ -1538,7 +1536,9 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final int iMassTh = inputIndex(MatrixCorrectionModel2.coatingMassThickness(mDatum));
+			final int iMassTh = mDatum.hasCoating()
+					? inputIndex(MatrixCorrectionModel2.coatingMassThickness(mDatum.getCoating()))
+					: -1;
 			final int iFx = inputIndex(MatrixCorrectionModel2.FofChiLabel(mDatum, mXRay));
 			final int oFxRed = outputIndex(MatrixCorrectionModel2.FofChiReducedLabel(mDatum, mXRay));
 
@@ -1577,7 +1577,9 @@ public class XPPMatrixCorrection2 //
 
 		@Override
 		public RealVector optimized(final RealVector point) {
-			final int iMassTh = inputIndex(MatrixCorrectionModel2.coatingMassThickness(mDatum));
+			final int iMassTh = mDatum.hasCoating()
+					? inputIndex(MatrixCorrectionModel2.coatingMassThickness(mDatum.getCoating()))
+					: -1;
 			final int iFx = inputIndex(MatrixCorrectionModel2.FofChiLabel(mDatum, mXRay));
 			final int oFxRed = outputIndex(MatrixCorrectionModel2.FofChiReducedLabel(mDatum, mXRay));
 
@@ -1809,11 +1811,14 @@ public class XPPMatrixCorrection2 //
 	 */
 	private static List<LabeledMultivariateJacobianFunction> buildSteps( //
 			final Set<KRatioLabel> kratios, //
-			final Set<MatrixCorrectionModel2.Variate> variates) throws ArgumentException {
+			final List<LabeledMultivariateJacobianFunction> preComps, //
+			final Set<MatrixCorrectionModel2.Variate> variates //
+	) throws ArgumentException {
 		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
-
+		res.addAll(preComps);
 		final Map<UnknownMatrixCorrectionDatum, CharacteristicXRaySet> unks = new HashMap<>();
 		final Map<StandardMatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
+		final Set<Composition> allComps = new HashSet<>();
 		for (final KRatioLabel krl : kratios) {
 			assert krl.getMethod().equals(Method.Measured);
 			final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
@@ -1825,7 +1830,16 @@ public class XPPMatrixCorrection2 //
 			if (!stds.containsKey(std))
 				stds.put(std, new CharacteristicXRaySet());
 			stds.get(std).addAll(exrs);
+			allComps.add(std.getComposition());
+			if (std.hasCoating())
+				allComps.add(std.getCoating().getComposition());
+			if (unk.hasCoating())
+				allComps.add(unk.getCoating().getComposition());
 		}
+		for (final Composition comp : allComps)
+			res.add(comp.getFunction());
+		for (final UnknownMatrixCorrectionDatum unk : unks.keySet())
+			res.add(buildMaterialMACFunctions(unk.getMaterial(), kratios, variates));
 		{
 			final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
 			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
@@ -1857,9 +1871,10 @@ public class XPPMatrixCorrection2 //
 	 */
 	public XPPMatrixCorrection2(//
 			final Set<KRatioLabel> kratios, //
+			final List<LabeledMultivariateJacobianFunction> preComps, //
 			final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
-		super("XPP Matrix Correction", kratios, buildSteps(kratios, variates), variates);
+		super("XPP Matrix Correction", kratios, buildSteps(kratios, preComps, variates), variates);
 	}
 
 	/**
@@ -1867,9 +1882,10 @@ public class XPPMatrixCorrection2 //
 	 * @throws ArgumentException
 	 */
 	public XPPMatrixCorrection2( //
-			final Set<KRatioLabel> kratios //
+			final Set<KRatioLabel> kratios, //
+			final List<LabeledMultivariateJacobianFunction> preComps //
 	) throws ArgumentException {
-		this(kratios, MatrixCorrectionModel2.defaultVariates());
+		this(kratios, preComps, MatrixCorrectionModel2.defaultVariates());
 	}
 
 	/**
@@ -1881,9 +1897,10 @@ public class XPPMatrixCorrection2 //
 	 */
 	public XPPMatrixCorrection2( //
 			final KRatioLabel krl, //
+			final List<LabeledMultivariateJacobianFunction> preComps, //
 			final Set<MatrixCorrectionModel2.Variate> variates //
 	) throws ArgumentException {
-		this(Collections.singleton(krl), variates);
+		this(Collections.singleton(krl), preComps, variates);
 	}
 
 	/**
@@ -1928,67 +1945,34 @@ public class XPPMatrixCorrection2 //
 	}
 
 	/**
-	 * Computes the material MACs as required for the standard and unknowns relative
-	 * to all the {@link CharacteristicXRay}s that take part in the measurement.
-	 *
-	 * @param elmMacs
-	 * @return UncertainValues containing {@link MaterialMAC} tags
-	 * @throws ArgumentException
-	 */
-	public UncertainValues computeMaterialMACs(final UncertainValues elmMacs, final Composition estUnknown) //
-			throws ArgumentException {
-		final Map<CharacteristicXRay, List<Material>> mclc = new HashMap<>();
-		final Set<Composition> comps = new HashSet<>();
-		comps.add(estUnknown);
-		for (final KRatioLabel krl : mKRatios) {
-			final Set<CharacteristicXRay> scxrs = krl.getXRaySet().getSetOfCharacteristicXRay();
-			for (final CharacteristicXRay cxr : scxrs) {
-				List<Material> lc = mclc.get(cxr);
-				if (lc == null) {
-					lc = new ArrayList<>();
-					mclc.put(cxr, lc);
-				}
-				final Composition stdComp = krl.getStandard().getComposition();
-				comps.add(stdComp);
-				if (!lc.contains(stdComp.getMaterial()))
-					lc.add(stdComp.getMaterial());
-			}
-		}
-		final List<LabeledMultivariateJacobianFunction> step = new ArrayList<>();
-		for (final Map.Entry<CharacteristicXRay, List<Material>> me : mclc.entrySet())
-			step.add(new MaterialMACFunction(me.getValue(), me.getKey()));
-		final LabeledMultivariateJacobianFunction macs = LabeledMultivariateJacobianFunctionBuilder.join("MACs", step);
-		final UncertainValues[] items = new UncertainValues[1 + comps.size()];
-		comps.toArray(items);
-		items[items.length - 1] = elmMacs;
-		final UncertainValues all = UncertainValues.combine(items);
-		return UncertainValues.propagate(macs, all);
-	}
-
-	/**
 	 * This is a quick way to build many of the input parameters. Many of the input
 	 * parameters are computed or tabulated. Some are input as experimental
 	 * conditions like beam energy which are provided in the {@link KRatioLabel}
 	 * objects. Using this information, it is possible to calculate all the
 	 * necessary inputs to this {@link LabeledMultivariateJacobianFunction}.
 	 *
-	 * @param unk  MatrixCorrectionDatum associated with the unknown
-	 * @param stds Set&lt;MatrixCorrectionDatum&gt; A set of
-	 *             {@link MatrixCorrectionDatum} associated with the standards
-	 * @return
+	 * @param estUnknown
+	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
 	@Override
-	public UncertainValues buildInput(final Composition estUnknown) //
+	public UncertainValues buildInput(final Map<MassFraction, ? extends Number> estUnknown) //
 			throws ArgumentException {
-		final UncertainValues constants = buildParameters(false, estUnknown);
+		final List<Object> lbls = new FastIndex<>();
+		final UncertainValuesBase constants = buildParameters(false, estUnknown);
+		lbls.addAll(constants.getLabels());
 		if (constants.getDimension() > 0) {
 			final Map<Object, Double> mod = new HashMap<>();
 			for (final Object tag : constants.getLabels())
 				mod.put(tag, constants.getEntry(tag));
 			initializeConstants(mod);
 		}
-		return UncertainValues.extract(getInputLabels(), buildParameters(true, estUnknown));
+		final UncertainValuesBase bp = buildParameters(true, estUnknown);
+		lbls.addAll(bp.getLabels());
+		for (final Object lbl : getInputLabels())
+			if (!lbls.contains(lbl))
+				System.err.println(lbl + " is missing in XPPMatrixCorrection.buildInput(...)");
+		return UncertainValues.extract(getInputLabels(), bp);
 	}
 
 	/**
@@ -2001,13 +1985,38 @@ public class XPPMatrixCorrection2 //
 	 *         the constant quantities
 	 * @throws ArgumentException
 	 */
-	private UncertainValues buildParameters(final boolean withUnc, final Composition estUnknown) //
+	private UncertainValuesBase buildParameters(final boolean withUnc,
+			final Map<MassFraction, ? extends Number> estUnknown) //
 			throws ArgumentException {
-		final List<UncertainValues> results = new ArrayList<>();
+		final List<UncertainValuesBase> results = new ArrayList<>();
+		// Make sure that there are no replicated Compositions
+		final Set<Composition> allComps = new HashSet<>();
+		if (withUnc) {
+			assert estUnknown != null;
+			results.add(new UncertainValues(estUnknown));
+			final Map<AtomicWeight, Number> maw = new HashMap<>();
+			for (final MassFraction mf : estUnknown.keySet()) {
+				final Material unkMat = mf.getMaterial();
+				for(Element elm : unkMat.getElementSet())
+					maw.put(MaterialLabel.buildAtomicWeightTag(unkMat, elm), unkMat.getAtomicWeight(elm));
+			}
+			results.add(new UncertainValues(maw));
+		}
+		for (final KRatioLabel krl : mKRatios) {
+			if (isSet(Variate.StandardComposition) == withUnc)
+				allComps.add(krl.getStandard().getComposition());
+			if (krl.getStandard().hasCoating())
+				allComps.add(krl.getStandard().getCoating().getComposition());
+			if (krl.getUnknown().hasCoating())
+				allComps.add(krl.getUnknown().getCoating().getComposition());
+		}
+		for (final Composition comp : allComps)
+			results.add(comp.getInputs());
+
 		if (isSet(Variate.MeanIonizationPotential) == withUnc)
 			results.add(buildMeanIonizationPotentials());
 		if (isSet(Variate.MassAbsorptionCofficient) == withUnc)
-			results.add(buildMaterialMACs(withUnc, estUnknown));
+			results.add(buildElementalMACs(withUnc, estUnknown));
 		if (isSet(Variate.BeamEnergy) == withUnc) {
 			final Map<Object, Number> vals = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
@@ -2023,19 +2032,19 @@ public class XPPMatrixCorrection2 //
 			results.add(new UncertainValues(vals));
 		}
 		if (isSet(Variate.Coating) == withUnc) {
-			final Map<Object, Number> vals = new HashMap<>();
+			final Set<Layer> coatings = new HashSet<>();
 			for (final KRatioLabel krl : mKRatios) {
-				if (krl.getStandard().hasCoating()) {
-					final MatrixCorrectionDatum mcd = krl.getStandard();
-					vals.put(MatrixCorrectionModel2.coatingMassThickness(mcd), mcd.getCoating().getMassThickness());
-				}
-				if (krl.getUnknown().hasCoating()) {
-					final MatrixCorrectionDatum mcd = krl.getUnknown();
-					vals.put(MatrixCorrectionModel2.coatingMassThickness(mcd), mcd.getCoating().getMassThickness());
-				}
+				if (krl.getStandard().hasCoating())
+					coatings.add(krl.getStandard().getCoating());
+				if (krl.getUnknown().hasCoating())
+					coatings.add(krl.getUnknown().getCoating());
 			}
-			if (!vals.isEmpty())
+			if (coatings.size() > 0) {
+				final Map<Object, Number> vals = new HashMap<>();
+				for (final Layer coating : coatings)
+					vals.put(MatrixCorrectionModel2.coatingMassThickness(coating), coating.getMassThickness());
 				results.add(new UncertainValues(vals));
+			}
 		}
 		if (isSet(Variate.IonizationExponent) == withUnc) {
 			final Map<Object, Number> vals = new HashMap<>();
@@ -2096,21 +2105,8 @@ public class XPPMatrixCorrection2 //
 
 			results.add(new UncertainValues(mon));
 		}
-		// Make sure that there are no replicated Compositions
-		final Set<Composition> allComps = new HashSet<>();
-		if (withUnc) {
-			assert estUnknown != null;
-			allComps.add(estUnknown);
-		}
-		for (final KRatioLabel krl : mKRatios) {
-			if (isSet(Variate.StandardComposition) == withUnc)
-				allComps.add(krl.getStandard().getComposition());
-		}
-		for (final Composition comp : allComps) {
-			results.add(comp.toMassFraction());
-			results.add(comp.getAtomicWeights());
-		}
-		return UncertainValues.combine(results);
+		final UncertainValuesBase res = UncertainValuesBase.combine(results, true);
+		return res;
 	}
 
 	public Set<Element> getElements() {
@@ -2120,63 +2116,74 @@ public class XPPMatrixCorrection2 //
 		return elms;
 	}
 
-	private UncertainValues buildMaterialMACs(final boolean withUnc, final Composition estUnknown) //
+	private static LabeledMultivariateJacobianFunction buildMaterialMACFunctions( //
+			final Material estUnknown, //
+			final Set<KRatioLabel> kratios, //
+			final Set<Variate> variates) //
 			throws ArgumentException {
-		final List<ElementalMAC.ElementMAC> elmMacs = new ArrayList<>();
-		final Map<Composition, CharacteristicXRaySet> comps = new HashMap<>();
+		final Map<Material, CharacteristicXRaySet> comps = new HashMap<>();
 		final List<LabeledMultivariateJacobianFunction> funcs = new ArrayList<>();
 		{
 			final Set<CharacteristicXRay> allCxr = new HashSet<>();
 			comps.put(estUnknown, new CharacteristicXRaySet());
-			for (final KRatioLabel krl : mKRatios) {
-				// assert (estUnknown == null) || estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
+			for (final KRatioLabel krl : kratios) {
+				// assert (estUnknown == null) ||
+				// estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
 				comps.get(estUnknown).addAll(krl.getXRaySet());
-				if (krl.getUnknown().hasCoating() && (isSet(Variate.Coating) == withUnc)) {
-					final Composition comp = krl.getUnknown().getCoating().getComposition();
-					if (!comps.containsKey(comp))
-						comps.put(comp, new CharacteristicXRaySet());
-					comps.get(comp).addAll(krl.getXRaySet());
+				if (krl.getUnknown().hasCoating() && (variates.contains(Variate.Coating))) {
+					final Material mat = krl.getUnknown().getCoating().getMaterial();
+					if (!comps.containsKey(mat))
+						comps.put(mat, new CharacteristicXRaySet());
+					comps.get(mat).addAll(krl.getXRaySet());
 				}
 				{
-					final Composition comp = krl.getStandard().getComposition();
-					if (!comps.containsKey(comp))
-						comps.put(comp, new CharacteristicXRaySet());
-					comps.get(comp).addAll(krl.getXRaySet());
+					final Material mat = krl.getStandard().getMaterial();
+					if (!comps.containsKey(mat))
+						comps.put(mat, new CharacteristicXRaySet());
+					comps.get(mat).addAll(krl.getXRaySet());
 				}
-				if (krl.getStandard().hasCoating() && (isSet(Variate.Coating) == withUnc)) {
-					final Composition comp = krl.getStandard().getCoating().getComposition();
-					if (!comps.containsKey(comp))
-						comps.put(comp, new CharacteristicXRaySet());
-					comps.get(comp).addAll(krl.getXRaySet());
+				if (krl.getStandard().hasCoating() && (variates.contains(Variate.Coating))) {
+					final Material mat = krl.getStandard().getCoating().getMaterial();
+					if (!comps.containsKey(mat))
+						comps.put(mat, new CharacteristicXRaySet());
+					comps.get(mat).addAll(krl.getXRaySet());
 				}
 				allCxr.addAll(krl.getXRaySet().getSetOfCharacteristicXRay());
 			}
 			for (final CharacteristicXRay cxr : allCxr) {
 				final Set<Material> mats = new HashSet<>();
-				final Set<Element> elms = new HashSet<>();
-				for (final Map.Entry<Composition, CharacteristicXRaySet> me : comps.entrySet())
-					if (me.getValue().contains(cxr)) {
-						mats.add(me.getKey().getMaterial());
-						elms.addAll(me.getKey().getElementSet());
-					}
+				for (final Map.Entry<Material, CharacteristicXRaySet> me : comps.entrySet())
+					if (me.getValue().contains(cxr))
+						mats.add(me.getKey());
 				// assert mats.size() > 1;
 				funcs.add(new MaterialMACFunction(new ArrayList<>(mats), cxr));
-				for (final Element elm : elms)
-					elmMacs.add(new ElementalMAC.ElementMAC(elm, cxr));
 			}
 		}
-		final LabeledMultivariateJacobianFunction all = //
-				LabeledMultivariateJacobianFunctionBuilder.join("MaterialMACs", funcs);
-		final UncertainValues macInps = new UncertainValues(elmMacs);
+		return LabeledMultivariateJacobianFunctionBuilder.join("MaterialMACs", funcs);
+	}
+
+	private UncertainValues buildElementalMACs(final boolean withUnc,
+			final Map<MassFraction, ? extends Number> estUnknown) //
+			throws ArgumentException {
+		Set<Element> elms = new HashSet<>();
+		Set<CharacteristicXRay> scxr = new HashSet<>();
+		{
+			for (final KRatioLabel krl : mKRatios) {
+				elms.addAll(krl.getUnknown().getElementSet());
+				elms.addAll(krl.getStandard().getMaterial().getElementSet());
+				if (krl.getUnknown().hasCoating())
+					elms.addAll(krl.getUnknown().getCoating().getMaterial().getElementSet());
+				if (krl.getStandard().hasCoating())
+					elms.addAll(krl.getStandard().getCoating().getMaterial().getElementSet());
+				scxr.addAll(krl.getXRaySet().getSetOfCharacteristicXRay());
+			}
+		}
+		final Map<ElementalMAC.ElementMAC, Number> macInps = new HashMap<>();
 		final ElementalMAC em = new ElementalMAC();
-		for (final ElementalMAC.ElementMAC emac : elmMacs)
-			macInps.set(emac, em.compute(emac.getElement(), emac.getXRay()));
-		final List<UncertainValues> inputs = new ArrayList<>();
-		inputs.add(macInps);
-		for (final Composition comp : comps.keySet())
-			inputs.add(comp.toMassFraction());
-		return inputs.size() > 0 ? UncertainValues.propagate(all, UncertainValues.combine(inputs))
-				: UncertainValues.NULL;
+		for (Element elm : elms)
+			for (CharacteristicXRay cxr : scxr)
+				macInps.put(new ElementalMAC.ElementMAC(elm, cxr), em.compute(elm, cxr));
+		return new UncertainValues(macInps);
 	}
 
 	private UncertainValues buildMeanIonizationPotentials() {
@@ -2199,31 +2206,6 @@ public class XPPMatrixCorrection2 //
 		assert tags.size() == vals.getDimension();
 		final UncertainValues mip = new UncertainValues(tags, vals, var);
 		return mip;
-	}
-
-	public static LabeledMultivariateJacobianFunction extractUnknown(//
-			final LabeledMultivariateJacobian jac, //
-			final Composition unknown //
-	) throws ArgumentException {
-		final List<Object> inpOut = new ArrayList<>();
-		final Composition mf = unknown;
-		for (final Object mft : mf.getLabels()) {
-			assert mft instanceof MaterialLabel.MassFraction;
-			inpOut.add(mft);
-		}
-		return jac.extract(inpOut, inpOut);
-	}
-
-	public static LabeledMultivariateJacobianFunction extractRemainder( //
-			final LabeledMultivariateJacobian jac, //
-			final Composition unknown //
-	) throws ArgumentException {
-		final Composition mf = unknown;
-		final List<Object> outTags = new ArrayList<>(jac.getOutputLabels());
-		outTags.removeAll(mf.getLabels());
-		final List<Object> inTags = new ArrayList<>(jac.getInputLabels());
-		inTags.removeAll(mf.getLabels());
-		return jac.extract(inTags, outTags);
 	}
 
 	private double phiRhoZ(final double rhoZ, final double a, final double b, final double A, final double B,

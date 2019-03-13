@@ -4,14 +4,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
 import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
@@ -23,8 +25,9 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
  * A matrix correction model is a model that computes the values associated with
@@ -173,7 +176,7 @@ abstract public class MatrixCorrectionModel2 //
 			final List<LabeledMultivariateJacobianFunction> steps, //
 			final Set<Variate> variates //
 	) throws ArgumentException {
-		super(name, steps);
+		super(name, steps, false);
 		mKRatios = kratios;
 		mVariates = Collections.unmodifiableSet(new TreeSet<>(variates));
 		mUnknownMaterial = mKRatios.iterator().next().getUnknown().getMaterial(); 
@@ -188,21 +191,21 @@ abstract public class MatrixCorrectionModel2 //
 					krl.getXRaySet());
 			if (!outputTags.contains(mct))
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
-			final Material stdComp = krl.getStandard().getComposition().getMaterial();
-			for (final Element elm : stdComp.getElementSet()) {
-				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(stdComp, elm);
-				if (!inputTags.contains(mft))
-					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
+			final Composition stdComp = krl.getStandard().getComposition();
+			
+			for (final Object inpLabel : stdComp.getInputLabels()) {
+				if (!inputTags.contains(inpLabel))
+					throw new ArgumentException(toString() + " must take " + inpLabel.toString() + " as an argument.");
 			}
-			final Material unkMat = krl.getUnknown().getMaterial();
-			for (final Element elm : unkMat.getElementSet()) {
-				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(unkMat, elm);
-				if (!inputTags.contains(mft))
-					throw new ArgumentException(toString() + " must take " + mft.toString() + " as an argument.");
-			}
-		}
+			/*
+			 * final Material unkMat = krl.getUnknown().getMaterial(); for (final Element
+			 * elm : unkMat.getElementSet()) { final MaterialLabel.MassFraction mft =
+			 * MaterialLabel.buildMassFractionTag(unkMat, elm); if
+			 * (!inputTags.contains(mft)) throw new ArgumentException(toString() +
+			 * " must take " + mft.toString() + " as an argument."); }
+			 */		}
 	}
-
+	
 	public Set<KRatioLabel> getKRatios() {
 		return Collections.unmodifiableSet(mKRatios);
 	}
@@ -270,9 +273,10 @@ abstract public class MatrixCorrectionModel2 //
 		return new MatrixCorrectionModel2.ChiLabel(comp, other);
 	}
 
-	static public Object coatingMassThickness(final MatrixCorrectionDatum mcd) {
-		return new MatrixCorrectionDatumLabel("[&rho;t]<sub>coating</sub>", mcd);
+	static public Object coatingMassThickness(final Layer layer) {
+		return new BaseLabel<UniqueString, Object, Object>("Thickness", layer.getName());
 	}
+
 
 	static public Object FofChiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.FofChiLabel(comp, other);
@@ -357,6 +361,6 @@ abstract public class MatrixCorrectionModel2 //
 		return sb.toString();
 	}
 
-	abstract public UncertainValues buildInput(Composition estUnknown) throws ArgumentException;
+	abstract public UncertainValuesBase buildInput(Map<MassFraction, ? extends Number> estUnknown) throws ArgumentException;
 
 }

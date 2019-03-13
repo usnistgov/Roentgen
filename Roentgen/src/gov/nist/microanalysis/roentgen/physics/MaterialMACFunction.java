@@ -1,8 +1,10 @@
 package gov.nist.microanalysis.roentgen.physics;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -16,6 +18,8 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
@@ -60,37 +64,25 @@ public class MaterialMACFunction //
 		return res;
 	}
 
-	/**
-	 * Helper for implementing {@link ElementalMAC}.compute(...) and
-	 * {@link ElementalMAC}.computeMC(...)
-	 *
-	 * @param comps List&lt;{@link Composition}&gt;
-	 * @param xray  {@link XRay}
-	 * @return Pair&lt;{@link UncertainValues},
-	 *         {@link ComputeMassAbsorptionCoefficients}&gt;
-	 */
-	final static public Pair<UncertainValues, MaterialMACFunction> buildCompute(//
+	public UncertainValuesBase buildInputs(//
 			final List<Composition> comps, //
 			final XRay xray //
-	) {
-		final List<Material> mfs = new ArrayList<>();
-		for (final Composition comp : comps)
-			mfs.add(comp.getMaterial());
-		final MaterialMACFunction cmac = new MaterialMACFunction(mfs, xray);
-		// Builds an input uncertainty matrix directly
-		final List<? extends Object> inp = cmac.getInputLabels();
-		final UncertainValues uvs = new UncertainValues(inp);
-		final Set<Element> elms = new HashSet<>();
-		// Initialize the elemental fractions for each material
-		for (final Composition mf : comps) {
-			UncertainValues.copy(mf, uvs);
-			elms.addAll(mf.getElementSet());
-		}
-		// Initialize the MACS for all elements relative to xr
+	) throws ArgumentException {
 		final ElementalMAC mac = new ElementalMAC();
-		for (final Element elm : elms)
-			uvs.set(new ElementalMAC.ElementMAC(elm, xray), mac.compute(elm, xray));
-		return Pair.create(uvs, cmac);
+		Map<Object, Number> men = new HashMap<>();
+		for (Object lbl : getInputLabels()) {
+			if (lbl instanceof ElementalMAC.ElementMAC) {
+				final ElementalMAC.ElementMAC eLbl = (ElementalMAC.ElementMAC) lbl;
+				final Element elm = eLbl.getElement();
+				final XRay xr = eLbl.getXRay();
+				men.put(new ElementalMAC.ElementMAC(elm, xr), mac.compute(elm, xr));
+			}
+		}
+		List<UncertainValuesBase> luvb = new ArrayList<>();
+		for(Composition comp : comps)
+			luvb.add(comp.reorder(comp.massFractionTags()));
+		luvb.add(new UncertainValues(men));
+		return UncertainValues.combine(getInputLabels(), luvb, false);
 	}
 
 	interface DecorrelationFunction {
@@ -256,10 +248,14 @@ public class MaterialMACFunction //
 		return res;
 	}
 
-	final static public UncertainValues compute(final List<Composition> materials, final XRay xray) //
+	final static public UncertainValuesCalculator compute(final List<Composition> materials, final XRay xray) //
 			throws ArgumentException {
-		final Pair<UncertainValues, MaterialMACFunction> tmp = buildCompute(materials, xray);
-		return UncertainValues.propagate(tmp.getValue(), tmp.getFirst());
+		List<Material> mats = new ArrayList<>();
+		for (Composition comp : materials)
+			mats.add(comp.getMaterial());
+		MaterialMACFunction mmf = new MaterialMACFunction(mats, xray);
+		UncertainValuesBase inputs = mmf.buildInputs(materials, xray);
+		return UncertainValuesBase.propagate(mmf, inputs);
 	}
 
 	private static List<Object> outputTags(final List<? extends Material> materials, final XRay xray) {
@@ -277,6 +273,19 @@ public class MaterialMACFunction //
 	 */
 	public MaterialMACFunction(final List<? extends Material> materials, final XRay xray) {
 		super(inputTags(materials, xray), outputTags(materials, xray));
+	}
+	
+	/**
+	 * Constructs a MassAbsorptionCoefficient
+	 *
+	 * @param comps A list of compositions to compute
+	 * @param xrays     A list of x-ray energies to compute
+	 */
+	public static MaterialMACFunction  build(final List<Composition> comps, final XRay xray) {
+		List<Material> mats = new ArrayList<>();
+		for(Composition comp : comps)
+			mats.add(comp.getMaterial());
+		return new MaterialMACFunction(mats, xray);
 	}
 
 	/**
@@ -335,4 +344,9 @@ public class MaterialMACFunction //
 		}
 		return res;
 	}
+	
+	public String toString() {
+		return "MaterialMAC"+getOutputLabels();
+	}
+
 }

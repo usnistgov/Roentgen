@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.math3.util.Pair;
 import org.junit.Assert;
@@ -16,6 +17,8 @@ import com.duckandcover.html.Report;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.ElementalMAC;
@@ -93,9 +96,8 @@ public class TestMassAbsorptionCoefficient {
 		final Composition mf6 = Composition.parse("CaF2");
 		final Composition[] mfs = new Composition[] { mf1, mf2, mf3, mf4, mf5, mf6 };
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Iron, XRayTransition.LA1);
-		final Pair<UncertainValues, MaterialMACFunction> pr = MaterialMACFunction.buildCompute(Arrays.asList(mfs), cxr);
-		final UncertainValues uv = UncertainValues.propagate(pr.getSecond(), pr.getFirst());
-		final UncertainValues mc = UncertainValues.propagateMC(pr.getSecond(), pr.getFirst(), 16000);
+		UncertainValuesCalculator uv = MaterialMACFunction.compute(Arrays.asList(mfs), cxr);
+		final UncertainValuesBase mc = UncertainValues.propagateMC(uv, 16000);
 		if (REPORT) {
 			final Report r = new Report("TestMultiMAC");
 			for (final Composition mf : mfs)
@@ -148,10 +150,11 @@ public class TestMassAbsorptionCoefficient {
 		final Report r = new Report("Test K412");
 		try {
 			for (final CharacteristicXRay cxr : cxrs) {
-				final Pair<UncertainValues, MaterialMACFunction> pr = MaterialMACFunction
-						.buildCompute(Arrays.asList(mfs), cxr);
-				final UncertainValues uv = UncertainValues.propagate(pr.getSecond(), pr.getFirst());
-				// final UncertainValues mc =
+				final List<Composition> comps = Arrays.asList(mfs);
+				MaterialMACFunction mmf = MaterialMACFunction.build(comps, cxr);
+				UncertainValuesBase inps = mmf.buildInputs(comps, cxr);
+				final UncertainValuesBase uv = UncertainValues.propagate(mmf, inps);
+				// final UncertainValuesBase mc =
 				// UncertainValues.propagateDeltaOrdered(pr.getSecond(), pr.getFirst(),
 				// pr.getFirst().getValues().mapMultiply(0.001));
 				r.addHeader(cxr);
