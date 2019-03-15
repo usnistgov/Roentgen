@@ -18,7 +18,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * @author Nicholas
  *
  */
-public class TrimmedNamedMultivariateJacobianFunction //
+public class TrimmedNamedMultivariateJacobianFunction
 		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
 	private final LabeledMultivariateJacobianFunction mBase;

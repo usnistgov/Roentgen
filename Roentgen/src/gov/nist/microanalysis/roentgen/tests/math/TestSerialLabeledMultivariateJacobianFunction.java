@@ -24,7 +24,7 @@ import junit.framework.TestCase;
 /**
  * @author Nicholas
  */
-public class TestMultiStepNamedMultivariateJacobianFunction extends TestCase {
+public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 
 	private final List<? extends Object> mInputs = Arrays.asList(new String[] { "X0", "X1", "X2" });
 	private final List<? extends Object> mOut1 = Arrays.asList(new String[] { "F1_0", "F1_1", "F1_2" });
@@ -130,29 +130,63 @@ public class TestMultiStepNamedMultivariateJacobianFunction extends TestCase {
 				mStep2 };
 		final SerialLabeledMultivariateJacobianFunction msnmjf = new SerialLabeledMultivariateJacobianFunction("Test1",
 				Arrays.asList(steps));
-		final UncertainValuesBase uv = UncertainValues.propagate(msnmjf, mInput1);
+		final UncertainValues uv = UncertainValues.force(UncertainValues.propagate(msnmjf, mInput1));
+		final UncertainValues mc = UncertainValues.propagateMC(msnmjf, mInput1, 100000);
+		final UncertainValues delta = UncertainValues.propagateDeltaOrdered(msnmjf, mInput1,
+				mInput1.getValues().mapMultiply(0.001));
 		final Report rep = new Report("Step 1 and 2");
 		rep.addHeader("Inputs");
 		rep.add(mInput1);
 		// rep.addHeader("Jacobian");
 		// rep.add(LabeledMultivariateJacobian.compute(msnmjf, mValues0));
 		rep.addHeader("Outputs 1 and 2");
-		rep.add(uv);
+		rep.add(uv, Mode.VERBOSE);
 		rep.addHeader("MC Outputs 1 and 2");
-		rep.add(UncertainValues.propagateMC(msnmjf, mInput1, 100000));
+		rep.add(mc, Mode.VERBOSE);
+		rep.addHeader("Delta Outputs 1 and 2");
+		rep.add(delta, Mode.VERBOSE);
 		rep.inBrowser(Mode.NORMAL);
 
-		// Calculated with Mathematica notebook MultiStepNMJF test1.nb
-		// double[] rv = new double[] { 100.812, 110.18, 42.1803, 31.501, 24.5424
-		// };
-		// double[][] rc = new double[][] { { 533.887, 483.696, 455.926 }, {
-		// 483.696,
-		// 1438.36, 1330.66 },
-		// { 455.926, 1330.66, 1305.74 } };
-		// UncertainValuesBase res = new UncertainValues(mOut1, new
-		// ArrayRealVector(rv),
-		// MatrixUtils.createRealMatrix(rc));
-		// assertTrue(uv.equals(res, 0.01));
+		assertTrue(delta.equals(uv, 0.001));
+		assertTrue(mc.equals(uv, 0.5));
+	}
+
+	public void testValues(double v1, double v2, double eps) {
+		if (Double.isFinite((v1 - v2) / v2))
+			assertEquals(0.0, Math.abs((v1 - v2) / v1), eps);
+		else
+			assertEquals(v1, v2, eps);
+	}
+
+	public void test3() throws IOException, ArgumentException {
+		final LabeledMultivariateJacobianFunction[] steps = new LabeledMultivariateJacobianFunction[] { mStep1,
+				mStep2 };
+
+		final List<? extends Object> outputs = Arrays.asList(new String[] { "F2_0", "X1", "X2", "F1_0", "F1_2" });
+
+		final SerialLabeledMultivariateJacobianFunction trimmed = new SerialLabeledMultivariateJacobianFunction(
+				"Trimmed", Arrays.asList(steps), outputs);
+
+		final SerialLabeledMultivariateJacobianFunction full = new SerialLabeledMultivariateJacobianFunction("Full",
+				Arrays.asList(steps), true);
+
+		final UncertainValuesBase trimRes = UncertainValues.propagate(trimmed, mInput1);
+		final UncertainValuesBase fullRes = UncertainValues.propagate(full, mInput1);
+
+		final Report rep = new Report("Step 1 and 2");
+		rep.addHeader("Trimmed");
+		rep.add(trimRes, Mode.VERBOSE);
+		rep.addHeader("Full");
+		rep.add(fullRes, Mode.VERBOSE);
+		rep.inBrowser(Mode.NORMAL);
+		
+		for (Object rLbl : trimRes.getLabels()) {
+			testValues(trimRes.getEntry(rLbl), fullRes.getEntry(rLbl), 0.001);
+			testValues(trimRes.getUncertainty(rLbl), fullRes.getUncertainty(rLbl), 0.001);
+			for (Object cLbl : trimRes.getLabels())
+				testValues(trimRes.getCorrelationCoefficient(rLbl, cLbl), fullRes.getCorrelationCoefficient(rLbl, cLbl),
+						0.01);
+		}
 	}
 
 }

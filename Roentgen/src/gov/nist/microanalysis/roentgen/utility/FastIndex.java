@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
+ * A {@link List} with an associated index to speed the indexOf(...) function.
+ * Does not allow adding an item twice
+ * 
  * Seems to produce a 10 % - 20 % improvement in overall evaluation speed.
  *
  * @author Nicholas W. M. Ritchie
@@ -23,11 +27,15 @@ public class FastIndex<H> extends ArrayList<H> {
 		this(Collections.emptyList());
 	}
 
-	public FastIndex(final Collection<H> list) {
+	public FastIndex(final List<H> outputs) {
 		super();
 		mIndex = new HashMap<>();
-		for (final H h : list)
+		for(H h : outputs)
 			add(h);
+	}
+
+	public FastIndex<H> copy() {
+		return new FastIndex<H>(this);
 	}
 
 	@Override
@@ -48,7 +56,28 @@ public class FastIndex<H> extends ArrayList<H> {
 			} else
 				return false;
 		} else
+			throw new UnsupportedOperationException("The item " + obj + " already exists in the FastIndex.");
+	}
+	
+	
+	public boolean addIfMissing(final H obj) {
+		if (indexOf(obj) == -1) {
+			final int len = super.size();
+			if (super.add(obj)) {
+				assert super.indexOf(obj) == len : obj + " " + super.indexOf(obj) + "!=" + len;
+				mIndex.put(obj, len);
+				return true;
+			} else
+				return false;
+		} else
 			return false;
+	}
+	
+	public boolean addMissing(final Collection<? extends H> hs) {
+		boolean added = false;
+		for (final H h : hs)
+			added |= addIfMissing(h);
+		return added;
 	}
 
 	@Override
@@ -57,6 +86,17 @@ public class FastIndex<H> extends ArrayList<H> {
 		for (final H h : hs)
 			added |= add(h);
 		return added;
+	}
+
+	@Override
+	public H remove(int i) {
+		throw new UnsupportedOperationException("This method is not supported");
+	}
+
+	
+	@Override
+	public boolean remove(Object o) {
+		throw new UnsupportedOperationException("This method is not supported");
 	}
 
 	@Override

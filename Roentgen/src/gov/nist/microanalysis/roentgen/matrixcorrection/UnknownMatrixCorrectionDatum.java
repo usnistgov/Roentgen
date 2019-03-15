@@ -73,6 +73,8 @@ public class UnknownMatrixCorrectionDatum //
 	) {
 		this(estimate, beamEnergy, takeOffAngle, Double.NaN, null);
 	}
+	
+	
 
 	/**
 	 * @param beamEnergy

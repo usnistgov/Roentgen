@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -155,7 +156,7 @@ public class CompExamples {
 
 	public void runStainless1() //
 			throws ArgumentException, IOException {
-		final Material mat = new Material("SS304", Element.Chromium, Element.Nickel, Element.Iron);
+		final Material mat = new Material("SS304", Arrays.asList(Element.Chromium, Element.Nickel, Element.Iron));
 		final Map<Element, Number> men = new HashMap<>();
 		men.put(Element.Chromium, new UncertainValue(0.19, 0.01));
 		men.put(Element.Nickel, new UncertainValue(0.0925, 0.0125));
@@ -186,7 +187,7 @@ public class CompExamples {
 			}
 			{
 				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap());
-				comp.setCalculator(new UncertainValuesCalculator.FiniteDifference(comp.getInputs().getValues().mapMultiply(0.001)));
+				comp.setCalculator(new UncertainValuesCalculator.FiniteDifference(comp.getInputValues().mapMultiply(0.001)));
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 			}

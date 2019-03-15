@@ -25,6 +25,7 @@ import com.duckandcover.lazy.SimplyLazy;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * <p>
@@ -57,29 +58,27 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 	private final SimplyLazy<List<? extends Object>> mInputLabels = new SimplyLazy<List<? extends Object>>() {
 		@Override
 		protected List<? extends Object> initialize() {
-			final Set<Object> res = new HashSet<>();
-			final Set<Object> out = new HashSet<>();
+			final List<Object> res = new FastIndex<>();
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				final List<? extends Object> inp = func.getInputLabels();
 				for (final Object tag : inp)
-					if (!out.contains(tag))
+					if (!res.contains(tag))
 						res.add(tag);
-				out.addAll(func.getOutputLabels());
 			}
 			return new ArrayList<>(res);
 		}
-
 	};
 
 	private final SimplyLazy<List<? extends Object>> mOutputLabels = new SimplyLazy<List<? extends Object>>() {
 		@Override
 		protected List<? extends Object> initialize() {
-			final Set<Object> res = new HashSet<>();
+			final List<Object> res = new FastIndex<>();
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 				final List<? extends Object> out = func.getOutputLabels();
 				for (final Object tag : out) {
-					assert !res.contains(tag) : "Duplicate output tag";
-					res.add(tag);
+					assert (func.inputIndex(tag) != -1) || (!res.contains(tag)) : "Duplicate output tag";
+					if (!res.contains(tag))
+						res.add(tag);
 				}
 			}
 			return new ArrayList<>(res);
@@ -95,7 +94,7 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		final List<Object> all = new ArrayList<>();
 		for (final LabeledMultivariateJacobianFunction func : mFuncs) {
 			for (final Object tag : func.getOutputLabels()) {
-				if (all.contains(tag))
+				if (all.contains(tag) && (func.inputIndex(tag) == -1))
 					throw new ArgumentException("The output tag " + tag.toString() + " is repeated.");
 				all.add(tag);
 			}
@@ -235,35 +234,37 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		 */
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final List<? extends Object> output = getOutputLabels();
-			final int oDim = output.size();
-			// assert oDim > 0 : "Output dimensions is zero in " + toString();
-			final int iDim = getInputDimension();
-			// assert iDim > 0 : "Input dimensions is zero in " + toString();
+			final int iDim = getInputDimension(), oDim = getOutputDimension();
 			final RealVector vals = new ArrayRealVector(oDim);
 			final RealMatrix cov = NullableRealMatrix.build(oDim, iDim);
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
-				final RealVector funcPoint = func.extractArgument(this, point);
-				final Map<Object, Double> consts = new HashMap<>(getConstants());
+				RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
+				for(int i = 0;i<func.getInputDimension();++i) {
+					Object fLbl = func.getInputLabel(i);
+					funcPoint.setEntry(i, point.getEntry(inputIndex(fLbl)));
+				}				
+				// final RealVector funcPoint = func.extractArgument(this, point);
 				if (func instanceof ImplicitMeasurementModel) {
-					final List<? extends Object> fOut = func.getOutputLabels();
-					for (final Object tag : fOut)
+					ImplicitMeasurementModel imm = (ImplicitMeasurementModel) func;
+					final Map<Object, Double> consts = new HashMap<>();
+					for (final Object tag : func.getOutputLabels())
 						consts.put(tag, getValue(tag, point));
+					imm.initializeConstants(consts);
 				}
-				func.initializeConstants(consts);
+				func.dumpArguments(funcPoint, this);
 				final Pair<RealVector, RealMatrix> v = func.value(funcPoint);
 				final RealVector fVals = v.getFirst();
 				final RealMatrix fJac = v.getSecond();
 				final List<? extends Object> fout = func.getOutputLabels();
 				final List<? extends Object> fin = func.getInputLabels();
-				final int[] findx = new int[fin.size()];
-				for (int c = 0; c < findx.length; ++c)
-					findx[c] = inputIndex(fin.get(c));
+				final int[] idxc = new int[fin.size()];
+				for (int c = 0; c < idxc.length; ++c)
+					idxc[c] = inputIndex(fin.get(c));
 				for (int r = 0; r < fout.size(); ++r) {
 					final int idxr = outputIndex(fout.get(r));
 					vals.setEntry(idxr, fVals.getEntry(r));
-					for (int c = 0; c < findx.length; ++c)
-						cov.setEntry(idxr, findx[c], fJac.getEntry(r, c));
+					for (int c = 0; c < idxc.length; ++c)
+						cov.setEntry(idxr, idxc[c], fJac.getEntry(r, c));
 				}
 			}
 			return Pair.create(vals, cov);
@@ -277,22 +278,19 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 		 */
 		@Override
 		public RealVector optimized(final RealVector point) {
-			final List<? extends Object> output = getOutputLabels();
-			final int oDim = output.size();
-			assert oDim > 0 : "Output dimensions is zero in " + toString();
-			final int iDim = getInputDimension() + getConstantDimension();
-			assert iDim > 0 : "Input dimensions is zero in " + toString();
+			final int oDim = getOutputDimension();
 			final RealVector vals = new ArrayRealVector(oDim);
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
-				final RealVector funcPoint = func.extractArgument(this, point);
-				func.initializeConstants(getConstants());
+				RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
+				for(int i = 0;i<func.getInputDimension();++i) {
+					Object fLbl = func.getInputLabel(i);
+					funcPoint.setEntry(i, point.getEntry(inputIndex(fLbl)));
+				}				
+				// final RealVector funcPoint = func.extractArgument(this, point);
+				func.dumpArguments(funcPoint, this);
 				final RealVector fVals = func.compute(funcPoint);
-				final List<? extends Object> fout = func.getOutputLabels();
-				final int fOutDim = fout.size();
-				for (int r = 0; r < fOutDim; ++r) {
-					final int idxr = outputIndex(fout.get(r));
-					vals.setEntry(idxr, fVals.getEntry(r));
-				}
+				for (int r = 0; r < func.getOutputDimension(); ++r)
+					vals.setEntry(outputIndex(func.getOutputLabel(r)), fVals.getEntry(r));
 			}
 			return vals;
 		}
@@ -400,8 +398,9 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			final RealMatrix rm = new Array2DRowRealMatrix(getOutputDimension(), getInputDimension());
 			final List<Callable<Result>> tasks = new ArrayList<>();
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
-				func.initializeConstants(getConstants());
-				tasks.add(new NMJFValue(func, func.extractArgument(this, point)));
+				final RealVector fPoint = func.extractArgument(this, point);
+				func.dumpArguments(fPoint, this);
+				tasks.add(new NMJFValue(func, fPoint));
 			}
 			final List<Future<Result>> res = mPool.invokeAll(tasks);
 			for (final Future<Result> fp : res) {
@@ -431,8 +430,9 @@ public class LabeledMultivariateJacobianFunctionBuilder implements IToHTML {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final List<Callable<Result>> tasks = new ArrayList<>();
 			for (final LabeledMultivariateJacobianFunction func : mFuncs) {
-				func.initializeConstants(getConstants());
-				tasks.add(new NMJFOptimized(func, func.extractArgument(this, point)));
+				final RealVector fPoint = func.extractArgument(this, point);
+				func.dumpArguments(fPoint, this);
+				tasks.add(new NMJFOptimized(func, fPoint));
 			}
 			final List<Future<Result>> res = mPool.invokeAll(tasks);
 			for (final Future<Result> fp : res) {

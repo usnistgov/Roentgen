@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.physics.composition;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
@@ -28,10 +28,12 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 public class Material //
 		implements IToHTML {
 
-	private final SortedSet<Element> mElements;
-	private final Map<Element, Number> mAtomicWeights;
 	private final String mHTMLName;
+	private final SortedSet<Element> mElements;
 	private final Optional<Conductivity> mConductivity;
+	private final UUID mUniquizer;
+
+	private final Map<Element, Number> mAtomicWeights;
 
 	private final int mHashCode;
 
@@ -49,8 +51,12 @@ public class Material //
 		if (getClass() != obj.getClass())
 			return false;
 		final Material other = (Material) obj;
-		return mHTMLName.equals(other.mHTMLName) && mElements.equals(other.mElements) //
-				&& mConductivity.equals(other.mConductivity);
+		// Omitting atomic weights
+		return mHTMLName.equals(other.mHTMLName) //
+				&& mElements.equals(other.mElements) //
+				&& mConductivity.equals(other.mConductivity) //
+				&& mUniquizer.equals(other.mUniquizer) //
+				&& mAtomicWeights.equals(other.mAtomicWeights);
 	}
 
 	public static Set<Material> convert(final Collection<Composition> comps) {
@@ -60,33 +66,27 @@ public class Material //
 		return res;
 	}
 
-	/**
-	 *
-	 */
-	public Material(final String htmlName, final Collection<Element> elms, Conductivity conduct) {
+
+	public Material(//
+			final String htmlName, //
+			final Collection<Element> elms, //
+			Conductivity conduct, //
+			Map<Element, ? extends Number> atomicWeights //
+	) {
 		mHTMLName = htmlName;
 		mElements = Collections.unmodifiableSortedSet(new TreeSet<>(elms));
 		mConductivity = Optional.ofNullable(conduct);
-		mHashCode = Objects.hash(mElements, mHTMLName, mConductivity);
-		mAtomicWeights=new HashMap<>();
+		mAtomicWeights = new HashMap<>(atomicWeights);
+		mUniquizer = UUID.randomUUID();
+		mHashCode = Objects.hash(mHTMLName, mElements, mConductivity, mAtomicWeights, mUniquizer);
 	}
 	
+	public Material(final String htmlName, final Collection<Element> elms, Conductivity conduct) {
+		this(htmlName, elms, conduct, Collections.emptyMap());
+	}
 
 	public Material(final String htmlName, final Collection<Element> elms) {
 		this(htmlName, elms, null);
-	}
-
-	public Material(Element elm) {
-		this("Pure "+elm.getAbbrev(), Collections.singletonList(elm));
-	}
-
-	public Material(Element elm, Conductivity cond) {
-		this("Pure "+elm.getAbbrev(), Collections.singletonList(elm), cond);
-	}
-
-	
-	public Material(final String htmlName, final Element... elms) {
-		this(htmlName, Arrays.asList(elms));
 	}
 
 	public SortedSet<Element> getElementSet() {
@@ -96,11 +96,11 @@ public class Material //
 	public String getHTMLName() {
 		return mHTMLName.toString();
 	}
-	
+
 	public Number getAtomicWeight(Element elm) {
 		return mAtomicWeights.getOrDefault(elm, elm.getAtomicWeight());
 	}
-	
+
 	public void setAtomicWeight(Element elm, Number value) {
 		mAtomicWeights.put(elm, value);
 	}

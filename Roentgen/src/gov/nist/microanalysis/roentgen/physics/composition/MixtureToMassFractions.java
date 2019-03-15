@@ -27,8 +27,8 @@ final class MixtureToMassFractions //
 		extends LabeledMultivariateJacobianFunction //
 		implements ILabeledMultivariateFunction {
 
-	private final Material mNewMaterial;
 	private final List<Object> mInputs;
+	private final Material mNewMaterial;
 
 	static private List<? extends Object> buildOutputs(//
 			final Material newMat, //
@@ -59,33 +59,22 @@ final class MixtureToMassFractions //
 		return res;
 	}
 
-	static private Set<Element> buildElements(final Set<Material> mats) {
-		final Set<Element> elms = new HashSet<>();
-		for (final Material mat : mats)
-			elms.addAll(mat.getElementSet());
-		return elms;
-	}
-
 	/**
 	 * Converts a mixture of Composition objects into the mass fraction of the
 	 * constituent elements.
 	 *
-	 * @param htmlName  String
+	 * @param newMat  A Material to define
 	 * @param mats      Set&lt;Material&gt;
 	 * @param normalize
 	 */
-	public MixtureToMassFractions(final String htmlName, final Set<Material> mats, boolean normalize) {
-		super(buildInputs(mats, normalize), buildOutputs(new Material(htmlName, buildElements(mats)), mats));
-		mNewMaterial = new Material(htmlName, buildElements(mats));
+	public MixtureToMassFractions(final Material newMat, final Set<Material> mats, boolean normalize) {
+		super(buildInputs(mats, normalize), buildOutputs(newMat, mats));
 		mInputs = new ArrayList<>();
+		mNewMaterial = newMat;
 		for (final Material mat : mats) {
 			final MaterialMassFraction mmft = MaterialLabel.buildMaterialFractionTag(mat);
 			mInputs.add(normalize ? Normalize.buildNormalized(mmft) : mmft);
 		}
-	}
-
-	public Material getNewMaterial() {
-		return mNewMaterial;
 	}
 
 	@Override

@@ -20,7 +20,7 @@ import junit.framework.TestCase;
  * @author Nicholas
  * @version 1.0
  */
-public class TestNamedMultivariateJacobianFuntion extends TestCase {
+public class TestLabeledMultivariateJacobianFuntion extends TestCase {
 
 	public void test1() {
 		final List<Object> funcs = Arrays.asList("f1", "f2", "f3");

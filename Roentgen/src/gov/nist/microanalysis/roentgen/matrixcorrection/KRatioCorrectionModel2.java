@@ -1,6 +1,7 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,7 +66,6 @@ public class KRatioCorrectionModel2 //
 
 	static private final int MAX_ITERATIONS = 100;
 	static private final double THRESH = 1.0e-4;
-
 
 	private final MatrixCorrectionModel2 mModel;
 
@@ -215,14 +215,7 @@ public class KRatioCorrectionModel2 //
 			return "K-to-C";
 		}
 	}
-
-	public KRatioCorrectionModel2(//
-			final Set<KRatioLabel> krs, //
-			final List<LabeledMultivariateJacobianFunction> preComps, //
-			final Set<MatrixCorrectionModel2.Variate> variates //
-	) throws ArgumentException {
-		this(krs, new XPPMatrixCorrection2(krs, preComps, variates));
-	}
+	
 
 	private static List<LabeledMultivariateJacobianFunction> buildSteps(//
 			final Set<KRatioLabel> krs, //
@@ -240,14 +233,49 @@ public class KRatioCorrectionModel2 //
 		res.add(new ImplicitMeasurementModel(new KR2HModel(krs), outputs));
 		return res;
 	}
+	
+	private final Set<KRatioLabel> mKRatioSet;
 
 	public KRatioCorrectionModel2(//
 			final Set<KRatioLabel> krs, //
-			final MatrixCorrectionModel2 model //
+			final List<LabeledMultivariateJacobianFunction> preComps, //
+			final List<? extends Object> outputLabels //
+	) throws ArgumentException {
+		this(krs, new XPPMatrixCorrection2(krs, preComps, outputLabels), outputLabels);
+	}
+	
+	public KRatioCorrectionModel2(//
+			final Set<KRatioLabel> krs, //
+			final List<LabeledMultivariateJacobianFunction> preComps
+	) throws ArgumentException {
+		this(krs, new XPPMatrixCorrection2(krs, preComps));
+	}
+
+
+	public KRatioCorrectionModel2(//
+			final Set<KRatioLabel> krs, //
+			final MatrixCorrectionModel2 model, //
+			List<? extends Object> outputLabels //
+	) throws ArgumentException {
+		super("K-Ratio Model[" + model.toString() + "]", buildSteps(krs, model), outputLabels);
+		mModel = model;
+		mKRatioSet = krs;
+	}
+	
+	public KRatioCorrectionModel2(//
+			final Set<KRatioLabel> krs, //
+			final MatrixCorrectionModel2 model
 	) throws ArgumentException {
 		super("K-Ratio Model[" + model.toString() + "]", buildSteps(krs, model));
 		mModel = model;
+		mKRatioSet = krs;
 	}
+
+	public Set<KRatioLabel> getKRatios(){
+		return Collections.unmodifiableSet(mKRatioSet);
+	}
+	
+	
 
 	/**
 	 * Returns an instance of the {@link MatrixCorrectionModel2} used to build this
@@ -294,10 +322,9 @@ public class KRatioCorrectionModel2 //
 	 */
 	static public KRatioCorrectionModel2 buildXPPModel( //
 			final Set<KRatioLabel> keySet, //
-			final List<LabeledMultivariateJacobianFunction> preComps, //
-			final Set<MatrixCorrectionModel2.Variate> variates //
+			final List<LabeledMultivariateJacobianFunction> preComps //
 	) throws ArgumentException {
-		return new KRatioCorrectionModel2(keySet, preComps, variates);
+		return new KRatioCorrectionModel2(keySet, preComps);
 	}
 
 	public UncertainValues getInputs(//
@@ -306,7 +333,6 @@ public class KRatioCorrectionModel2 //
 	) throws ArgumentException {
 		return UncertainValues.extract(getInputLabels(), UncertainValues.propagate(mcm, inputs), krs, inputs);
 	}
-
 
 	public Material getUnknownMaterial() {
 		return mModel.getUnknownMaterial();
@@ -342,7 +368,7 @@ public class KRatioCorrectionModel2 //
 		trimmed.setBaseInputs(buildInput(mfMap, kratios));
 		final RealVector start = new ArrayRealVector(trimmed.getInputDimension());
 		final List<Element> elms = new ArrayList<>();
-		for(int i=0;i<trimmed.getInputDimension();++i) {
+		for (int i = 0; i < trimmed.getInputDimension(); ++i) {
 			final MassFraction mf = (MassFraction) trimmed.getInputLabel(i);
 			elms.add(mf.getElement());
 			start.setEntry(i, mfMap.get(mf).doubleValue());

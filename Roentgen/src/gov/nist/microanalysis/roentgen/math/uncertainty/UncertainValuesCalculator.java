@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +15,7 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.lazy.SimplyLazy;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * A lazy mechanism to perform uncertainty propagation. The
@@ -30,15 +30,28 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 
 	public interface ICalculator {
 
-		Pair<RealVector, RealMatrix> compute(LabeledMultivariateJacobianFunction func, UncertainValuesBase point);
+		/**
+		 * Give a {@link LabeledMultivariateJacobianFunction} and and {@link UncertainValues}
+		 * computes the values and the covariance in some manner or another.
+		 * 
+		 * @param func
+		 * @param point
+		 * @return Pair&lt;RealVector, RealMatrix&gt;
+		 */
+		public Pair<RealVector, RealMatrix> compute( //
+				final LabeledMultivariateJacobianFunction func, //
+				final UncertainValues point //
+		);
 
 	}
 
 	public static class Jacobian implements ICalculator {
 
 		@Override
-		public Pair<RealVector, RealMatrix> compute(final LabeledMultivariateJacobianFunction func,
-				final UncertainValuesBase point) {
+		public Pair<RealVector, RealMatrix> compute( //
+				final LabeledMultivariateJacobianFunction func, //
+				final UncertainValues point //
+		) {
 			return func.evaluate(point.getValues());
 		}
 
@@ -50,6 +63,23 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 
 	public static class FiniteDifference implements ICalculator {
 
+		@Override
+		public int hashCode() {
+			return Objects.hash(mDeltaInputs);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			FiniteDifference other = (FiniteDifference) obj;
+			return Objects.equals(mDeltaInputs, other.mDeltaInputs);
+		}
+
 		final RealVector mDeltaInputs;
 
 		public FiniteDifference(final RealVector dinp) {
@@ -57,11 +87,13 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> compute(final LabeledMultivariateJacobianFunction func,
-				final UncertainValuesBase point) {
+		public Pair<RealVector, RealMatrix> compute( //
+				final LabeledMultivariateJacobianFunction func, //
+				final UncertainValues point //
+		) {
 			final RealVector inp = point.getValues();
 			final RealVector vals = func.compute(inp);
-			final RealMatrix jac = func.computeDelta(inp, mDeltaInputs);
+			final RealMatrix jac = func.computeFiniteDifference(inp, mDeltaInputs);
 			return Pair.create(vals, jac);
 		}
 
@@ -72,13 +104,14 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 	}
 
 	private final LabeledMultivariateJacobianFunction mFunction;
-	private UncertainValuesBase mInputs;
+	private UncertainValues mInputs;
+	private UncertainValuesBase mRawInputs;
 	private ICalculator mCalculator;
 	private final boolean mRetainInputs;
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(mFunction, mInputs);
+		return Objects.hash(mFunction, mInputs, mRawInputs, mCalculator, mRetainInputs);
 	}
 
 	@Override
@@ -90,7 +123,12 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		if (getClass() != obj.getClass())
 			return false;
 		final UncertainValuesCalculator other = (UncertainValuesCalculator) obj;
-		return Objects.equals(mFunction, other.mFunction) && Objects.equals(mInputs, other.mInputs);
+		return Objects.equals(mFunction, other.mFunction) //
+				&& Objects.equals(mInputs, other.mInputs) //
+				&& Objects.equals(mRawInputs, other.mRawInputs) //
+				&& Objects.equals(mCalculator, other.mCalculator) //
+				&& (mRetainInputs == other.mRetainInputs);
+
 	}
 
 	private final SimplyLazy<Pair<RealVector, RealMatrix>> mEvaluated = new SimplyLazy<Pair<RealVector, RealMatrix>>() {
@@ -99,6 +137,7 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		protected Pair<RealVector, RealMatrix> initialize() {
 			final Pair<RealVector, RealMatrix> tmp = mCalculator.compute(mFunction, mInputs);
 			if (mRetainInputs) {
+				// Does not change the column dimension, just adds the inputs to the covariances
 				final RealVector rv1 = tmp.getFirst();
 				final RealMatrix rm1 = tmp.getSecond();
 				final int inpLen = rm1.getColumnDimension();
@@ -124,10 +163,11 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		protected UncertainValues initialize() {
 			final Pair<RealVector, RealMatrix> eval = mEvaluated.get();
 			final RealMatrix jac = eval.getSecond();
+			final RealMatrix cov = jac.multiply(mInputs.getCovariances().multiply(jac.transpose()));
 			return new UncertainValues(//
 					getOutputLabels(), //
 					eval.getFirst(), //
-					jac.multiply(mInputs.getCovariances().multiply(jac.transpose())));
+					cov);
 		}
 	};
 
@@ -150,26 +190,28 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		}
 	};
 
-	private final static List<? extends Object> buildInputs(final LabeledMultivariateJacobianFunction func,
-			final boolean retainInputs) {
-		final List<Object> res = new ArrayList<>();
+	private final static List<? extends Object> buildOutputs(//
+			final LabeledMultivariateJacobianFunction func, //
+			final boolean retainInputs //
+	) {
+		final FastIndex<Object> res = new FastIndex<>();
 		if (retainInputs)
-			res.addAll(func.getInputLabels());
-		res.addAll(func.getOutputLabels());
+			res.addMissing(func.getInputLabels());
+		res.addMissing(func.getOutputLabels());
 		return res;
 	}
 
-	/**
-	 * @throws ArgumentException
-	 *
-	 */
-	public UncertainValuesCalculator(final LabeledMultivariateJacobianFunction func, final UncertainValuesBase inputs,
-			final boolean retainInputs) //
-			throws ArgumentException {
-		super(buildInputs(func, retainInputs));
+	public UncertainValuesCalculator(//
+			final LabeledMultivariateJacobianFunction func, //
+			final UncertainValuesBase inputs, //
+			final boolean retainInputs //
+	) throws ArgumentException {
+		super(buildOutputs(func, retainInputs));
 		mFunction = func;
-		if (inputs != null)
-			mInputs = inputs.reorder(mFunction.getInputLabels());
+		if (inputs != null) {
+			mRawInputs = inputs;
+			mInputs = UncertainValues.force(inputs.reorder(mFunction.getInputLabels()));
+		}
 		mCalculator = new Jacobian();
 		mRetainInputs = retainInputs;
 	}
@@ -187,15 +229,23 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 			final LabeledMultivariateJacobianFunction func, final UncertainValuesBase inps, final double sigma//
 	) throws ArgumentException {
 		final UncertainValuesCalculator res = new UncertainValuesCalculator(func, inps, false);
-		final RealVector rv = inps.getValues().mapMultiply(sigma);
+		final RealVector rv = inps.getValues(func.getInputLabels()).mapMultiply(sigma);
 		res.setCalculator(new FiniteDifference(rv));
+		return res;
+	}
+	
+	public static UncertainValuesCalculator buildDelta(//
+			final LabeledMultivariateJacobianFunction func, final UncertainValuesBase inps, final RealVector delta//
+	) throws ArgumentException {
+		final UncertainValuesCalculator res = new UncertainValuesCalculator(func, inps, false);
+		res.setCalculator(new FiniteDifference(delta));
 		return res;
 	}
 
 	public void setInputs(final UncertainValuesBase inputs) //
 			throws ArgumentException {
 		synchronized (this) {
-			mInputs = inputs.reorder(mFunction.getInputLabels());
+			mInputs = UncertainValues.force(inputs.reorder(mFunction.getInputLabels()));
 			mEvaluated.reset();
 			mFullOutputs.reset();
 			mOutputValues.reset();
@@ -219,8 +269,36 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		return mFunction;
 	}
 
-	public UncertainValuesBase getInputs() {
+	/**
+	 * Returns the input {@link UncertainValues} in the correct order for the
+	 * associated {@link LabeledMultivariateJacobianFunction}.
+	 * 
+	 * 
+	 * @return {@link UncertainValues}
+	 */
+	public UncertainValues getInputs() {
 		return mInputs;
+	}
+
+	/**
+	 * Returns the input {@link RealVector} in the correct order for the associated
+	 * {@link LabeledMultivariateJacobianFunction}.
+	 * 
+	 * 
+	 * @return {@link RealVector}
+	 */
+	public RealVector getInputValues() {
+		return mInputs.getValues();
+	}
+
+	/**
+	 * Returns the input {@link UncertainValuesBase} in the form in which it was
+	 * passed to the constructor - any order with any extra values.
+	 * 
+	 * @return {@link UncertainValuesBase}
+	 */
+	public UncertainValuesBase getRawInputs() {
+		return mRawInputs;
 	}
 
 	public RealMatrix getJacobian() {
@@ -238,8 +316,12 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 	}
 
 	public void setCalculator(final ICalculator calc) {
-		mCalculator = calc;
-		reset();
+		synchronized (this) {
+			mCalculator = calc;
+			mEvaluated.reset();
+			mFullOutputs.reset();
+			mOutputValues.reset();
+		}
 	}
 
 	public int getInputDimension() {
@@ -297,7 +379,6 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 	public HashMap<? extends Object, UncertainValue> getOutputValues( //
 			final double tol//
 	) throws ArgumentException {
-		final UncertainValues ordered = mFullOutputs.get();
 		final Pair<RealVector, RealMatrix> pvm = mEvaluated.get();
 		final RealVector vals = pvm.getFirst();
 		final RealMatrix jac = pvm.getSecond();
@@ -306,10 +387,15 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		final List<? extends Object> outLabels = getOutputLabels();
 		for (int i = 0; i < outLabels.size(); ++i)
 			res.put(outLabels.get(i), new UncertainValue(vals.getEntry(i)));
+		
+		RealMatrix covs = mInputs.getCovariances();
+		RealMatrix zeroed = MatrixUtils.createRealMatrix(covs.getRowDimension(), covs.getColumnDimension());
 		for (int inIdx = 0; inIdx < inLabels.size(); ++inIdx) {
 			final Object inLabel = inLabels.get(inIdx);
-			final UncertainValues zeroed = UncertainValues.zeroBut(inLabel, ordered);
-			final RealMatrix covLabel = jac.multiply(zeroed.getCovariances()).multiply(jac.transpose());
+			final int idx = mInputs.indexOf(inLabel);
+			zeroed.setEntry(idx, idx, covs.getEntry(idx, idx));
+			final RealMatrix covLabel = jac.multiply(zeroed).multiply(jac.transpose());
+			zeroed.setEntry(idx, idx, 0.0);
 			for (int outIdx = 0; outIdx < outLabels.size(); ++outIdx) {
 				final UncertainValue val = res.get(outLabels.get(outIdx));
 				final double sigma = Math.sqrt(covLabel.getEntry(outIdx, outIdx));
@@ -360,19 +446,17 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		}
 		return res;
 	}
-	
+
 	/**
-	 * Perform the uncertainty calculation using a Monte Carlo evaluation
-	 * model.
+	 * Perform the uncertainty calculation using a Monte Carlo evaluation model.
 	 * 
 	 * @param nEvals
 	 * @return {@link UncertainValues}
-	 * @throws ArgumentException 
+	 * @throws ArgumentException
 	 */
 	public UncertainValues propagateMC(int nEvals) throws ArgumentException {
-		final MCPropagator mcp = new MCPropagator(getFunction(), getInputs());
+		final MCPropagator mcp = new MCPropagator(this);
 		return mcp.compute(nEvals);
 	}
-	
 
 }

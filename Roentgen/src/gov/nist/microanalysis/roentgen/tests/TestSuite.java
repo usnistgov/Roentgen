@@ -4,8 +4,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 import gov.nist.microanalysis.roentgen.tests.math.TestIntInterval;
-import gov.nist.microanalysis.roentgen.tests.math.TestMultiStepNamedMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.tests.math.TestNamedMultivariateJacobianFuntion;
+import gov.nist.microanalysis.roentgen.tests.math.TestSerialLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.tests.math.TestLabeledMultivariateJacobianFuntion;
 import gov.nist.microanalysis.roentgen.tests.math.TestSafeMultivariateNormalDistribution;
 import gov.nist.microanalysis.roentgen.tests.math.TestUncertainValue;
 import gov.nist.microanalysis.roentgen.tests.math.TestUncertainValues;
@@ -24,8 +24,8 @@ import gov.nist.microanalysis.roentgen.tests.spectrum.TestSpectrumFileReader;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ //
 		TestIntInterval.class, //
-		TestMultiStepNamedMultivariateJacobianFunction.class, //
-		TestNamedMultivariateJacobianFuntion.class, //
+		TestSerialLabeledMultivariateJacobianFunction.class, //
+		TestLabeledMultivariateJacobianFuntion.class, //
 		TestSafeMultivariateNormalDistribution.class, //
 		TestUncertainValue.class, //
 		TestUncertainValues.class, //

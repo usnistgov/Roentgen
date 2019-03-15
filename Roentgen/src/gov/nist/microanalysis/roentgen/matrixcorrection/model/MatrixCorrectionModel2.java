@@ -1,12 +1,10 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection.model;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
@@ -137,7 +135,7 @@ abstract public class MatrixCorrectionModel2 //
 	 * @author Nicholas W. M. Ritchie
 	 *
 	 */
-	public enum Variate {
+	public enum VariateX {
 
 		MeanIonizationPotential("Mean ionization potential"), //
 		MassAbsorptionCofficient("Mass absorption coefficent"), //
@@ -153,7 +151,7 @@ abstract public class MatrixCorrectionModel2 //
 
 		private final String mName;
 
-		private Variate(final String name) {
+		private VariateX(final String name) {
 			mName = name;
 		}
 
@@ -166,33 +164,31 @@ abstract public class MatrixCorrectionModel2 //
 
 	protected final Set<KRatioLabel> mKRatios;
 	// The types of variables to compute Jacobian elements.
-	private final Set<MatrixCorrectionModel2.Variate> mVariates;
-	
+
 	private final Material mUnknownMaterial;
 
 	public MatrixCorrectionModel2(//
 			final String name, //
 			final Set<KRatioLabel> kratios, //
 			final List<LabeledMultivariateJacobianFunction> steps, //
-			final Set<Variate> variates //
+			List<? extends Object> outputLabels //
 	) throws ArgumentException {
-		super(name, steps);
+		super(name, steps, outputLabels);
 		mKRatios = kratios;
-		mVariates = Collections.unmodifiableSet(new TreeSet<>(variates));
-		mUnknownMaterial = mKRatios.iterator().next().getUnknown().getMaterial(); 
+		mUnknownMaterial = mKRatios.iterator().next().getUnknown().getMaterial();
 		// Validate the inputs...
 		final List<? extends Object> outputTags = getOutputLabels();
 		final List<? extends Object> inputTags = getInputLabels();
-		
+
 		for (final KRatioLabel krl : mKRatios) {
-			if(!krl.getUnknown().getMaterial().equals(mUnknownMaterial))
+			if (!krl.getUnknown().getMaterial().equals(mUnknownMaterial))
 				throw new ArgumentException("The k-ratios can only be associated with one material.");
 			final MatrixCorrectionLabel mct = new MatrixCorrectionLabel(krl.getUnknown(), krl.getStandard(),
 					krl.getXRaySet());
 			if (!outputTags.contains(mct))
 				throw new ArgumentException(toString() + " does not calculate the required output " + mct.toString());
 			final Composition stdComp = krl.getStandard().getComposition();
-			
+
 			for (final Object inpLabel : stdComp.getInputLabels()) {
 				if (!inputTags.contains(inpLabel))
 					throw new ArgumentException(toString() + " must take " + inpLabel.toString() + " as an argument.");
@@ -203,13 +199,18 @@ abstract public class MatrixCorrectionModel2 //
 			 * MaterialLabel.buildMassFractionTag(unkMat, elm); if
 			 * (!inputTags.contains(mft)) throw new ArgumentException(toString() +
 			 * " must take " + mft.toString() + " as an argument."); }
-			 */		}
+			 */ }
 	}
-	
+
+	public MatrixCorrectionModel2(String string, Set<KRatioLabel> kratios,
+			List<LabeledMultivariateJacobianFunction> buildSteps) throws ArgumentException {
+		this(string, kratios,buildSteps, SerialLabeledMultivariateJacobianFunction.allOutputs(buildSteps, false));
+	}
+
 	public Set<KRatioLabel> getKRatios() {
 		return Collections.unmodifiableSet(mKRatios);
 	}
-	
+
 	public Material getUnknownMaterial() {
 		return mUnknownMaterial;
 	}
@@ -234,31 +235,6 @@ abstract public class MatrixCorrectionModel2 //
 	 *
 	 * @return
 	 */
-	public static Set<Variate> minimalVariates() {
-		final Set<Variate> res = new HashSet<>();
-		res.add(Variate.StandardComposition);
-		res.add(Variate.UnknownComposition);
-		return res;
-	}
-
-	public static Set<Variate> allVariates() {
-		final Set<Variate> res = new HashSet<>(Arrays.asList(Variate.values()));
-		return res;
-	}
-
-	/**
-	 * All Variates except AtomicWeight, IonizationExponent, MeanIonizationPotential
-	 * and WeightsOfLines.
-	 *
-	 * @return
-	 */
-	public static Set<Variate> defaultVariates() {
-		final Set<Variate> res = MatrixCorrectionModel2.allVariates();
-		res.remove(Variate.IonizationExponent);
-		res.remove(Variate.MeanIonizationPotential);
-		res.remove(Variate.WeightsOfLines);
-		return res;
-	}
 
 	static public Object aLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
 			final CharacteristicXRay cxr) {
@@ -276,7 +252,6 @@ abstract public class MatrixCorrectionModel2 //
 	static public Object coatingMassThickness(final Layer layer) {
 		return new BaseLabel<UniqueString, Object, Object>("Thickness", layer.getName());
 	}
-
 
 	static public Object FofChiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.FofChiLabel(comp, other);
@@ -342,25 +317,7 @@ abstract public class MatrixCorrectionModel2 //
 		return new MatrixCorrectionModel2.ZAFLabel("Z", unk, std, cxr);
 	}
 
-	public boolean isSet(final Variate variate) {
-		return mVariates.contains(variate);
-	}
-
-	/**
-	 * Creates a user-friendly string summarizing the Variates that are set.
-	 *
-	 * @return String A list of Variates in string form.
-	 */
-	public String listVariates() {
-		final StringBuffer sb = new StringBuffer();
-		for (final Variate var : mVariates) {
-			if (sb.length() > 0)
-				sb.append(", ");
-			sb.append(var.mName);
-		}
-		return sb.toString();
-	}
-
-	abstract public UncertainValuesBase buildInput(Map<MassFraction, ? extends Number> estUnknown) throws ArgumentException;
+	abstract public UncertainValuesBase buildInput(Map<MassFraction, ? extends Number> estUnknown)
+			throws ArgumentException;
 
 }

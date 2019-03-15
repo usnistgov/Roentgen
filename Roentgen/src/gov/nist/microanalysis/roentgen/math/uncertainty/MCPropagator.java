@@ -9,14 +9,15 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.EstimateUncertainValues;
 import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
 
 /**
  * A simple class for facilitating the evaluation of an uncertainty problem
  * using a Monte Carlo approach. The problem is defined by a
- * {@link LabeledMultivariateJacobianFunction}. A {@link UncertainValuesBase} object
- * provides the initial values and associated uncertainties. A
+ * {@link LabeledMultivariateJacobianFunction}. A {@link UncertainValuesBase}
+ * object provides the initial values and associated uncertainties. A
  * {@link MultivariateRealDistribution} object or the default
  * {@link SafeMultivariateNormalDistribution} object provides the random
  * variates.
@@ -28,7 +29,7 @@ public class MCPropagator {
 	private final LabeledMultivariateJacobianFunction mFunction;
 	private final MultivariateRealDistribution mDistribution;
 	private final Constraint[] mConstraints;
-	private final UncertainValuesBase mValues;
+	private final UncertainValues mValues;
 	private final EstimateUncertainValues mOutputs;
 	private final EstimateUncertainValues mInputs;
 
@@ -94,13 +95,6 @@ public class MCPropagator {
 		}
 	}
 
-	private static Constraint[] buildNone(final int n) {
-		final Constraint[] res = new Constraint[n];
-		for (int i = 0; i < n; ++i)
-			res[i] = new None();
-		return res;
-	}
-
 	private static Constraint[] buildSigma(final double sigma, final UncertainValuesBase uv) {
 		final int n = uv.getDimension();
 		final Constraint[] res = new Constraint[n];
@@ -118,8 +112,11 @@ public class MCPropagator {
 	private void evaluate() {
 		final RealVector pt = MatrixUtils.createRealVector(mDistribution.sample());
 		assert !pt.isNaN();
-		for (int i = 0; i < mConstraints.length; ++i)
-			pt.setEntry(i, mConstraints[i].limit(pt.getEntry(i)));
+		for (int i = 0; i < pt.getDimension(); ++i)
+			if ((mConstraints != null) && (i < mConstraints.length))
+				pt.setEntry(i, mConstraints[i].limit(pt.getEntry(i)));
+			else
+				pt.setEntry(i, pt.getEntry(i));
 		mInputs.add(pt);
 		mOutputs.add(mFunction.compute(pt));
 	}
@@ -160,18 +157,18 @@ public class MCPropagator {
 	 * @param constraints The constraints to the input values
 	 * @param mrd         A {@link MultivariateRealDistribution} to generate the
 	 *                    random variates
+	 * @throws ArgumentException
 	 */
 	private MCPropagator( //
-			final LabeledMultivariateJacobianFunction nmvjf, //
-			final UncertainValuesBase inputs, //
+			UncertainValuesCalculator uvc, //
 			final Constraint[] constraints, //
 			final MultivariateRealDistribution mrd//
-	) {
-		mFunction = nmvjf;
-		mConstraints = constraints.clone();
-		mValues = inputs;
-		mOutputs = new EstimateUncertainValues(nmvjf.getOutputLabels());
-		mInputs = new EstimateUncertainValues(nmvjf.getInputLabels());
+	) throws ArgumentException {
+		mFunction = uvc.getFunction();
+		mConstraints = constraints != null ? constraints.clone() : null;
+		mValues = uvc.getInputs();
+		mOutputs = new EstimateUncertainValues(mFunction.getOutputLabels());
+		mInputs = new EstimateUncertainValues(mFunction.getInputLabels());
 		mDistribution = mrd;
 	}
 
@@ -185,13 +182,14 @@ public class MCPropagator {
 	 * @param inputs The input values and associated covariance matrix
 	 * @param mrd    A {@link MultivariateRealDistribution} to generate the random
 	 *               variates
+	 * @throws ArgumentException
 	 */
 	public MCPropagator( //
 			final LabeledMultivariateJacobianFunction nmvjf, //
 			final UncertainValuesBase uv, //
 			final MultivariateRealDistribution mrd //
-	) {
-		this(nmvjf, uv, buildNone(uv.getDimension()), mrd);
+	) throws ArgumentException {
+		this(new UncertainValuesCalculator(nmvjf, uv), null, mrd);
 	}
 
 	/**
@@ -204,11 +202,10 @@ public class MCPropagator {
 	 * @param nmvjf  {@link LabeledMultivariateJacobianFunction}
 	 * @param inputs The input values and associated covariance matrix in the same
 	 *               order as the nmvjf input labels.
+	 * @throws ArgumentException
 	 */
-	public MCPropagator(final LabeledMultivariateJacobianFunction nmvjf, final UncertainValuesBase uv) {
-		this(nmvjf, uv, buildNone(uv.getDimension()),
-				new SafeMultivariateNormalDistribution(uv.getValues(), uv.getCovariances()));
-		assert nmvjf.getInputLabels().equals(uv.getLabels());
+	public MCPropagator(final UncertainValuesCalculator uvc) throws ArgumentException {
+		this(uvc, null, new SafeMultivariateNormalDistribution(uvc.getInputs()));
 	}
 
 	/**
@@ -222,14 +219,15 @@ public class MCPropagator {
 	 * @param sigma  Constrain the inputs to within sigma of the mean
 	 * @param mrd    A {@link MultivariateRealDistribution} to generate the random
 	 *               variates
+	 * @throws ArgumentException
 	 */
 	public MCPropagator( //
 			final LabeledMultivariateJacobianFunction nmvjf, //
 			final UncertainValuesBase uv, //
 			final double sigma, //
 			final MultivariateRealDistribution mrd //
-	) {
-		this(nmvjf, uv, buildSigma(sigma, uv), mrd);
+	) throws ArgumentException {
+		this(new UncertainValuesCalculator(nmvjf, uv), buildSigma(sigma, uv), mrd);
 	}
 
 	/**
@@ -241,10 +239,15 @@ public class MCPropagator {
 	 * @param nmvjf  {@link LabeledMultivariateJacobianFunction}
 	 * @param inputs The input values and associated covariance matrix
 	 * @param sigma  Constrain the inputs to within sigma of the mean
+	 * @throws ArgumentException
 	 */
 
-	public MCPropagator(final LabeledMultivariateJacobianFunction nmvjf, final UncertainValuesBase uv, final double sigma) {
-		this(nmvjf, uv, sigma, new SafeMultivariateNormalDistribution(uv.getValues(), uv.getCovariances()));
+	public MCPropagator(//
+			final LabeledMultivariateJacobianFunction nmvjf, //
+			final UncertainValuesBase uv, //
+			final double sigma //
+	) throws ArgumentException {
+		this(nmvjf, uv, sigma, new SafeMultivariateNormalDistribution(uv));
 	}
 
 	/**
@@ -293,7 +296,7 @@ public class MCPropagator {
 	 *
 	 * @return {@link UncertainValues}
 	 */
-	public UncertainValuesBase getInputDistribution() {
+	public UncertainValues getInputDistribution() {
 		return mValues;
 	}
 

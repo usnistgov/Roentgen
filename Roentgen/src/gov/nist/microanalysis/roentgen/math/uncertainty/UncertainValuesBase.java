@@ -163,7 +163,8 @@ abstract public class UncertainValuesBase //
 
 		};
 
-		protected CombinedUncertainValues(List<? extends Object> labels, List<? extends UncertainValuesBase> bases, boolean first)//
+		protected CombinedUncertainValues(List<? extends Object> labels, List<? extends UncertainValuesBase> bases,
+				boolean first)//
 				throws ArgumentException {
 			super(labels);
 			mIndices = new ArrayList<>();
@@ -174,7 +175,7 @@ abstract public class UncertainValuesBase //
 					if (idx >= 0) {
 						mIndices.add(Pair.create(uvb, idx));
 						cx++;
-						if(first)
+						if (first)
 							break;
 					}
 				}
@@ -198,7 +199,7 @@ abstract public class UncertainValuesBase //
 
 	};
 
-	protected static final double MAX_CORR = 1.00000001;
+	protected static final double MAX_CORR = 1.001;
 	private final FastIndex<? extends Object> mLabels;
 	private int mHashCode = 0;
 
@@ -373,7 +374,7 @@ abstract public class UncertainValuesBase //
 			final UncertainValuesBase input //
 	) throws ArgumentException {
 		return new UncertainValuesCalculator(nmjf, input);
-	}	
+	}
 
 	public static UncertainValues forceMinCovariance(final UncertainValuesBase vals, final RealVector minCov) {
 		assert vals.getDimension() == minCov.getDimension();
@@ -383,7 +384,6 @@ abstract public class UncertainValuesBase //
 				cov.setEntry(rc, rc, minCov.getEntry(rc));
 		return new UncertainValues(vals.getLabels(), vals.getValues(), cov);
 	}
-
 
 	/**
 	 * Extract an array of values from this UncertainValue object for the specified
@@ -428,7 +428,8 @@ abstract public class UncertainValuesBase //
 		return new ReorderedUncertainValues(labels, this);
 	}
 
-	public static UncertainValuesBase combine(List<? extends Object> labels, List<? extends UncertainValuesBase> bases, boolean takeFirst) //
+	public static UncertainValuesBase combine(List<? extends Object> labels, List<? extends UncertainValuesBase> bases,
+			boolean takeFirst) //
 			throws ArgumentException {
 		return new CombinedUncertainValues(labels, bases, takeFirst);
 	}
@@ -800,19 +801,18 @@ abstract public class UncertainValuesBase //
 	final public Map<Object, Double> getValueMap() {
 		return getValueMap(getLabels());
 	}
-	
+
 	final public Map<Object, Double> getValueMap(List<? extends Object> labels) {
 		final Map<Object, Double> res = new HashMap<>();
 		for (final Object label : labels)
 			res.put(label, getEntry(label));
 		return res;
 	}
-	
-	
-	final public <T> Map<T, Double> getValueMap(Class<T> cls){
+
+	final public <T> Map<T, Double> getValueMap(Class<T> cls) {
 		final Map<T, Double> res = new HashMap<>();
 		for (final Object label : getLabels())
-			if(cls.isInstance(label))
+			if (cls.isInstance(label))
 				res.put(cls.cast(label), getEntry(label));
 		return res;
 	}
@@ -1104,10 +1104,12 @@ abstract public class UncertainValuesBase //
 
 	public boolean equals(final UncertainValuesBase uv2, final double tol) {
 		for (int r = 0; r < this.getDimension(); ++r) {
-			if (Math.abs(getEntry(r) - uv2.getEntry(mLabels.get(r))) > tol)
-				return false;
+			final double tmp = Math.abs((getEntry(r) - uv2.getEntry(mLabels.get(r))) / getEntry(r));
+			if (Double.isFinite(tmp))
+				if (tmp > tol)
+					return false;
 			for (int c = r; c < this.getDimension(); ++c)
-				if (Math.abs(getCovariance(r, c) - uv2.getCovariance(mLabels.get(r), mLabels.get(c))) > tol)
+				if (Math.abs(getCorrelationCoefficient(r, c) - uv2.getCorrelationCoefficient(mLabels.get(r), mLabels.get(c))) > tol)
 					return false;
 		}
 		return true;
@@ -1195,7 +1197,7 @@ abstract public class UncertainValuesBase //
 	 *
 	 * @param idx
 	 * @return {@link UncertainValues} A new object
-	 * @throws ArgumentException 
+	 * @throws ArgumentException
 	 */
 	final public UncertainValuesBase extract(final int[] indices) throws ArgumentException {
 		return reorder(getLabels(indices));
@@ -1294,8 +1296,8 @@ abstract public class UncertainValuesBase //
 
 	public List<Object> findMissing(List<? extends Object> inputLabels) {
 		List<Object> res = new ArrayList<>();
-		for(Object lbl : inputLabels)
-			if(indexOf(lbl)==-1) 
+		for (Object lbl : inputLabels)
+			if (indexOf(lbl) == -1)
 				res.add(lbl);
 		return res;
 	}

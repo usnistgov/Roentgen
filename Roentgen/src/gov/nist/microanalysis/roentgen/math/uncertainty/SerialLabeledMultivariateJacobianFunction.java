@@ -1,7 +1,7 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +20,8 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
+import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * <p>
@@ -49,49 +50,36 @@ public class SerialLabeledMultivariateJacobianFunction //
 		extends LabeledMultivariateJacobianFunction //
 		implements ILabeledMultivariateFunction, IToHTML {
 
+	private final String mName;
+
+	/**
+	 * Should we keep the function inputs as outputs?
+	 */
+	private final boolean mKeepInputs;
+
 	/**
 	 * Steps in order from inner-most to outer-most. The output of the inner steps
 	 * become the input of the subsequent outer.
 	 */
 	private final List<LabeledMultivariateJacobianFunction> mSteps = new ArrayList<>();
 
-	private final String mName;
-
-	private Set<? extends Object> mFinalOutputs;
-
-	private final boolean mRetainInputs;
-
-	private final static List<? extends Object> computeOutputs( //
-			final List<LabeledMultivariateJacobianFunction> steps, //
-			final boolean copyInputs //
-	) throws ArgumentException {
-		final Set<Object> sob = new HashSet<>();
-		final List<Object> res = new ArrayList<>();
-		if (copyInputs)
-			res.addAll(computeInputs(steps));
-		for (final LabeledMultivariateJacobianFunction nmjf : steps) {
-			final List<? extends Object> labels = nmjf.getOutputLabels();
-			for (final Object label : labels) {
-				if (sob.contains(label))
-					throw new ArgumentException("The output " + label + " has already been defined in an earlier step");
-				sob.add(label);
-				res.add(label);
-			}
-		}
-		return res;
-	}
-
 	/**
-	 * A list containing the labels associated with all required input values that
-	 * are not computed as output values. (Values for these labels must be provided
-	 * to the evaluate function.)
-	 *
-	 * @throws ArgumentException
+	 * A list of the subset of outputs required to be retained from each step.
 	 */
-	private final static List<? extends Object> computeInputs( //
-			final List<LabeledMultivariateJacobianFunction> steps //
-	) throws ArgumentException {
-		return new ArrayList<>(minimumInputRequirements(0, steps));
+	private final List<FastIndex<? extends Object>> mOutputs = new ArrayList<>();
+
+	public static List<? extends Object> allOutputs( //
+			final List<LabeledMultivariateJacobianFunction> steps, //
+			final boolean keepInputs //
+	) {
+		final FastIndex<Object> res = new FastIndex<>();
+		for (int i = 0; i < steps.size(); ++i) {
+			final LabeledMultivariateJacobianFunction step = steps.get(i);
+			if (keepInputs)
+				res.addMissing(step.getInputLabels());
+			res.addMissing(step.getOutputLabels());
+		}
+		return new FastIndex<>(res);
 	}
 
 	/**
@@ -102,11 +90,13 @@ public class SerialLabeledMultivariateJacobianFunction //
 	 * @param steps The list of steps
 	 * @return Set&lt;Object&gt; The set of labels
 	 */
-	private static Set<Object> minimumInputRequirements(//
+	private static FastIndex<Object> minimumInputRequirements(//
 			final int step, //
-			final List<LabeledMultivariateJacobianFunction> steps //
+			final List<LabeledMultivariateJacobianFunction> steps, //
+			final List<? extends Object> outputs //
 	) {
 		final Set<Object> inputs = new HashSet<>();
+		inputs.addAll(outputs);
 		for (int st = steps.size() - 1; st >= step; --st) {
 			final LabeledMultivariateJacobianFunction nmjf = steps.get(st);
 			inputs.removeAll(nmjf.getOutputLabels());
@@ -114,49 +104,54 @@ public class SerialLabeledMultivariateJacobianFunction //
 			if (nmjf instanceof ImplicitMeasurementModel)
 				inputs.addAll(nmjf.getOutputLabels());
 		}
-		return inputs;
+		return new FastIndex<>(new ArrayList<>(inputs));
 	}
 
-	/**
-	 * Create a MultiStepNamedMultivariateJacobianFunction object to compute the
-	 * steps in order, where the output values for earlier steps become available as
-	 * input values to later steps.
-	 *
-	 * @param name
-	 * @param steps
-	 * @param copyInputs Copy the input values into the output
-	 * @throws ArgumentException
-	 */
-	public SerialLabeledMultivariateJacobianFunction(//
+	public SerialLabeledMultivariateJacobianFunction( //
 			final String name, //
 			final List<LabeledMultivariateJacobianFunction> steps, //
-			final boolean copyInputs //
+			final List<? extends Object> outputs, //
+			final boolean keepInputs //
 	) throws ArgumentException {
-		super(computeInputs(steps), computeOutputs(steps, copyInputs));
+		super(minimumInputRequirements(0, steps, outputs), outputs);
 		mName = name;
-		mSteps.addAll(steps);
-		mRetainInputs = copyInputs;
+		mKeepInputs = keepInputs;
+		for (int step = 0; step < steps.size(); ++step) {
+			if (step != 0)
+				mOutputs.add(minimumInputRequirements(step, steps, outputs));
+			mSteps.add(steps.get(step));
+		}
+		mOutputs.add(new FastIndex<>(outputs));
 	}
 
-	public boolean isKeepingInputs() {
-		return mRetainInputs;
+	public SerialLabeledMultivariateJacobianFunction( //
+			final String name, //
+			final List<LabeledMultivariateJacobianFunction> steps, //
+			final List<? extends Object> outputs //
+	) throws ArgumentException {
+		this(name, steps, outputs, false);
 	}
 
-	/**
-	 * Create a MultiStepNamedMultivariateJacobianFunction object to compute the
-	 * steps in order, where the output values for earlier steps become available as
-	 * input values to later steps.
-	 *
-	 * @param name
-	 * @param steps
-	 * @param copyInputs Copy the input values into the output
-	 * @throws ArgumentException
-	 */
-	public SerialLabeledMultivariateJacobianFunction(//
+	public SerialLabeledMultivariateJacobianFunction( //
+			final String name, //
+			final List<LabeledMultivariateJacobianFunction> steps, //
+			final boolean keepInputs //
+	) throws ArgumentException {
+		this(name, steps, allOutputs(steps, keepInputs), keepInputs);
+	}
+
+	public SerialLabeledMultivariateJacobianFunction( //
 			final String name, //
 			final List<LabeledMultivariateJacobianFunction> steps //
 	) throws ArgumentException {
 		this(name, steps, false);
+	}
+
+	public SerialLabeledMultivariateJacobianFunction(//
+			final SerialLabeledMultivariateJacobianFunction func, //
+			final List<? extends Object> outputs //
+	) throws ArgumentException {
+		this(func.mName, func.mSteps, outputs, func.mKeepInputs);
 	}
 
 	/**
@@ -195,34 +190,9 @@ public class SerialLabeledMultivariateJacobianFunction //
 		return -1;
 	}
 
-	/**
-	 * Returns an array consisting of the labels associated with the m output random
-	 * variables.
-	 *
-	 * @return List&lt;Object&gt;
-	 */
-	@Override
-	public List<? extends Object> getOutputLabels() {
-		return mFinalOutputs != null ? new ArrayList<>(mFinalOutputs) : super.getOutputLabels();
-	}
-
-	/**
-	 * A mechanism for optimizing the calculation by keeping a subset of the outputs
-	 * at each step. <code>finalOutput</code> specifies which outputs to keep
-	 * regardless of whether they are required by a subsequent step. At each step in
-	 * the calculation determine which outputs are required by subsequent steps and
-	 * and keep only these outputs.
-	 *
-	 * @param finalOutputs
-	 */
-	public void trimOutputs(final Set<? extends Object> finalOutputs) {
-		mFinalOutputs = new HashSet<>(getOutputLabels());
-		mFinalOutputs.retainAll(finalOutputs);
-	}
-
 	@Override
 	public String toString() {
-		return mName + "[" + getInputDimension() + "," + getOutputDimension() + "]";
+		return mName.toString();
 	}
 
 	@Override
@@ -305,6 +275,24 @@ public class SerialLabeledMultivariateJacobianFunction //
 		}
 	}
 
+	protected void dumpCurrentValues(final int step, final List<? extends Object> index, final RealVector vals) {
+		if (sDump != null) {
+			final StringBuffer sb = new StringBuffer();
+			final NumberFormat nf = new HalfUpFormat("0.00E0");
+			sb.append("Step[" + step + "] -> ");
+			sb.append(toString() + " : ");
+			for (int i = 0; i < index.size(); ++i) {
+				if (i != 0)
+					sb.append(",");
+				sb.append(index.get(i));
+				sb.append("=");
+				sb.append(nf.format(vals.getEntry(i)));
+			}
+			sb.append("\n");
+			sDump.append(sb.toString());
+		}
+	}
+
 	/**
 	 * This function builds the output vector and Jacobian by calling in sequence
 	 * the steps in the calculation and building cumulatively the result Jacobian.
@@ -317,137 +305,71 @@ public class SerialLabeledMultivariateJacobianFunction //
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		assert point.getDimension() > 0 : "Zero dimension input in " + this.toString();
-		final List<? extends Object> inpLabels = getInputLabels();
-		// inputs contains labels and the associated values (inputs and calculated
-		// values)
-		final Map<Object, Double> inputs = new HashMap<>(); // label -> index in valLabels
-		// Add the input labels and values
-		for (int i = 0; i < point.getDimension(); ++i)
-			inputs.put(inpLabels.get(i), point.getEntry(i));
-		// Cumulative Jacobian: Start with an identity matrix representing the partials
-		// the input values relative to themselves and accumulate.
-		RealMatrix cumJac = MatrixUtils.createRealIdentityMatrix(point.getDimension());
-		// prevRows keeps track of the rows in the previous step's Jacobian
-		List<? extends Object> prevRows = Collections.unmodifiableList(inpLabels);
-
+		// The current set of output values
+		RealVector currVals = point;
+		// Cumulative Jacobian
+		RealMatrix cumJac = null;
+		List<? extends Object> currInputs = getInputLabels();
+		// The rows and cols associated with the cumJac
 		for (int step = 0; step < mSteps.size(); ++step) {
+			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
 			final LabeledMultivariateJacobianFunction func = mSteps.get(step);
 			// Initialize constants based on this->getConstants()
-			final Map<Object, Double> consts = new HashMap<>(getConstants());
-			final List<? extends Object> fout = func.getOutputLabels();
 			if (func instanceof ImplicitMeasurementModel) {
+				final ImplicitMeasurementModel imm = (ImplicitMeasurementModel) func;
 				// Add in output values as constants...
-				for (final Object label : fout)
-					consts.put(label, inputs.get(label));
+				final Map<Object, Double> consts = new HashMap<>();
+				for (final Object label : func.getOutputLabels())
+					consts.put(label, currVals.getEntry(currInputs.indexOf(label)));
+				imm.initializeConstants(consts);
 			}
-			func.initializeConstants(consts);
 			// Build the vector argument to func and call evaluate
 			final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 			final List<? extends Object> fin = func.getInputLabels();
 			for (int i = 0; i < funcPoint.getDimension(); ++i) {
 				final Object label = fin.get(i);
-				assert label != null : "Missmatch in length between input labels and point dimension.";
-				assert inputs.containsKey(label) : "The value for label " + label + " has not been assigned by Step "
-						+ step + ".";
-				funcPoint.setEntry(i, inputs.get(label));
+				assert currInputs.indexOf(label) != -1 : //
+				label + " not assigned for " + func + " (step " + step + ")";
+				funcPoint.setEntry(i, currVals.getEntry(currInputs.indexOf(label)));
 			}
+			func.dumpArguments(funcPoint, this);
 			final Pair<RealVector, RealMatrix> fres = func.evaluate(funcPoint);
-			final RealVector ovals = fres.getFirst();
-			assert ovals.getDimension() > 0;
-			final RealMatrix ojac = fres.getSecond();
-			assert ojac.getRowDimension() == ovals.getDimension();
-			// (ovals, ojac) = func.evaluate(funcPoint)
-			// ovals[fout], ojac[fout][fin]
-			// expJac[expRows][expCols]
-			assert fout.size() == ovals.getDimension();
-			for (int i = 0; i < ovals.getDimension(); ++i)
-				inputs.put(fout.get(i), ovals.getEntry(i));
-			{ // Build the resulting Jacobian
-				final List<? extends Object> currCols = prevRows; // output becomes input
-				// Build currRows from prevRows + newItems
-				final List<Object> currRows = new ArrayList<>(prevRows); // old + new output
-				// foutIdx is where to place the out
-				final int[] foutRow = new int[fout.size()];
-				if (func instanceof ImplicitMeasurementModel) {
-					// Output label will be one of the previous steps output labels also
-					for (int i = 0; i < fout.size(); ++i) {
-						final int prevIdx = prevRows.indexOf(fout.get(i));
-						assert prevIdx != -1 : "Jacobian elements should alread exist for " + fout.get(i);
-						foutRow[i] = prevIdx;
-					}
-				} else {
-					// Add the output label to the end off currRows
-					for (int i = 0; i < fout.size(); ++i) {
-						final Object label = fout.get(i);
-						assert (prevRows.indexOf(label) == -1) || (inpLabels.indexOf(label) != -1) : //
-						label + " was previously calculated.";
-						currRows.add(label);
-						foutRow[i] = currRows.size() - 1;
-					}
-				}
-				// Build the extended Jacobian previous inputs and current outputs
-				final RealMatrix newJac = MatrixUtils.createRealMatrix(currRows.size(), currCols.size());
-				for (int rc = 0; rc < currCols.size(); ++rc)
-					newJac.setEntry(rc, rc, fout.contains(currCols.get(rc)) ? 0.0 : 1.0);
-				for (int c = 0; c < fin.size(); ++c) {
-					final int col = currCols.indexOf(fin.get(c));
-					assert col != -1 : fin.get(c) + " was not a row in the previous Jacobian.";
-					for (int r = 0; r < foutRow.length; ++r) {
-						assert foutRow[r] < newJac.getRowDimension() : fout.get(foutRow[r]);
-						assert foutRow[r] != -1;
-						newJac.setEntry(foutRow[r], col, ojac.getEntry(r, c));
-					}
-				}
-				/*
-				 * Keep the Jacobian row count as small as possible each step by eliminating
-				 * rows associated with values that are not required as input to subsequent
-				 * steps.
-				 */
-				if (mFinalOutputs != null) {
-					// Determine the minimum set if outputs to retain
-					final Set<Object> minOutputs = minimumInputRequirements(step + 1, mSteps);
-					minOutputs.addAll(mFinalOutputs);
-					// Build a list of rows to keep and their index
-					final List<Object> trimmedRows = new ArrayList<>();
-					final List<Integer> trimmedIdx = new ArrayList<>();
-					for (int r = 0; r < currRows.size(); ++r) {
-						final Object label = currRows.get(r);
-						if (minOutputs.contains(label)) {
-							trimmedRows.add(label);
-							trimmedIdx.add(r);
-						} else
-							inputs.remove(label);
-					}
-					// Build the trimmed Jacobian
-					final RealMatrix trimmedJac = NullableRealMatrix.build(trimmedIdx.size(), currCols.size());
-					for (int r = trimmedIdx.size() - 1; r >= 0; --r)
-						trimmedJac.setRow(r, newJac.getRow(trimmedIdx.get(r)));
-					// Calculate the cumulative Jacobian
-					cumJac = trimmedJac.multiply(cumJac);
-					prevRows = Collections.unmodifiableList(trimmedRows);
-				} else {
-					// Calculate the cumulative Jacobian
-					cumJac = newJac.multiply(cumJac);
-					prevRows = Collections.unmodifiableList(currRows);
+			final RealVector vres = fres.getFirst();
+			final RealMatrix mres = fres.getSecond();
+
+			final FastIndex<? extends Object> nextInps = mOutputs.get(step);
+			final RealVector newVals = new ArrayRealVector(nextInps.size());
+			final RealMatrix newJac = MatrixUtils.createRealMatrix(nextInps.size(), currInputs.size());
+
+			final int[] cidx = new int[func.getInputDimension()];
+			for (int cI = 0; cI < cidx.length; ++cI)
+				cidx[cI] = currInputs.indexOf(func.getInputLabel(cI));
+
+			for (int r = 0; r < nextInps.size(); ++r) {
+				final Object nextVal = nextInps.get(r);
+				final int rI = currInputs.indexOf(nextVal);
+				if (rI != -1) { // One of the current inputs...
+					assert currInputs.get(rI).equals(nextVal) : "1: " + nextVal + " for " + func + " in " + this;
+					newVals.setEntry(r, currVals.getEntry(rI));
+					newJac.setEntry(r, rI, 1.0);
+				} else { // function inputs
+					final int frI = func.outputIndex(nextVal);
+					assert func.getOutputLabel(frI).equals(nextVal) : //
+					"2: " + nextVal + " for " + func + " in " + this;
+					assert frI != -1 : //
+					nextVal + " is missing in SerialLMJF";
+					newVals.setEntry(r, vres.getEntry(frI));
+					for (int cI = 0; cI < cidx.length; ++cI)
+						newJac.setEntry(r, cidx[cI], mres.getEntry(frI, cI));
 				}
 			}
+			currVals = newVals;
+			cumJac = cumJac == null ? newJac : newJac.multiply(cumJac);
+			currInputs = nextInps;
+			assert cumJac.getRowDimension() == nextInps.size();
 		}
-		// Build the output structures
-		final List<? extends Object> outs = getOutputLabels();
-		final RealVector resVals = new ArrayRealVector(outs.size());
-		final RealMatrix resJac = NullableRealMatrix.build(outs.size(), inpLabels.size());
-		{ // Ensure the output rows are ordered correctly.
-			assert cumJac.getColumnDimension() == inpLabels.size();
-			assert inputs.size() == cumJac.getRowDimension() : //
-			inputs.size() + "!=" + cumJac.getRowDimension();
-			for (int row = outs.size() - 1; row >= 0; --row) {
-				final Object rowLabel = outs.get(row);
-				resVals.setEntry(row, inputs.get(rowLabel));
-				resJac.setRow(row, cumJac.getRow(prevRows.indexOf(rowLabel)));
-			}
-		}
-		return Pair.create(resVals, resJac);
+		return Pair.create(currVals, cumJac);
 	}
 
 	/**
@@ -458,43 +380,56 @@ public class SerialLabeledMultivariateJacobianFunction //
 	@Override
 	public RealVector optimized(final RealVector point) {
 		assert point.getDimension() > 0 : "Zero dimension input in " + this.toString();
-		final List<? extends Object> inpLabels = getInputLabels();
-		final Map<Object, Double> inputs = new HashMap<>(); // label -> index in valLabels
-		// Add the input labels and values
-		for (int i = 0; i < point.getDimension(); ++i)
-			inputs.put(inpLabels.get(i), point.getEntry(i));
-		// Start with a identity matrix for the input values
+		// The current set of input values
+		RealVector currVals = point;
+		List<? extends Object> currInputs = getInputLabels();
 		for (int step = 0; step < mSteps.size(); ++step) {
+			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
 			final LabeledMultivariateJacobianFunction func = mSteps.get(step);
 			// Initialize constants based on this->getConstants()
-			final Map<Object, Double> consts = new HashMap<>(getConstants());
-			final List<? extends Object> fout = func.getOutputLabels();
 			if (func instanceof ImplicitMeasurementModel) {
+				final ImplicitMeasurementModel imm = (ImplicitMeasurementModel) func;
 				// Add in output values as constants...
-				for (final Object label : fout)
-					consts.put(label, inputs.get(label));
+				final Map<Object, Double> consts = new HashMap<>();
+				for (final Object label : func.getOutputLabels())
+					consts.put(label, currVals.getEntry(currInputs.indexOf(label)));
+				imm.initializeConstants(consts);
 			}
-			func.initializeConstants(consts);
 			// Build the vector argument to func and call evaluate
 			final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 			final List<? extends Object> fin = func.getInputLabels();
 			for (int i = 0; i < funcPoint.getDimension(); ++i) {
 				final Object label = fin.get(i);
-				assert label != null : "Missmatch in length between input labels and point dimension.";
-				assert inputs.containsKey(label) : "The value for label " + label + " has not been assigned by Step "
-						+ step + ".";
-				funcPoint.setEntry(i, inputs.get(label));
+				assert currInputs.indexOf(label) != -1 : //
+				label + " not assigned for " + func + " (step " + step + ")";
+				funcPoint.setEntry(i, currVals.getEntry(currInputs.indexOf(label)));
 			}
-			final RealVector ovals = func.compute(funcPoint);
-			for (int i = 0; i < ovals.getDimension(); ++i)
-				inputs.put(fout.get(i), ovals.getEntry(i));
+			func.dumpArguments(funcPoint, this);
+			final RealVector vres = func.compute(funcPoint);
+
+			final FastIndex<? extends Object> nextInps = mOutputs.get(step);
+			final RealVector newVals = new ArrayRealVector(nextInps.size());
+
+			for (int r = 0; r < nextInps.size(); ++r) {
+				final Object nextVal = nextInps.get(r);
+				final int rI = currInputs.indexOf(nextVal);
+				if (rI != -1) { // One of the current inputs...
+					assert currInputs.get(rI).equals(nextVal): //
+					"1: " + nextVal + " for " + func + " in " + this;
+					newVals.setEntry(r, currVals.getEntry(rI));
+				} else { // function inputs
+					final int frI = func.outputIndex(nextVal);
+					assert func.getOutputLabel(frI).equals(nextVal): //
+					"2: " + nextVal + " for " + func + " in " + this;
+					assert frI != -1 : nextVal + " is missing in SerialLMJF";
+					newVals.setEntry(r, vres.getEntry(frI));
+				}
+			}
+			currVals = newVals;
+			currInputs = nextInps;
 		}
-		// Build the outputs in the correct order.
-		final List<? extends Object> outs = getOutputLabels();
-		final RealVector resVals = new ArrayRealVector(outs.size());
-		for (int r = outs.size() - 1; r >= 0; --r)
-			resVals.setEntry(r, inputs.get(outs.get(r)));
-		return resVals;
+		return currVals;
 	}
+
 }

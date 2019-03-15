@@ -207,7 +207,7 @@ public class CharacteristicXRay extends XRay implements IToHTML, Comparable<XRay
 			final double energy = getEnergy(elm, tr);
 			res = new CharacteristicXRay(elm, tr, energy);
 		} catch (final Exception e) {
-			System.out.println("Energy unavailable for " + elm.getAbbrev() + " " + tr.toString());
+			// System.out.println("Energy unavailable for " + elm.getAbbrev() + " " + tr.toString());
 		}
 		return res;
 	}

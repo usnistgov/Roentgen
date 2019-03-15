@@ -16,6 +16,9 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularMatrixException;
 import org.apache.commons.math3.random.RandomGeneratorFactory;
 
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+
 /**
  * This class is designed to avoid some of the problems associated with
  * generating random variants from a correlated uncertainties.
@@ -46,6 +49,10 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 	public SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov) {
 		this(vals, cov, 1.0e-9);
 	}
+	
+	public SafeMultivariateNormalDistribution(UncertainValuesBase uvs) {
+		this(uvs.getValues(), uvs.getCovariances(), 1.0e-9);
+	}	
 
 	public SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov, final double tol) {
 		super(RandomGeneratorFactory.createRandomGenerator(new Random()), vals.getDimension());

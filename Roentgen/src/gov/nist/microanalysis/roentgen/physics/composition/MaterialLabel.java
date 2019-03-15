@@ -69,13 +69,13 @@ public class MaterialLabel //
 
 	public static class AtomFraction extends AtomType {
 		private AtomFraction(final Material mat, final Element elm) {
-			super("A", mat, elm);
+			super("f<sub>atom</sub>", mat, elm);
 		}
 	}
 
 	public static class Stoichiometry extends AtomType {
 		Stoichiometry(final Material mat, final Element elm) {
-			super("S", mat, elm);
+			super("N<sub>atom</sub>", mat, elm);
 		}
 	}
 

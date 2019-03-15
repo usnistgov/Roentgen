@@ -22,6 +22,7 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
@@ -159,6 +160,8 @@ public class CompositionTest2 {
 
 	@Test
 	public void testMassFraction() throws ArgumentException {
+		LabeledMultivariateJacobianFunction.sDump = System.out;
+		try {
 		final Map<Element, Number> massFracs = new HashMap<>();
 		final double total = 0.98;
 		massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
@@ -213,6 +216,11 @@ public class CompositionTest2 {
 				e.printStackTrace();
 			}
 		}
+		}
+		finally {
+			LabeledMultivariateJacobianFunction.sDump=null;
+		}
+		
 	}
 
 	@Test
@@ -441,17 +449,19 @@ public class CompositionTest2 {
 		mcn.put(sanidine, new UncertainValue(0.40, 0.01));
 		final Composition albite = Composition.parse("Na(AlSi3O8)");
 		mcn.put(albite, new UncertainValue(0.60, 0.01));
-		final Composition mix = Composition.combine(name, mcn, true);
-
+		final Composition combiner = Composition.combine(name, mcn, true);
+		
 		final Report r = new Report("Anorthoclase");
 		r.addHeader("Mixture");
 		r.addSubHeader("Jacobian");
 		r.add(albite);
 		r.add(sanidine);
-		r.add(mix);
+		r.add(combiner);
+		UncertainValues mix = UncertainValues.force(combiner);
+		combiner.setCalculator(new UncertainValuesCalculator.FiniteDifference(combiner.getInputValues().mapMultiply(0.001)));
+		UncertainValues dmix = UncertainValues.force(combiner);
 		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
 		r.addSubHeader("Delta");
-		final Composition dmix = Composition.combineDelta(name, mcn, true);
 		r.add(dmix);
 		r.addImage(
 				UncertainValues.compareAsBitmap(UncertainValues.extract(dmix.getLabels(), mix), dmix,

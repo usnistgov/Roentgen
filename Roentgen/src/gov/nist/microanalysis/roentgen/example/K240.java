@@ -176,7 +176,7 @@ public class K240 {
 
 				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, preComps, MatrixCorrectionModel2.allVariates());
+						lkr, preComps);
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
@@ -398,7 +398,7 @@ public class K240 {
 
 				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, preComps, MatrixCorrectionModel2.allVariates());
+						lkr, preComps);
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
@@ -625,7 +625,7 @@ public class K240 {
 
 				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, preComps, MatrixCorrectionModel2.allVariates());
+						lkr, preComps);
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
@@ -856,7 +856,7 @@ public class K240 {
 
 				List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 				final KRatioCorrectionModel2 cfk = new KRatioCorrectionModel2(//
-						lkr, preComps, MatrixCorrectionModel2.allVariates());
+						lkr, preComps);
 				final MatrixCorrectionModel2 mcm = cfk.getModel();
 				final UncertainValuesBase input = mcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
 				// Calculate the optimal k-ratios
