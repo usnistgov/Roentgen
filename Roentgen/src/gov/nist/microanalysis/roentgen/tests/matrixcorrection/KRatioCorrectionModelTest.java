@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.tests.matrixcorrection;
 import java.awt.Color;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,7 +101,7 @@ public class KRatioCorrectionModelTest {
 
 		List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 		final KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(//
-				mouv.keySet(), preComps, MatrixCorrectionModel2.defaultVariates());
+				mouv.keySet(), preComps);
 		final UncertainValuesBase uvs = krcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class), kuv);
 
 		final Report r = new Report("KRatioCorrectionModel - test 1");
@@ -188,7 +189,7 @@ public class KRatioCorrectionModelTest {
 
 		List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 		final KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(//
-				lkr.keySet(), preComps, MatrixCorrectionModel2.defaultVariates());
+				lkr.keySet(), preComps);
 		final UncertainValuesBase uvs = krcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class), kratios);
 
 		final Report report = new Report("K-Ratio (2)");
@@ -296,8 +297,15 @@ public class KRatioCorrectionModelTest {
 		final UncertainValuesBase kuv = new UncertainValues(lkr);
 
 		List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
+		final List<Object> tags = new ArrayList<>();
+		tags.addAll(MaterialLabel.buildMassFractionTags(unkMcd.getMaterial()));
+		for (KRatioLabel krl : lkr.keySet()) {
+			tags.add(MatrixCorrectionModel2.zafLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet()));
+			tags.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(), krl.getElement()));
+		}
 		final KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(//
-				lkr.keySet(), preComps, MatrixCorrectionModel2.defaultVariates());
+				lkr.keySet(), preComps, tags);
+
 		final UncertainValuesBase uvs = krcm.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class), kuv);
 
 		final Report report = new Report("K-Ratio (3)");
@@ -352,16 +360,6 @@ public class KRatioCorrectionModelTest {
 			}
 
 			report.addImage(results.asCovarianceBitmap(4, V2L3, L2C), "Correlation matrix");
-
-			final Set<Object> tags = new HashSet<>();
-			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Oxygen));
-			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Magnesium));
-			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Silicon));
-			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Titanium));
-			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Zinc));
-			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Zirconium));
-			tags.add(MaterialLabel.buildMassFractionTag(unkMcd.getMaterial(), Element.Barium));
-			krcm.trimOutputs(tags);
 
 			final UncertainValuesBase resultsTr = UncertainValues.propagate(krcm, uvs);
 			{
@@ -443,8 +441,10 @@ public class KRatioCorrectionModelTest {
 
 		List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
 		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(//
-				vals.keySet(), preComps, MatrixCorrectionModel2.defaultVariates());
-		final UncertainValuesBase uvs = iter.compute(kratios);
+				vals.keySet(), preComps);
+		
+		final UncertainValues uvs = UncertainValues.force(iter.iterate(kratios));
+		
 		final Composition comp = Composition.massFraction(iter.getUnknownMaterial(), uvs);
 
 		final Report rep = new Report("K240 Iteration");
@@ -514,14 +514,13 @@ public class KRatioCorrectionModelTest {
 				KRatioLabel.Method.Measured), 0.283990);
 
 		final UncertainValuesBase kratios = new UncertainValues(vals);
-		
+
 		LabeledMultivariateJacobianFunction elmByDiff = new ElementByDifference(unkMat, Element.Oxygen);
-		
+
 		List<LabeledMultivariateJacobianFunction> preComps = Collections.singletonList(elmByDiff);
-		
-		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(//
-				vals.keySet(), preComps, MatrixCorrectionModel2.defaultVariates());
-		final UncertainValuesBase uvs = iter.compute(kratios);
+
+		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(vals.keySet(), preComps);
+		final UncertainValues uvs = UncertainValues.force(iter.iterate(kratios));
 		final Composition comp = Composition.massFraction(iter.getUnknownMaterial(), uvs);
 
 		final Report rep = new Report("K240 Iteration - O by differences");

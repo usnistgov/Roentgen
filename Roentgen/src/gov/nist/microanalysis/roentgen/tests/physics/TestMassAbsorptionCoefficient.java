@@ -97,7 +97,7 @@ public class TestMassAbsorptionCoefficient {
 		final Composition[] mfs = new Composition[] { mf1, mf2, mf3, mf4, mf5, mf6 };
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Iron, XRayTransition.LA1);
 		UncertainValuesCalculator uv = MaterialMACFunction.compute(Arrays.asList(mfs), cxr);
-		final UncertainValuesBase mc = UncertainValues.propagateMC(uv, 16000);
+		final UncertainValuesBase mc = UncertainValues.propagateMonteCarlo(uv, 16000);
 		if (REPORT) {
 			final Report r = new Report("TestMultiMAC");
 			for (final Composition mf : mfs)

@@ -106,8 +106,8 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 
 	private final UncertainValues mInput1 = new UncertainValues(mInputs, mValues1, mCov1);
 
-	public void test1() throws IOException {
-		final UncertainValuesBase uv = UncertainValues.propagateOrdered(mStep1, mInput0);
+	public void test1() throws IOException, ArgumentException {
+		final UncertainValuesBase uv = UncertainValues.propagate(mStep1, mInput0);
 		final Report rep = new Report("Step 1");
 		rep.addHeader("Inputs");
 		rep.add(mInput0);
@@ -132,8 +132,8 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 				Arrays.asList(steps));
 		final UncertainValues uv = UncertainValues.force(UncertainValues.propagate(msnmjf, mInput1));
 		final UncertainValues mc = UncertainValues.propagateMC(msnmjf, mInput1, 100000);
-		final UncertainValues delta = UncertainValues.propagateDeltaOrdered(msnmjf, mInput1,
-				mInput1.getValues().mapMultiply(0.001));
+		final UncertainValues delta = UncertainValues.propagateFiniteDifference(//
+				msnmjf, mInput1, mInput1.getValues().mapMultiply(0.001));
 		final Report rep = new Report("Step 1 and 2");
 		rep.addHeader("Inputs");
 		rep.add(mInput1);
@@ -179,7 +179,7 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		rep.addHeader("Full");
 		rep.add(fullRes, Mode.VERBOSE);
 		rep.inBrowser(Mode.NORMAL);
-		
+
 		for (Object rLbl : trimRes.getLabels()) {
 			testValues(trimRes.getEntry(rLbl), fullRes.getEntry(rLbl), 0.001);
 			testValues(trimRes.getUncertainty(rLbl), fullRes.getUncertainty(rLbl), 0.001);

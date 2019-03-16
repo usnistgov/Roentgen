@@ -348,20 +348,16 @@ public class SerialLabeledMultivariateJacobianFunction //
 
 			for (int r = 0; r < nextInps.size(); ++r) {
 				final Object nextVal = nextInps.get(r);
-				final int rI = currInputs.indexOf(nextVal);
-				if (rI != -1) { // One of the current inputs...
-					assert currInputs.get(rI).equals(nextVal) : "1: " + nextVal + " for " + func + " in " + this;
-					newVals.setEntry(r, currVals.getEntry(rI));
-					newJac.setEntry(r, rI, 1.0);
-				} else { // function inputs
-					final int frI = func.outputIndex(nextVal);
-					assert func.getOutputLabel(frI).equals(nextVal) : //
-					"2: " + nextVal + " for " + func + " in " + this;
-					assert frI != -1 : //
-					nextVal + " is missing in SerialLMJF";
+				final int frI = func.outputIndex(nextVal);
+				if (frI != -1) {
 					newVals.setEntry(r, vres.getEntry(frI));
 					for (int cI = 0; cI < cidx.length; ++cI)
 						newJac.setEntry(r, cidx[cI], mres.getEntry(frI, cI));
+				} else {
+					final int rI = currInputs.indexOf(nextVal);
+					assert rI != -1 : nextVal + " is missing in SerialLMJF";
+					newVals.setEntry(r, currVals.getEntry(rI));
+					newJac.setEntry(r, rI, 1.0);
 				}
 			}
 			currVals = newVals;
@@ -387,15 +383,6 @@ public class SerialLabeledMultivariateJacobianFunction //
 			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
 			final LabeledMultivariateJacobianFunction func = mSteps.get(step);
-			// Initialize constants based on this->getConstants()
-			if (func instanceof ImplicitMeasurementModel) {
-				final ImplicitMeasurementModel imm = (ImplicitMeasurementModel) func;
-				// Add in output values as constants...
-				final Map<Object, Double> consts = new HashMap<>();
-				for (final Object label : func.getOutputLabels())
-					consts.put(label, currVals.getEntry(currInputs.indexOf(label)));
-				imm.initializeConstants(consts);
-			}
 			// Build the vector argument to func and call evaluate
 			final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 			final List<? extends Object> fin = func.getInputLabels();
@@ -406,24 +393,35 @@ public class SerialLabeledMultivariateJacobianFunction //
 				funcPoint.setEntry(i, currVals.getEntry(currInputs.indexOf(label)));
 			}
 			func.dumpArguments(funcPoint, this);
-			final RealVector vres = func.compute(funcPoint);
+			// Initialize constants based on this->getConstants()
+			RealVector vres = null;
+			if (func instanceof ImplicitMeasurementModel) {
+				ImplicitMeasurementModel imm = (ImplicitMeasurementModel) func;
+				if (imm.hasAlternativeModel()) {
+					ILabeledMultivariateFunction ifunc = imm.getAlternativeModel();
+					vres = ifunc.optimized(funcPoint);
+				} else {
+					// Add in output values as constants...
+					final Map<Object, Double> consts = new HashMap<>();
+					for (final Object label : func.getOutputLabels())
+						consts.put(label, currVals.getEntry(currInputs.indexOf(label)));
+					imm.initializeConstants(consts);
+				}
+			}
+			vres = func.compute(funcPoint);
 
 			final FastIndex<? extends Object> nextInps = mOutputs.get(step);
 			final RealVector newVals = new ArrayRealVector(nextInps.size());
 
 			for (int r = 0; r < nextInps.size(); ++r) {
 				final Object nextVal = nextInps.get(r);
-				final int rI = currInputs.indexOf(nextVal);
-				if (rI != -1) { // One of the current inputs...
-					assert currInputs.get(rI).equals(nextVal): //
-					"1: " + nextVal + " for " + func + " in " + this;
-					newVals.setEntry(r, currVals.getEntry(rI));
-				} else { // function inputs
-					final int frI = func.outputIndex(nextVal);
-					assert func.getOutputLabel(frI).equals(nextVal): //
-					"2: " + nextVal + " for " + func + " in " + this;
-					assert frI != -1 : nextVal + " is missing in SerialLMJF";
+				final int frI = func.outputIndex(nextVal);
+				if (frI != -1) {
 					newVals.setEntry(r, vres.getEntry(frI));
+				} else {
+					final int rI = currInputs.indexOf(nextVal);
+					assert rI != -1 : nextVal + " is missing in SerialLMJF";
+					newVals.setEntry(r, currVals.getEntry(rI));
 				}
 			}
 			currVals = newVals;

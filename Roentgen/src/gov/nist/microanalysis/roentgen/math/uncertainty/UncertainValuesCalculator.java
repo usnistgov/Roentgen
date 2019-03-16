@@ -15,6 +15,7 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.lazy.SimplyLazy;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
@@ -40,7 +41,7 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		 */
 		public Pair<RealVector, RealMatrix> compute( //
 				final LabeledMultivariateJacobianFunction func, //
-				final UncertainValues point //
+				final RealVector point //
 		);
 
 	}
@@ -50,9 +51,9 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		@Override
 		public Pair<RealVector, RealMatrix> compute( //
 				final LabeledMultivariateJacobianFunction func, //
-				final UncertainValues point //
+				final RealVector point //
 		) {
-			return func.evaluate(point.getValues());
+			return func.evaluate(point);
 		}
 
 		@Override
@@ -89,12 +90,23 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 		@Override
 		public Pair<RealVector, RealMatrix> compute( //
 				final LabeledMultivariateJacobianFunction func, //
-				final UncertainValues point //
+				final RealVector point //
 		) {
-			final RealVector inp = point.getValues();
-			final RealVector vals = func.compute(inp);
-			final RealMatrix jac = func.computeFiniteDifference(inp, mDeltaInputs);
-			return Pair.create(vals, jac);
+			final int inDim = func.getInputDimension(), outDim = func.getOutputDimension();
+			assert point.getDimension() == inDim;
+			final RealMatrix rm = NullableRealMatrix.build(outDim, inDim);
+			for (int c = 0; c < inDim; ++c) {
+				final RealVector pt0 = new ArrayRealVector(point), pt1 = new ArrayRealVector(point);
+				final double deltaX = Math.abs(mDeltaInputs.getEntry(c));
+				pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
+				pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
+				final RealVector output0 = func.compute(pt0), output1 = func.compute(pt1);
+				for (int r = 0; r < outDim; ++r) {
+					final double value = (output0.getEntry(r) - output1.getEntry(r)) / deltaX;
+					rm.setEntry(r, c, Double.isNaN(value) ? 0.0 : value);
+				}
+			}
+			return Pair.create(func.compute(point), rm);
 		}
 
 		@Override
@@ -135,7 +147,7 @@ public class UncertainValuesCalculator extends UncertainValuesBase {
 
 		@Override
 		protected Pair<RealVector, RealMatrix> initialize() {
-			final Pair<RealVector, RealMatrix> tmp = mCalculator.compute(mFunction, mInputs);
+			final Pair<RealVector, RealMatrix> tmp = mCalculator.compute(mFunction, mInputs.getValues());
 			if (mRetainInputs) {
 				// Does not change the column dimension, just adds the inputs to the covariances
 				final RealVector rv1 = tmp.getFirst();

@@ -78,13 +78,7 @@ public class UncertainValues //
 
 	}
 
-	private UncertainValues() {
-		super(Collections.emptyList());
-		mValues = new ArrayRealVector(0);
-		mCovariance = NullableRealMatrix.build(0, 0);
-	}
-
-	public static final UncertainValues NULL = new UncertainValues();
+	public static final UncertainValues NULL = new UncertainValues(Collections.emptyList());
 
 	/**
 	 * Checks that the covariance matrix is m x m, the variances are non-negative,
@@ -425,47 +419,27 @@ public class UncertainValues //
 
 	/**
 	 * Returns the UncertainValues that result from applying the function/Jacobian
-	 * in <code>nmjf</code> to the input values/variances in <code>input</code>
-	 * which are assumed to be ordered in the same order as nmjf.getInputLabels().
+	 * in <code>nmjf</code> to the input values/variances in <code>input</code>.
 	 *
 	 *
 	 * @param nmjf
-	 * @param ordered
+	 * @param inputs
+	 * @param dinp   Delta in the input values in the same order as inputs...
 	 * @return UncertainValues
+	 * @throws ArgumentException
 	 */
-	public static UncertainValuesBase propagateOrdered( //
+	public static UncertainValues propagateFiniteDifference( //
 			final LabeledMultivariateJacobianFunction nmjf, //
-			final UncertainValues ordered) {
-		try {
-			return new UncertainValuesCalculator(nmjf, ordered);
-		} catch (final ArgumentException e) {
-			System.out.println("Please fix this!!!!");
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	/**
-	 * Returns the UncertainValues that result from applying the function/Jacobian
-	 * in <code>nmjf</code> to the input values/variances in <code>input</code>
-	 * which are assumed to be ordered in the same order as nmjf.getInputLabels().
-	 *
-	 *
-	 * @param nmjf
-	 * @param ordered
-	 * @param dinp    Delta in the input values in the same order as ordered...
-	 * @return UncertainValues
-	 */
-	public static UncertainValues propagateDeltaOrdered( //
-			final LabeledMultivariateJacobianFunction nmjf, //
-			final UncertainValues ordered, final RealVector dinp) {
-		assert ordered.getLabels()
-				.equals(nmjf.getInputLabels()) : "The input values are not ordered the same as the nmjf input labels.";
-		final RealVector inp = ordered.extractValues(nmjf.getInputLabels());
-		final RealVector vals = nmjf.compute(inp);
-		final RealMatrix jac = nmjf.computeFiniteDifference(inp, dinp);
-		return new UncertainValues(nmjf.getOutputLabels(), vals, //
-				jac.multiply(ordered.getCovariances().multiply(jac.transpose())));
+			final UncertainValues inputs, //
+			final RealVector dinp //
+	) throws ArgumentException {
+		UncertainValuesCalculator uvc = new UncertainValuesCalculator(nmjf, inputs);
+		final List<Object> labels = uvc.getInputs().getLabels();
+		RealVector reordered = new ArrayRealVector(labels.size());
+		for (int i = 0; i < reordered.getDimension(); ++i)
+			reordered.setEntry(i, dinp.getEntry(inputs.indexOf(labels.get(i))));
+		uvc.setCalculator(new UncertainValuesCalculator.FiniteDifference(reordered));
+		return UncertainValues.force(uvc);
 	}
 
 	public static UncertainValues forceMinCovariance(final UncertainValues vals, final RealVector minCov) {
@@ -487,7 +461,7 @@ public class UncertainValues //
 	 * @return UncertainValues
 	 * @throws ArgumentException
 	 */
-	public static UncertainValues propagateMC(//
+	public static UncertainValues propagateMonteCarlo(//
 			final UncertainValuesCalculator uvc, //
 			final int nEvals //
 	) throws ArgumentException {
@@ -505,8 +479,9 @@ public class UncertainValues //
 	 * @throws ArgumentException
 	 */
 	public static UncertainValues propagateMC(//
-			final LabeledMultivariateJacobianFunction nmjf, final UncertainValuesBase inputs, //
-			final int nEvals//
+			final LabeledMultivariateJacobianFunction nmjf, //
+			final UncertainValuesBase inputs, //
+			final int nEvals //
 	) throws ArgumentException {
 		UncertainValuesCalculator uvc = new UncertainValuesCalculator(nmjf, inputs);
 		final MCPropagator mcp = new MCPropagator(uvc);
@@ -672,7 +647,7 @@ public class UncertainValues //
 	 * @param from
 	 * @param to
 	 */
-	public static void copy(final UncertainValues from, final UncertainValues to) {
+	public static void copy(final UncertainValuesBase from, final UncertainValues to) {
 		final List<? extends Object> fromLabels = from.getLabels();
 		final Map<Object, Integer> toMap = new HashMap<>();
 		final Map<Object, Integer> fromMap = new HashMap<>();
@@ -703,7 +678,7 @@ public class UncertainValues //
 	 * @param val
 	 * @param var
 	 */
-	public void set(final Object label, final double val, final double var) {
+	final public void set(final Object label, final double val, final double var) {
 		final int p = indexOf(label);
 		mValues.setEntry(p, val);
 		mCovariance.setEntry(p, p, var);
@@ -717,7 +692,7 @@ public class UncertainValues //
 	 * @param label2
 	 * @param cov
 	 */
-	public void setCovariance(final Object label1, final Object label2, final double cov) {
+	final public void setCovariance(final Object label1, final Object label2, final double cov) {
 		final int p1 = indexOf(label1), p2 = indexOf(label2);
 		setCovariance(p1, p2, cov);
 	}
@@ -730,7 +705,7 @@ public class UncertainValues //
 	 * @param p2
 	 * @param cov
 	 */
-	public void setCovariance(final int p1, final int p2, final double cov) {
+	final public void setCovariance(final int p1, final int p2, final double cov) {
 		mCovariance.setEntry(p1, p2, cov);
 		mCovariance.setEntry(p2, p1, cov);
 	}
@@ -741,7 +716,7 @@ public class UncertainValues //
 	 * @param label
 	 * @param uv    (uses the doubleValue() and variance())
 	 */
-	public void set(final Object label, final UncertainValue uv) {
+	final public void set(final Object label, final UncertainValue uv) {
 		final int p = indexOf(label);
 		mValues.setEntry(p, uv.doubleValue());
 		mCovariance.setEntry(p, p, uv.variance());
@@ -795,5 +770,4 @@ public class UncertainValues //
 		return "UVS[" + lblStr.substring(1, lblStr.length() - 1)
 				+ (labelSub.size() < labels.size() ? "+" + (labels.size() - labelSub.size()) + " more" : "") + "]";
 	}
-
 }

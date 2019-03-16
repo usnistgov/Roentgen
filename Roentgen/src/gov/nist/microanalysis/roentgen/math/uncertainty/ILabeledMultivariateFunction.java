@@ -1,5 +1,7 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
+import java.util.List;
+
 import org.apache.commons.math3.linear.RealVector;
 
 /**
@@ -23,6 +25,19 @@ public interface ILabeledMultivariateFunction {
 	 * @param point
 	 * @return {@link RealVector}
 	 */
-	public RealVector optimized(RealVector point);
-
+	public RealVector optimized(RealVector point);	
+	
+	/**
+	 * A list containing the labels identifying the input values to optimized(...)
+	 * 
+	 * @return List&lt;? extends Object&gt;
+	 */
+	public List<? extends Object> getInputLabels();
+	
+	/**
+	 * A list containing the labels identifying the output values from optimized(...)
+	 * 
+	 * @return List&lt;? extends Object&gt;
+	 */
+	public List<? extends Object> getOutputLabels();
 }

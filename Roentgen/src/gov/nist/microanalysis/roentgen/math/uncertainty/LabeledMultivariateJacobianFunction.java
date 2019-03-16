@@ -22,7 +22,6 @@ import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
@@ -221,7 +220,7 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * @return Pair&lt;{@link RealVector}, {@link RealMatrix}&gt; As from a call to
 	 *         <code>value(x)</code>.
 	 */
-	public Pair<RealVector, RealMatrix> evaluate(final RealVector x) {
+	final public Pair<RealVector, RealMatrix> evaluate(final RealVector x) {
 		if (x.getDimension() != getInputDimension())
 			throw new DimensionMismatchException(x.getDimension(), getInputDimension());
 		final Pair<RealVector, RealMatrix> res = value(x);
@@ -338,34 +337,6 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 */
 	final public boolean hasValue(final Object label) {
 		return (inputIndex(label) != -1);
-	}
-
-	/**
-	 * Estimates the covariance matrix using the finite difference estimator for the
-	 * partial derivatives.
-	 * 
-	 * 
-	 * @param inp  Evaluation point
-	 * @param dinp Finite difference round evaluation point
-	 * @return RealMatrix Estimated covariances
-	 */
-	public RealMatrix computeFiniteDifference( //
-			final RealVector inp, //
-			final RealVector dinp) {
-		assert inp.getDimension() == getInputDimension();
-		final RealMatrix rm = NullableRealMatrix.build(getOutputDimension(), getInputDimension());
-		for (int c = 0; c < getInputDimension(); ++c) {
-			final RealVector pt0 = new ArrayRealVector(inp), pt1 = new ArrayRealVector(inp);
-			final double deltaX = Math.abs(dinp.getEntry(c));
-			pt0.setEntry(c, pt0.getEntry(c) + 0.5 * deltaX);
-			pt1.setEntry(c, pt1.getEntry(c) - 0.5 * deltaX);
-			final RealVector output0 = compute(pt0), output1 = compute(pt1);
-			for (int r = 0; r < getOutputDimension(); ++r) {
-				final double value = (output0.getEntry(r) - output1.getEntry(r)) / deltaX;
-				rm.setEntry(r, c, Double.isNaN(value) ? 0.0 : value);
-			}
-		}
-		return rm;
 	}
 
 	@Override

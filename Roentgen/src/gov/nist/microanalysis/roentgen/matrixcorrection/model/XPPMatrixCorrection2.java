@@ -29,6 +29,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariat
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
@@ -148,9 +149,15 @@ public class XPPMatrixCorrection2 //
 	 * @param dinp
 	 * @param computed
 	 */
-	static private void checkPartials(final LabeledMultivariateJacobianFunction lmjf, final RealVector inp,
-			final RealVector dinp, final RealMatrix computed) {
-		final RealMatrix delta = lmjf.computeFiniteDifference(inp, dinp);
+	static private void checkPartials(//
+			final LabeledMultivariateJacobianFunction lmjf, //
+			final RealVector inp, //
+			final RealVector dinp, //
+			final RealMatrix computed //
+	) {
+		UncertainValuesCalculator.ICalculator calc = new UncertainValuesCalculator.FiniteDifference(dinp);
+		final Pair<RealVector, RealMatrix> pr = calc.compute(lmjf, inp);
+		final RealMatrix delta = pr.getSecond();
 		for (int r = 0; r < delta.getRowDimension(); r++)
 			for (int c = 0; c < delta.getColumnDimension(); ++c)
 				assert Math.abs(delta.getEntry(r, c) - computed.getEntry(r, c)) < 1.0e-3
@@ -2235,9 +2242,9 @@ public class XPPMatrixCorrection2 //
 		}
 		return res;
 	}
-	
+
 	/**
-	 * Useful for calculating the 
+	 * Useful for calculating the
 	 * 
 	 * @param inputs
 	 * @param frac
@@ -2246,15 +2253,13 @@ public class XPPMatrixCorrection2 //
 	public RealVector delta(UncertainValuesBase inputs, double frac) {
 		RealVector res = inputs.getValues().copy();
 		List<RoughnessLabel> lbls = inputs.getLabels(MatrixCorrectionModel2.RoughnessLabel.class);
-		for(Object lbl : lbls)
+		for (Object lbl : lbls)
 			res.setEntry(inputs.indexOf(lbl), 1.0e-5);
-		for(int i=0;i<res.getDimension();++i)
-			if(Math.abs(res.getEntry(i))<1.0e-20)
+		for (int i = 0; i < res.getDimension(); ++i)
+			if (Math.abs(res.getEntry(i)) < 1.0e-20)
 				res.setEntry(i, 1.0e-10);
 		return res.mapMultiply(frac);
 	}
-	
-	
 
 	@Override
 	public String toHTML(final Mode mode) {

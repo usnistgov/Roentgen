@@ -413,7 +413,6 @@ abstract public class UncertainValuesBase //
 	 * @throws ArgumentException
 	 */
 	public UncertainValuesBase reorder(final List<? extends Object> labels) throws ArgumentException {
-		assert labels.size() <= mLabels.size() : toString() + mLabels + " -- " + labels;
 		if (mLabels.size() == labels.size()) {
 			// Check if already in correct order...
 			boolean eq = true;
