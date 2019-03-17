@@ -17,7 +17,6 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
@@ -117,13 +116,13 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 			final Object lbl = getInputLabel(j);
 			if (lbl instanceof MassFraction) {
 				final MassFraction mft = (MassFraction) lbl;
-				final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mft.getElement());
+				final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mft.getElement()));
 				if (Double.isNaN(ai)) {
-					final Object awe = MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mElement);
-					ai = getValue(awe, point);
+					final int awe = inputIndex(MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mElement));
+					ai = point.getEntry(awe);
 				}
-				final double cj = getValue(mft, point);
-				final double aj = getValue(awt, point);
+				final double cj = point.getEntry(j);
+				final double aj = point.getEntry(awt);
 				ci -= (ai / aj)
 						* (mValences.get(mft.getElement()).doubleValue() / mValences.get(mElement).doubleValue()) * cj;
 			}

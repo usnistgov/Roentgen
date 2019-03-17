@@ -705,6 +705,11 @@ public class XRaySet //
 					cmo = false;
 			final Set<CharacteristicXRay> allChar = ElementXRaySet.buildElementXRaySet(mElement, Double.MAX_VALUE)
 					.getSetOfCharacteristicXRay();
+			if(mSet.size()==1) {
+				res.append(mSet.iterator().next().toString());
+				res.append("]");
+				return res.toString();
+			}
 			for (final CharacteristicXRay cx : allChar) {
 				final XRayTransition tr = cx.getTransition();
 				cka |= tr.isKAlpha();
@@ -781,6 +786,7 @@ public class XRaySet //
 					}
 				}
 			}
+			// res.append(","+mSet.size());
 			res.append("]");
 			return res.toString();
 		}

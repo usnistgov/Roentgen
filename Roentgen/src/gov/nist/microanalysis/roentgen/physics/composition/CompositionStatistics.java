@@ -76,17 +76,17 @@ public class CompositionStatistics //
 		final int maIdx = outputIndex(MaterialLabel.buildMeanAtomicWeighTag(mMaterial));
 		final int mzIdx = outputIndex(MaterialLabel.buildMeanAtomicNumberTag(mMaterial));
 		for (final Element elm : mMaterial.getElementSet()) {
-			final MassFraction mft = MaterialLabel.buildMassFractionTag(mMaterial, elm);
-			final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
-			final double mf = getValue(mft, point);
-			final double aw = getValue(awt, point);
+			final int mft = inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm));
+			final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
+			final double mf = point.getEntry(mft);
+			final double aw = point.getEntry(awt);
 			total += mf;
 			meanA += mf * aw;
 			meanZ += mf * elm.getAtomicNumber();
-			writeJacobian(totIdx, mft, 1.0, rm);
-			writeJacobian(maIdx, awt, mf, rm);
-			writeJacobian(maIdx, mft, aw, rm);
-			writeJacobian(mzIdx, mft, elm.getAtomicNumber(), rm);
+			rm.setEntry(totIdx, mft, 1.0);
+			rm.setEntry(maIdx, awt, mf);
+			rm.setEntry(maIdx, mft, aw);
+			rm.setEntry(mzIdx, mft, elm.getAtomicNumber());
 		}
 		rv.setEntry(totIdx, total);
 		rv.setEntry(maIdx, meanA);
@@ -110,10 +110,10 @@ public class CompositionStatistics //
 		final int maIdx = outputIndex(MaterialLabel.buildMeanAtomicWeighTag(mMaterial));
 		final int mzIdx = outputIndex(MaterialLabel.buildMeanAtomicNumberTag(mMaterial));
 		for (final Element elm : mMaterial.getElementSet()) {
-			final MassFraction mft = MaterialLabel.buildMassFractionTag(mMaterial, elm);
-			final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
-			final double mf = getValue(mft, point);
-			final double aw = getValue(awt, point);
+			final int mft = inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm));
+			final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
+			final double mf = point.getEntry(mft);
+			final double aw = point.getEntry(awt);
 			total += mf;
 			meanA += mf * aw;
 			meanZ += mf * elm.getAtomicNumber();

@@ -46,7 +46,7 @@ public class ElementByDifference //
 		for (int i = 0; i < point.getDimension(); ++i)
 			sum += point.getEntry(i);
 		for (int iIdx = 0; iIdx < getInputDimension(); ++iIdx)
-			writeJacobian(0, getInputLabel(iIdx), -1.0, rm);
+			rm.setEntry(0, iIdx, -1.0);
 		rv.setEntry(0, 1.0 - sum);
 		return Pair.create(rv, rm);
 

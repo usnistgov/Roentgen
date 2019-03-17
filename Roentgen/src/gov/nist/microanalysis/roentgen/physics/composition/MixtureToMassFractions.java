@@ -15,6 +15,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunc
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MaterialMassFraction;
 
 /**
@@ -46,7 +47,7 @@ final class MixtureToMassFractions //
 
 	static private List<Object> buildInputs(//
 			final Set<Material> mats, //
-			boolean normalize //
+			final boolean normalize //
 	) {
 		final List<Object> res = new ArrayList<>();
 		for (final Material mat : mats) {
@@ -64,11 +65,11 @@ final class MixtureToMassFractions //
 	 * Converts a mixture of Composition objects into the mass fraction of the
 	 * constituent elements.
 	 *
-	 * @param newMat  A Material to define
+	 * @param newMat    A Material to define
 	 * @param mats      Set&lt;Material&gt;
 	 * @param normalize
 	 */
-	public MixtureToMassFractions(final Material newMat, final Set<Material> mats, boolean normalize) {
+	public MixtureToMassFractions(final Material newMat, final Set<Material> mats, final boolean normalize) {
 		super(buildInputs(mats, normalize), buildOutputs(newMat, mats));
 		mInputs = new ArrayList<>();
 		mNewMaterial = newMat;
@@ -88,40 +89,43 @@ final class MixtureToMassFractions //
 			final MaterialLabel.AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (final Object mmft : mInputs) {
+			for (int mmfti = 0; mmfti < mInputs.size(); ++mmfti) {
+				final Object mmft = mInputs.get(mmfti);
 				final Material mat = ((MaterialMassFraction) Normalize.unwrap(mmft)).getMaterial();
-				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
+				final int mfti = inputIndex(MaterialLabel.buildMassFractionTag(mat, elm));
 				// The material may or may not have the element...
-				final double mmf = getValue(mmft, point);
-				if (hasValue(mft)) {
-					final MaterialLabel.AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mat, elm);
-					assert hasValue(awt);
-					final double mf = getValue(mft, point);
-					final double aw = getValue(awt, point);
+				final double mmf = point.getEntry(mmfti);
+				if (mfti != -1) {
+					final int awti = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
+					assert awti != -1;
+					final double mf = point.getEntry(mfti);
+					final double aw = point.getEntry(awti);
 					tmpCz += mf * mmf;
 					tmpAz += mf * mmf / aw;
 				}
 			}
 			final double cZ = tmpCz;
 			final double aZ = tmpCz / tmpAz;
-			for (final Object mmft : mInputs) {
+			for (int mmfti = 0; mmfti < mInputs.size(); ++mmfti) {
+				final Object mmft = mInputs.get(mmfti);
 				final Material mat = ((MaterialMassFraction) Normalize.unwrap(mmft)).getMaterial();
-				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
+				final MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
+				final int mfti = inputIndex(mft);
 				// The material may or may not have the element...
-				final double mI = getValue(mmft, point);
-				writeJacobian(iCz, mft, mI, rm);
-				if (hasValue(mft)) {
-					final MaterialLabel.AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mat, elm);
-					assert hasValue(awt);
-					final double cIZ = getValue(mft, point);
-					writeJacobian(iCz, mmft, cIZ, rm);
-					writeJacobian(iCz, mft, mI, rm);
+				final double mI = point.getEntry(mmfti);
+				if (mfti != -1) {
+					rm.setEntry(iCz, mfti, mI);
+					final int awti = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
+					assert awti != -1;
+					final double cIZ = point.getEntry(mfti);
+					rm.setEntry(iCz, mmfti, cIZ);
+					rm.setEntry(iCz, mfti, mI);
 
-					final double aIZ = getValue(awt, point);
+					final double aIZ = point.getEntry(awti);
 					final double kk = aZ * (1.0 - aZ / aIZ) / cZ;
-					writeJacobian(iAz, mft, mI * kk, rm);
-					writeJacobian(iAz, awt, Math.pow(aZ / aIZ, 2.0) * (cIZ / cZ) * mI, rm);
-					writeJacobian(iAz, mmft, cIZ * kk, rm);
+					rm.setEntry(iAz, mfti, mI * kk);
+					rm.setEntry(iAz, awti, Math.pow(aZ / aIZ, 2.0) * (cIZ / cZ) * mI);
+					rm.setEntry(iAz, mmfti, cIZ * kk);
 				}
 			}
 			rv.setEntry(iCz, cZ);
@@ -140,16 +144,17 @@ final class MixtureToMassFractions //
 			final MaterialLabel.AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (final Object mmft : mInputs) {
+			for (int mmfti = 0; mmfti < mInputs.size(); ++mmfti) {
+				final Object mmft = mInputs.get(mmfti);
 				final Material mat = ((MaterialMassFraction) Normalize.unwrap(mmft)).getMaterial();
-				final MaterialLabel.MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
+				final int mfti = inputIndex(MaterialLabel.buildMassFractionTag(mat, elm));
 				// The material may or may not have the element...
-				final double mmf = getValue(mmft, point);
-				if (hasValue(mft)) {
-					final MaterialLabel.AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mat, elm);
-					assert hasValue(awt);
-					final double mf = getValue(mft, point);
-					final double aw = getValue(awt, point);
+				final double mmf = point.getEntry(mmfti);
+				if (mfti != -1) {
+					final int awti = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
+					assert awti != -1;
+					final double mf = point.getEntry(mfti);
+					final double aw = point.getEntry(awti);
 					tmpCz += mf * mmf;
 					tmpAz += mf * mmf / aw;
 				}
@@ -163,6 +168,7 @@ final class MixtureToMassFractions //
 		return rv;
 	}
 
+	@Override
 	public String toString() {
 		return "Mixture-to-" + mNewMaterial.toString();
 	}

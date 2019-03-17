@@ -27,8 +27,8 @@ public class StoichiometryToAtomFraction //
 
 	private double denom(final RealVector point) {
 		double res = 0.0;
-		for (final Object tag : getInputLabels())
-			res += getValue(tag, point);
+		for (int i=0;i<getInputDimension();++i)
+			res += point.getEntry(i);
 		return res;
 	}
 
@@ -45,7 +45,7 @@ public class StoichiometryToAtomFraction //
 			final MaterialLabel.AtomFraction aft1 = (MaterialLabel.AtomFraction) getOutputLabel(outIdx);
 			final MaterialLabel.Stoichiometry st1 = MaterialLabel.buildStoichiometryTag(aft1.getMaterial(),
 					aft1.getElement());
-			final double s1 = getValue(st1, point);
+			final double s1 = point.getEntry(inputIndex(st1));
 			vals.setEntry(outIdx, s1 / den);
 			for (int inIdx = 0; inIdx < getInputDimension(); ++inIdx) {
 				final MaterialLabel.Stoichiometry st2 = (MaterialLabel.Stoichiometry) getInputLabel(inIdx);
@@ -63,7 +63,7 @@ public class StoichiometryToAtomFraction //
 			final MaterialLabel.AtomFraction aft1 = (MaterialLabel.AtomFraction) getOutputLabel(outIdx);
 			final MaterialLabel.Stoichiometry st1 = MaterialLabel.buildStoichiometryTag(aft1.getMaterial(),
 					aft1.getElement());
-			final double s1 = getValue(st1, point);
+			final double s1 = point.getEntry(inputIndex(st1));
 			vals.setEntry(outIdx, s1 / den);
 		}
 		return vals;
