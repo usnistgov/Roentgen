@@ -25,6 +25,8 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 public class AtomFractionToMassFraction //
 		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
+	public final Material mMaterial;
+
 	private static List<? extends Object> buildInputTags(final Material mat) {
 		final List<Object> res = new ArrayList<>();
 		res.addAll(MaterialLabel.buildAtomFractionTags(mat));
@@ -40,6 +42,7 @@ public class AtomFractionToMassFraction //
 	 */
 	public AtomFractionToMassFraction(final Material mat) {
 		super(buildInputTags(mat), MaterialLabel.buildMassFractionTags(mat));
+		mMaterial = mat;
 	}
 
 	private double denom(final RealVector point) {
@@ -105,9 +108,9 @@ public class AtomFractionToMassFraction //
 		}
 		return vals;
 	}
-	
+
 	public String toString() {
-		return "Atom Fraction to Mass Fraction";
+		return "Atom fraction to Mass fraction[" + mMaterial + "]";
 	}
 
 }

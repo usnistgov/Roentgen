@@ -1,6 +1,7 @@
 package gov.nist.microanalysis.roentgen.physics.composition;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -33,7 +34,7 @@ public class StoichiometeryRules implements IToHTML {
 	public Element getElement() {
 		return mElement;
 	}
-
+	
 	public Composition getRule(final Element elm) {
 		return mRules.getOrDefault(elm, Composition.pureElement(elm));
 	}
@@ -63,26 +64,35 @@ public class StoichiometeryRules implements IToHTML {
 			return sb.toString();
 		}
 		}
-
 	}
 
 	public Map<Element, Composition> getRuleMap() {
 		return Collections.unmodifiableMap(mRules);
 	}
-
-	public static StoichiometeryRules defaultOxygenByStoichiomery() //
-			throws ArgumentException {
+	
+	public static Map<Element, Integer> getOxygenDefaults(){
 		final int[] valences = { 0, 1, 0, 1, 2, 3, 4, 5, -2, 1, 0, 1, 2, 3, 4, 5, 6, 5, 0, 1, 2, 3, 4, 5, 2, 2, 2, 2, 2,
 				2, 2, 3, 4, 3, 6, 5, 0, 1, 2, 3, 4, 5, 6, 2, 4, 4, 2, 1, 2, 3, 2, 3, 4, 5, 0, 1, 2, 3, 4, 3, 3, 3, 3, 3,
 				3, 3, 3, 3, 3, 3, 3, 3, 4, 5, 6, 4, 4, 4, 4, 3, 2, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 4, 4, 4 };
+		Map<Element, Integer> res=new HashMap<>();
+		for(int i=1;i<valences.length;++i)
+			res.put(Element.byAtomicNumber(i), valences[i]);
+		return res;
+	}
+	
+	
+
+	public static StoichiometeryRules defaultOxygenByStoichiomery() //
+			throws ArgumentException {
 		final Element elmO = Element.Oxygen;
 		final StoichiometeryRules res = new StoichiometeryRules(elmO);
-		final int valenceO = valences[elmO.getAtomicNumber()];
+		 Map<Element, Integer> valences = getOxygenDefaults();
+		final int valenceO = valences.get(elmO);
 		assert valenceO == -2;
 		for (int z = 1; z <= 94; ++z)
 			if (z != 8) {
 				final Element other = Element.byAtomicNumber(z);
-				final int valenceOther = valences[other.getAtomicNumber()];
+				final int valenceOther = valences.get(other);
 				if (valenceOther > 0) {
 					final int gcd = ArithmeticUtils.gcd(valenceOther, -valenceO);
 					final Map<Element, Integer> stoic = new TreeMap<>();

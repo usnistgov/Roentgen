@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.physics.composition;
+package gov.nist.microanalysis.roentgen.matrixcorrection;
 
 import java.util.Objects;
 
@@ -8,6 +8,8 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 public class Layer //

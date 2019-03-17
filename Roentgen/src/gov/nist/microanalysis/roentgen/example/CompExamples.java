@@ -194,7 +194,7 @@ public class CompExamples {
 			{
 				r.addHeader("Naive - mass fraction model");
 				men.put(Element.Iron, new UncertainValue(0.7175,0.0160));
-				final Composition comp = Composition.massFraction(mat, men);
+				final Composition comp = Composition.massFraction(mat, men, Collections.emptyList());
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 				try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\SS304_naive.tex")) {

@@ -6,7 +6,6 @@ import java.util.Optional;
 import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 
 /**

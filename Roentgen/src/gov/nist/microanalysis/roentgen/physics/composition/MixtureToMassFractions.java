@@ -15,6 +15,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunc
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MaterialMassFraction;
 
 /**
  * Converts a mixture of Composition objects into the mass fraction of the
@@ -163,6 +164,6 @@ final class MixtureToMassFractions //
 	}
 
 	public String toString() {
-		return "To" + mNewMaterial.toString();
+		return "Mixture-to-" + mNewMaterial.toString();
 	}
 }

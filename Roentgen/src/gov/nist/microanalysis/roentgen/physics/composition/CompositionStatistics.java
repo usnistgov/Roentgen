@@ -42,14 +42,13 @@ public class CompositionStatistics //
 		res.add(MaterialLabel.buildMeanAtomicWeighTag(mat));
 		return res;
 	}
-	
+
 	private static List<Object> buildInputs(final Material mat) {
 		final List<Object> res = new ArrayList<>();
 		res.addAll(MaterialLabel.buildMassFractionTags(mat));
 		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
 		return res;
 	}
-
 
 	private final Material mMaterial;
 
@@ -61,7 +60,6 @@ public class CompositionStatistics //
 		super(buildInputs(mat), buildOutputTags(mat));
 		mMaterial = mat;
 	}
-
 
 	/*
 	 * @see
@@ -125,10 +123,9 @@ public class CompositionStatistics //
 		rv.setEntry(mzIdx, meanZ);
 		return rv;
 	}
-	
-	public String toString() {
-		return "Composition Statistics";
-	}
 
+	public String toString() {
+		return "Composition Statistics[" + mMaterial + "]";
+	}
 
 }

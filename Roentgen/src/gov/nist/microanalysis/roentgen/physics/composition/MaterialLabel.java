@@ -214,4 +214,16 @@ public class MaterialLabel //
 		return new AnalyticalTotalTag(mat);
 	}
 
+	public static final class MaterialMassFraction //
+			extends BaseLabel<Material, Object, Object> {
+
+		public MaterialMassFraction(final Material mat) {
+			super("f", mat);
+		}
+
+		public Material getMaterial() {
+			return getObject1();
+		}
+	}
+
 }

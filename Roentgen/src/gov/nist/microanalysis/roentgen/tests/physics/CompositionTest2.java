@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -28,9 +30,11 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.ElementByStoichiometry;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.StoichiometeryRules;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -160,7 +164,7 @@ public class CompositionTest2 {
 
 	@Test
 	public void testMassFraction() throws ArgumentException {
-		LabeledMultivariateJacobianFunction.sDump = System.out;
+		LabeledMultivariateJacobianFunction.sDump = null;
 		try {
 		final Map<Element, Number> massFracs = new HashMap<>();
 		final double total = 0.98;
@@ -469,6 +473,74 @@ public class CompositionTest2 {
 				"Comparing analytical with finite difference.");
 
 		r.inBrowser(Mode.VERBOSE);
+	}
+	
+	@Test
+	public void testOByStoich() throws ArgumentException {
+		LabeledMultivariateJacobianFunction.sDump = null;
+		try {
+		final Map<Element, Number> massFracs = new HashMap<>();
+		final double total = 0.98;
+		massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
+		massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, "dP", 0.008));
+		massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, "dH", 0.001));
+		
+		Material mat = new Material("Apatite", Arrays.asList(Element.Calcium, Element.Phosphorus, Element.Hydrogen, Element.Oxygen));
+		ElementByStoichiometry oByStoic = new ElementByStoichiometry(mat, Element.Oxygen, StoichiometeryRules.getOxygenDefaults());
+		
+		
+		final Composition mf = Composition.massFraction(mat, massFracs, Collections.singletonList(oByStoic));
+
+		Assert.assertEquals(5.0 / 22.0, mf.getAtomFraction(Element.Calcium).doubleValue(), 1.0e-6);
+		Assert.assertEquals(3.0 / 22.0, mf.getAtomFraction(Element.Phosphorus).doubleValue(), 1.0e-6);
+		Assert.assertEquals(13.0 / 22.0, mf.getAtomFraction(Element.Oxygen).doubleValue(), 1.0e-6);
+		Assert.assertEquals(1.0 / 22.0, mf.getAtomFraction(Element.Hydrogen).doubleValue(), 1.0e-6);
+
+		final MaterialLabel.AtomFraction aft_ca = MaterialLabel.buildAtomFractionTag(mat, Element.Calcium);
+		final MaterialLabel.AtomFraction aft_p = MaterialLabel.buildAtomFractionTag(mat, Element.Phosphorus);
+		final MaterialLabel.AtomFraction aft_o = MaterialLabel.buildAtomFractionTag(mat, Element.Oxygen);
+		final MaterialLabel.AtomFraction aft_h = MaterialLabel.buildAtomFractionTag(mat, Element.Hydrogen);
+		Assert.assertEquals(0.0000917629, mf.getCovariance(aft_ca, aft_ca), 1.0e-7);
+		Assert.assertEquals(0.0000330836, mf.getCovariance(aft_p, aft_p), 1.0e-7);
+		Assert.assertEquals(0.0000812777, mf.getCovariance(aft_o, aft_o), 1.0e-6);
+		Assert.assertEquals(0.0004291211, mf.getCovariance(aft_h, aft_h), 1.0e-6);
+		Assert.assertEquals(-0.000095595, mf.getCovariance(aft_h, aft_p), 1.0e-6);
+		Assert.assertEquals(0.0000137997, mf.getCovariance(aft_ca, aft_p), 1.0e-6);
+		Assert.assertEquals(-0.000178976, mf.getCovariance(aft_o, aft_h), 1.0e-6);
+
+		if (mHTML) {
+			try {
+				final File f = File.createTempFile("MassFraction", ".html");
+				try (FileWriter fr = new FileWriter(f)) {
+					fr.append(HTML.createPageHeader("Mass Fraction Report", null));
+					fr.append(HTML.header("Mass Fraction"));
+					fr.append(HTML.subHeader("TERSE"));
+					fr.append(mf.toHTML(Mode.TERSE));
+					fr.append(HTML.subHeader("NORMAL"));
+					fr.append(mf.toHTML(Mode.NORMAL));
+					fr.append(HTML.subHeader("VERBOSE"));
+					fr.append(mf.toHTML(Mode.VERBOSE));
+					fr.append(HTML.subHeader("TERSE"));
+					final Table t = new Table();
+					t.addRow(Table.th("Element"), Table.thc("Verbose"), Table.thc("Normal"));
+					for (final Element elm : mf.getElementSet())
+						t.addRow(Table.td(elm.toHTML(Mode.TERSE)),
+								Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.VERBOSE)),
+								Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.NORMAL)));
+					fr.append(t.toHTML(Mode.NORMAL));
+					fr.append(HTML.createPageEnd());
+				}
+				Desktop.getDesktop().browse(f.toURI());
+			} catch (final IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		}
+		finally {
+			LabeledMultivariateJacobianFunction.sDump=null;
+		}
+		
 	}
 
 }

@@ -3,8 +3,10 @@ package gov.nist.microanalysis.roentgen.physics.composition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -28,12 +30,19 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 	private final Map<Element, Integer> mValences = new HashMap<>();
 	private final Element mElement;
 
-	private static List<? extends Object> buildInput(final Material mat, final List<Element> inputElms,
-			final Element outputElm) {
+	private static List<? extends Object> buildInput(//
+			final Material mat, //
+			final Element outputElm //
+	) {
+		Set<Element> inputElms = new HashSet<>();
+		inputElms.addAll(mat.getElementSet());
+		inputElms.remove(outputElm);
 		final List<Object> res = new ArrayList<>();
 		for (final Element elm : inputElms) {
-			res.add(MaterialLabel.buildMassFractionTag(mat, elm));
-			res.add(MaterialLabel.buildAtomicWeightTag(mat, elm));
+			if (elm != outputElm) {
+				res.add(MaterialLabel.buildMassFractionTag(mat, elm));
+				res.add(MaterialLabel.buildAtomicWeightTag(mat, elm));
+			}
 		}
 		res.add(MaterialLabel.buildAtomicWeightTag(mat, outputElm));
 		return res;
@@ -43,12 +52,15 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 	 * @param inputLabels
 	 * @param outputLabels
 	 */
-	public ElementByStoichiometry(final Material mat, final List<Element> inputElms, final Element outputElm,
-			final Map<Element, Integer> valences) {
-		super(buildInput(mat, inputElms, outputElm),
+	public ElementByStoichiometry(final Material mat, final Element outputElm, final Map<Element, Integer> valences) {
+		super(buildInput(mat, outputElm),
 				Collections.singletonList(MaterialLabel.buildMassFractionTag(mat, outputElm)));
 		mValences.putAll(valences);
 		mElement = outputElm;
+	}
+	
+	static public ElementByStoichiometry buildDefaultOxygen(Material mat) {
+		return new ElementByStoichiometry(mat, Element.Oxygen, StoichiometeryRules.getOxygenDefaults());
 	}
 
 	/*
@@ -63,26 +75,27 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 		final RealVector rv = new ArrayRealVector(1);
 		final RealMatrix rm = MatrixUtils.createRealMatrix(1, getInputDimension());
 		double awi = Double.NaN;
-		Object awit = null;
+		int awii = -1;
 		double ci = 0.0, dcidawi = 0.0;
 		for (int j = 0; j < getInputDimension(); ++j) {
 			final Object lbl = getInputLabel(j);
 			if (lbl instanceof MassFraction) {
 				final MassFraction cjt = (MassFraction) lbl;
-				final AtomicWeight awjt = MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), cjt.getElement());
-				if (Double.isNaN(awi)) {
-					awit = MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), mElement);
-					awi = getValue(awit, point);
+				final int awji = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), cjt.getElement()));
+				if (awii==-1) {
+					awii = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), mElement));
+					awi = point.getEntry(awii);
 				}
-				final double cj = getValue(cjt, point);
-				final double awj = getValue(awjt, point);
-				final double kkj = -(awi / awj) * (mValences.get(cjt.getElement()) / mValences.get(mElement));
+				final double cj = point.getEntry(j);
+				final double awj = point.getEntry(awji);
+				final double kkj = -(awi / awj)
+						* (mValences.get(cjt.getElement()).doubleValue() / mValences.get(mElement).doubleValue());
 				ci += kkj * cj;
 				dcidawi += (kkj / awi) * cj;
-				writeJacobian(0, cjt, kkj, rm);
-				writeJacobian(0, awjt, -kkj / awj, rm);
+				rm.setEntry(0, j, kkj);
+				rm.setEntry(0, awji, -(kkj / awj) * cj);
 			}
-			writeJacobian(0, awit, dcidawi, rm);
+			rm.setEntry(0, awii, dcidawi);
 		}
 		rv.setEntry(0, ci);
 		return Pair.create(rv, rm);
@@ -111,11 +124,16 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 				}
 				final double cj = getValue(mft, point);
 				final double aj = getValue(awt, point);
-				ci -= (ai / aj) * (mValences.get(mft.getElement()) / mValences.get(mElement)) * cj;
+				ci -= (ai / aj)
+						* (mValences.get(mft.getElement()).doubleValue() / mValences.get(mElement).doubleValue()) * cj;
 			}
 		}
 		rv.setEntry(0, ci);
 		return rv;
+	}
+	
+	public String toString() {
+		return mElement.getAbbrev()+"-by-stoichiometry";
 	}
 
 }

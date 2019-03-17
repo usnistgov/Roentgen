@@ -12,6 +12,8 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 public class StoichiometryToAtomFraction //
 		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
 
+	private final Material mMaterial;
+
 	/**
 	 * Constructs a AtomicFractionToMassFraction
 	 *
@@ -20,6 +22,7 @@ public class StoichiometryToAtomFraction //
 	 */
 	public StoichiometryToAtomFraction(final Material mat) {
 		super(MaterialLabel.buildStoichiometryTags(mat), MaterialLabel.buildAtomFractionTags(mat));
+		mMaterial = mat;
 	}
 
 	private double denom(final RealVector point) {
@@ -65,9 +68,9 @@ public class StoichiometryToAtomFraction //
 		}
 		return vals;
 	}
-	
+
 	public String toString() {
-		return "Stoichiometry-to-Atom Fraction";
+		return "Stoichiometry-to-Atom Fraction[" + mMaterial + "]";
 	}
 
 }
