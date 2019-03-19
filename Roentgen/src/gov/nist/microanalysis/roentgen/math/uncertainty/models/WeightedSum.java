@@ -19,25 +19,25 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
  * @author Nicholas W. M. Ritchie
  *
  */
-public class WeightedSum extends LabeledMultivariateJacobianFunction //
-		implements ILabeledMultivariateFunction {
+public class WeightedSum<G,H> extends LabeledMultivariateJacobianFunction<G,H> //
+		implements ILabeledMultivariateFunction<G,H> {
 
 	private final RealVector mCoeffs;
 
 	public WeightedSum( //
-			final List<? extends Object> inLabels, //
+			final List<G> inLabels, //
 			final RealVector coeffs, //
-			final Object outLabel //
+			final H outLabel //
 	) {
 		super(inLabels, Collections.singletonList(outLabel));
 		assert inLabels.size() == coeffs.getDimension();
 		mCoeffs = coeffs;
 	}
 
-	public static WeightedSum buildSum(List<? extends Object> inLabels, Object outLabel) {
+	public static <G,H> WeightedSum<G,H> buildSum(List<G> inLabels, H outLabel) {
 		final ArrayRealVector coeffs = new ArrayRealVector(inLabels.size());
 		coeffs.set(1.0);
-		return new WeightedSum(inLabels, coeffs, outLabel);
+		return new WeightedSum<G,H>(inLabels, coeffs, outLabel);
 	}
 
 	@Override

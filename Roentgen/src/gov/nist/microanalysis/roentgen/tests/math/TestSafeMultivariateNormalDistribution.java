@@ -42,16 +42,15 @@ public class TestSafeMultivariateNormalDistribution {
 		cov.setEntry(2, 4, 0.8);
 		cov.setEntry(3, 4, -1.2);
 		cov.setEntry(4, 3, -1.2);
-		final UncertainValues uvs = new UncertainValues(tags, vals, cov);
+		final UncertainValues<String> uvs = new UncertainValues<String>(tags, vals, cov);
 		final SafeMultivariateNormalDistribution smnd = new SafeMultivariateNormalDistribution(vals, cov);
-		final EstimateUncertainValues euv = new EstimateUncertainValues(tags);
-		euv.add(smnd, 1600000);
-		final UncertainValues euvs = euv.estimateDistribution();
+		final EstimateUncertainValues<String> euvs = new EstimateUncertainValues<String>(tags);
+		euvs.add(smnd, 1600000);
 		if (REPORT) {
 			final Report r = new Report("Test1 - SafeMultivariateNormalDistribution");
 			final BasicNumberFormat nf = new BasicNumberFormat("0.00");
 			r.addHTML(uvs.toHTML(Mode.NORMAL, nf));
-			r.addHTML(euv.estimateDistribution().toHTML(Mode.NORMAL, nf));
+			r.addHTML(euvs.toHTML(Mode.NORMAL, nf));
 			r.inBrowser(Mode.NORMAL);
 		}
 		for (int r = 0; r < tagCount; ++r) {
@@ -86,16 +85,15 @@ public class TestSafeMultivariateNormalDistribution {
 
 		cov.setEntry(5, 6, -0.3);
 		cov.setEntry(6, 5, -0.3);
-		final UncertainValues uvs = new UncertainValues(tags, vals, cov);
+		final UncertainValues<String> uvs = new UncertainValues<String>(tags, vals, cov);
 		final SafeMultivariateNormalDistribution smnd = new SafeMultivariateNormalDistribution(vals, cov);
-		final EstimateUncertainValues euv = new EstimateUncertainValues(tags);
-		euv.add(smnd, 1600000);
-		final UncertainValues euvs = euv.estimateDistribution();
+		final EstimateUncertainValues<String> euvs = new EstimateUncertainValues<String>(tags);
+		euvs.add(smnd, 1600000);
 		if (REPORT) {
 			final Report r = new Report("Test1 - SafeMultivariateNormalDistribution");
 			final BasicNumberFormat nf = new BasicNumberFormat("0.00");
 			r.addHTML(uvs.toHTML(Mode.NORMAL, nf));
-			r.addHTML(euv.estimateDistribution().toHTML(Mode.NORMAL, nf));
+			r.addHTML(euvs.toHTML(Mode.NORMAL, nf));
 			r.inBrowser(Mode.NORMAL);
 		}
 		for (int r = 0; r < tagCount; ++r) {

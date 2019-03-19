@@ -16,10 +16,10 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class JUncertainValuesEditor //
+public class JUncertainValuesEditor<H> //
 		extends JPanel {
 
-	private final UncertainValues mInitial;
+	private final UncertainValues<H> mInitial;
 	// private UncertainValues mCurrent;
 
 	private JTable mValuesTable;
@@ -61,7 +61,7 @@ public class JUncertainValuesEditor //
 		mCovarModel = new CovarTableModel(size);
 		if (mInitial != null) {
 			for (int r = 0; r < mInitial.getDimension(); ++r) {
-				final Object label = mInitial.getLabel(r);
+				final H label = mInitial.getLabel(r);
 				mValuesModel.setValueAt(label, r, 0);
 				mValuesModel.setValueAt(mValFormat.format(mInitial.getValue(label)), r, 0);
 				for (int c = 0; c < mInitial.getDimension(); ++c)
@@ -80,7 +80,7 @@ public class JUncertainValuesEditor //
 		repaint();
 	}
 
-	public JUncertainValuesEditor(UncertainValues initVals) {
+	public JUncertainValuesEditor(UncertainValues<H> initVals) {
 		super(false);
 		mInitial = initVals;
 		mValFormat = new HalfUpFormat("0.00E0");

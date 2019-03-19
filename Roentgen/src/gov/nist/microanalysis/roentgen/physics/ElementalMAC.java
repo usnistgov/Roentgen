@@ -13,8 +13,8 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 import com.google.common.base.Preconditions;
 
+import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.Globals;
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
@@ -98,7 +98,7 @@ public class ElementalMAC {
 		return frac < mLimit ? frac : mLimit;
 	}
 
-	public static class ElementMAC extends BaseLabel<Element, XRay, Object> {
+	public static class ElementMAC extends EPMALabel.BaseLabel<Element, XRay, Object> {
 
 		public ElementMAC(final Element elm, final XRay xr) {
 			super("[&mu;/&rho;]", elm, xr);
@@ -406,7 +406,7 @@ public class ElementalMAC {
 		final Set<Element> elms = comp.getElementSet();
 		double res = 0.0;
 		for (final Element elm : elms)
-			res += computeQ(elm, energy) * comp.getValue(elm).doubleValue();
+			res += computeQ(elm, energy) * comp.getMassFraction(elm).doubleValue();
 		return res;
 	}
 

@@ -15,8 +15,6 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
  * <p>
@@ -32,21 +30,21 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  *
  */
 public class CompositionStatistics //
-		extends LabeledMultivariateJacobianFunction //
-		implements ILabeledMultivariateFunction {
+		extends LabeledMultivariateJacobianFunction<MaterialLabel, MaterialLabel> //
+		implements ILabeledMultivariateFunction<MaterialLabel, MaterialLabel> {
 
-	private static List<Object> buildOutputTags(final Material mat) {
-		final List<Object> res = new ArrayList<>();
-		res.add(MaterialLabel.buildAnalyticalTotalTag(mat));
-		res.add(MaterialLabel.buildMeanAtomicNumberTag(mat));
-		res.add(MaterialLabel.buildMeanAtomicWeighTag(mat));
+	private static List<MaterialLabel> buildInputs(final Material mat) {
+		final List<MaterialLabel> res = new ArrayList<>();
+		res.addAll(MaterialLabel.buildMassFractionTags(mat));
+		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
 		return res;
 	}
 
-	private static List<Object> buildInputs(final Material mat) {
-		final List<Object> res = new ArrayList<>();
-		res.addAll(MaterialLabel.buildMassFractionTags(mat));
-		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
+	private static List<MaterialLabel> buildOutputTags(final Material mat) {
+		final List<MaterialLabel> res = new ArrayList<>();
+		res.add(MaterialLabel.buildAnalyticalTotalTag(mat));
+		res.add(MaterialLabel.buildMeanAtomicNumberTag(mat));
+		res.add(MaterialLabel.buildMeanAtomicWeighTag(mat));
 		return res;
 	}
 
@@ -59,6 +57,41 @@ public class CompositionStatistics //
 	public CompositionStatistics(final Material mat) {
 		super(buildInputs(mat), buildOutputTags(mat));
 		mMaterial = mat;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction
+	 * #optimized(org.apache.commons.math3.linear.RealVector)
+	 */
+	@Override
+	public RealVector optimized(final RealVector point) {
+		assert point.getDimension() == getInputDimension();
+		double meanA = 0.0, total = 0.0, meanZ = 0.0;
+		final RealVector rv = new ArrayRealVector(getOutputDimension());
+		final int totIdx = outputIndex(MaterialLabel.buildAnalyticalTotalTag(mMaterial));
+		final int maIdx = outputIndex(MaterialLabel.buildMeanAtomicWeighTag(mMaterial));
+		final int mzIdx = outputIndex(MaterialLabel.buildMeanAtomicNumberTag(mMaterial));
+		for (final Element elm : mMaterial.getElementSet()) {
+			final int mft = inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm));
+			final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
+			final double mf = point.getEntry(mft);
+			final double aw = point.getEntry(awt);
+			total += mf;
+			meanA += mf * aw;
+			meanZ += mf * elm.getAtomicNumber();
+		}
+		rv.setEntry(totIdx, total);
+		rv.setEntry(maIdx, meanA);
+		rv.setEntry(mzIdx, meanZ);
+		return rv;
+	}
+
+	@Override
+	public String toString() {
+		return "Composition Statistics[" + mMaterial + "]";
 	}
 
 	/*
@@ -92,40 +125,6 @@ public class CompositionStatistics //
 		rv.setEntry(maIdx, meanA);
 		rv.setEntry(mzIdx, meanZ);
 		return Pair.create(rv, rm);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction
-	 * #optimized(org.apache.commons.math3.linear.RealVector)
-	 */
-	@Override
-	public RealVector optimized(final RealVector point) {
-		assert point.getDimension() == getInputDimension();
-		double meanA = 0.0, total = 0.0, meanZ = 0.0;
-		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		final int totIdx = outputIndex(MaterialLabel.buildAnalyticalTotalTag(mMaterial));
-		final int maIdx = outputIndex(MaterialLabel.buildMeanAtomicWeighTag(mMaterial));
-		final int mzIdx = outputIndex(MaterialLabel.buildMeanAtomicNumberTag(mMaterial));
-		for (final Element elm : mMaterial.getElementSet()) {
-			final int mft = inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm));
-			final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
-			final double mf = point.getEntry(mft);
-			final double aw = point.getEntry(awt);
-			total += mf;
-			meanA += mf * aw;
-			meanZ += mf * elm.getAtomicNumber();
-		}
-		rv.setEntry(totIdx, total);
-		rv.setEntry(maIdx, meanA);
-		rv.setEntry(mzIdx, meanZ);
-		return rv;
-	}
-
-	public String toString() {
-		return "Composition Statistics[" + mMaterial + "]";
 	}
 
 }

@@ -27,7 +27,7 @@ public class FastIndex<H> extends ArrayList<H> {
 		this(Collections.emptyList());
 	}
 
-	public FastIndex(final List<H> outputs) {
+	public FastIndex(final List<? extends H> outputs) {
 		super();
 		mIndex = new HashMap<>();
 		for(H h : outputs)

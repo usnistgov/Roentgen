@@ -11,7 +11,7 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -38,7 +38,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
  */
 
 public class KRatioLabel//
-		extends BaseLabel<UnknownMatrixCorrectionDatum, StandardMatrixCorrectionDatum, ElementXRaySet> //
+		extends EPMALabel.BaseLabel<UnknownMatrixCorrectionDatum, StandardMatrixCorrectionDatum, ElementXRaySet> //
 		implements IToHTML, Comparable<KRatioLabel> {
 
 	public enum Method {
@@ -184,9 +184,9 @@ public class KRatioLabel//
 		return c;
 	}
 
-	public static UncertainValues extractKRatios(final RealVector res, final List<? extends Object> labels,
+	public static UncertainValues<KRatioLabel> extractKRatios(final RealVector res, final List<? extends Object> labels,
 			final Method meth) {
-		final Map<Object, Number> vals = new HashMap<>();
+		final Map<KRatioLabel, Number> vals = new HashMap<>();
 		for (int i = 0; i < labels.size(); ++i) {
 			final Object label = labels.get(i);
 			if (label instanceof KRatioLabel) {
@@ -197,7 +197,7 @@ public class KRatioLabel//
 				vals.put(meas, res.getEntry(i));
 			}
 		}
-		return new UncertainValues(vals);
+		return new UncertainValues<KRatioLabel>(vals);
 	}
 
 }

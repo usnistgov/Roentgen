@@ -20,7 +20,7 @@ import com.duckandcover.lazy.SimplyLazy;
  * @version 1.0
  */
 public abstract class MultiLinearJacobianFunction //
-		extends LabeledMultivariateJacobianFunction {
+		extends LabeledMultivariateJacobianFunction<String, String> {
 
 	private final SimplyLazy<RealMatrix> mJacobian = new SimplyLazy<RealMatrix>() {
 
@@ -31,8 +31,8 @@ public abstract class MultiLinearJacobianFunction //
 
 	};
 
-	private static List<Object> buildLabels(final String prefix, final int nCh) {
-		final List<Object> labels = new ArrayList<>();
+	private static List<String> buildLabels(final String prefix, final int nCh) {
+		final List<String> labels = new ArrayList<>();
 		for (int i = 0; i < nCh; ++i)
 			labels.add(prefix + "[" + Integer.toString(i) + "]");
 		return labels;

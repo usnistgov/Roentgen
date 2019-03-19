@@ -30,16 +30,18 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @author Nicholas W. M. Ritchie
  * @version $Rev: 232 $
  */
-abstract public class EnergyCalibration extends LabeledMultivariateJacobianFunction implements IToHTML {
+abstract public class EnergyCalibration //
+		extends LabeledMultivariateJacobianFunction<String, String> //
+		implements IToHTML {
 
-	private static List<Object> buildParams(final String prefix, final int nParams) {
-		final List<Object> res = new ArrayList<>();
+	private static List<String> buildParams(final String prefix, final int nParams) {
+		final List<String> res = new ArrayList<>();
 		for (int i = 0; i < nParams; ++i)
 			res.add(prefix + "[" + Integer.toString(i) + "]");
 		return res;
 	}
 
-	protected EnergyCalibration(final List<Object> inputParams, final int nCh) {
+	protected EnergyCalibration(final List<String> inputParams, final int nCh) {
 		super(inputParams, buildParams("E", nCh));
 	}
 
@@ -106,7 +108,7 @@ abstract public class EnergyCalibration extends LabeledMultivariateJacobianFunct
 		private final PolynomialFunction mPolynomial;
 
 		public Polynomial(final double[] params, final int nCh) {
-			super(Arrays.asList((Object[]) Arrays.copyOf(ORDER_NAMES, params.length)), nCh);
+			super(Arrays.asList(Arrays.copyOf(ORDER_NAMES, params.length)), nCh);
 			assert params.length >= 2 : "EnergyScaleFunction.Polynomial order must be >1.";
 			assert params.length < 9 : "EnergyScaleFunction.Polynomial order must be 9.";
 			mPolynomial = new PolynomialFunction(params);
@@ -211,8 +213,8 @@ abstract public class EnergyCalibration extends LabeledMultivariateJacobianFunct
 
 		private final double[] mParameters;
 
-		private static List<Object> inputTags() {
-			return Arrays.asList(new Object[] { "Offset", "Sqrt", "Linear" });
+		private static List<String> inputTags() {
+			return Arrays.asList(  "Offset", "Sqrt", "Linear" );
 		}
 
 		public QuadraticInSqrt(final double offset, final double sqrt, final double linear, final int nChannels) {

@@ -16,20 +16,20 @@ import org.junit.Test;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel.HLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 
 /**
  * Not ready!!! Need test inputs....
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
 public class TestImplicitMeasurementModel {
 
 	public static class Pressure102Example //
-			extends ImplicitMeasurementModel.HModel implements ILabeledMultivariateFunction {
+			extends ImplicitMeasurementModel.HModel<String> //
+			implements ILabeledMultivariateFunction<String, String> {
 
 		private static final String PRESSURE = "p";
 		private static final String GL = "gl";
@@ -41,18 +41,18 @@ public class TestImplicitMeasurementModel {
 		private static final String MW = "m<sub>w</sub>";
 		private static final String DTHETA = "&delta;&Theta;";
 
-		static private String idx(String base, int i) {
+		static private String idx(final String base, final int i) {
 			return base + "[" + i + "]";
 		}
 
 		/**
 		 * Build the input (X) labels (used by Pressure102Example constructor)
-		 * 
+		 *
 		 * @param len The number of pressure measurements
 		 * @return List<String> A list of labels
 		 */
-		static private List<String> xLabels(int len) {
-			List<String> res = new ArrayList<>();
+		static private List<String> xLabels(final int len) {
+			final List<String> res = new ArrayList<>();
 			for (int i = 0; i < len; ++i) {
 				res.add(idx(DTHETA, i));
 				res.add(idx(MW, i));
@@ -64,14 +64,27 @@ public class TestImplicitMeasurementModel {
 
 		/**
 		 * Build the output (Y) labels (used by Pressure102Example constructor)
-		 * 
+		 *
 		 * @param len The number of pressure measurements
 		 * @return List<String> A list of labels
 		 */
-		static private List<String> yLabels(int len) {
-			List<String> res = new ArrayList<>();
+		static private List<String> yLabels(final int len) {
+			final List<String> res = new ArrayList<>();
 			for (int i = 0; i < len; ++i)
 				res.add(idx(PRESSURE, i));
+			return res;
+		}
+
+		/**
+		 * Build the output (Y) labels (used by Pressure102Example constructor)
+		 *
+		 * @param len The number of pressure measurements
+		 * @return List<String> A list of labels
+		 */
+		static private List<String> hLabels(final int len) {
+			final List<String> res = new ArrayList<>();
+			for (int i = 0; i < len; ++i)
+				res.add(idx("HHH", i));
 			return res;
 		}
 
@@ -80,13 +93,13 @@ public class TestImplicitMeasurementModel {
 		 */
 		private final int mLength;
 
-		public Pressure102Example(int len) {
-			super(xLabels(len), yLabels(len));
+		public Pressure102Example(final int len) {
+			super(xLabels(len), yLabels(len), hLabels(len));
 			mLength = len;
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(RealVector point) {
+		public Pair<RealVector, RealMatrix> value(final RealVector point) {
 			// Initialize input variables
 			final double rhoa = point.getEntry(inputIndex(RHOA));
 			final double rhow = point.getEntry(inputIndex(RHOW));
@@ -106,10 +119,10 @@ public class TestImplicitMeasurementModel {
 			final RealVector val = new ArrayRealVector(getOutputDimension());
 			final RealMatrix jac = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 			for (int i = 0; i < mLength; ++i) {
-				final int hIdx = outputIndex(new HLabel(idx(PRESSURE, i)));
+				final int hIdx = i;
 				val.setEntry(hIdx, a0 * p[i] * (1.0 + lambda * p[i]) * (1.0 + alpha * dtheta[i])
 						- mw[i] * (1.0 - rhoa / rhow) * gl);
-				for (int j = 0; j < mLength; ++i) {
+				for (final int j = 0; j < mLength; ++i) {
 					jac.setEntry(hIdx, inputIndex(idx(PRESSURE, j)), //
 							a0 * (1.0 + 2.0 * lambda * p[i]) * (1.0 + alpha * dtheta[i]));
 					jac.setEntry(hIdx, inputIndex(idx(DTHETA, j)), //
@@ -128,7 +141,7 @@ public class TestImplicitMeasurementModel {
 		}
 
 		@Override
-		public RealVector optimized(RealVector point) {
+		public RealVector optimized(final RealVector point) {
 			// Initialize input variables
 			final double rhoa = point.getEntry(inputIndex(RHOA));
 			final double rhow = point.getEntry(inputIndex(RHOW));
@@ -147,7 +160,7 @@ public class TestImplicitMeasurementModel {
 			// Calculate output values
 			final RealVector val = new ArrayRealVector(getOutputDimension());
 			for (int i = 0; i < mLength; ++i) {
-				final int hIdx = outputIndex(new HLabel(PRESSURE + "[" + i + "]"));
+				final int hIdx = i;
 				val.setEntry(hIdx, a0 * p[i] * (1.0 + lambda * p[i]) * (1.0 + alpha * dtheta[i])
 						- mw[i] * (1.0 - rhoa / rhow) * gl);
 			}
@@ -155,24 +168,25 @@ public class TestImplicitMeasurementModel {
 		}
 	}
 
-
 	@Test
 	public void Example102() throws ArgumentException {
 
-		Pressure102Example hmodel = new Pressure102Example(3);
-		ImplicitMeasurementModel imm = new ImplicitMeasurementModel(hmodel, hmodel.getOutputLabels());
+		final Pressure102Example hmodel = new Pressure102Example(3);
 
-		UncertainValues inputs = new UncertainValues(imm.getInputLabels());
+		final ImplicitMeasurementModel<String> imm = new ImplicitMeasurementModel<>(hmodel,
+				hmodel.getOutputLabels());
 
-		UncertainValuesCalculator uvc = new UncertainValuesCalculator(imm, inputs);
-		UncertainValues jres = UncertainValues.force(uvc);
-		
-		RealVector dinp = inputs.getValues().mapMultiply(0.001);
+		final UncertainValues<String> inputs = new UncertainValues<>(imm.getInputLabels());
+
+		final UncertainValuesCalculator<String, String> uvc = new UncertainValuesCalculator<>(imm, inputs);
+		final UncertainValues<String> jres = UncertainValues.<String>force(uvc);
+
+		final RealVector dinp = inputs.getValues().mapMultiply(0.001);
 		uvc.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
-		UncertainValues fdres = UncertainValues.force(uvc);
-		
+		final UncertainValues<String> fdres = UncertainValues.<String>force(uvc);
+
 		assertTrue("Finite difference does not equal Jacobian", jres.equals(fdres, 0.00001));
-		
+
 	}
 
 }

@@ -3,9 +3,9 @@ package gov.nist.microanalysis.roentgen.matrixcorrection;
 import java.util.Date;
 import java.util.Optional;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.EPMALabel;
 
-public class ProbeCurrentLabel extends BaseLabel<Integer, Object, Object> {
+public class ProbeCurrentLabel extends EPMALabel.BaseLabel<Integer, Object, Object> {
 
 	private final Optional<Date> mTimestamp;
 
@@ -22,5 +22,4 @@ public class ProbeCurrentLabel extends BaseLabel<Integer, Object, Object> {
 	public Optional<Date> getTimestamp() {
 		return mTimestamp;
 	}
-
 }

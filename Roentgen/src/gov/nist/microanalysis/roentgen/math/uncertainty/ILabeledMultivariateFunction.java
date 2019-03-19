@@ -15,7 +15,7 @@ import org.apache.commons.math3.linear.RealVector;
  * @author Nicholas W. M. Ritchie
  *
  */
-public interface ILabeledMultivariateFunction {
+public interface ILabeledMultivariateFunction<H, K> {
 
 	/**
 	 * Evaluate a multivariate function at the point specified. Return the output
@@ -25,19 +25,20 @@ public interface ILabeledMultivariateFunction {
 	 * @param point
 	 * @return {@link RealVector}
 	 */
-	public RealVector optimized(RealVector point);	
-	
+	public RealVector optimized(RealVector point);
+
 	/**
 	 * A list containing the labels identifying the input values to optimized(...)
-	 * 
-	 * @return List&lt;? extends Object&gt;
+	 *
+	 * @return List&lt;H&gt;
 	 */
-	public List<? extends Object> getInputLabels();
-	
+	public List<H> getInputLabels();
+
 	/**
-	 * A list containing the labels identifying the output values from optimized(...)
-	 * 
-	 * @return List&lt;? extends Object&gt;
+	 * A list containing the labels identifying the output values from
+	 * optimized(...)
+	 *
+	 * @return List&lt;H&gt;
 	 */
-	public List<? extends Object> getOutputLabels();
+	public List<K> getOutputLabels();
 }

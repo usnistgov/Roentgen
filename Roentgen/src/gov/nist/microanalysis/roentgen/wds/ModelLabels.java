@@ -1,6 +1,6 @@
 package gov.nist.microanalysis.roentgen.wds;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.EPMALabel.BaseLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
@@ -20,35 +20,35 @@ public class ModelLabels<H, J> extends BaseLabel<MatrixCorrectionDatum, H, J> {
 		super(name, obj1, obj2, obj3);
 	}
 
-	public static Object buildNormCharacteristicIntensity(final MatrixCorrectionDatum mcd, final ElementXRaySet exrs) {
+	public static ModelLabels<ElementXRaySet, Object> buildNormCharacteristicIntensity(final MatrixCorrectionDatum mcd, final ElementXRaySet exrs) {
 		return new ModelLabels<ElementXRaySet, Object>("I<sub>norm,char</sub>", mcd, exrs);
 	}
 
-	public static Object buildNormCharacteristicIntensity(final MatrixCorrectionDatum mcd,
+	public static ModelLabels<ElementXRaySet, Object> buildNormCharacteristicIntensity(final MatrixCorrectionDatum mcd,
 			final CharacteristicXRay cxr) {
 		return buildNormCharacteristicIntensity(mcd, new ElementXRaySet(cxr));
 	}
 
-	public static Object buildSpectrometerPosition(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
+	public static ModelLabels<CharacteristicXRay, Integer> buildSpectrometerPosition(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
 			final int index) {
 		return new ModelLabels<CharacteristicXRay, Integer>("R", mcd, cxr, Integer.valueOf(index));
 	}
 
-	public static Object buildRawIntensity(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
+	public static ModelLabels<CharacteristicXRay, Integer> buildRawIntensity(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
 			final int index) {
 		return new ModelLabels<CharacteristicXRay, Integer>("I", mcd, cxr, Integer.valueOf(index));
 	}
 
-	public static Object buildLiveTime(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr, final int index) {
+	public static ModelLabels<CharacteristicXRay, Integer> buildLiveTime(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr, final int index) {
 		return new ModelLabels<CharacteristicXRay, Integer>("LT", mcd, cxr, Integer.valueOf(index));
 	}
 
-	public static Object buildProbeCurrent(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
+	public static ModelLabels<CharacteristicXRay, Integer> buildProbeCurrent(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
 			final int index) {
 		return new ModelLabels<CharacteristicXRay, Integer>("PC", mcd, cxr, Integer.valueOf(index));
 	}
 
-	public static Object buildNormalizedIntensity(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
+	public static ModelLabels<CharacteristicXRay, Integer> buildNormalizedIntensity(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
 			final int index) {
 		return new ModelLabels<CharacteristicXRay, Integer>("I<sub>norm</sub>", mcd, cxr, Integer.valueOf(index));
 	}

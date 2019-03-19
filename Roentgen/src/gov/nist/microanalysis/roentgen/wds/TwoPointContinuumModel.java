@@ -13,7 +13,7 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunctionBuilder;
-import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 
@@ -26,23 +26,23 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class TwoPointContinuumModel extends SerialLabeledMultivariateJacobianFunction {
+public class TwoPointContinuumModel extends CompositeLabeledMultivariateJacobianFunction<ModelLabels<?, ?>> {
 
 	public static final int HIGH_BACK = 1;
 	public static final int ON_PEAK = 0;
 	public static final int LOW_BACK = -1;
 
-	static private List<? extends Object> buildNIInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
+	static private List<ModelLabels<?,?>> buildNIInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
 			final int index) {
-		final List<Object> res = new ArrayList<>();
+		final List<ModelLabels<?,?>> res = new ArrayList<>();
 		res.add(ModelLabels.buildRawIntensity(mcd, cxr, index));
 		res.add(ModelLabels.buildLiveTime(mcd, cxr, index));
 		res.add(ModelLabels.buildProbeCurrent(mcd, cxr, index));
 		return res;
 	}
 
-	static private List<? extends Object> buildPCInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
-		final List<Object> res = new ArrayList<>();
+	static private List<ModelLabels<?,?>> buildPCInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
+		final List<ModelLabels<?,?>> res = new ArrayList<>();
 		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, LOW_BACK));
 		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, ON_PEAK));
 		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, HIGH_BACK));
@@ -52,7 +52,7 @@ public class TwoPointContinuumModel extends SerialLabeledMultivariateJacobianFun
 		return res;
 	}
 
-	private static class NormalizeIntensity extends LabeledMultivariateJacobianFunction {
+	private static class NormalizeIntensity extends LabeledMultivariateJacobianFunction<ModelLabels<?,?>, ModelLabels<?,?>> {
 
 		private final MatrixCorrectionDatum mMcd;
 		private final CharacteristicXRay mCxr;
@@ -88,7 +88,7 @@ public class TwoPointContinuumModel extends SerialLabeledMultivariateJacobianFun
 		}
 	}
 
-	public static class ComputePeakContinuum extends LabeledMultivariateJacobianFunction {
+	public static class ComputePeakContinuum extends LabeledMultivariateJacobianFunction<ModelLabels<?,?>,ModelLabels<?,?>> {
 
 		private final MatrixCorrectionDatum mMcd;
 		private final CharacteristicXRay mCxr;
@@ -141,13 +141,13 @@ public class TwoPointContinuumModel extends SerialLabeledMultivariateJacobianFun
 
 	}
 
-	static public List<LabeledMultivariateJacobianFunction> buildModel( //
+	static public List<? extends LabeledMultivariateJacobianFunction<? extends ModelLabels<?,?>, ? extends ModelLabels<?,?>>> buildModel( //
 			final MatrixCorrectionDatum mcd, //
 			final CharacteristicXRay cxr //
 	) throws ArgumentException {
-		final List<LabeledMultivariateJacobianFunction> res = new ArrayList<>();
-		final LabeledMultivariateJacobianFunctionBuilder builder = new LabeledMultivariateJacobianFunctionBuilder(
-				"Normalizer");
+		final List<LabeledMultivariateJacobianFunction<? extends ModelLabels<?,?>, ? extends ModelLabels<?,?>>> res = new ArrayList<>();
+		final LabeledMultivariateJacobianFunctionBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>> builder = //
+				new LabeledMultivariateJacobianFunctionBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>>("Normalizer");
 		builder.add(new NormalizeIntensity(mcd, cxr, LOW_BACK));
 		builder.add(new NormalizeIntensity(mcd, cxr, ON_PEAK));
 		builder.add(new NormalizeIntensity(mcd, cxr, HIGH_BACK));

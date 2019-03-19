@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty.models;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -9,7 +8,6 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 
@@ -17,74 +15,53 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
  * Normalize takes the input values and normalizes them to a sum of unity.
  * Negative values are truncated to zero. If the resulting sum of the truncated
  * values is zero, then the inputs are returned and a unity Jacobian matrix.
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
-public class Normalize //
-		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
-
-	public static class Normalized extends BaseLabel<Object, Object, Object> {
-
-		private Normalized(Object obj) {
-			super("N", obj);
-		}
-		
-		public Object getBase() {
-			return getObject1();
-		}
-	}
-
-	public final static List<Object> buildNormalized(List<? extends Object> inputs) {
-		List<Object> res = new ArrayList<>();
-		for (Object lbl : inputs)
-			res.add(buildNormalized(lbl));
-		return res;
-	}
-
-	public static Normalized buildNormalized(Object lbl) {
-		if (lbl instanceof BaseLabel)
-			return new Normalized((BaseLabel<?, ?, ?>) lbl);
-		else
-			return new Normalized(lbl);
-	}
+public class Normalize<H, K> //
+		extends LabeledMultivariateJacobianFunction<H, K> //
+		implements ILabeledMultivariateFunction<H, K> {
 
 	/**
 	 * @param inputLabels
 	 */
-	public Normalize(List<? extends Object> inputLabels) {
-		super(inputLabels, buildNormalized(inputLabels));
-	}
-
-	/**
-	 * <p>
-	 * If obj is an instance of Normalized then unwrap returns the object inside of
-	 * Normalized (getObject1()). Otherwise unwrap just returns obj.
-	 * </p>
-	 * <p>
-	 * Useful for functions that can take either normalized or unnormalized
-	 * equivalents of tags.
-	 * </p>
-	 * 
-	 * @param obj
-	 * @return
-	 */
-	public static Object unwrap(Object obj) {
-		if (obj instanceof Normalized)
-			return ((Normalized) obj).getBase();
-		else
-			return obj;
+	public Normalize(final List<H> inputLabels, final List<K> outputLabels) {
+		super(inputLabels, outputLabels);
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
+	 * @see
+	 * gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction
+	 * #optimized(org.apache.commons.math3.linear.RealVector)
+	 */
+	@Override
+	public RealVector optimized(final RealVector point) {
+		assert getInputDimension() == getOutputDimension();
+		final int dim = point.getDimension();
+		assert getInputDimension() == dim;
+		double norm = 0.0;
+		for (int i = 0; i < point.getDimension(); ++i)
+			norm += Math.max(0.0, point.getEntry(i));
+		return point.mapDivide(norm);
+	}
+
+	@Override
+	public String toString() {
+		return "Normalize" + getInputLabels();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
 	 * @see
 	 * org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
 	 * value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(RealVector point) {
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		assert getInputDimension() == getOutputDimension();
 		final int dim = point.getDimension();
 		assert getInputDimension() == dim;
@@ -94,8 +71,8 @@ public class Normalize //
 		if (norm == 0.0) {
 			return Pair.create(point.copy(), MatrixUtils.createRealIdentityMatrix(dim));
 		} else {
-			RealMatrix j = MatrixUtils.createRealMatrix(dim, dim);
-			RealVector resV = new ArrayRealVector(dim);
+			final RealMatrix j = MatrixUtils.createRealMatrix(dim, dim);
+			final RealVector resV = new ArrayRealVector(dim);
 			for (int r = 0; r < dim; ++r) {
 				final double a = point.getEntry(r);
 				final double n = a / norm;
@@ -109,28 +86,6 @@ public class Normalize //
 			}
 			return Pair.create(resV, j);
 		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction
-	 * #optimized(org.apache.commons.math3.linear.RealVector)
-	 */
-	@Override
-	public RealVector optimized(RealVector point) {
-		assert getInputDimension() == getOutputDimension();
-		final int dim = point.getDimension();
-		assert getInputDimension() == dim;
-		double norm = 0.0;
-		for (int i = 0; i < point.getDimension(); ++i)
-			norm += Math.max(0.0, point.getEntry(i));
-		return point.mapDivide(norm);
-	}
-	
-	public String toString() {
-		return "Normalize"+getInputLabels();
 	}
 
 }

@@ -16,7 +16,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularMatrixException;
 import org.apache.commons.math3.random.RandomGeneratorFactory;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 
 /**
@@ -49,10 +48,10 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 	public SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov) {
 		this(vals, cov, 1.0e-9);
 	}
-	
-	public SafeMultivariateNormalDistribution(UncertainValuesBase uvs) {
+
+	public SafeMultivariateNormalDistribution(final UncertainValuesBase<?> uvs) {
 		this(uvs.getValues(), uvs.getCovariances(), 1.0e-9);
-	}	
+	}
 
 	public SafeMultivariateNormalDistribution(final RealVector vals, final RealMatrix cov, final double tol) {
 		super(RandomGeneratorFactory.createRandomGenerator(new Random()), vals.getDimension());
@@ -135,14 +134,13 @@ public class SafeMultivariateNormalDistribution extends AbstractMultivariateReal
 			}
 			assert MatrixUtils.isSymmetric(MatrixUtils.createRealMatrix(covariances), 1.0e-9);
 			assert validateCovariances(covariances);
-			try  {
+			try {
 				mDistribution[groupIdx] = new MultivariateNormalDistribution(random, means, covariances);
-			}
-			catch(SingularMatrixException sex) {
+			} catch (final SingularMatrixException sex) {
 				System.err.println(groups.get(groupIdx));
 				System.err.println("Means[" + groupIdx + "] = " + Arrays.toString(means));
-				System.err
-						.println("Covariances[" + groupIdx + "] = " + MatrixUtils.createRealMatrix(covariances).toString());
+				System.err.println(
+						"Covariances[" + groupIdx + "] = " + MatrixUtils.createRealMatrix(covariances).toString());
 				sex.printStackTrace();
 				throw sex;
 			}

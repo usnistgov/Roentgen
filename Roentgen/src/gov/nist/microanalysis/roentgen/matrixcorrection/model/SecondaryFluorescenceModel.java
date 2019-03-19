@@ -8,7 +8,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
@@ -18,10 +18,10 @@ import gov.nist.microanalysis.roentgen.physics.AtomicShell;
  *
  */
 public class SecondaryFluorescenceModel //
-		extends LabeledMultivariateJacobianFunction {
+		extends LabeledMultivariateJacobianFunction<EPMALabel, EPMALabel> {
 
 	public static class SecondaryFluorescenceLabel //
-			extends BaseLabel<MatrixCorrectionDatum, AtomicShell, Object> {
+			extends EPMALabel.BaseLabel<MatrixCorrectionDatum, AtomicShell, Object> {
 
 		public SecondaryFluorescenceLabel(final MatrixCorrectionDatum mcd, final AtomicShell shell) {
 			super("Fs", mcd, shell);
@@ -40,8 +40,8 @@ public class SecondaryFluorescenceModel //
 	 * @param inputLabels
 	 * @param outputLabels
 	 */
-	public SecondaryFluorescenceModel(final List<? extends Object> inputLabels,
-			final List<? extends Object> outputLabels) {
+	public SecondaryFluorescenceModel(final List<EPMALabel> inputLabels,
+			final List<EPMALabel> outputLabels) {
 		super(inputLabels, outputLabels);
 	}
 

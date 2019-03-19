@@ -6,9 +6,9 @@ import java.util.List;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
-import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
+import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 
 /**
@@ -40,8 +40,8 @@ public class WriteToLaTeX {
 		TERSE, NORMAL, VERBOSE
 	};
 
-	public void write(final PrintWriter wr, final UncertainValuesBase uvs, final BasicNumberFormat bnf,
-			final List<Object> labels) {
+	public <H> void write(final PrintWriter wr, final UncertainValuesBase<H> uvs, final BasicNumberFormat bnf,
+			final List<H> labels) {
 		wr.write("\\begin{equation}\n");
 		wr.write("\\begin{matrix}\n");
 		wr.write(" \\begin{bmatrix}\n");
@@ -93,6 +93,7 @@ public class WriteToLaTeX {
 	}
 
 	public void write(final PrintWriter wr, final Composition comp, final Mode mode) {
+		final Material material = comp.getMaterial();
 		switch (mode) {
 		case TERSE: {
 			wr.write(stripName(comp));
@@ -151,13 +152,13 @@ public class WriteToLaTeX {
 		}
 			break;
 		case VERBOSE:
-			final List<Object> labels = new ArrayList<>();
-			labels.addAll(MaterialLabel.buildMassFractionTags(comp.getMaterial()));
-			labels.addAll(Normalize.buildNormalized(MaterialLabel.buildMassFractionTags(comp.getMaterial())));
-			labels.addAll(MaterialLabel.buildAtomFractionTags(comp.getMaterial()));
-			labels.add(MaterialLabel.buildAnalyticalTotalTag(comp.getMaterial()));
-			labels.add(MaterialLabel.buildMeanAtomicNumberTag(comp.getMaterial()));
-			labels.add(MaterialLabel.buildMeanAtomicWeighTag(comp.getMaterial()));
+			final List<MaterialLabel> labels = new ArrayList<>();
+			labels.addAll(MaterialLabel.buildMassFractionTags(material));
+			labels.addAll(MaterialLabel.buildNormalizedMassFractionTags(material));
+			labels.addAll(MaterialLabel.buildAtomFractionTags(material));
+			labels.add(MaterialLabel.buildAnalyticalTotalTag(material));
+			labels.add(MaterialLabel.buildMeanAtomicNumberTag(material));
+			labels.add(MaterialLabel.buildMeanAtomicWeighTag(material));
 			write(wr, comp, mMassFractionFormat, labels);
 			break;
 		}
@@ -168,7 +169,7 @@ public class WriteToLaTeX {
 	}
 
 	private String stripName(final String label) {
-		return label.substring(label.indexOf('[')+1, label.length() - 1);
+		return label.substring(label.indexOf('[') + 1, label.length() - 1);
 	}
 
 	public BasicNumberFormat getMassFractionFormat() {

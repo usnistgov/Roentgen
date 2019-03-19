@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.math.uncertainty;
 import java.io.PrintStream;
 import java.text.NumberFormat;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,26 +40,63 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
-abstract public class LabeledMultivariateJacobianFunction //
+abstract public class LabeledMultivariateJacobianFunction<H, K> //
 		implements MultivariateJacobianFunction, IToHTML //
 {
 
+	public static PrintStream sDump = null;
 	/***
 	 * Unique object labels identifying each of the random variable arguments to the
 	 * functions
 	 */
-	private final List<? extends Object> mInputLabels;
+	private final List<H> mInputLabels;
+
 	/***
 	 * Unique object labels identifying each of the functions (in order)
 	 */
-	private final List<? extends Object> mOutputLabels;
+	private final List<K> mOutputLabels;
 
-	public static PrintStream sDump = null;
+	/**
+	 * Constructs an instance of the LabeledMultivariateJacobianFunction class for a
+	 * N dimensional function of M input values.
+	 *
+	 * @param inputLabels  A List containing labels for M input variables
+	 * @param outputLabels A list containing labels for N output values
+	 */
+	public LabeledMultivariateJacobianFunction( //
+			final List<H> inputLabels, //
+			final List<K> outputLabels) //
+	{
+		validateLabels(inputLabels);
+		// assert inputLabels != outputLabels;
+		mInputLabels = new FastIndex<>(inputLabels);
+		validateLabels(outputLabels);
+		mOutputLabels = new FastIndex<>(outputLabels);
+	}
 
-	protected void dumpArguments(RealVector point, LabeledMultivariateJacobianFunction parent) {
+	/**
+	 * Computes the result {@link RealVector} using the most efficient available
+	 * mechanism depending upon whether the instantiated class implements
+	 * {@link ILabeledMultivariateFunction} or not. If
+	 * {@link ILabeledMultivariateFunction} is available then this is called.
+	 * Otherwise value(...) is called and only the {@link RealVector} value portion
+	 * is returned.
+	 *
+	 *
+	 * @param inp Evaluation point
+	 * @return {@link RealVector} The result values
+	 */
+	final public RealVector compute(final RealVector inp) {
+		if (this instanceof ILabeledMultivariateFunction)
+			return ((ILabeledMultivariateFunction<?,?>) this).optimized(inp);
+		else
+			return value(inp).getFirst();
+	}
+
+	protected void dumpArguments(final RealVector point, final LabeledMultivariateJacobianFunction<?,?> parent) {
 		if (sDump != null) {
-			StringBuffer sb = new StringBuffer();
-			NumberFormat nf = new HalfUpFormat("0.00E0");
+			final StringBuffer sb = new StringBuffer();
+			final NumberFormat nf = new HalfUpFormat("0.00E0");
 			sb.append(toString());
 			sb.append("[");
 			for (int i = 0; i < getInputDimension(); ++i) {
@@ -76,134 +114,17 @@ abstract public class LabeledMultivariateJacobianFunction //
 		}
 	}
 
-	/**
-	 * Check labels are only used once.
-	 *
-	 * @param labels
-	 */
-	private void validateLabels(final Collection<? extends Object> labels) {
-		final Set<? extends Object> set = new HashSet<>(labels);
-		for (Object lbl : labels)
-			if (!set.remove(lbl))
-				throw new RuntimeException("The label " + lbl + " is duplicated.");
-	}
-
-	public LabeledMultivariateJacobianFunction( //
-			final List<? extends Object> inputLabels, //
-			final List<? extends Object> outputs) {
-		validateLabels(inputLabels);
-		// assert inputLabels != outputLabels;
-		mInputLabels = new FastIndex<>(inputLabels);
-		validateLabels(outputs);
-		mOutputLabels = new FastIndex<>(outputs);
-	}
-
-	/**
-	 * Returns an array consisting of the labels associated with the n input random
-	 * variables.
-	 *
-	 * @return List&lt;Object&gt;
-	 */
-	final public List<? extends Object> getInputLabels() {
-		return mInputLabels;
-	}
-
-	/**
-	 * Returns an array consisting of the labels associated with the m output random
-	 * variables.
-	 *
-	 * @return List&lt;Object&gt;
-	 */
-	final public List<? extends Object> getOutputLabels() {
-		return mOutputLabels;
-	}
-
-	final public Object getOutputLabel(final int idx) {
-		return mOutputLabels.get(idx);
-	}
-
-	final public Object getInputLabel(final int idx) {
-		return mInputLabels.get(idx);
-	}
-
-	/**
-	 * Number of input random variables expected.
-	 *
-	 * @return int
-	 */
-	final public int getInputDimension() {
-		return mInputLabels.size();
-	}
-
-	/**
-	 * Number of output random variable produced.
-	 *
-	 * @return int
-	 */
-	final public int getOutputDimension() {
-		return mOutputLabels.size();
-	}
-
-	/**
-	 * Returns the index of the input variable identified by the specified Object
-	 *
-	 * @param label
-	 * @return int Index or -1 for not found.
-	 */
-	final public int inputIndex(final Object label) {
-		return mInputLabels.indexOf(label);
-	}
-
-	/**
-	 * Returns the index of the output variable identified by the specified Object
-	 *
-	 * @param label
-	 * @return int Index or -1 for not found.
-	 */
-	final public int outputIndex(final Object label) {
-		return mOutputLabels.indexOf(label);
-	}
-
-	/**
-	 * Only writes <code>value</code> to the Jacobian matrix <code>jacob</code> if
-	 * <code>label</code> is an input variable (not a constant.) This is useful for
-	 * implementing compute(...) to handle situations in which an input may either
-	 * be considered a constant or a random variable.
-	 *
-	 *
-	 * @param row   Row index
-	 * @param label Column label
-	 * @param value Quantity to place at row, inputIndex(label) in
-	 *              <code>jacob</code>
-	 * @param jacob The result Jacobian (modified)
-	 */
-	public void writeJacobian(final int row, final Object label, final double value, final RealMatrix jacob) {
-		final int p = inputIndex(label);
-		if (p != -1)
-			jacob.setEntry(row, p, value);
-	}
-
-	/**
-	 * Extracts from <code>point</code> representing an argument to
-	 * <code>nmvj.compute(point)</code> the input RealArray that is suitable as the
-	 * argument to <code>this.comptue(...)</code>.
-	 *
-	 * @param nmvj  The outer {@link LabeledMultivariateJacobianFunction}
-	 * @param point A {@link RealVector} of length nmvj.getInputDimension()
-	 * @return {@link RealVector} of length this.getInputDimension() containing the
-	 *         appropriate input values from point.
-	 */
-	public RealVector extractArgument(final LabeledMultivariateJacobianFunction nmvj, final RealVector point) {
-		assert point.getDimension() == nmvj.getInputDimension();
-		final int dim = getInputDimension();
-		final RealVector res = new ArrayRealVector(dim);
-		final List<? extends Object> labels = getInputLabels();
-		for (int i = 0; i < dim; ++i) {
-			final int idx = nmvj.inputIndex(labels.get(i));
-			assert idx != -1 : "Can't find " + labels.get(i) + " in the arguments to " + nmvj.toString();
-			res.setEntry(i, point.getEntry(idx));
-		}
-		return res;
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final LabeledMultivariateJacobianFunction<?, ?> other = (LabeledMultivariateJacobianFunction<?, ?>) obj;
+		return Objects.equals(mInputLabels, other.mInputLabels) && //
+				Objects.equals(mOutputLabels, other.mOutputLabels);
 	}
 
 	/**
@@ -234,53 +155,72 @@ abstract public class LabeledMultivariateJacobianFunction //
 	}
 
 	/**
-	 * Computes the result {@link RealVector} using the most efficient available
-	 * mechanism depending upon whether the instantiated class implements
-	 * {@link ILabeledMultivariateFunction} or not. If
-	 * {@link ILabeledMultivariateFunction} is available then this is called.
-	 * Otherwise value(...) is called and only the {@link RealVector} value portion
-	 * is returned.
+	 * Extracts from <code>point</code> representing an argument to
+	 * <code>nmvj.compute(point)</code> the input RealArray that is suitable as the
+	 * argument to <code>this.comptue(...)</code>.
 	 *
-	 *
-	 * @param inp Evaluation point
-	 * @return {@link RealVector} The result values
+	 * @param nmvj  The outer {@link LabeledMultivariateJacobianFunction}
+	 * @param point A {@link RealVector} of length nmvj.getInputDimension()
+	 * @return {@link RealVector} of length this.getInputDimension() containing the
+	 *         appropriate input values from point.
 	 */
-	final public RealVector compute(final RealVector inp) {
-		if (this instanceof ILabeledMultivariateFunction)
-			return ((ILabeledMultivariateFunction) this).optimized(inp);
-		else
-			return value(inp).getFirst();
+	public RealVector extractArgument(final LabeledMultivariateJacobianFunction<?, ?> nmvj, final RealVector point) {
+		assert point.getDimension() == nmvj.getInputDimension();
+		final int dim = getInputDimension();
+		final RealVector res = new ArrayRealVector(dim);
+		final List<? extends H> labels = getInputLabels();
+		for (int i = 0; i < dim; ++i) {
+			final int idx = nmvj.inputIndex(labels.get(i));
+			assert idx != -1 : "Can't find " + labels.get(i) + " in the arguments to " + nmvj.toString();
+			res.setEntry(i, point.getEntry(idx));
+		}
+		return res;
 	}
 
 	/**
-	 * Returns a Map of the labels associated with output values expressed as
-	 * {@link UncertainValue} objects. Equivalent to
-	 * <code>getOutputValues(uvs, 1.0e-6)</code>
+	 * Number of input random variables expected.
 	 *
-	 * @param uvs Input {@link UncertainValues}
-	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
-	 * @throws ArgumentException
+	 * @return int
 	 */
-	public HashMap<? extends Object, UncertainValue> getOutputValues(final UncertainValuesBase uvs)
-			throws ArgumentException {
-		return getOutputValues(uvs, 1.0e-6);
+	final public int getInputDimension() {
+		return mInputLabels.size();
+	}
+
+	final public H getInputLabel(final int idx) {
+		return mInputLabels.get(idx);
 	}
 
 	/**
-	 * Returns a Map of the labels associated with output values expressed as
-	 * {@link UncertainValue} objects.
+	 * Returns an array consisting of the labels associated with the M input random
+	 * variables.
 	 *
-	 * @param uvs Input {@link UncertainValues}
-	 * @param tol Tolerance relative to value
-	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
-	 * @throws ArgumentException
+	 * @return List&lt;Object&gt;
 	 */
-	public HashMap<? extends Object, UncertainValue> getOutputValues( //
-			final UncertainValuesBase uvs, //
-			final double tol//
-	) throws ArgumentException {
-		UncertainValuesCalculator uvc = new UncertainValuesCalculator(this, uvs, true);
-		return uvc.getOutputValues(tol);
+	final public List<H> getInputLabels() {
+		return Collections.unmodifiableList(mInputLabels);
+	}
+
+	/**
+	 * Number of output random variable produced.
+	 *
+	 * @return int
+	 */
+	final public int getOutputDimension() {
+		return mOutputLabels.size();
+	}
+
+	final public K getOutputLabel(final int idx) {
+		return mOutputLabels.get(idx);
+	}
+
+	/**
+	 * Returns an array consisting of the labels associated with the N output
+	 * function values.
+	 *
+	 * @return List&lt;Object&gt;
+	 */
+	final public List<K> getOutputLabels() {
+		return Collections.unmodifiableList(mOutputLabels);
 	}
 
 	/**
@@ -299,34 +239,48 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
 	 * @throws ArgumentException
 	 */
-	public HashMap<? extends Object, UncertainValue> getOutputValues( //
-			final UncertainValues uvs, //
-			final Map<String, Collection<? extends Object>> labels, //
+	public HashMap<K, UncertainValue> getOutputValues( //
+			final UncertainValues<H> uvs, //
+			final Map<String, Collection<? extends K>> labels, //
 			final double tol //
 	) throws ArgumentException {
-		UncertainValuesCalculator uvc = new UncertainValuesCalculator(this, uvs);
+		final UncertainValuesCalculator<H, K> uvc = new UncertainValuesCalculator<H, K>(this, uvs);
 		return uvc.getOutputValues(labels, tol);
 	}
 
 	/**
-	 * <p>
-	 * First checks to see if <code>label</code> is an input variable in which case
-	 * it gets the associated value from <code>point</code>. Otherwise, it returns
-	 * the constant value associate with <code>label</code>. This is useful for
-	 * implementing compute(...) in situations in which an input is sometimes a
-	 * constant and other times a random variable.
-	 * </p>
-	 * <p>
-	 * getValue(...) is typically used for input parameters and not used for
-	 * intermediate parameters in multi-step calculations.
-	 * </p>
+	 * Returns a Map of the labels associated with output values expressed as
+	 * {@link UncertainValue} objects. Equivalent to
+	 * <code>getOutputValues(uvs, 1.0e-6)</code>
 	 *
-	 * @param label
-	 * @param point
-	 * @return double
+	 * @param uvs Input {@link UncertainValues}
+	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
+	 * @throws ArgumentException
 	 */
-	final public double getValue(final Object label, final RealVector point) {
-		return point.getEntry(inputIndex(label));
+	public HashMap<K, UncertainValue> getOutputValues(final UncertainValuesBase<H> uvs) throws ArgumentException {
+		return getOutputValues(uvs, 1.0e-6);
+	}
+
+	/**
+	 * Returns a Map of the labels associated with output values expressed as
+	 * {@link UncertainValue} objects.
+	 *
+	 * @param uvs Input {@link UncertainValues}
+	 * @param tol Tolerance relative to value
+	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
+	 * @throws ArgumentException
+	 */
+	public HashMap<K, UncertainValue> getOutputValues( //
+			final UncertainValuesBase<H> uvs, //
+			final double tol//
+	) throws ArgumentException {
+		final UncertainValuesCalculator<H, K> uvc = new UncertainValuesCalculator<H, K>(this, uvs);
+		return uvc.getOutputValues(tol);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(mInputLabels, mOutputLabels);
 	}
 
 	/**
@@ -335,26 +289,29 @@ abstract public class LabeledMultivariateJacobianFunction //
 	 * @param label
 	 * @return true if a value has been defined.
 	 */
-	final public boolean hasValue(final Object label) {
+	final public boolean hasValue(final H label) {
 		return (inputIndex(label) != -1);
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(mInputLabels, mOutputLabels);
+	/**
+	 * Returns the index of the input variable identified by the specified instance
+	 * of H.
+	 *
+	 * @param label
+	 * @return int Index or -1 for not found.
+	 */
+	final public int inputIndex(final Object label) {
+		return mInputLabels.indexOf(label);
 	}
 
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		final LabeledMultivariateJacobianFunction other = (LabeledMultivariateJacobianFunction) obj;
-		return Objects.equals(mInputLabels, other.mInputLabels) && //
-				Objects.equals(mOutputLabels, other.mOutputLabels);
+	/**
+	 * Returns the index of the output function identified by the specified instance of H.
+	 *
+	 * @param label
+	 * @return int Index or -1 for not found.
+	 */
+	final public int outputIndex(final Object label) {
+		return mOutputLabels.indexOf(label);
 	}
 
 	@Override
@@ -391,5 +348,17 @@ abstract public class LabeledMultivariateJacobianFunction //
 			return t.toHTML(Mode.NORMAL);
 		}
 		}
+	}
+
+	/**
+	 * Check labels are only used once.
+	 *
+	 * @param labels
+	 */
+	private void validateLabels(final Collection<? extends Object> labels) {
+		final Set<? extends Object> set = new HashSet<>(labels);
+		for (final Object lbl : labels)
+			if (!set.remove(lbl))
+				throw new RuntimeException("The label " + lbl + " is duplicated.");
 	}
 }

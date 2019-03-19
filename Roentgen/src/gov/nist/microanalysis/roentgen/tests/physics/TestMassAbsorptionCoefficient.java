@@ -15,6 +15,8 @@ import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.EPMALabel;
+import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
@@ -96,8 +98,8 @@ public class TestMassAbsorptionCoefficient {
 		final Composition mf6 = Composition.parse("CaF2");
 		final Composition[] mfs = new Composition[] { mf1, mf2, mf3, mf4, mf5, mf6 };
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Iron, XRayTransition.LA1);
-		UncertainValuesCalculator uv = MaterialMACFunction.compute(Arrays.asList(mfs), cxr);
-		final UncertainValuesBase mc = UncertainValues.propagateMonteCarlo(uv, 16000);
+		UncertainValuesCalculator<EPMALabel, MaterialMAC> uv = MaterialMACFunction.compute(Arrays.asList(mfs), cxr);
+		final UncertainValuesBase<MaterialMAC> mc = UncertainValues.propagateMonteCarlo(uv, 16000);
 		if (REPORT) {
 			final Report r = new Report("TestMultiMAC");
 			for (final Composition mf : mfs)
@@ -152,8 +154,8 @@ public class TestMassAbsorptionCoefficient {
 			for (final CharacteristicXRay cxr : cxrs) {
 				final List<Composition> comps = Arrays.asList(mfs);
 				MaterialMACFunction mmf = MaterialMACFunction.build(comps, cxr);
-				UncertainValuesBase inps = mmf.buildInputs(comps, cxr);
-				final UncertainValuesBase uv = UncertainValues.propagate(mmf, inps);
+				UncertainValuesBase<EPMALabel> inps = mmf.buildInputs(comps, cxr);
+				final UncertainValuesBase<MaterialMAC> uv = UncertainValues.propagate(mmf, inps);
 				// final UncertainValuesBase mc =
 				// UncertainValues.propagateDeltaOrdered(pr.getSecond(), pr.getFirst(),
 				// pr.getFirst().getValues().mapMultiply(0.001));

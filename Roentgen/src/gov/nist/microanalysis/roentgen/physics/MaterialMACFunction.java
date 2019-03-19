@@ -13,8 +13,9 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.EPMALabel;
+import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
@@ -32,64 +33,8 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
  *
  */
 public class MaterialMACFunction //
-		extends LabeledMultivariateJacobianFunction //
-		implements ILabeledMultivariateFunction {
-
-	public static class MaterialMAC //
-			extends BaseLabel<Material, XRay, Object> {
-
-		public MaterialMAC(final Material mf, final XRay xr) {
-			super("[&mu;/&rho;]", mf, xr);
-		}
-
-		public Material getMaterial() {
-			return getObject1();
-		}
-
-		public XRay getXRay() {
-			return getObject2();
-		}
-
-	}
-
-	private static List<Object> inputTags(final List<? extends Material> comps, final XRay xray) {
-		final List<Object> res = new ArrayList<>();
-		final Set<Element> elms = new HashSet<>();
-		for (final Material comp : comps) {
-			elms.addAll(comp.getElementSet());
-			res.addAll(MaterialLabel.massFractionTags(comp));
-		}
-		for (final Element elm : elms)
-			res.add(new ElementalMAC.ElementMAC(elm, xray));
-		return res;
-	}
-
-	public UncertainValuesBase buildInputs(//
-			final List<Composition> comps, //
-			final XRay xray //
-	) throws ArgumentException {
-		final ElementalMAC mac = new ElementalMAC();
-		Map<Object, Number> men = new HashMap<>();
-		for (Object lbl : getInputLabels()) {
-			if (lbl instanceof ElementalMAC.ElementMAC) {
-				final ElementalMAC.ElementMAC eLbl = (ElementalMAC.ElementMAC) lbl;
-				final Element elm = eLbl.getElement();
-				final XRay xr = eLbl.getXRay();
-				men.put(new ElementalMAC.ElementMAC(elm, xr), mac.compute(elm, xr));
-			}
-		}
-		List<UncertainValuesBase> luvb = new ArrayList<>();
-		for(Composition comp : comps)
-			luvb.add(comp.reorder(comp.massFractionTags()));
-		luvb.add(new UncertainValues(men));
-		return UncertainValues.combine(getInputLabels(), luvb, false);
-	}
-
-	interface DecorrelationFunction {
-
-		public double compute(AtomicShell edgeEnergy, XRay xray);
-
-	}
+		extends LabeledMultivariateJacobianFunction<EPMALabel, MaterialMAC> //
+		implements ILabeledMultivariateFunction<EPMALabel, MaterialMAC> {
 
 	public static class DefaultDecorrelationFunction implements DecorrelationFunction {
 
@@ -150,54 +95,33 @@ public class MaterialMACFunction //
 		}
 	}
 
-	/**
-	 *
-	 * <p>
-	 * This function checks the MatrialMAC values to reduce the correlation between
-	 * materials that 1) share a common element; and 2) the edge of which is close
-	 * in energy to the X-ray energy.
-	 * </p>
-	 *
-	 * <p>
-	 * The algorithm considers all the edges associated with all the elements in the
-	 * material to determine how close the x-ray energy is to an edge and then
-	 * compute a
-	 *
-	 *
-	 * @param uvs   An UncertainValues containing more than one MaterialMAC tag
-	 * @param above Range above edge to decorrelate (nominally 400 eV)
-	 * @param below Range below edge to decorrelate (nominally 5 eV)
-	 * @return
-	 */
-	static public UncertainValues decorrelate( //
-			final UncertainValues uvs, //
-			final double above, final double below) {
-		return decorrelate(uvs, new DefaultDecorrelationFunction(above, below));
+	interface DecorrelationFunction {
+
+		public double compute(AtomicShell edgeEnergy, XRay xray);
+
 	}
 
 	/**
+	 * Constructs a MassAbsorptionCoefficient
 	 *
-	 * <p>
-	 * This function checks the MatrialMAC values to reduce the correlation between
-	 * materials that 1) share a common element; and 2) the edge of which is close
-	 * in energy to the X-ray energy.
-	 * </p>
-	 *
-	 * <p>
-	 * The algorithm considers all the edges associated with all the elements in the
-	 * material to determine how close the x-ray energy is to an edge and then
-	 * compute a
-	 *
-	 *
-	 * @param uvs   An UncertainValues containing more than one MaterialMAC tag
-	 * @param above Range above edge to decorrelate (nominally 400 eV)
-	 * @param below Range below edge to decorrelate (nominally 5 eV)
-	 * @return
+	 * @param comps A list of compositions to compute
+	 * @param xrays A list of x-ray energies to compute
 	 */
-	static public UncertainValues decorrelate2( //
-			final UncertainValues uvs, //
-			final double above, final double below) {
-		return decorrelate(uvs, new TotalDecorrelationFunction(above, below));
+	public static MaterialMACFunction build(final List<Composition> comps, final XRay xray) {
+		final List<Material> mats = new ArrayList<>();
+		for (final Composition comp : comps)
+			mats.add(comp.getMaterial());
+		return new MaterialMACFunction(mats, xray);
+	}
+
+	final static public UncertainValuesCalculator<EPMALabel, MaterialMAC> compute(final List<Composition> materials, final XRay xray) //
+			throws ArgumentException {
+		final List<Material> mats = new ArrayList<>();
+		for (final Composition comp : materials)
+			mats.add(comp.getMaterial());
+		final MaterialMACFunction mmf = new MaterialMACFunction(mats, xray);
+		final UncertainValuesBase<EPMALabel> inputs = mmf.buildInputs(materials, xray);
+		return UncertainValuesBase.propagate(mmf, inputs);
 	}
 
 	/**
@@ -221,10 +145,10 @@ public class MaterialMACFunction //
 	 * @param decor DecorrelationFunction
 	 * @return A new UncertainValues object
 	 */
-	public static UncertainValues decorrelate( //
-			final UncertainValues uvs, final DecorrelationFunction decor) {
-		final UncertainValues res = uvs.copy();
-		final List<? extends Object> labels = res.getLabels();
+	public static UncertainValues<EPMALabel> decorrelate( //
+			final UncertainValues<EPMALabel> uvs, final DecorrelationFunction decor) {
+		final UncertainValues<EPMALabel> res = uvs.copy();
+		final List<EPMALabel> labels = res.getLabels();
 		final int labelCx = labels.size();
 		for (int i = 0; i < labelCx; ++i) {
 			final Object labeli = labels.get(i);
@@ -248,20 +172,72 @@ public class MaterialMACFunction //
 		return res;
 	}
 
-	final static public UncertainValuesCalculator compute(final List<Composition> materials, final XRay xray) //
-			throws ArgumentException {
-		List<Material> mats = new ArrayList<>();
-		for (Composition comp : materials)
-			mats.add(comp.getMaterial());
-		MaterialMACFunction mmf = new MaterialMACFunction(mats, xray);
-		UncertainValuesBase inputs = mmf.buildInputs(materials, xray);
-		return UncertainValuesBase.propagate(mmf, inputs);
+	/**
+	 *
+	 * <p>
+	 * This function checks the MatrialMAC values to reduce the correlation between
+	 * materials that 1) share a common element; and 2) the edge of which is close
+	 * in energy to the X-ray energy.
+	 * </p>
+	 *
+	 * <p>
+	 * The algorithm considers all the edges associated with all the elements in the
+	 * material to determine how close the x-ray energy is to an edge and then
+	 * compute a
+	 *
+	 *
+	 * @param uvs   An UncertainValues containing more than one MaterialMAC tag
+	 * @param above Range above edge to decorrelate (nominally 400 eV)
+	 * @param below Range below edge to decorrelate (nominally 5 eV)
+	 * @return
+	 */
+	static public UncertainValues<EPMALabel> decorrelate( //
+			final UncertainValues<EPMALabel> uvs, //
+			final double above, final double below) {
+		return decorrelate(uvs, new DefaultDecorrelationFunction(above, below));
 	}
 
-	private static List<Object> outputTags(final List<? extends Material> materials, final XRay xray) {
-		final List<Object> res = new ArrayList<>();
-		for (final Material mf : materials)
-			res.add(new MaterialMAC(mf, xray));
+	/**
+	 *
+	 * <p>
+	 * This function checks the MatrialMAC values to reduce the correlation between
+	 * materials that 1) share a common element; and 2) the edge of which is close
+	 * in energy to the X-ray energy.
+	 * </p>
+	 *
+	 * <p>
+	 * The algorithm considers all the edges associated with all the elements in the
+	 * material to determine how close the x-ray energy is to an edge and then
+	 * compute a
+	 *
+	 *
+	 * @param uvs   An UncertainValues containing more than one MaterialMAC tag
+	 * @param above Range above edge to decorrelate (nominally 400 eV)
+	 * @param below Range below edge to decorrelate (nominally 5 eV)
+	 * @return
+	 */
+	static public UncertainValues<EPMALabel> decorrelate2( //
+			final UncertainValues<EPMALabel> uvs, //
+			final double above, final double below) {
+		return decorrelate(uvs, new TotalDecorrelationFunction(above, below));
+	}
+
+	private static List<EPMALabel> inputTags(final List<Material> mats, final XRay xray) {
+		final List<EPMALabel> res = new ArrayList<>();
+		final Set<Element> elms = new HashSet<>();
+		for (final Material mat : mats) {
+			elms.addAll(mat.getElementSet());
+			res.addAll(MaterialLabel.massFractionTags(mat));
+		}
+		for (final Element elm : elms)
+			res.add(new ElementalMAC.ElementMAC(elm, xray));
+		return res;
+	}
+
+	private static List<MaterialMAC> outputTags(final List<Material> mats, final XRay xray) {
+		final List<MaterialMAC> res = new ArrayList<>();
+		for (final Material mat : mats)
+			res.add(new MaterialMAC(mat, xray));
 		return res;
 	}
 
@@ -271,21 +247,56 @@ public class MaterialMACFunction //
 	 * @param materials A list of materials to compute
 	 * @param xrays     A list of x-ray energies to compute
 	 */
-	public MaterialMACFunction(final List<? extends Material> materials, final XRay xray) {
+	public MaterialMACFunction(final List<Material> materials, final XRay xray) {
 		super(inputTags(materials, xray), outputTags(materials, xray));
 	}
+
+	public UncertainValuesBase<EPMALabel> buildInputs(//
+			final List<Composition> comps, //
+			final XRay xray //
+	) throws ArgumentException {
+		final ElementalMAC mac = new ElementalMAC();
+		final Map<EPMALabel, Number> men = new HashMap<>();
+		for (final EPMALabel lbl : getInputLabels()) {
+			if (lbl instanceof ElementalMAC.ElementMAC) {
+				final ElementalMAC.ElementMAC eLbl = (ElementalMAC.ElementMAC) lbl;
+				final Element elm = eLbl.getElement();
+				final XRay xr = eLbl.getXRay();
+				men.put(new ElementalMAC.ElementMAC(elm, xr), mac.compute(elm, xr));
+			}
+		}
+		final List<UncertainValuesBase<?>> luvb = new ArrayList<>();
+		for (final Composition comp : comps)
+			luvb.add(comp.toMassFraction());
+		luvb.add(new UncertainValues<EPMALabel>(men));
+		return UncertainValues.<EPMALabel>extract(getInputLabels(), luvb);
+	}
 	
-	/**
-	 * Constructs a MassAbsorptionCoefficient
-	 *
-	 * @param comps A list of compositions to compute
-	 * @param xrays     A list of x-ray energies to compute
-	 */
-	public static MaterialMACFunction  build(final List<Composition> comps, final XRay xray) {
-		List<Material> mats = new ArrayList<>();
-		for(Composition comp : comps)
-			mats.add(comp.getMaterial());
-		return new MaterialMACFunction(mats, xray);
+
+	@Override
+	public RealVector optimized(final RealVector point) {
+		final RealVector res = new ArrayRealVector(getOutputDimension());
+		final List<? extends Object> macTags = getOutputLabels();
+		final List<? extends Object> inp = getInputLabels();
+		for (int i = 0; i < macTags.size(); ++i) {
+			final MaterialMAC macTag = (MaterialMAC) macTags.get(i);
+			final Material mf = macTag.getMaterial();
+			final XRay xr = macTag.getXRay();
+			double tmp = 0.0;
+			for (final Element elm : mf.getElementSet()) {
+				final int p = inp.indexOf(new ElementalMAC.ElementMAC(elm, xr));
+				final int q = inp.indexOf(MaterialLabel.buildMassFractionTag(mf, elm));
+				assert (p >= 0) && (q >= 0);
+				tmp += point.getEntry(p) * point.getEntry(q);
+			}
+			res.setEntry(i, tmp);
+		}
+		return res;
+	}
+
+	@Override
+	public String toString() {
+		return "MaterialMAC" + getOutputLabels();
 	}
 
 	/**
@@ -322,31 +333,6 @@ public class MaterialMACFunction //
 			res.setEntry(matMacIdx, matMac);
 		}
 		return Pair.create(res, cov);
-	}
-
-	@Override
-	public RealVector optimized(final RealVector point) {
-		final RealVector res = new ArrayRealVector(getOutputDimension());
-		final List<? extends Object> macTags = getOutputLabels();
-		final List<? extends Object> inp = getInputLabels();
-		for (int i = 0; i < macTags.size(); ++i) {
-			final MaterialMAC macTag = (MaterialMAC) macTags.get(i);
-			final Material mf = macTag.getMaterial();
-			final XRay xr = macTag.getXRay();
-			double tmp = 0.0;
-			for (final Element elm : mf.getElementSet()) {
-				final int p = inp.indexOf(new ElementalMAC.ElementMAC(elm, xr));
-				final int q = inp.indexOf(MaterialLabel.buildMassFractionTag(mf, elm));
-				assert (p >= 0) && (q >= 0);
-				tmp += point.getEntry(p) * point.getEntry(q);
-			}
-			res.setEntry(i, tmp);
-		}
-		return res;
-	}
-	
-	public String toString() {
-		return "MaterialMAC"+getOutputLabels();
 	}
 
 }

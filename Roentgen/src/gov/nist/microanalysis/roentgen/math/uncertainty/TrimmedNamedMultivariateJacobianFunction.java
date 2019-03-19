@@ -1,5 +1,6 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -18,10 +19,10 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * @author Nicholas
  *
  */
-public class TrimmedNamedMultivariateJacobianFunction
-		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
+public class TrimmedNamedMultivariateJacobianFunction<G,H>
+		extends LabeledMultivariateJacobianFunction<G,H> implements ILabeledMultivariateFunction<G,H> {
 
-	private final LabeledMultivariateJacobianFunction mBase;
+	private final LabeledMultivariateJacobianFunction<? extends G,? extends H> mBase;
 	private RealVector mBaseInputs;
 	
 
@@ -34,11 +35,11 @@ public class TrimmedNamedMultivariateJacobianFunction
 	 * @throws ArgumentException
 	 */
 	public TrimmedNamedMultivariateJacobianFunction(//
-			final LabeledMultivariateJacobianFunction base, //
-			final List<? extends Object> inputLabels, //
-			final List<? extends Object> outputLabels //
+			final LabeledMultivariateJacobianFunction<? extends G,? extends H> base, //
+			final List<? extends G> inputLabels, //
+			final List<? extends H> outputLabels //
 	) throws ArgumentException {
-		super(inputLabels, outputLabels);
+		super(new ArrayList<G>(inputLabels), new ArrayList<H>(outputLabels));
 		assert base.getInputLabels().containsAll(inputLabels);
 		assert base.getOutputLabels().containsAll(outputLabels);
 		if (!base.getInputLabels().containsAll(inputLabels))
@@ -60,10 +61,10 @@ public class TrimmedNamedMultivariateJacobianFunction
 		mBaseInputs = point.copy();
 	}
 	
-	public void setBaseInputs(UncertainValuesBase uvb) {
+	public void setBaseInputs(UncertainValuesBase<G> uvb) {
 		RealVector basePt = new ArrayRealVector(mBase.getInputDimension());
 		for(int i=0;i<mBase.getInputDimension();++i) {
-			Object lbk = mBase.getInputLabel(i);
+			G lbk = mBase.getInputLabel(i);
 			basePt.setEntry(i, uvb.getEntry(lbk));
 		}
 		setBaseInputs(basePt);

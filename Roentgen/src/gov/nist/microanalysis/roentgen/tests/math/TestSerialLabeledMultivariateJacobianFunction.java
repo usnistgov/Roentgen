@@ -15,8 +15,9 @@ import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.EstimateUncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.SerialLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import junit.framework.TestCase;
@@ -26,13 +27,13 @@ import junit.framework.TestCase;
  */
 public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 
-	private final List<? extends Object> mInputs = Arrays.asList(new String[] { "X0", "X1", "X2" });
-	private final List<? extends Object> mOut1 = Arrays.asList(new String[] { "F1_0", "F1_1", "F1_2" });
-	private final List<? extends Object> mInputs2 = Arrays
-			.asList(new String[] { "X0", "X1", "X2", "F1_0", "F1_1", "F1_2" });
-	private final List<? extends Object> mOut2 = Arrays.asList(new String[] { "F2_0", "F2_1" });
+	private final List<String> mInputs = Arrays.asList("X0", "X1", "X2");
+	private final List<String> mOut1 = Arrays.asList("F1_0", "F1_1", "F1_2");
+	private final List<String> mInputs2 = Arrays.asList("X0", "X1", "X2", "F1_0", "F1_1", "F1_2");
+	private final List<String> mOut2 = Arrays.asList("F2_0", "F2_1");
 
-	private final LabeledMultivariateJacobianFunction mStep1 = new LabeledMultivariateJacobianFunction(mInputs, mOut1) {
+	private final LabeledMultivariateJacobianFunction<String, String> mStep1 = new LabeledMultivariateJacobianFunction<String, String>(
+			mInputs, mOut1) {
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
@@ -65,8 +66,8 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		}
 	};
 
-	private final LabeledMultivariateJacobianFunction mStep2 = new LabeledMultivariateJacobianFunction(mInputs2,
-			mOut2) {
+	private final LabeledMultivariateJacobianFunction<String, String> mStep2 = new LabeledMultivariateJacobianFunction<String, String>(
+			mInputs2, mOut2) {
 
 		@Override
 		public Pair<RealVector, RealMatrix> value(final RealVector point) {
@@ -98,16 +99,16 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 	private final RealMatrix mCov0 = new Array2DRowRealMatrix(
 			new double[][] { { 0.1, 0.03, -0.013 }, { 0.03, 0.7, 0.002 }, { -0.013, 0.002, 0.3 } });
 
-	private final UncertainValues mInput0 = new UncertainValues(mInputs, mValues0, mCov0);
+	private final UncertainValues<String> mInput0 = new UncertainValues<>(mInputs, mValues0, mCov0);
 
 	private final RealVector mValues1 = new ArrayRealVector(new double[] { 2.3, 3.5, 1.3 });
 	private final RealMatrix mCov1 = new Array2DRowRealMatrix(
 			new double[][] { { 0.01, 0.003, -0.0013 }, { 0.003, 0.07, 0.0002 }, { -0.0013, 0.0002, 0.03 } });
 
-	private final UncertainValues mInput1 = new UncertainValues(mInputs, mValues1, mCov1);
+	private final UncertainValues<String> mInput1 = new UncertainValues<>(mInputs, mValues1, mCov1);
 
 	public void test1() throws IOException, ArgumentException {
-		final UncertainValuesBase uv = UncertainValues.propagate(mStep1, mInput0);
+		final UncertainValuesBase<String> uv = UncertainValues.propagate(mStep1, mInput0);
 		final Report rep = new Report("Step 1");
 		rep.addHeader("Inputs");
 		rep.add(mInput0);
@@ -120,19 +121,18 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		final double[] rv = new double[] { 100.812, 110.18, 42.1803 };
 		final double[][] rc = new double[][] { { 533.887, 483.696, 455.926 }, { 483.696, 1438.36, 1330.66 },
 				{ 455.926, 1330.66, 1305.74 } };
-		final UncertainValuesBase res = new UncertainValues(mOut1, new ArrayRealVector(rv),
+		final UncertainValuesBase<String> res = new UncertainValues<>(mOut1, new ArrayRealVector(rv),
 				MatrixUtils.createRealMatrix(rc));
 		assertTrue(uv.equals(res, 0.01));
 	}
 
 	public void test2() throws IOException, ArgumentException {
-		final LabeledMultivariateJacobianFunction[] steps = new LabeledMultivariateJacobianFunction[] { mStep1,
-				mStep2 };
-		final SerialLabeledMultivariateJacobianFunction msnmjf = new SerialLabeledMultivariateJacobianFunction("Test1",
-				Arrays.asList(steps));
-		final UncertainValues uv = UncertainValues.force(UncertainValues.propagate(msnmjf, mInput1));
-		final UncertainValues mc = UncertainValues.propagateMC(msnmjf, mInput1, 100000);
-		final UncertainValues delta = UncertainValues.propagateFiniteDifference(//
+		final List<LabeledMultivariateJacobianFunction<String, String>> steps = Arrays.asList(mStep1, mStep2);
+		final CompositeLabeledMultivariateJacobianFunction<String> msnmjf = //
+				new CompositeLabeledMultivariateJacobianFunction<String>("Test1", steps);
+		final UncertainValues<String> uv = UncertainValues.force(UncertainValues.propagate(msnmjf, mInput1));
+		final EstimateUncertainValues<String> mc = UncertainValues.propagateMC(msnmjf, mInput1, 100000);
+		final UncertainValues<String> delta = UncertainValues.propagateFiniteDifference(//
 				msnmjf, mInput1, mInput1.getValues().mapMultiply(0.001));
 		final Report rep = new Report("Step 1 and 2");
 		rep.addHeader("Inputs");
@@ -151,7 +151,7 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		assertTrue(mc.equals(uv, 0.5));
 	}
 
-	public void testValues(double v1, double v2, double eps) {
+	public void testValues(final double v1, final double v2, final double eps) {
 		if (Double.isFinite((v1 - v2) / v2))
 			assertEquals(0.0, Math.abs((v1 - v2) / v1), eps);
 		else
@@ -159,19 +159,18 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 	}
 
 	public void test3() throws IOException, ArgumentException {
-		final LabeledMultivariateJacobianFunction[] steps = new LabeledMultivariateJacobianFunction[] { mStep1,
-				mStep2 };
+		final List<LabeledMultivariateJacobianFunction<String, String>> steps = Arrays.asList(mStep1, mStep2);
 
-		final List<? extends Object> outputs = Arrays.asList(new String[] { "F2_0", "X1", "X2", "F1_0", "F1_2" });
+		final List<String> outputs = Arrays.asList("F2_0", "F1_0", "F1_2");
 
-		final SerialLabeledMultivariateJacobianFunction trimmed = new SerialLabeledMultivariateJacobianFunction(
-				"Trimmed", Arrays.asList(steps), outputs);
+		final CompositeLabeledMultivariateJacobianFunction<String> trimmed = //
+				new CompositeLabeledMultivariateJacobianFunction<String>("Trimmed", steps, outputs);
 
-		final SerialLabeledMultivariateJacobianFunction full = new SerialLabeledMultivariateJacobianFunction("Full",
-				Arrays.asList(steps), true);
+		final CompositeLabeledMultivariateJacobianFunction<String> full = //
+				new CompositeLabeledMultivariateJacobianFunction<String>("Full", steps);
 
-		final UncertainValuesBase trimRes = UncertainValues.propagate(trimmed, mInput1);
-		final UncertainValuesBase fullRes = UncertainValues.propagate(full, mInput1);
+		final UncertainValuesBase<String> trimRes = UncertainValues.propagate(trimmed, mInput1);
+		final UncertainValuesBase<String> fullRes = UncertainValues.propagate(full, mInput1);
 
 		final Report rep = new Report("Step 1 and 2");
 		rep.addHeader("Trimmed");
@@ -180,11 +179,12 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		rep.add(fullRes, Mode.VERBOSE);
 		rep.inBrowser(Mode.NORMAL);
 
-		for (Object rLbl : trimRes.getLabels()) {
+		for (final String rLbl : trimRes.getLabels()) {
 			testValues(trimRes.getEntry(rLbl), fullRes.getEntry(rLbl), 0.001);
 			testValues(trimRes.getUncertainty(rLbl), fullRes.getUncertainty(rLbl), 0.001);
-			for (Object cLbl : trimRes.getLabels())
-				testValues(trimRes.getCorrelationCoefficient(rLbl, cLbl), fullRes.getCorrelationCoefficient(rLbl, cLbl),
+			for (final String cLbl : trimRes.getLabels())
+				testValues(trimRes.getCorrelationCoefficient(rLbl, cLbl), //
+						fullRes.getCorrelationCoefficient(rLbl, cLbl),
 						0.01);
 		}
 	}

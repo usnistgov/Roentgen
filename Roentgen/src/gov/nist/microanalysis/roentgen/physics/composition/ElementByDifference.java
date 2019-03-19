@@ -18,24 +18,40 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
 /**
  * Computes a single element by assuming the mass total is unity and that all
  * the missing mass is found in the specified element.
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
 public class ElementByDifference //
-		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
+		extends LabeledMultivariateJacobianFunction<MassFraction, MassFraction> //
+		implements ILabeledMultivariateFunction<MassFraction, MassFraction> {
+
+	private static List<MassFraction> buildInputs(final Material mat, final Element elmByDif) {
+		final List<MassFraction> res = new ArrayList<>();
+		for (final Element elm : mat.getElementSet())
+			if (!elm.equals(elmByDif))
+				res.add(MaterialLabel.buildMassFractionTag(mat, elm));
+		return res;
+	}
 
 	public ElementByDifference(final Material mat, final Element elmByDiff) {
 		super(buildInputs(mat, elmByDiff),
 				Collections.singletonList(MaterialLabel.buildMassFractionTag(mat, elmByDiff)));
 	}
 
-	private static List<? extends Object> buildInputs(final Material mat, final Element elmByDif) {
-		final List<Object> res = new ArrayList<>();
-		for (final Element elm : mat.getElementSet())
-			if (!elm.equals(elmByDif))
-				res.add(MaterialLabel.buildMassFractionTag(mat, elm));
-		return res;
+	@Override
+	public RealVector optimized(final RealVector point) {
+		final RealVector rv = new ArrayRealVector(getOutputDimension());
+		double sum = 0.0;
+		for (int i = 0; i < point.getDimension(); ++i)
+			sum += point.getEntry(i);
+		rv.setEntry(0, 1.0 - sum);
+		return rv;
+	}
+
+	@Override
+	public String toString() {
+		return ((MassFraction) getOutputLabel(0)).getElement() + "-by-Stoichiometry";
 	}
 
 	@Override
@@ -50,20 +66,6 @@ public class ElementByDifference //
 		rv.setEntry(0, 1.0 - sum);
 		return Pair.create(rv, rm);
 
-	}
-
-	@Override
-	public RealVector optimized(final RealVector point) {
-		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		double sum = 0.0;
-		for (int i = 0; i < point.getDimension(); ++i)
-			sum += point.getEntry(i);
-		rv.setEntry(0, 1.0 - sum);
-		return rv;
-	}
-
-	public String toString() {
-		return ((MassFraction) getOutputLabel(0)).getElement() + "-by-Stoichiometry";
 	}
 
 }

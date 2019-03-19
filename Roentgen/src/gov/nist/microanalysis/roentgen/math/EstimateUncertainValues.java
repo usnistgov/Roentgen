@@ -11,7 +11,10 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
+import com.duckandcover.lazy.SimplyLazy;
+
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 
 /**
  * Computes an estimated UncertainValues object give a set of samples
@@ -21,12 +24,38 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
  * @author Nicholas
  *
  */
-public class EstimateUncertainValues {
+public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 
 	private final int mDimension;
-	private final ArrayList<? extends Object> mTags;
 
 	private final ArrayList<RealVector> mSamples = new ArrayList<RealVector>();
+
+	private final SimplyLazy<UncertainValues<H>> mResults = new SimplyLazy<UncertainValues<H>>() {
+
+		@Override
+		protected UncertainValues<H> initialize() {
+			synchronized (mSamples) {
+				final int len = mDimension;
+				final RealVector sum = new ArrayRealVector(len);
+				for (final RealVector samp : mSamples)
+					sum.combineToSelf(1.0, 1.0, samp);
+				final RealVector avg = sum.mapDivide(mSamples.size());
+				final RealMatrix cov = MatrixUtils.createRealMatrix(len, len);
+
+				for (int r = 0; r < len; r++) {
+					for (int c = r; c < len; c++) {
+						double tmp = 0.0;
+						for (final RealVector samp : mSamples)
+							tmp += samp.getEntry(r) * samp.getEntry(c);
+						final double coval = tmp / mSamples.size() - avg.getEntry(r) * avg.getEntry(c);
+						cov.setEntry(r, c, coval);
+						cov.setEntry(c, r, coval);
+					}
+				}
+				return new UncertainValues<H>(getLabels(), avg, cov);
+			}
+		}
+	};
 
 	/**
 	 * Create an object to accumulate samples to estimate an {@link UncertainValues}
@@ -34,9 +63,9 @@ public class EstimateUncertainValues {
 	 *
 	 * @param tags The names of the parameters
 	 */
-	public EstimateUncertainValues(final List<? extends Object> tags) {
+	public EstimateUncertainValues(final List<? extends H> tags) {
+		super(new ArrayList<H>(tags));
 		mDimension = tags.size();
-		mTags = new ArrayList<>(tags);
 	}
 
 	/**
@@ -84,44 +113,6 @@ public class EstimateUncertainValues {
 	}
 
 	/**
-	 * Estimate the variances and covariances by calculating the expectation values
-	 * given the set of samples.
-	 *
-	 * @return {@link UncertainValues}
-	 */
-	public UncertainValues estimateDistribution() {
-		final int len = mDimension;
-		synchronized (mSamples) {
-			final RealVector sum = new ArrayRealVector(len);
-			for (final RealVector samp : mSamples)
-				sum.combineToSelf(1.0, 1.0, samp);
-			final RealVector avg = sum.mapDivide(mSamples.size());
-			final RealMatrix cov = MatrixUtils.createRealMatrix(len, len);
-
-			for (int r = 0; r < len; r++) {
-				for (int c = r; c < len; c++) {
-					double tmp = 0.0;
-					for (final RealVector samp : mSamples)
-						tmp += samp.getEntry(r) * samp.getEntry(c);
-					final double coval = tmp / mSamples.size() - avg.getEntry(r) * avg.getEntry(c);
-					cov.setEntry(r, c, coval);
-					cov.setEntry(c, r, coval);
-				}
-			}
-			return new UncertainValues(mTags, avg, cov);
-		}
-	}
-
-	/**
-	 * Returns a list of tag objects.
-	 *
-	 * @return List&lt;? extends Object&gt;
-	 */
-	public List<? extends Object> getTags() {
-		return mTags;
-	}
-
-	/**
 	 * Number of samples / measurements which will be used to compute the estimated
 	 * uncertain values object.
 	 *
@@ -145,15 +136,25 @@ public class EstimateUncertainValues {
 	 * Returns a {@link DescriptiveStatistics} object that provides insight into the
 	 * variable associated with the specified tag.
 	 *
-	 * @param tag
+	 * @param label
 	 * @return {@link DescriptiveStatistics}
 	 */
-	public DescriptiveStatistics getDescriptiveStatistics(final Object tag) {
+	public DescriptiveStatistics getDescriptiveStatistics(final H label) {
 		final DescriptiveStatistics ds = new DescriptiveStatistics(getSampleCount());
-		final int idx = mTags.indexOf(tag);
+		final int idx = indexOf(label);
 		for (final RealVector eval : mSamples)
 			ds.addValue(eval.getEntry(idx));
 		return ds;
+	}
+
+	@Override
+	public RealVector getValues() {
+		return mResults.get().getValues();
+	}
+
+	@Override
+	public RealMatrix getCovariances() {
+		return mResults.get().getCovariances();
 	}
 
 }

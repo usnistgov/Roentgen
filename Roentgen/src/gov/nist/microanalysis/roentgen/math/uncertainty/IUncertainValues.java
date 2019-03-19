@@ -12,11 +12,10 @@ import org.apache.commons.math3.linear.RealVector;
  * @author nicho
  *
  */
-public interface IUncertainValues {
+public interface IUncertainValues<H> {
 	
 	/**
-	 * Returns a {@link RealVector} containing the function values associated with this
-	 * uncertainty calculation.
+	 * Returns a {@link RealVector} containing the L-values.
 	 *
 	 * @return {@link RealVector}
 	 */
@@ -24,7 +23,7 @@ public interface IUncertainValues {
 	
 	
 	/**
-	 * Returns the matrix containing the covariances associate with this uncertainty calculation.
+	 * Returns an L x L matrix containing the covariances.
 	 * 
 	 * @return RealMatrix
 	 */
@@ -37,7 +36,7 @@ public interface IUncertainValues {
 	 *
 	 * @return List&lt;Object&gt;
 	 */
-	public List<? extends Object> getLabels();
+	public List<H> getLabels();
 	
-	public boolean hasEntry(Object lbl);
+	public boolean hasEntry(H lbl);
 }

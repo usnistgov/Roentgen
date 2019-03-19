@@ -23,9 +23,9 @@ import junit.framework.TestCase;
 public class TestLabeledMultivariateJacobianFuntion extends TestCase {
 
 	public void test1() {
-		final List<Object> funcs = Arrays.asList("f1", "f2", "f3");
-		final List<Object> vars = Arrays.asList("x0", "x1", "x2", "x3", "x4");
-		final LabeledMultivariateJacobianFunction nmvf = new LabeledMultivariateJacobianFunction(vars, funcs) {
+		final List<String> funcs = Arrays.asList("f1", "f2", "f3");
+		final List<String> vars = Arrays.asList("x0", "x1", "x2", "x3", "x4");
+		final LabeledMultivariateJacobianFunction<String, String> nmvf = new LabeledMultivariateJacobianFunction<String,String>(vars, funcs) {
 
 			public double f1(final RealVector point) {
 				final double x0 = point.getEntry(0);

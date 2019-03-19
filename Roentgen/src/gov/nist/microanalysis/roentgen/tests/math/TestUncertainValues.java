@@ -36,7 +36,7 @@ public class TestUncertainValues {
 				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, //
 		});
 		final double EPS = 1.0e-8;
-		final UncertainValues uvs = new UncertainValues(labels, vals, vars, corrCoeff);
+		final UncertainValues<String> uvs = new UncertainValues<>(labels, vals, vars, corrCoeff);
 		assertEquals(0.1, uvs.getCorrelationCoefficient(0, 1), EPS);
 		assertEquals(0.1, uvs.getCorrelationCoefficient(1, 0), EPS);
 		assertEquals(0.33, uvs.getCorrelationCoefficient(6, 5), EPS);
@@ -61,7 +61,7 @@ public class TestUncertainValues {
 		assertEquals(0.4 * 0.27 * -0.3, covCG, EPS);
 		assertEquals(0.3 * 0.27 * -0.8, covBG, EPS);
 
-		final UncertainValuesBase uvss = uvs.sort();
+		final UncertainValuesBase<String> uvss = uvs.sort();
 
 		assertEquals(2.0, uvss.getEntry("A"), EPS);
 		assertEquals(4.0, uvss.getEntry("F"), EPS);
@@ -82,7 +82,7 @@ public class TestUncertainValues {
 		assertEquals(-0.3, uvss.getCorrelationCoefficient("C", "A"), EPS);
 		assertEquals(-0.3, uvs.getCorrelationCoefficient("C", "A"), EPS);
 
-		final UncertainValuesBase uvsd = uvs.blockDiagnonalize();
+		final UncertainValuesBase<String> uvsd = uvs.blockDiagnonalize();
 		assertEquals(2.0, uvsd.getEntry("A"), EPS);
 		assertEquals(4.0, uvsd.getEntry("F"), EPS);
 		assertEquals(7.0, uvsd.getEntry("G"), EPS);
@@ -113,10 +113,10 @@ public class TestUncertainValues {
 				{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, //
 		});
 		final double EPS = 1.0e-8;
-		final UncertainValuesBase uvs = new UncertainValues(labels, vals, vars, corrCoeff);
-		final UncertainValuesBase uvss = uvs.sort();
+		final UncertainValuesBase<String> uvs = new UncertainValues<>(labels, vals, vars, corrCoeff);
+		final UncertainValuesBase<String> uvss = uvs.sort();
 
-		final UncertainValuesBase uvsd = uvss.blockDiagnonalize();
+		final UncertainValuesBase<String> uvsd = uvss.blockDiagnonalize();
 		assertEquals(uvs.getEntry("A"), uvsd.getEntry("A"), EPS);
 		assertEquals(uvs.getEntry("F"), uvsd.getEntry("F"), EPS);
 		assertEquals(uvs.getEntry("G"), uvsd.getEntry("G"), EPS);

@@ -45,7 +45,7 @@ public class TwoPointContinuumModelTest {
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 		final RealVector vals = new ArrayRealVector(12);
 		final RealVector vars = new ArrayRealVector(12);
-		final List<Object> labels = Arrays.asList(new Object[12]);
+		final List<ModelLabels<?,?>> labels = Arrays.asList(new ModelLabels[12]);
 		// LOW
 		labels.set(0, ModelLabels.buildSpectrometerPosition(mcd, cxr, TwoPointContinuumModel.LOW_BACK));
 		vals.setEntry(0, 69.96629);
@@ -85,7 +85,7 @@ public class TwoPointContinuumModelTest {
 		labels.set(11, ModelLabels.buildLiveTime(mcd, cxr, TwoPointContinuumModel.HIGH_BACK));
 		vals.setEntry(11, 5.0);
 		vars.setEntry(11, sqr(0.01));
-		final UncertainValues uvs = new UncertainValues(labels, vals, vars);
+		final UncertainValues<ModelLabels<?,?>> uvs = new UncertainValues<>(labels, vals, vars);
 
 		final Report r = new Report("2Point");
 		try {
@@ -103,7 +103,7 @@ public class TwoPointContinuumModelTest {
 				l.addAll(tpcm.getOutputLabels());
 				r.addHTML(l.toHTML(Mode.NORMAL));
 			}
-			final UncertainValuesBase res = UncertainValues.propagate(tpcm, uvs);
+			final UncertainValuesBase<ModelLabels<?,?>> res = UncertainValues.propagate(tpcm, uvs);
 			r.add(res);
 
 			final HashMap<? extends Object, UncertainValue> ovals = tpcm.getOutputValues(uvs, 0.0);

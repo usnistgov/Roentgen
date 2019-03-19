@@ -1,6 +1,7 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,8 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
+
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * Solve C<sub>y</sub> U<sub>y</sub> C<sub>y</sub><sup>T</sup> = C<sub>x,z</sub>
@@ -32,74 +35,71 @@ import org.apache.commons.math3.util.Pair;
  * @author Nicholas
  *
  */
-public class ImplicitMeasurementModel //
-		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
+public class ImplicitMeasurementModel<G> //
+		extends LabeledMultivariateJacobianFunction<G, G>//
+		implements ILabeledMultivariateFunction<G, G> {
 
-	public static class HLabel extends BaseLabel<Object, Object, Object> {
-
-		public HLabel(final Object label) {
-			super("h", label);
-		}
-	}
-
-	public static abstract class HModel //
-			extends LabeledMultivariateJacobianFunction {
-
-		private static List<? extends Object> combine(final List<? extends Object> inp,
-				final List<? extends Object> outp) {
-			final List<Object> res = new ArrayList<>();
+	public static abstract class HModel<G> //
+			extends LabeledMultivariateJacobianFunction<G, G> {
+		
+		private final List<G> mHInputLabels;
+		private final List<G> mHOutputLabels;
+	
+		private static <J> List<J> combine(final List<? extends J> inp, final List<? extends J> outp) {
+			final List<J> res = new ArrayList<>();
 			res.addAll(inp);
 			res.addAll(outp);
 			return res;
 		}
 
-		/**
-		 * Builds a special set of labels to represent the function
-		 * <b>h</b>(<b>X</b>,<b>Y</b>,<b>Z</b>) = <b>0</b>.
-		 *
-		 * @param outlabels
-		 * @return List&lt;? extends Object&gt;
-		 */
-		private static List<? extends Object> buildHLabels(//
-				final List<? extends Object> outlabels //
-		) {
-			final List<Object> res = new ArrayList<>();
-			for (final Object label : outlabels)
-				res.add(new HLabel(label));
-			return res;
+		public HModel(final List<? extends G> inputLabels, final List<? extends G> outputLabels, final List<? extends G> hLabels) {
+			super(combine(inputLabels, outputLabels), new ArrayList<G>(hLabels));
+			assert hLabels.size() == outputLabels.size();
+			mHInputLabels = Collections.unmodifiableList(new FastIndex<>(inputLabels));
+			mHOutputLabels = Collections.unmodifiableList(new FastIndex<>(outputLabels));
 		}
 
-		public HModel(final List<? extends Object> inputLabels, final List<? extends Object> outputLabels) {
-			super(combine(inputLabels, outputLabels), buildHLabels(outputLabels));
+		/**
+		 * @return the mHInputLabels
+		 */
+		public List<G> getHInputLabels() {
+			return mHInputLabels;
+		}
+
+		/**
+		 * @return the hOutputLabels
+		 */
+		public List<G> getHOutputLabels() {
+			return mHOutputLabels;
 		}
 	}
 
-	private final HModel mHFunction;
+	private final HModel<G> mHFunction;
 	private RealVector mHValues;
-	private final ILabeledMultivariateFunction mAlternativeModel;
+	private final ILabeledMultivariateFunction<G, G> mAlternativeModel;
 
 	/***
 	 * A set of constant values for use evaluating the MulitvariateJacobianFunction.
 	 */
-	private final Map<Object, Double> mConstants = new HashMap<>();
+	private final Map<G, Double> mConstants = new HashMap<>();
 
-	private static List<? extends Object> buildInputs(//
-			final LabeledMultivariateJacobianFunction h, //
-			final List<? extends Object> outputLabels //
+	private static <H> List<H> buildInputs(//
+			final LabeledMultivariateJacobianFunction<? extends H, ? extends H> h, //
+			final List<? extends H> outputLabels //
 	) {
-		final List<? extends Object> res = new ArrayList<>(h.getInputLabels());
+		final List<H> res = new ArrayList<>(h.getInputLabels());
 		res.removeAll(outputLabels);
 		return res;
 	}
 
 	public ImplicitMeasurementModel(//
-			final HModel h, //
-			final List<? extends Object> outputLabels, //
-			final ILabeledMultivariateFunction altModel //
+			final HModel<G> h, //
+			final List<? extends G> outputLabels, //
+			final ILabeledMultivariateFunction<G, G> altModel //
 	) {
-		super(buildInputs(h, outputLabels), outputLabels);
+		super(buildInputs(h, outputLabels), new ArrayList<>(outputLabels));
 		mHFunction = h;
-		ArrayList<? extends Object> inputLabels = new ArrayList<>(h.getInputLabels());
+		final ArrayList<G> inputLabels = new ArrayList<>(h.getInputLabels());
 		inputLabels.removeAll(outputLabels);
 		assert altModel.getInputLabels().containsAll(inputLabels);
 		assert altModel.getOutputLabels().containsAll(outputLabels);
@@ -109,8 +109,8 @@ public class ImplicitMeasurementModel //
 	}
 
 	public ImplicitMeasurementModel(//
-			final HModel h, //
-			final List<? extends Object> outputLabels //
+			final HModel<G> h, //
+			final List<G> outputLabels //
 	) {
 		this(h, outputLabels, null);
 	}
@@ -119,7 +119,7 @@ public class ImplicitMeasurementModel //
 		return mAlternativeModel != null;
 	}
 
-	public ILabeledMultivariateFunction getAlternativeModel() {
+	public ILabeledMultivariateFunction<G, G> getAlternativeModel() {
 		return mAlternativeModel;
 	}
 
@@ -128,7 +128,7 @@ public class ImplicitMeasurementModel //
 		return "Implicit[" + mHFunction + "]";
 	}
 
-	public HModel getHModel() {
+	public HModel<G> getHModel() {
 		return mHFunction;
 	}
 
@@ -141,7 +141,7 @@ public class ImplicitMeasurementModel //
 	 * @param list
 	 * @param vals
 	 */
-	public void initializeConstants(final List<? extends Object> list, final RealVector vals) {
+	public void initializeConstants(final List<G> list, final RealVector vals) {
 		for (int i = 0; i < list.size(); ++i)
 			if (inputIndex(list.get(i)) == -1)
 				mConstants.put(list.get(i), vals.getEntry(i));
@@ -152,8 +152,8 @@ public class ImplicitMeasurementModel //
 	 *
 	 * @param consts Map&lt;Object,Double&gt; where Object is a label
 	 */
-	public void initializeConstants(final Map<Object, ? extends Number> consts) {
-		for (final Entry<Object, ? extends Number> me : consts.entrySet())
+	public void initializeConstants(final Map<G, ? extends Number> consts) {
+		for (final Entry<G, ? extends Number> me : consts.entrySet())
 			if (inputIndex(me.getKey()) == -1)
 				mConstants.put(me.getKey(), me.getValue().doubleValue());
 	}
@@ -164,7 +164,7 @@ public class ImplicitMeasurementModel //
 	 * @param label
 	 * @return double
 	 */
-	public double getConstant(final Object label) {
+	public double getConstant(final G label) {
 		assert inputIndex(label) == -1 : "Label " + label + " is a variable.";
 		assert mConstants.containsKey(label) : "Label " + label + " is not a constant";
 		return mConstants.get(label).doubleValue();
@@ -208,7 +208,7 @@ public class ImplicitMeasurementModel //
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector hPoint = new ArrayRealVector(mHFunction.getInputDimension());
 		for (int r = 0; r < hPoint.getDimension(); ++r) {
-			final Object hLbl = mHFunction.getInputLabel(r);
+			final G hLbl = mHFunction.getInputLabel(r);
 			final int ii = inputIndex(hLbl);
 			if (ii != -1)
 				hPoint.setEntry(r, point.getEntry(ii));
@@ -236,41 +236,35 @@ public class ImplicitMeasurementModel //
 	}
 
 	private RealMatrix extractCx(final RealMatrix hrm) {
-		final List<? extends Object> yLabels = getOutputLabels();
+		final List<? extends G> yLabels = getOutputLabels();
 		final List<Object> xLabels = new ArrayList<>();
 		xLabels.addAll(getInputLabels());
 		xLabels.removeAll(yLabels);
 		final int n = xLabels.size(), m = yLabels.size();
-		final List<? extends Object> hIn = mHFunction.getInputLabels();
-		final List<? extends Object> hOut = mHFunction.getOutputLabels();
+		final List<? extends G> hIn = mHFunction.getInputLabels();
 		// output x inputs
 		final RealMatrix mc = MatrixUtils.createRealMatrix(m, n);
 		for (int r = 0; r < m; ++r) {
-			final int rIdx = hOut.indexOf(new HLabel(yLabels.get(r)));
-			assert rIdx >= 0 : yLabels.get(r);
 			for (int c = 0; c < n; ++c) {
 				final int cIdx = hIn.indexOf(xLabels.get(c));
 				assert cIdx >= 0 : xLabels.get(c);
-				mc.setEntry(r, c, hrm.getEntry(rIdx, cIdx));
+				mc.setEntry(r, c, hrm.getEntry(r, cIdx));
 			}
 		}
 		return mc;
 	}
 
 	private RealMatrix extractCy(final RealMatrix hrm) {
-		final List<? extends Object> labels = getOutputLabels();
+		final List<? extends G> labels = getOutputLabels();
 		final int m = labels.size();
-		final List<? extends Object> hIn = mHFunction.getInputLabels();
-		final List<? extends Object> hOut = mHFunction.getOutputLabels();
+		final List<? extends G> hIn = mHFunction.getInputLabels();
 		// output x inputs
 		final RealMatrix mc = MatrixUtils.createRealMatrix(m, m);
 		for (int r = 0; r < m; ++r) {
-			final int rIdx = hOut.indexOf(new HLabel(labels.get(r)));
-			assert rIdx >= 0 : labels.get(r);
 			for (int c = 0; c < m; ++c) {
 				final int cIdx = hIn.indexOf(labels.get(c));
 				assert cIdx >= 0 : labels.get(c);
-				mc.setEntry(r, c, hrm.getEntry(rIdx, cIdx));
+				mc.setEntry(r, c, hrm.getEntry(r, cIdx));
 			}
 		}
 		return mc;
@@ -289,7 +283,7 @@ public class ImplicitMeasurementModel //
 	public RealVector optimized(final RealVector point) {
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		if (mAlternativeModel != null) {
-			final List<? extends Object> inLabels = mAlternativeModel.getInputLabels();
+			final List<? extends G> inLabels = mAlternativeModel.getInputLabels();
 			final RealVector altPt = new ArrayRealVector(inLabels.size());
 			for (int i = 0; i < inLabels.size(); ++i) {
 				final int ii = inputIndex(inLabels.get(i));
@@ -298,7 +292,7 @@ public class ImplicitMeasurementModel //
 				altPt.setEntry(i, point.getEntry(ii));
 			}
 			final RealVector res = mAlternativeModel.optimized(altPt);
-			final List<? extends Object> outLabels = mAlternativeModel.getOutputLabels();
+			final List<? extends G> outLabels = mAlternativeModel.getOutputLabels();
 			for (int i = 0; i < outLabels.size(); ++i)
 				rv.setEntry(outputIndex(outLabels.get(i)), res.getEntry(i));
 		} else {

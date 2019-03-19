@@ -3,7 +3,7 @@ package gov.nist.microanalysis.roentgen.physics.composition;
 import java.util.ArrayList;
 import java.util.List;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.BaseLabel;
+import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 
 /**
@@ -16,41 +16,18 @@ import gov.nist.microanalysis.roentgen.physics.Element;
  *
  */
 public class MaterialLabel //
-		extends BaseLabel<Element, Material, Object> {
+		extends EPMALabel.BaseLabel<Material, Element, Object> {
 
-	private MaterialLabel(final String prefix, final Material material, final Element elm) {
-		super(prefix, elm, material);
-	}
+	public static class AnalyticalTotalTag extends MaterialLabel {
 
-	public Element getElement() {
-		return getObject1();
-	}
-
-	public Material getMaterial() {
-		return getObject2();
-	}
-
-	public static class MassFraction //
-			extends MaterialLabel {
-		private MassFraction(final Material mat, final Element elm) {
-			super("C", mat, elm);
+		private AnalyticalTotalTag(final Material mat) {
+			super("&Sigma;", mat, null);
 		}
 	}
 
-	public static MassFraction buildMassFractionTag(final Material mat, final Element elm) {
-		return new MassFraction(mat, elm);
-	}
-
-	public static List<MassFraction> buildMassFractionTags(final Material mat) {
-		final List<MassFraction> res = new ArrayList<>();
-		for (final Element elm : mat.getElementSet())
-			res.add(new MassFraction(mat, elm));
-		return res;
-	}
-
-	public static class AtomType extends MaterialLabel {
-		private AtomType(final String name, final Material mat, final Element elm) {
-			super(name, mat, elm);
+	public static class AtomFraction extends AtomType {
+		private AtomFraction(final Material mat, final Element elm) {
+			super("f<sub>atom</sub>", mat, elm);
 		}
 	}
 
@@ -60,16 +37,47 @@ public class MaterialLabel //
 		}
 	}
 
-	public static List<AtomicWeight> buildAtomicWeightTags(final Material mat) {
-		final List<AtomicWeight> res = new ArrayList<>();
-		for (final Element elm : mat.getElementSet())
-			res.add(new AtomicWeight(mat, elm));
-		return res;
+	public static class AtomType extends MaterialLabel {
+		private AtomType(final String name, final Material mat, final Element elm) {
+			super(name, mat, elm);
+		}
 	}
 
-	public static class AtomFraction extends AtomType {
-		private AtomFraction(final Material mat, final Element elm) {
-			super("f<sub>atom</sub>", mat, elm);
+	public static class MassFraction //
+			extends MaterialLabel {
+		private MassFraction(final Material mat, final Element elm) {
+			this(mat, elm, false);
+		}
+
+		private MassFraction(final Material mat, final Element elm, final boolean normalized) {
+			super(normalized ? "N" : "C", mat, elm);
+		}
+
+	}
+
+	public static final class MaterialMassFraction //
+			extends MaterialLabel {
+
+		public MaterialMassFraction(final Material mat) {
+			this(mat, false);
+		}
+
+		public MaterialMassFraction(final Material mat, final boolean normalized) {
+			super(normalized ? "f<sub>mat,norm</sub>" : "f<sub>mat</sub>", mat);
+		}
+	}
+
+	public static class MeanATag extends MaterialLabel {
+
+		public MeanATag(final Material mat) {
+			super("A&#773;", mat, null);
+		}
+	}
+
+	public static class MeanZTag extends MaterialLabel {
+
+		public MeanZTag(final Material mat) {
+			super("Z&#773;", mat, null);
 		}
 	}
 
@@ -79,11 +87,25 @@ public class MaterialLabel //
 		}
 	}
 
-	public static List<Stoichiometry> buildStoichiometryTags(final Material mat) {
-		final List<Stoichiometry> res = new ArrayList<>();
+	/**
+	 * Returns a list of {@link AtomWeightTag} objects one for each element in the
+	 * material.
+	 *
+	 * @return List&lt;AtomWeightTag&gt;
+	 */
+	public static List<AtomicWeight> atomWeightTags(final Material mat) {
+		final List<AtomicWeight> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
-			res.add(new Stoichiometry(mat, elm));
+			res.add(new AtomicWeight(mat, elm));
 		return res;
+	}
+
+	public static AnalyticalTotalTag buildAnalyticalTotalTag(final Material mat) {
+		return new AnalyticalTotalTag(mat);
+	}
+
+	public static AtomFraction buildAtomFractionTag(final Material mat, final Element elm) {
+		return new AtomFraction(mat, elm);
 	}
 
 	public static List<AtomFraction> buildAtomFractionTags(final Material mat) {
@@ -91,10 +113,6 @@ public class MaterialLabel //
 		for (final Element elm : mat.getElementSet())
 			res.add(new AtomFraction(mat, elm));
 		return res;
-	}
-
-	public static MaterialMassFraction buildMaterialFractionTag(final Material mat) {
-		return new MaterialMassFraction(mat);
 	}
 
 	/**
@@ -109,12 +127,66 @@ public class MaterialLabel //
 		return new AtomicWeight(mat, elm);
 	}
 
+	public static List<AtomicWeight> buildAtomicWeightTags(final Material mat) {
+		final List<AtomicWeight> res = new ArrayList<>();
+		for (final Element elm : mat.getElementSet())
+			res.add(new AtomicWeight(mat, elm));
+		return res;
+	}
+
+	public static MassFraction buildMassFractionTag(final Material mat, final Element elm) {
+		return new MassFraction(mat, elm);
+	}
+
+	public static List<MassFraction> buildMassFractionTags(final Material mat) {
+		final List<MassFraction> res = new ArrayList<>();
+		for (final Element elm : mat.getElementSet())
+			res.add(new MassFraction(mat, elm));
+		return res;
+	}
+
+	public static MaterialMassFraction buildMaterialFractionTag(final Material mat) {
+		return new MaterialMassFraction(mat, false);
+	}
+
+	public static MeanZTag buildMeanAtomicNumberTag(final Material mat) {
+		return new MeanZTag(mat);
+	}
+
+	public static MeanATag buildMeanAtomicWeighTag(final Material mat) {
+		return new MeanATag(mat);
+	}
+
+	public static MassFraction buildNormalizedMassFractionTag(final Material mat, final Element elm) {
+		return new MassFraction(mat, elm, true);
+	}
+
+	public static List<MassFraction> buildNormalizedMassFractionTags(final Material mat) {
+		final List<MassFraction> res = new ArrayList<>();
+		for (final Element elm : mat.getElementSet())
+			res.add(new MassFraction(mat, elm, true));
+		return res;
+	}
+
+	public static MaterialMassFraction buildNormalizedMaterialFractionTag(final Material mat) {
+		return new MaterialMassFraction(mat, true);
+	}
+
 	public static Stoichiometry buildStoichiometryTag(final Material mat, final Element elm) {
 		return new Stoichiometry(mat, elm);
 	}
 
-	public static AtomFraction buildAtomFractionTag(final Material mat, final Element elm) {
-		return new AtomFraction(mat, elm);
+	public static List<Stoichiometry> buildStoichiometryTags(final Material mat) {
+		final List<Stoichiometry> res = new ArrayList<>();
+		for (final Element elm : mat.getElementSet())
+			res.add(new Stoichiometry(mat, elm));
+		return res;
+	}
+
+	public static <H extends EPMALabel> List<H> convert(List<? extends H> list){
+		List<H> res = new ArrayList<>();
+		res.addAll(list);
+		return res;
 	}
 
 	/**
@@ -131,19 +203,6 @@ public class MaterialLabel //
 	}
 
 	/**
-	 * Returns a list of {@link AtomWeightTag} objects one for each element in the
-	 * material.
-	 *
-	 * @return List&lt;AtomWeightTag&gt;
-	 */
-	public static List<AtomicWeight> atomWeightTags(final Material mat) {
-		final List<AtomicWeight> res = new ArrayList<>();
-		for (final Element elm : mat.getElementSet())
-			res.add(new AtomicWeight(mat, elm));
-		return res;
-	}
-
-	/**
 	 * Returns a list of {@link Stoichiometry} objects one for each element in the
 	 * material.
 	 *
@@ -154,6 +213,15 @@ public class MaterialLabel //
 		for (final Element elm : mat.getElementSet())
 			res.add(new Stoichiometry(mat, elm));
 		return res;
+	}
+	
+	private MaterialLabel(final String prefix, final Material material) {
+		super(prefix, material);
+	}
+
+
+	private MaterialLabel(final String prefix, final Material material, final Element elm) {
+		super(prefix, material, elm);
 	}
 
 	/**
@@ -169,61 +237,12 @@ public class MaterialLabel //
 		return res;
 	}
 
-	public static class MeanZTag extends BaseLabel<Material, Object, Object> {
-
-		public MeanZTag(final Material mat) {
-			super("MeanZ", mat);
-		}
-
-		public Material getMaterial() {
-			return getObject1();
-		}
+	public Element getElement() {
+		return getObject2();
 	}
-
-	public static Object buildMeanAtomicNumberTag(final Material mat) {
-		return new MeanZTag(mat);
-	}
-
-	public static class MeanATag extends BaseLabel<Material, Object, Object> {
-
-		public MeanATag(final Material mat) {
-			super("MeanA", mat);
-		}
-
-		public Material getMaterial() {
-			return getObject1();
-		}
-	}
-
-	public static Object buildMeanAtomicWeighTag(final Material mat) {
-		return new MeanATag(mat);
-	}
-
-	public static class AnalyticalTotalTag extends BaseLabel<Material, Object, Object> {
-
-		private AnalyticalTotalTag(final Material mat) {
-			super("Total", mat);
-		}
-
-		public Material getMaterial() {
-			return getObject1();
-		}
-	}
-
-	public static Object buildAnalyticalTotalTag(final Material mat) {
-		return new AnalyticalTotalTag(mat);
-	}
-
-	public static final class MaterialMassFraction //
-			extends BaseLabel<Material, Object, Object> {
-
-		public MaterialMassFraction(final Material mat) {
-			super("f", mat);
-		}
-
-		public Material getMaterial() {
-			return getObject1();
-		}
+	
+	public Material getMaterial() {
+		return getObject1();
 	}
 
 }

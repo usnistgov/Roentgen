@@ -23,20 +23,22 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  * @author Nicholas W. M. Ritchie
  *
  */
-public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
-		implements ILabeledMultivariateFunction {
+public class ElementByStoichiometry //
+		extends LabeledMultivariateJacobianFunction<MaterialLabel, MassFraction> //
+		implements ILabeledMultivariateFunction<MaterialLabel, MassFraction> {
 
-	private final Map<Element, Integer> mValences = new HashMap<>();
-	private final Element mElement;
+	static public ElementByStoichiometry buildDefaultOxygen(final Material mat) {
+		return new ElementByStoichiometry(mat, Element.Oxygen, StoichiometeryRules.getOxygenDefaults());
+	}
 
-	private static List<? extends Object> buildInput(//
+	private static List<MaterialLabel> buildInput(//
 			final Material mat, //
 			final Element outputElm //
 	) {
-		Set<Element> inputElms = new HashSet<>();
+		final Set<Element> inputElms = new HashSet<>();
 		inputElms.addAll(mat.getElementSet());
 		inputElms.remove(outputElm);
-		final List<Object> res = new ArrayList<>();
+		final List<MaterialLabel> res = new ArrayList<>();
 		for (final Element elm : inputElms) {
 			if (elm != outputElm) {
 				res.add(MaterialLabel.buildMassFractionTag(mat, elm));
@@ -47,6 +49,10 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 		return res;
 	}
 
+	private final Map<Element, Integer> mValences = new HashMap<>();
+
+	private final Element mElement;
+
 	/**
 	 * @param inputLabels
 	 * @param outputLabels
@@ -56,48 +62,6 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 				Collections.singletonList(MaterialLabel.buildMassFractionTag(mat, outputElm)));
 		mValences.putAll(valences);
 		mElement = outputElm;
-	}
-	
-	static public ElementByStoichiometry buildDefaultOxygen(Material mat) {
-		return new ElementByStoichiometry(mat, Element.Oxygen, StoichiometeryRules.getOxygenDefaults());
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
-	 * value(org.apache.commons.math3.linear.RealVector)
-	 */
-	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
-		final RealVector rv = new ArrayRealVector(1);
-		final RealMatrix rm = MatrixUtils.createRealMatrix(1, getInputDimension());
-		double awi = Double.NaN;
-		int awii = -1;
-		double ci = 0.0, dcidawi = 0.0;
-		for (int j = 0; j < getInputDimension(); ++j) {
-			final Object lbl = getInputLabel(j);
-			if (lbl instanceof MassFraction) {
-				final MassFraction cjt = (MassFraction) lbl;
-				final int awji = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), cjt.getElement()));
-				if (awii==-1) {
-					awii = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), mElement));
-					awi = point.getEntry(awii);
-				}
-				final double cj = point.getEntry(j);
-				final double awj = point.getEntry(awji);
-				final double kkj = -(awi / awj)
-						* (mValences.get(cjt.getElement()).doubleValue() / mValences.get(mElement).doubleValue());
-				ci += kkj * cj;
-				dcidawi += (kkj / awi) * cj;
-				rm.setEntry(0, j, kkj);
-				rm.setEntry(0, awji, -(kkj / awj) * cj);
-			}
-			rm.setEntry(0, awii, dcidawi);
-		}
-		rv.setEntry(0, ci);
-		return Pair.create(rv, rm);
 	}
 
 	/*
@@ -130,9 +94,48 @@ public class ElementByStoichiometry extends LabeledMultivariateJacobianFunction
 		rv.setEntry(0, ci);
 		return rv;
 	}
-	
+
+	@Override
 	public String toString() {
-		return mElement.getAbbrev()+"-by-stoichiometry";
+		return mElement.getAbbrev() + "-by-stoichiometry";
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
+	 * value(org.apache.commons.math3.linear.RealVector)
+	 */
+	@Override
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		final RealVector rv = new ArrayRealVector(1);
+		final RealMatrix rm = MatrixUtils.createRealMatrix(1, getInputDimension());
+		double awi = Double.NaN;
+		int awii = -1;
+		double ci = 0.0, dcidawi = 0.0;
+		for (int j = 0; j < getInputDimension(); ++j) {
+			final Object lbl = getInputLabel(j);
+			if (lbl instanceof MassFraction) {
+				final MassFraction cjt = (MassFraction) lbl;
+				final int awji = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), cjt.getElement()));
+				if (awii == -1) {
+					awii = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), mElement));
+					awi = point.getEntry(awii);
+				}
+				final double cj = point.getEntry(j);
+				final double awj = point.getEntry(awji);
+				final double kkj = -(awi / awj)
+						* (mValences.get(cjt.getElement()).doubleValue() / mValences.get(mElement).doubleValue());
+				ci += kkj * cj;
+				dcidawi += (kkj / awi) * cj;
+				rm.setEntry(0, j, kkj);
+				rm.setEntry(0, awji, -(kkj / awj) * cj);
+			}
+			rm.setEntry(0, awii, dcidawi);
+		}
+		rv.setEntry(0, ci);
+		return Pair.create(rv, rm);
 	}
 
 }

@@ -54,7 +54,7 @@ public class CompExamples {
 		r.add(mix);
 		r.inBrowser(Mode.VERBOSE);
 
-		WriteToLaTeX wtl = new WriteToLaTeX();
+		final WriteToLaTeX wtl = new WriteToLaTeX();
 		try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\Anorthoclaise.tex")) {
 			pw.write("% TERSE\n");
 			wtl.write(pw, mix, WriteToLaTeX.Mode.TERSE);
@@ -80,8 +80,8 @@ public class CompExamples {
 		r.addSubHeader("Verbose");
 		r.add(comp, Mode.VERBOSE);
 		r.inBrowser(Mode.VERBOSE);
-		
-		WriteToLaTeX wtl = new WriteToLaTeX();
+
+		final WriteToLaTeX wtl = new WriteToLaTeX();
 		try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\Au(60)Ag.tex")) {
 			pw.write("% TERSE\n");
 			wtl.write(pw, comp, WriteToLaTeX.Mode.TERSE);
@@ -90,14 +90,15 @@ public class CompExamples {
 			pw.write("\n\n% VERBOSE\n");
 			wtl.write(pw, comp, WriteToLaTeX.Mode.VERBOSE);
 			pw.write("\n\n% CUSTOM\n");
-			List<Object> labels = new ArrayList<>();
+			final List<MaterialLabel> labels = new ArrayList<>();
 			labels.addAll(MaterialLabel.buildMassFractionTags(comp.getMaterial()));
 			// labels.addAll(Normalize.buildNormalized(MaterialLabel.buildMassFractionTags(comp.getMaterial())));
 			// labels.addAll(MaterialLabel.buildAtomFractionTags(comp.getMaterial()));
 			// labels.add(MaterialLabel.buildAnalyticalTotalTag(comp.getMaterial()));
 			// labels.add(MaterialLabel.buildMeanAtomicNumberTag(comp.getMaterial()));
 			// labels.add(MaterialLabel.buildMeanAtomicWeighTag(comp.getMaterial()));
-			wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);;
+			wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);
+			;
 		}
 	}
 
@@ -161,10 +162,11 @@ public class CompExamples {
 		men.put(Element.Chromium, new UncertainValue(0.19, 0.01));
 		men.put(Element.Nickel, new UncertainValue(0.0925, 0.0125));
 		final Report r = new Report("Element-by-Difference");
-		WriteToLaTeX wtl = new WriteToLaTeX();
+		final WriteToLaTeX wtl = new WriteToLaTeX();
 		try {
 			{
-				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap());
+				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men,
+						Collections.emptyMap());
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 				try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\SS304.tex")) {
@@ -175,26 +177,29 @@ public class CompExamples {
 					pw.write("\n\n% VERBOSE\n");
 					wtl.write(pw, comp, WriteToLaTeX.Mode.VERBOSE);
 					pw.write("\n\n% CUSTOM\n");
-					List<Object> labels = new ArrayList<>();
+					final List<MaterialLabel> labels = new ArrayList<>();
 					labels.addAll(MaterialLabel.buildMassFractionTags(comp.getMaterial()));
 					// labels.addAll(Normalize.buildNormalized(MaterialLabel.buildMassFractionTags(comp.getMaterial())));
 					// labels.addAll(MaterialLabel.buildAtomFractionTags(comp.getMaterial()));
 					// labels.add(MaterialLabel.buildAnalyticalTotalTag(comp.getMaterial()));
 					// labels.add(MaterialLabel.buildMeanAtomicNumberTag(comp.getMaterial()));
 					// labels.add(MaterialLabel.buildMeanAtomicWeighTag(comp.getMaterial()));
-					wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);;
+					wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);
+					;
 				}
 			}
 			{
-				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men, Collections.emptyMap());
-				comp.setCalculator(new UncertainValuesCalculator.FiniteDifference(comp.getInputValues().mapMultiply(0.001)));
+				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men,
+						Collections.emptyMap());
+				comp.setCalculator(
+						new UncertainValuesCalculator.FiniteDifference(comp.getInputValues().mapMultiply(0.001)));
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 			}
 			{
 				r.addHeader("Naive - mass fraction model");
-				men.put(Element.Iron, new UncertainValue(0.7175,0.0160));
-				final Composition comp = Composition.massFraction(mat, men, Collections.emptyList());
+				men.put(Element.Iron, new UncertainValue(0.7175, 0.0160));
+				final Composition comp = Composition.massFraction(mat, men, null);
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 				try (PrintWriter pw = new PrintWriter(System.getProperty("user.home") + "\\Desktop\\SS304_naive.tex")) {
@@ -205,19 +210,19 @@ public class CompExamples {
 					pw.write("\n\n% VERBOSE\n");
 					wtl.write(pw, comp, WriteToLaTeX.Mode.VERBOSE);
 					pw.write("\n\n% CUSTOM\n");
-					List<Object> labels = new ArrayList<>();
+					final List<MaterialLabel> labels = new ArrayList<>();
 					labels.addAll(MaterialLabel.buildMassFractionTags(comp.getMaterial()));
 					// labels.addAll(Normalize.buildNormalized(MaterialLabel.buildMassFractionTags(comp.getMaterial())));
 					// labels.addAll(MaterialLabel.buildAtomFractionTags(comp.getMaterial()));
 					// labels.add(MaterialLabel.buildAnalyticalTotalTag(comp.getMaterial()));
 					// labels.add(MaterialLabel.buildMeanAtomicNumberTag(comp.getMaterial()));
 					// labels.add(MaterialLabel.buildMeanAtomicWeighTag(comp.getMaterial()));
-					wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);;
+					wtl.write(pw, comp, new BasicNumberFormat("0.000"), labels);
+					;
 				}
 			}
-			
-		} finally
-		{
+
+		} finally {
 			r.inBrowser(Mode.VERBOSE);
 		}
 	}

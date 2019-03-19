@@ -8,9 +8,12 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomFraction;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.Stoichiometry;
 
 public class StoichiometryToAtomFraction //
-		extends LabeledMultivariateJacobianFunction implements ILabeledMultivariateFunction {
+		extends LabeledMultivariateJacobianFunction<Stoichiometry, AtomFraction> //
+		implements ILabeledMultivariateFunction<Stoichiometry, AtomFraction> {
 
 	private final Material mMaterial;
 
@@ -25,15 +28,23 @@ public class StoichiometryToAtomFraction //
 		mMaterial = mat;
 	}
 
-	private double denom(final RealVector point) {
-		double res = 0.0;
-		for (int i=0;i<getInputDimension();++i)
-			res += point.getEntry(i);
-		return res;
+	@Override
+	public RealVector optimized(final RealVector point) {
+		final RealVector vals = new ArrayRealVector(getOutputDimension());
+		final double den = denom(point);
+		for (int outIdx = 0; outIdx < getOutputDimension(); ++outIdx) {
+			final MaterialLabel.AtomFraction aft1 = (MaterialLabel.AtomFraction) getOutputLabel(outIdx);
+			final MaterialLabel.Stoichiometry st1 = MaterialLabel.buildStoichiometryTag(aft1.getMaterial(),
+					aft1.getElement());
+			final double s1 = point.getEntry(inputIndex(st1));
+			vals.setEntry(outIdx, s1 / den);
+		}
+		return vals;
 	}
 
-	private double delta(final MaterialLabel.AtomType a1, final MaterialLabel.AtomType a2) {
-		return a1.getElement().equals(a2.getElement()) ? 1.0 : 0.0;
+	@Override
+	public String toString() {
+		return "Stoichiometry-to-Atom Fraction[" + mMaterial + "]";
 	}
 
 	@Override
@@ -55,22 +66,15 @@ public class StoichiometryToAtomFraction //
 		return Pair.create(vals, jac);
 	}
 
-	@Override
-	public RealVector optimized(final RealVector point) {
-		final RealVector vals = new ArrayRealVector(getOutputDimension());
-		final double den = denom(point);
-		for (int outIdx = 0; outIdx < getOutputDimension(); ++outIdx) {
-			final MaterialLabel.AtomFraction aft1 = (MaterialLabel.AtomFraction) getOutputLabel(outIdx);
-			final MaterialLabel.Stoichiometry st1 = MaterialLabel.buildStoichiometryTag(aft1.getMaterial(),
-					aft1.getElement());
-			final double s1 = point.getEntry(inputIndex(st1));
-			vals.setEntry(outIdx, s1 / den);
-		}
-		return vals;
+	private double delta(final MaterialLabel.AtomType a1, final MaterialLabel.AtomType a2) {
+		return a1.getElement().equals(a2.getElement()) ? 1.0 : 0.0;
 	}
 
-	public String toString() {
-		return "Stoichiometry-to-Atom Fraction[" + mMaterial + "]";
+	private double denom(final RealVector point) {
+		double res = 0.0;
+		for (int i = 0; i < getInputDimension(); ++i)
+			res += point.getEntry(i);
+		return res;
 	}
 
 }

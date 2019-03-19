@@ -28,6 +28,7 @@ import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.MCPropagator;
@@ -37,11 +38,12 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
+import gov.nist.microanalysis.roentgen.matrixcorrection.Layer;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.ZAFMultiLineLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -50,9 +52,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.Layer;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
@@ -108,54 +108,60 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(krlSi);
 		skrl.add(krlO);
 
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps);
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final Report r = new Report("XPP Report - test1");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
+				r.addHeader("Compositions");
+				r.addSubHeader("Standard");
+				r.add(std, Mode.VERBOSE);
+				r.addSubHeader("Unknown");
+				r.add(unk, Mode.VERBOSE);
+				
+				
 				final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 				r.addHeader("test1()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				final UncertainValues inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
-				final UncertainValuesCalculator xppI = new UncertainValuesCalculator(xpp, inputs);
-				final UncertainValuesBase results = xppI.sort();
-				final Object tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesBase<EPMALabel> results = xppI.sort();
+				final EPMALabel tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagAu), 401.654, 0.001);
-				final Object tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
+				final EPMALabel tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagau), 11189.1680, 0.001);
-				final Object tagBu = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner());
+				final EPMALabel tagBu = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagBu), -526613.8448, 0.001);
-				final Object tagbu = MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner());
+				final EPMALabel tagbu = MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagbu), 12568.9576, 0.001);
-				final Object tagPhi0u = MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner());
+				final EPMALabel tagPhi0u = MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagPhi0u), 1.252, 0.001);
 
-				final Object tagAs = MatrixCorrectionModel2.shellLabel("A", stdMcd, cxr.getInner());
+				final EPMALabel tagAs = MatrixCorrectionModel2.shellLabel("A", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagAs), 396.744, 0.001);
-				final Object tagas = MatrixCorrectionModel2.shellLabel("a", stdMcd, cxr.getInner());
+				final EPMALabel tagas = MatrixCorrectionModel2.shellLabel("a", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagas), 11314.847, 0.001);
-				final Object tagBs = MatrixCorrectionModel2.shellLabel("B", stdMcd, cxr.getInner());
+				final EPMALabel tagBs = MatrixCorrectionModel2.shellLabel("B", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagBs), -529359.3292, 0.001);
-				final Object tagbs = MatrixCorrectionModel2.shellLabel("b", stdMcd, cxr.getInner());
+				final EPMALabel tagbs = MatrixCorrectionModel2.shellLabel("b", stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagbs), 12719.694, 0.001);
-				final Object tagPhi0s = MatrixCorrectionModel2.phi0Label(stdMcd, cxr.getInner());
+				final EPMALabel tagPhi0s = MatrixCorrectionModel2.phi0Label(stdMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagPhi0s), 1.254, 0.001);
 
-				final Object tagChiu = MatrixCorrectionModel2.chiLabel(unkMcd, cxr);
+				final EPMALabel tagChiu = MatrixCorrectionModel2.chiLabel(unkMcd, cxr);
 				assertEquals(results.getEntry(tagChiu), 2542.429, 0.001);
-				final Object tagChis = MatrixCorrectionModel2.chiLabel(stdMcd, cxr);
+				final EPMALabel tagChis = MatrixCorrectionModel2.chiLabel(stdMcd, cxr);
 				assertEquals(results.getEntry(tagChis), 1038.418, 0.001);
-				final Object tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
+				final EPMALabel tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
 				assertEquals(results.getEntry(tagFChiFu), 0.6331, 0.001);
-				final Object tagFChiFs = MatrixCorrectionModel2.FxFLabel(stdMcd, cxr);
+				final EPMALabel tagFChiFs = MatrixCorrectionModel2.FxFLabel(stdMcd, cxr);
 				assertEquals(results.getEntry(tagFChiFs), 0.8206, 0.001);
-				final Object tagZA = MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr);
+				final EPMALabel tagZA = MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr);
 				assertEquals(results.getEntry(tagZA), 0.7797, 0.001);
 
-				UncertainValuesCalculator uvc = new UncertainValuesCalculator(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
 
 				assertEquals(results.getEntry(tagAu), uvc.getEntry(tagAu), 0.001);
 				assertEquals(results.getEntry(tagau), uvc.getEntry(tagau), 0.001);
@@ -183,7 +189,7 @@ public class XPPMatrixCorrection2Test {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					final UncertainValue uv = outVals.get(outTag);
 					valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 							Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -193,7 +199,7 @@ public class XPPMatrixCorrection2Test {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -202,8 +208,9 @@ public class XPPMatrixCorrection2Test {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
@@ -239,7 +246,8 @@ public class XPPMatrixCorrection2Test {
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 			}
 			if (MC_ITERATIONS > 0) {
@@ -247,9 +255,9 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Monte Carlo Results");
 				r.add(xpp);
 				r.addHeader("Inputs");
-				final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
-				final UncertainValuesBase results = UncertainValuesBase.propagate(xpp, inputs).sort();
+				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagate(xpp, inputs).sort();
 
 				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner())), 2366.373,
 						0.001);
@@ -280,9 +288,9 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Analyic Results");
 				r.add(results);
 
-				UncertainValuesBase ordered = inputs.reorder(xpp.getInputLabels());
-				final MCPropagator mcp = new MCPropagator(xpp, ordered, SIGMA);
-				final UncertainValuesBase resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
+				final MCPropagator<EPMALabel, EPMALabel> mcp = new MCPropagator<>(xpp, ordered, SIGMA);
+				final UncertainValuesBase<EPMALabel> resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
 
 				if (DUMP) {
 					System.out.println("Monte Carlo Results");
@@ -293,7 +301,7 @@ public class XPPMatrixCorrection2Test {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : resultsMc.getLabels()) {
+				for (final EPMALabel tag : resultsMc.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -303,7 +311,7 @@ public class XPPMatrixCorrection2Test {
 
 				r.addSubHeader("Phi0");
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object tag : xpp.getOutputLabels()) {
+				for (final EPMALabel tag : xpp.getOutputLabels()) {
 					r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 					r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 				}
@@ -319,8 +327,8 @@ public class XPPMatrixCorrection2Test {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					final BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
-					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionLabel) {
+					for (final EPMALabel tag : xpp.getOutputLabels())
+						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
@@ -329,7 +337,7 @@ public class XPPMatrixCorrection2Test {
 									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 						}
-					for (final Object tag : xpp.getOutputLabels())
+					for (final EPMALabel tag : xpp.getOutputLabels())
 						if (tag instanceof KRatioLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
@@ -433,21 +441,20 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, stdMcd,
 				new ElementXRaySet(CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1)), Method.Measured));
 
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps);
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final Report r = new Report("XPP Report - test2");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
 				r.addHeader("test2()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
 
 				final long start = System.currentTimeMillis();
-				final UncertainValuesCalculator xppI = new UncertainValuesCalculator(xpp, inputs);
-				final UncertainValuesBase results = xppI.sort();
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 				System.out.println("Full Timing(2) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
@@ -458,8 +465,8 @@ public class XPPMatrixCorrection2Test {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
+					if (outTag instanceof ZAFMultiLineLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -471,7 +478,7 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Covariance matrix");
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -479,8 +486,9 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
@@ -502,7 +510,8 @@ public class XPPMatrixCorrection2Test {
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 			}
 			if (MC_ITERATIONS > 0) {
@@ -511,15 +520,15 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Monte Carlo Results");
 				r.add(xpp);
 				r.addHeader("Inputs");
-				final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
-				final UncertainValuesBase results = UncertainValuesBase.propagate(xpp, inputs).sort();
+				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagate(xpp, inputs).sort();
 				r.addHeader("Analytic Results");
 				r.add(results);
 
-				UncertainValuesBase ordered = inputs.reorder(xpp.getInputLabels());
-				final MCPropagator mcp = new MCPropagator(xpp, ordered, SIGMA);
-				final UncertainValuesBase resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
+				final MCPropagator<EPMALabel, EPMALabel> mcp = new MCPropagator<>(xpp, ordered, SIGMA);
+				final UncertainValuesBase<EPMALabel> resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -530,7 +539,7 @@ public class XPPMatrixCorrection2Test {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -539,8 +548,8 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel tag : xpp.getOutputLabels()) {
+					if (tag instanceof ZAFMultiLineLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -556,8 +565,8 @@ public class XPPMatrixCorrection2Test {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionLabel) {
+					for (final EPMALabel tag : xpp.getOutputLabels())
+						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -614,31 +623,31 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, stdMcd,
 				new ElementXRaySet(CharacteristicXRay.create(Element.Magnesium, XRayTransition.KA2)), Method.Measured));
 
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final Set<Object> outputs = new HashSet<>();
+		final Set<EPMALabel> outputs = new HashSet<>();
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
 				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
 				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 			}
 		}
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps, new ArrayList<>(outputs));
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final Report r = new Report("XPP Report - test3");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
 				r.addHeader("test3()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
 				final long start = System.currentTimeMillis();
-				final UncertainValuesCalculator xppI = new UncertainValuesCalculator(xpp, inputs);
-				final UncertainValuesBase results = xppI.sort();
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 				System.out.println("Timing(3) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
@@ -649,8 +658,8 @@ public class XPPMatrixCorrection2Test {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
+					if (outTag instanceof ZAFMultiLineLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -662,7 +671,7 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Covariance matrix");
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -670,8 +679,9 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
@@ -698,22 +708,23 @@ public class XPPMatrixCorrection2Test {
 				}
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 			}
 			if (MC_ITERATIONS > 0) {
 				r.addHeader("Monte Carlo Results");
 				r.add(xpp);
 				r.addHeader("Inputs");
-				final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
-				final UncertainValuesBase results = UncertainValuesBase.propagate(xpp, inputs).sort();
+				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagate(xpp, inputs).sort();
 				r.addHeader("Analytic Results");
 				r.add(results);
 
-				UncertainValuesBase ordered = inputs.reorder(xpp.getInputLabels());
-				final MCPropagator mcp = new MCPropagator(xpp, ordered, SIGMA);
-				final UncertainValuesBase resultsMc = mcp.computeMT(16 * MC_ITERATIONS).sort();
+				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
+				final MCPropagator<EPMALabel, EPMALabel> mcp = new MCPropagator<>(xpp, ordered, SIGMA);
+				final UncertainValuesBase<EPMALabel> resultsMc = mcp.computeMT(16 * MC_ITERATIONS).sort();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -723,7 +734,7 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("MC Results");
 				r.add(resultsMc);
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -732,11 +743,12 @@ public class XPPMatrixCorrection2Test {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Analytical result matrix");
 				r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "MC result matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsMc, L2C, 8),
+						"Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel tag : xpp.getOutputLabels()) {
+					if (tag instanceof ZAFMultiLineLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -752,8 +764,8 @@ public class XPPMatrixCorrection2Test {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionLabel) {
+					for (final EPMALabel tag : xpp.getOutputLabels())
+						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -826,9 +838,9 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, std1Mcd,
 				new ElementXRaySet(CharacteristicXRay.create(Element.Aluminum, XRayTransition.KA1)), Method.Measured));
 
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final Set<Object> outputs = new HashSet<>();
+		final Set<EPMALabel> outputs = new HashSet<>();
 		for (final KRatioLabel krl : skrl) {
+			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
@@ -837,26 +849,25 @@ public class XPPMatrixCorrection2Test {
 			}
 		}
 
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps, new ArrayList<>(outputs));
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-		final UncertainValuesBase results = jac.sort();
+		final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> results = jac.sort();
 
 		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
-		final List<LabeledMultivariateJacobianFunction> preComps2 = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, preComps2);
-		final UncertainValuesBase inputs2 = xpp2.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
-		final UncertainValuesBase results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
+		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		for (final Object outTag : outputs) {
-			for (final Object outTag2 : outputs)
+		for (final EPMALabel outTag : outputs) {
+			for (final EPMALabel outTag2 : outputs)
 				if (outTag == outTag2) {
 					final int oi1 = results.indexOf(outTag);
 					final double v1 = results.getEntry(oi1);
@@ -873,7 +884,7 @@ public class XPPMatrixCorrection2Test {
 				}
 		}
 		final Report r = new Report("XPP Report - test4()");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
 				r.addHeader("test4()");
@@ -889,8 +900,8 @@ public class XPPMatrixCorrection2Test {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
+					if (outTag instanceof ZAFMultiLineLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -902,7 +913,7 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Covariance matrix");
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -912,7 +923,8 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (4) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -940,7 +952,8 @@ public class XPPMatrixCorrection2Test {
 				}
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 			}
 			if (MC_ITERATIONS > 0) {
@@ -949,7 +962,8 @@ public class XPPMatrixCorrection2Test {
 				inputs.validateCovariance();
 				Report.dump(inputs.blockDiagnonalize().toSimpleHTML(new BasicNumberFormat("0.00E0")));
 
-				final UncertainValuesBase resultsMc = UncertainValues.propagateMC(xpp, inputs, MC_ITERATIONS).sort();
+				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.propagateMC(xpp, inputs, MC_ITERATIONS)
+						.sort();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -959,7 +973,7 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Monte Carlo Results");
 				r.add(resultsMc);
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -968,7 +982,8 @@ public class XPPMatrixCorrection2Test {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Analytical result matrix");
 				r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "MC result matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsMc, L2C, 8),
+						"Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
 				/*
@@ -986,8 +1001,8 @@ public class XPPMatrixCorrection2Test {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionLabel) {
+					for (final EPMALabel tag : xpp.getOutputLabels())
+						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1089,35 +1104,34 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, std4Mcd, ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1),
 				Method.Measured));
 
-		final Set<Object> outputs = new HashSet<>();
+		final Set<EPMALabel> outputs = new HashSet<>();
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
 				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
 				outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 			}
 		}
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps, new ArrayList<>(outputs));
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-		final UncertainValuesBase results = jac.sort();
+		final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (5) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
-		final List<LabeledMultivariateJacobianFunction> preComps2 = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, preComps2);
-		final UncertainValuesBase inputs2 = xpp2.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
-		final UncertainValuesBase results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
+		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		for (final Object outTag : outputs) {
-			for (final Object outTag2 : outputs)
+		for (final EPMALabel outTag : outputs) {
+			for (final EPMALabel outTag2 : outputs)
 				if (outTag == outTag2) {
 					final int oi1 = results.indexOf(outTag);
 					final double v1 = results.getEntry(oi1);
@@ -1135,7 +1149,7 @@ public class XPPMatrixCorrection2Test {
 		}
 
 		final Report r = new Report("XPP Report - Test5()");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
 				r.addHeader("test5()");
@@ -1145,13 +1159,13 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+				final Map<? extends EPMALabel, UncertainValue> outVals = xpp.getOutputValues(inputs);
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
+					if (outTag instanceof ZAFMultiLineLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1162,7 +1176,7 @@ public class XPPMatrixCorrection2Test {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1171,7 +1185,8 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1190,7 +1205,8 @@ public class XPPMatrixCorrection2Test {
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 				if (DUMP) {
 					System.out.println("Results");
@@ -1205,9 +1221,9 @@ public class XPPMatrixCorrection2Test {
 			if (MC_ITERATIONS > 0) {
 				r.addHeader("Monte Carlo Results");
 
-				UncertainValuesBase ordered = inputs.reorder(xpp.getInputLabels());
-				final MCPropagator mcp = new MCPropagator(xpp, ordered, SIGMA);
-				final UncertainValuesBase resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
+				final MCPropagator<EPMALabel, EPMALabel> mcp = new MCPropagator<>(xpp, ordered, SIGMA);
+				final UncertainValuesBase<EPMALabel> resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -1216,7 +1232,7 @@ public class XPPMatrixCorrection2Test {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1225,11 +1241,12 @@ public class XPPMatrixCorrection2Test {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Analytical result matrix");
 				r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "MC result matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsMc, L2C, 8),
+						"Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel tag : xpp.getOutputLabels()) {
+					if (tag instanceof ZAFMultiLineLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -1244,8 +1261,8 @@ public class XPPMatrixCorrection2Test {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionLabel) {
+					for (final EPMALabel tag : xpp.getOutputLabels())
+						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1348,9 +1365,10 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, std4Mcd, ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1),
 				Method.Measured));
 
-		final Set<Object> outputs = new HashSet<>();
+		final Set<EPMALabel> outputs = new HashSet<>();
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
 				outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
@@ -1358,26 +1376,24 @@ public class XPPMatrixCorrection2Test {
 			}
 		}
 
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps, new ArrayList<>(outputs));
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-		final UncertainValuesBase results = jac.sort();
+		final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (6) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 
-		final List<LabeledMultivariateJacobianFunction> preComps2 = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, preComps2);
-		final UncertainValuesBase inputs2 = xpp2.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
-		final UncertainValuesBase results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
+		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (6) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		for (final Object outTag : outputs) {
-			for (final Object outTag2 : outputs)
+		for (final EPMALabel outTag : outputs) {
+			for (final EPMALabel outTag2 : outputs)
 				if (outTag == outTag2) {
 					final int oi1 = results.indexOf(outTag);
 					final double v1 = results.getEntry(oi1);
@@ -1395,7 +1411,7 @@ public class XPPMatrixCorrection2Test {
 		}
 
 		final Report r = new Report("XPP Report - Test6()");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
 				r.addHeader("test6()");
@@ -1405,13 +1421,13 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<? extends Object, UncertainValue> outVals = xpp.getOutputValues(inputs);
+				final Map<? extends EPMALabel, UncertainValue> outVals = xpp.getOutputValues(inputs);
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
+					if (outTag instanceof ZAFMultiLineLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1422,7 +1438,7 @@ public class XPPMatrixCorrection2Test {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1431,7 +1447,8 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (6) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1450,7 +1467,8 @@ public class XPPMatrixCorrection2Test {
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 				if (DUMP) {
 					System.out.println("Results");
@@ -1465,9 +1483,9 @@ public class XPPMatrixCorrection2Test {
 			if (MC_ITERATIONS > 0) {
 				r.addHeader("Monte Carlo Results");
 
-				UncertainValuesBase ordered = inputs.reorder(xpp.getInputLabels());
-				final MCPropagator mcp = new MCPropagator(xpp, ordered, SIGMA);
-				final UncertainValuesBase resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
+				final MCPropagator<EPMALabel, EPMALabel> mcp = new MCPropagator<>(xpp, ordered, SIGMA);
+				final UncertainValuesBase<EPMALabel> resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -1476,7 +1494,7 @@ public class XPPMatrixCorrection2Test {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1485,11 +1503,12 @@ public class XPPMatrixCorrection2Test {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Analytical result matrix");
 				r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "MC result matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsMc, L2C, 8),
+						"Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel tag : xpp.getOutputLabels()) {
+					if (tag instanceof ZAFMultiLineLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -1504,8 +1523,8 @@ public class XPPMatrixCorrection2Test {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionLabel) {
+					for (final EPMALabel tag : xpp.getOutputLabels())
+						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -1607,9 +1626,10 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, std3Mcd, ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1),
 				Method.Measured));
 
-		final Set<Object> outputs = new HashSet<>();
+		final Set<EPMALabel> outputs = new HashSet<>();
 		for (final KRatioLabel krl : skrl) {
 			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
 				outputs.add(MatrixCorrectionModel2.zLabel(unkMcd, meStd, cxr));
@@ -1620,26 +1640,24 @@ public class XPPMatrixCorrection2Test {
 			}
 		}
 
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps, new ArrayList<>(outputs));
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-		final UncertainValuesBase results = jac.sort();
+		final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (7) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 
-		final List<LabeledMultivariateJacobianFunction> preComps2 = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, preComps2);
-		final UncertainValuesBase inputs2 = xpp2.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
-		final UncertainValuesBase results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
+		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (7) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		for (final Object outTag : outputs) {
-			for (final Object outTag2 : outputs)
+		for (final EPMALabel outTag : outputs) {
+			for (final EPMALabel outTag2 : outputs)
 				if (outTag == outTag2) {
 					final int oi1 = results.indexOf(outTag);
 					final double v1 = results.getEntry(oi1);
@@ -1657,7 +1675,7 @@ public class XPPMatrixCorrection2Test {
 		}
 
 		final Report r = new Report("XPP Report - Test7()");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
 				r.addHeader("test7()");
@@ -1672,8 +1690,8 @@ public class XPPMatrixCorrection2Test {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
+					if (outTag instanceof ZAFMultiLineLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1684,7 +1702,7 @@ public class XPPMatrixCorrection2Test {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1694,7 +1712,8 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (7) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1713,7 +1732,8 @@ public class XPPMatrixCorrection2Test {
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 				final Table res = new Table();
 				res.addRow(Table.th("Line"), Table.th("ZA"), Table.th("Z"), Table.th("A"));
@@ -1721,10 +1741,11 @@ public class XPPMatrixCorrection2Test {
 
 				for (final KRatioLabel krl : skrl) {
 					final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+					outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-						final Object zaTag = MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr);
-						final Object zTag = MatrixCorrectionModel2.zLabel(unkMcd, meStd, cxr);
-						final Object aTag = MatrixCorrectionModel2.aLabel(unkMcd, meStd, cxr);
+						final EPMALabel zaTag = MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr);
+						final EPMALabel zTag = MatrixCorrectionModel2.zLabel(unkMcd, meStd, cxr);
+						final EPMALabel aTag = MatrixCorrectionModel2.aLabel(unkMcd, meStd, cxr);
 						final UncertainValue za = results.getUncertainValue(zaTag);
 						final UncertainValue a = results.getUncertainValue(aTag);
 						final UncertainValue z = results.getUncertainValue(zTag);
@@ -1738,7 +1759,7 @@ public class XPPMatrixCorrection2Test {
 				r.add(res, Mode.NORMAL);
 
 				final Table tk = new Table();
-				for (final Object tag : xpp.getOutputLabels())
+				for (final EPMALabel tag : xpp.getOutputLabels())
 					if (tag instanceof KRatioLabel) {
 						tk.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 								MathUtilities.td(results.getValue(tag).doubleValue(), bnf2),
@@ -1752,9 +1773,9 @@ public class XPPMatrixCorrection2Test {
 				for (final KRatioLabel krl : skrl) {
 					final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-						final Object zaTag = MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr);
-						final Object fUnkTag = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
-						final Object fStdTag = MatrixCorrectionModel2.FxFLabel(meStd, cxr);
+						final EPMALabel zaTag = MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr);
+						final EPMALabel fUnkTag = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
+						final EPMALabel fStdTag = MatrixCorrectionModel2.FxFLabel(meStd, cxr);
 						final double za = results.getEntry(zaTag);
 						final double a = results.getEntry(fUnkTag) / results.getEntry(fStdTag);
 						final double z = za / a;
@@ -1887,32 +1908,27 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, std4Mcd, XRaySet.build(Element.Iron, Principle.K, 0.001), Method.Measured));
 		skrl.add(new KRatioLabel(unkMcd, std4Mcd, XRaySet.build(Element.Iron, Principle.L, 0.001), Method.Measured));
 
-		final Set<Object> outputs = new HashSet<>();
-		for (final KRatioLabel krl : skrl) {
-			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
-			final ElementXRaySet exrs = krl.getXRaySet();
-			outputs.add(new MatrixCorrectionLabel(unkMcd, meStd, exrs));
-		}
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps, new ArrayList<>(outputs));
+		final Set<EPMALabel> outputs = new HashSet<>();
+		for (final KRatioLabel krl : skrl)
+			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 		assertEquals(xpp.getOutputDimension(), outputs.size());
-		final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-		final UncertainValuesBase results = jac.sort();
+		final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (8) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 
-		final List<LabeledMultivariateJacobianFunction> preComps2 = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, preComps2);
-		final UncertainValuesBase inputs2 = xpp2.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
-		final UncertainValuesBase results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
+		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
 		System.out.println("Full Timing (8) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		for (final Object outTag : outputs) {
-			for (final Object outTag2 : outputs)
+		for (final EPMALabel outTag : outputs) {
+			for (final EPMALabel outTag2 : outputs)
 				if (outTag == outTag2) {
 					final int oi1 = results.indexOf(outTag);
 					final double v1 = results.getEntry(oi1);
@@ -1930,7 +1946,7 @@ public class XPPMatrixCorrection2Test {
 		}
 
 		final Report r = new Report("XPP Report - Test8()");
-		UncertainValuesBase resultsD = null;
+		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
 			{
 				r.addHeader("test8()");
@@ -1945,8 +1961,8 @@ public class XPPMatrixCorrection2Test {
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final Object outTag : xpp.getOutputLabels()) {
-					if (outTag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel outTag : xpp.getOutputLabels()) {
+					if (outTag instanceof ZAFMultiLineLabel) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -1957,7 +1973,7 @@ public class XPPMatrixCorrection2Test {
 
 				r.addHeader("Covariance matrix");
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -1966,7 +1982,8 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+						xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (8) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1985,7 +2002,8 @@ public class XPPMatrixCorrection2Test {
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8), "Comparing uncertainty matrix");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+						"Comparing uncertainty matrix");
 
 				if (DUMP) {
 					System.out.println("Results");
@@ -2000,9 +2018,9 @@ public class XPPMatrixCorrection2Test {
 			if (MC_ITERATIONS > 0) {
 				r.addHeader("Monte Carlo Results");
 				Report.dump(inputs.blockDiagnonalize().toSimpleHTML(new BasicNumberFormat("0.00E0")));
-				UncertainValuesBase ordered = inputs.reorder(xpp.getInputLabels());
-				final MCPropagator mcp = new MCPropagator(xpp, ordered, SIGMA);
-				final UncertainValuesBase resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
+				final MCPropagator<EPMALabel, EPMALabel> mcp = new MCPropagator<>(xpp, ordered, SIGMA);
+				final UncertainValuesBase<EPMALabel> resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -2011,7 +2029,7 @@ public class XPPMatrixCorrection2Test {
 				r.add(resultsMc);
 
 				final StringBuffer sb = new StringBuffer();
-				for (final Object tag : results.getLabels()) {
+				for (final EPMALabel tag : results.getLabels()) {
 					if (sb.length() > 0)
 						sb.append(",");
 					sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -2020,11 +2038,12 @@ public class XPPMatrixCorrection2Test {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Analytical result matrix");
 				r.addImage(resultsMc.asCovarianceBitmap(8, V2L3, L2C), "MC result matrix");
-				r.addImage(UncertainValues.compareAsBitmap(results, resultsMc, L2C, 8), "Comparing analytical with MC");
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsMc, L2C, 8),
+						"Comparing analytical with MC");
 
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.0000");
-				for (final Object tag : xpp.getOutputLabels()) {
-					if (tag instanceof MatrixCorrectionLabel) {
+				for (final EPMALabel tag : xpp.getOutputLabels()) {
+					if (tag instanceof ZAFMultiLineLabel) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -2039,8 +2058,8 @@ public class XPPMatrixCorrection2Test {
 							Table.th("U(Analytic)"), //
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
-					for (final Object tag : xpp.getOutputLabels())
-						if (tag instanceof MatrixCorrectionLabel) {
+					for (final EPMALabel tag : xpp.getOutputLabels())
+						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
@@ -2127,24 +2146,21 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(new KRatioLabel(unkMcd, std4Mcd, XRaySet.build(Element.Iron, Principle.K, 0.001), Method.Measured));
 		skrl.add(new KRatioLabel(unkMcd, std4Mcd, XRaySet.build(Element.Iron, Principle.L, 0.001), Method.Measured));
 
-		final Set<Object> outputs = new HashSet<>();
-		for (final KRatioLabel krl : skrl) {
-			final StandardMatrixCorrectionDatum meStd = krl.getStandard();
-			final ElementXRaySet exrs = krl.getXRaySet();
-			outputs.add(new MatrixCorrectionLabel(unkMcd, meStd, exrs));
-		}
-		final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps);
-		final UncertainValuesBase results = UncertainValues.propagate(xpp,
-				xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class)));
+		final Set<EPMALabel> outputs = new HashSet<>();
+		for (final KRatioLabel krl : skrl)
+			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, Collections.emptyList());
+		final UncertainValuesBase<EPMALabel> results = UncertainValues.propagate(xpp,
+				xpp.buildInput(unk.toMassFraction()));
 
 		final DataFrame<Double> df = xpp.computePhiRhoZCurve(results.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
 		df.writeCsv("C:\\Users\\nicho\\OneDrive\\Desktop\\prz412.csv");
 	}
 
-	public void checkEquals(final Object l1, final Object l2, final double v1, final double v2, final double dv) {
+	public void checkEquals(final EPMALabel object, final EPMALabel object2, final double v1, final double v2,
+			final double dv) {
 		if (Math.abs(v2 - v1) > Math.abs(dv)) {
-			System.err.println(l1.toString() + " and " + l2.toString() + " at (" + v1 + "," + v2 + ")");
+			System.err.println(object.toString() + " and " + object2.toString() + " at (" + v1 + "," + v2 + ")");
 			// assertEquals(v1, v2, dv);
 		}
 	}
@@ -2160,7 +2176,7 @@ public class XPPMatrixCorrection2Test {
 	public void testXPP10() //
 			throws ArgumentException, ParseException, IOException {
 		// final Composition unk = Composition.parse("Al2SiO5");
-		LabeledMultivariateJacobianFunction.sDump = null; // System.out;
+		LabeledMultivariateJacobianFunction.sDump = null;
 		try {
 			final List<Element> elmsU = Arrays.asList(Element.Aluminum, Element.Silicon, Element.Oxygen);
 			final RealVector valsU = new ArrayRealVector(new double[] { 0.3330, 0.1733, 0.4937 });
@@ -2205,65 +2221,119 @@ public class XPPMatrixCorrection2Test {
 			skrl.add(krlO);
 			skrl.add(krlAl);
 
-			final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-			final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps);
+			final List<EPMALabel> outputs = XPPMatrixCorrection2.buildDefaultOutputs(skrl);
+
+			final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
+
+			final EPMALabel tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
+			outputs.add(tagAu);
+			final EPMALabel tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
+			outputs.add(tagau);
+			final EPMALabel tagBu = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner());
+			outputs.add(tagBu);
+			final EPMALabel tagbu = MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner());
+			outputs.add(tagbu);
+			final EPMALabel tagPhi0u = MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner());
+			outputs.add(tagPhi0u);
+
+			final EPMALabel tagAs = MatrixCorrectionModel2.shellLabel("A", std1Mcd, cxr.getInner());
+			outputs.add(tagAs);
+			final EPMALabel tagas = MatrixCorrectionModel2.shellLabel("a", std1Mcd, cxr.getInner());
+			outputs.add(tagas);
+			final EPMALabel tagBs = MatrixCorrectionModel2.shellLabel("B", std1Mcd, cxr.getInner());
+			outputs.add(tagBs);
+			final EPMALabel tagbs = MatrixCorrectionModel2.shellLabel("b", std1Mcd, cxr.getInner());
+			outputs.add(tagbs);
+			final EPMALabel tagPhi0s = MatrixCorrectionModel2.phi0Label(std1Mcd, cxr.getInner());
+			outputs.add(tagPhi0s);
+
+			final EPMALabel tagChiu = MatrixCorrectionModel2.chiLabel(unkMcd, cxr);
+			outputs.add(tagChiu);
+			final EPMALabel tagChis = MatrixCorrectionModel2.chiLabel(std1Mcd, cxr);
+			outputs.add(tagChis);
+			final EPMALabel tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
+			outputs.add(tagFChiFu);
+			final EPMALabel tagFChiFs = MatrixCorrectionModel2.FxFLabel(std1Mcd, cxr);
+			outputs.add(tagFChiFs);
+			final ZAFMultiLineLabel zafLabel = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsSi);
+			// outputs.add(zafLabel); Already in...
+			final EPMALabel tagZAO = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsO);
+			// outputs.add(tagZAO); Already in...
+
+			final CharacteristicXRay cxr2 = CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1);
+			final EPMALabel tagZAAl = MatrixCorrectionModel2.zafLabel(unkMcd, std2Mcd, exrsAl);
+			// outputs.add(tagZAAl);
+			final EPMALabel shellLabelA = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr2.getInner());
+			outputs.add(shellLabelA);
+			final EPMALabel shellLabela = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr2.getInner());
+			outputs.add(shellLabela);
+			final EPMALabel shellLabelB = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr2.getInner());
+			outputs.add(shellLabelB);
+			final EPMALabel shellLabelb = MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr2.getInner());
+			outputs.add(shellLabelb);
+			final EPMALabel phi0Label = MatrixCorrectionModel2.phi0Label(unkMcd, cxr2.getInner());
+			outputs.add(phi0Label);
+
+			final EPMALabel shellLabelA2 = MatrixCorrectionModel2.shellLabel("A", std1Mcd, cxr2.getInner());
+			outputs.add(shellLabelA2);
+			final EPMALabel shellLabela2 = MatrixCorrectionModel2.shellLabel("a", std1Mcd, cxr2.getInner());
+			outputs.add(shellLabela2);
+			final EPMALabel shellLabelB2 = MatrixCorrectionModel2.shellLabel("B", std1Mcd, cxr2.getInner());
+			outputs.add(shellLabelB2);
+			final EPMALabel shellLabelb2 = MatrixCorrectionModel2.shellLabel("b", std1Mcd, cxr2.getInner());
+			outputs.add(shellLabelb2);
+			final EPMALabel phi0Label2 = MatrixCorrectionModel2.phi0Label(std1Mcd, cxr2.getInner());
+			outputs.add(phi0Label2);
+
+			final EPMALabel chiLabelu = MatrixCorrectionModel2.chiLabel(unkMcd, cxr2);
+			outputs.add(chiLabelu);
+			final EPMALabel chiLabels = MatrixCorrectionModel2.chiLabel(std1Mcd, cxr2);
+			outputs.add(chiLabels);
+			final EPMALabel fxFLabelu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr2);
+			outputs.add(fxFLabelu);
+			final EPMALabel fxFLabels = MatrixCorrectionModel2.FxFLabel(std1Mcd, cxr2);
+			outputs.add(fxFLabels);
+
+			final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, outputs);
 			final Report r = new Report("XPP Report - test10");
-			UncertainValuesBase resultsD = null;
+			UncertainValuesBase<EPMALabel> resultsD = null;
 			try {
 				{
-					final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 					r.addHeader("test1()");
 					r.addHTML(xpp.toHTML(Mode.NORMAL));
 					r.addHeader("Inputs");
 
-					final UncertainValues inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+					final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 					assertTrue(UncertainValuesBase.testEquality(inputs, inputs.blockDiagnonalize()));
 					r.add(inputs.blockDiagnonalize());
 
-					final UncertainValuesCalculator xppI = new UncertainValuesCalculator(xpp, inputs);
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
 
 					assertTrue(UncertainValuesBase.testEquality(xppI, xppI.blockDiagnonalize()));
 					assertTrue(UncertainValuesBase.testEquality(xppI, xppI.sort()));
-					final UncertainValuesBase results = xppI.sort();
-					final Object tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
+					final UncertainValuesBase<EPMALabel> results = xppI.sort();
 					assertEquals(tagAu.toString(), results.getEntry(tagAu), 401.654, 0.001);
-					final Object tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
 					assertEquals(results.getEntry(tagau), 11189.1680, 0.001);
-					final Object tagBu = MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner());
 					assertEquals(results.getEntry(tagBu), -526613.8449, 0.001);
-					final Object tagbu = MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner());
 					assertEquals(results.getEntry(tagbu), 12568.9576, 0.001);
-					final Object tagPhi0u = MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner());
 					assertEquals(results.getEntry(tagPhi0u), 1.252, 0.001);
 
-					final Object tagAs = MatrixCorrectionModel2.shellLabel("A", std1Mcd, cxr.getInner());
 					assertEquals(results.getEntry(tagAs), 396.744, 0.001);
-					final Object tagas = MatrixCorrectionModel2.shellLabel("a", std1Mcd, cxr.getInner());
 					assertEquals(results.getEntry(tagas), 11314.8474, 0.001);
-					final Object tagBs = MatrixCorrectionModel2.shellLabel("B", std1Mcd, cxr.getInner());
 					assertEquals(results.getEntry(tagBs), -529359.3293, 0.001);
-					final Object tagbs = MatrixCorrectionModel2.shellLabel("b", std1Mcd, cxr.getInner());
 					assertEquals(results.getEntry(tagbs), 12719.6941, 0.001);
-					final Object tagPhi0s = MatrixCorrectionModel2.phi0Label(std1Mcd, cxr.getInner());
 					assertEquals(results.getEntry(tagPhi0s), 1.254, 0.001);
 
-					final Object tagChiu = MatrixCorrectionModel2.chiLabel(unkMcd, cxr);
 					assertEquals(results.getEntry(tagChiu), 2542.429, 0.001);
-					final Object tagChis = MatrixCorrectionModel2.chiLabel(std1Mcd, cxr);
 					assertEquals(results.getEntry(tagChis), 1038.418, 0.001);
-					final Object tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
 					assertEquals(results.getEntry(tagFChiFu), 0.6324, 0.001);
-					final Object tagFChiFs = MatrixCorrectionModel2.FxFLabel(std1Mcd, cxr);
 					assertEquals(results.getEntry(tagFChiFs), 0.8198, 0.001);
-					final Object tagZASi = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsSi);
-					assertEquals(results.getEntry(tagZASi), 0.7805, 0.001);
-					final Object tagZAO = MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsO);
+					assertEquals(results.getEntry(zafLabel), 0.7805, 0.001);
 					assertEquals(results.getEntry(tagZAO), 1.0731, 0.001);
 					// assertEquals(results.getEntry(tagZAO), 1.077, 0.001);
-					final Object tagZAAl = MatrixCorrectionModel2.zafLabel(unkMcd, std2Mcd, exrsAl);
 					assertEquals(results.getEntry(tagZAAl), 0.796, 0.002);
 
-					UncertainValuesCalculator uvc = new UncertainValuesCalculator(xpp, inputs);
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
 
 					assertEquals(results.getEntry(tagAu), uvc.getEntry(tagAu), 0.001);
 					assertEquals(results.getEntry(tagau), uvc.getEntry(tagau), 0.001);
@@ -2281,7 +2351,7 @@ public class XPPMatrixCorrection2Test {
 					assertEquals(results.getEntry(tagChis), uvc.getEntry(tagChis), 0.001);
 					assertEquals(results.getEntry(tagFChiFu), uvc.getEntry(tagFChiFu), 0.001);
 					assertEquals(results.getEntry(tagFChiFs), uvc.getEntry(tagFChiFs), 0.001);
-					assertEquals(results.getEntry(tagZASi), uvc.getEntry(tagZASi), 0.001);
+					assertEquals(results.getEntry(zafLabel), uvc.getEntry(zafLabel), 0.001);
 					assertEquals(results.getEntry(tagZAO), uvc.getEntry(tagZAO), 0.001);
 					assertEquals(results.getEntry(tagZAAl), uvc.getEntry(tagZAAl), 0.001);
 
@@ -2294,7 +2364,7 @@ public class XPPMatrixCorrection2Test {
 					valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 							Table.td("Value (Verbose)"));
 					final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-					for (final Object outTag : xpp.getOutputLabels()) {
+					for (final EPMALabel outTag : xpp.getOutputLabels()) {
 						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
@@ -2304,7 +2374,7 @@ public class XPPMatrixCorrection2Test {
 
 					r.addHeader("Covariance matrix");
 					final StringBuffer sb = new StringBuffer();
-					for (final Object tag : results.getLabels()) {
+					for (final EPMALabel tag : results.getLabels()) {
 						if (sb.length() > 0)
 							sb.append(",");
 						sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -2313,8 +2383,9 @@ public class XPPMatrixCorrection2Test {
 
 					r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-					final UncertainValuesCalculator jac = new UncertainValuesCalculator(xpp, inputs);
-					final UncertainValuesCalculator djac = UncertainValuesCalculator.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
+							xpp.delta(inputs, 0.001));
 
 					for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 						for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
@@ -2326,8 +2397,8 @@ public class XPPMatrixCorrection2Test {
 											+ jac.getInputLabels().get(iIdx) + "]");
 								}
 							}
-					final List<? extends Object> outLbl = jac.getOutputLabels();
-					final List<? extends Object> inLbl = jac.getInputLabels();
+					final List<? extends EPMALabel> outLbl = jac.getOutputLabels();
+					final List<? extends EPMALabel> inLbl = jac.getInputLabels();
 					for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 						for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8)
@@ -2360,55 +2431,44 @@ public class XPPMatrixCorrection2Test {
 
 					resultsD = djac.sort();
 					r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-					r.addImage(UncertainValues.compareAsBitmap(results, resultsD, L2C, 8),
+					r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
 							"Comparing uncertainty matrix");
 
 				}
 				if (MC_ITERATIONS > 0) {
-					final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1);
 					r.addHeader("Monte Carlo Results");
 					r.add(xpp);
 					r.addHeader("Inputs");
-					final UncertainValues inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
+					final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 					r.add(inputs);
-					final UncertainValuesBase results = UncertainValues.propagate(xpp, inputs).sort();
+					final UncertainValuesBase<EPMALabel> results = UncertainValues.propagate(xpp, inputs).sort();
 
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner())),
-							2366.373, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner())),
-							11052.8730, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner())),
-							-1460552.629, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("b", unkMcd, cxr.getInner())),
-							11681.219, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner())), 1.258,
-							0.001);
+					assertEquals(results.getEntry(shellLabelA), 2366.373, 0.001);
+					assertEquals(results.getEntry(shellLabela), 11052.8730, 0.001);
+					assertEquals(results.getEntry(shellLabelB), -1460552.629, 0.001);
+					assertEquals(results.getEntry(shellLabelb), 11681.219, 0.001);
+					assertEquals(results.getEntry(phi0Label), 1.258, 0.001);
 
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", std1Mcd, cxr.getInner())),
-							2307.215, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("a", std1Mcd, cxr.getInner())),
-							11178.191, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("B", std1Mcd, cxr.getInner())),
-							-1459152.313, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("b", std1Mcd, cxr.getInner())),
-							11822.223, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.phi0Label(std1Mcd, cxr.getInner())), 1.26,
-							0.001);
+					assertEquals(results.getEntry(shellLabelA2), 2307.215, 0.001);
+					assertEquals(results.getEntry(shellLabela2), 11178.191, 0.001);
+					assertEquals(results.getEntry(shellLabelB2), -1459152.313, 0.001);
+					assertEquals(results.getEntry(shellLabelb2), 11822.223, 0.001);
+					assertEquals(results.getEntry(phi0Label2), 1.26, 0.001);
 
-					assertEquals(results.getEntry(MatrixCorrectionModel2.chiLabel(unkMcd, cxr)), 5836.018, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.chiLabel(std1Mcd, cxr)), 6414.025, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr)), 0.3554, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.FxFLabel(std1Mcd, cxr)), 0.3346, 0.001);
-					assertEquals(results.getEntry(MatrixCorrectionModel2.zafLabel(unkMcd, std1Mcd, exrsSi)), 0.7805,
-							0.001);
+					assertEquals(results.getEntry(chiLabelu), 5836.018, 0.001);
+					assertEquals(results.getEntry(chiLabels), 6414.025, 0.001);
+					assertEquals(results.getEntry(fxFLabelu), 0.3554, 0.001);
+					assertEquals(results.getEntry(fxFLabels), 0.3346, 0.001);
+					assertEquals(results.getEntry(zafLabel), 0.7805, 0.001);
 
 					r.addHeader("Analytic Results");
 					r.add(results);
 
-					UncertainValuesBase ordered = inputs.reorder(xpp.getInputLabels());
-					final MCPropagator mcp = new MCPropagator(xpp, ordered, SIGMA);
-					// final UncertainValuesBase resultsMc = mcp.compute(100).sort();
-					final UncertainValuesBase resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
+					final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
+					final MCPropagator<EPMALabel, EPMALabel> mcp = new MCPropagator<>(xpp, ordered, SIGMA);
+					// final UncertainValuesBase<EPMALabel> resultsMc =
+					// mcp.compute(100).sort();
+					final UncertainValuesBase<EPMALabel> resultsMc = mcp.computeMT(MC_ITERATIONS).sort();
 
 					if (DUMP) {
 						System.out.println("Monte Carlo Results");
@@ -2419,7 +2479,7 @@ public class XPPMatrixCorrection2Test {
 					r.add(resultsMc);
 
 					final StringBuffer sb = new StringBuffer();
-					for (final Object tag : resultsMc.getLabels()) {
+					for (final EPMALabel tag : resultsMc.getLabels()) {
 						if (sb.length() > 0)
 							sb.append(",");
 						sb.append(HTML.toHTML(tag, Mode.TERSE));
@@ -2429,7 +2489,7 @@ public class XPPMatrixCorrection2Test {
 
 					r.addSubHeader("Phi0");
 					final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-					for (final Object tag : xpp.getOutputLabels()) {
+					for (final EPMALabel tag : xpp.getOutputLabels()) {
 						r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 						r.add(MathUtilities.toHTML(mcp.getOutputStatistics(tag), bnf));
 					}
@@ -2445,8 +2505,8 @@ public class XPPMatrixCorrection2Test {
 								Table.th("V(Delta)"), //
 								Table.th("U(Delta)"));
 						final BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
-						for (final Object tag : xpp.getOutputLabels())
-							if (tag instanceof MatrixCorrectionLabel) {
+						for (final EPMALabel tag : xpp.getOutputLabels())
+							if (tag instanceof ZAFMultiLineLabel) {
 								t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 										MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
 										MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
@@ -2455,7 +2515,7 @@ public class XPPMatrixCorrection2Test {
 										MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
 										MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 							}
-						for (final Object tag : xpp.getOutputLabels())
+						for (final EPMALabel tag : xpp.getOutputLabels())
 							if (tag instanceof KRatioLabel) {
 								t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 										MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
@@ -2507,7 +2567,7 @@ public class XPPMatrixCorrection2Test {
 		final int MIN_E = 9;
 		final int MAX_E = 31;
 		final Map<Integer, Map<? extends Object, UncertainValue>> outVals = new TreeMap<>();
-		List<? extends Object> outLabels = null, inLabels = null;
+		List<? extends EPMALabel> outLabels = null, inLabels = null;
 
 		try {
 			final Table valTable = new Table();
@@ -2547,8 +2607,9 @@ public class XPPMatrixCorrection2Test {
 				skrl.add(new KRatioLabel(unkMcd, std4Mcd, ElementXRaySet.singleton(Element.Iron, XRayTransition.LA1),
 						Method.Measured));
 
-				final Set<Object> outputs = new HashSet<>();
+				final Set<EPMALabel> outputs = new HashSet<>();
 				for (final KRatioLabel krl : skrl) {
+					outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 					final StandardMatrixCorrectionDatum meStd = krl.getStandard();
 					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 						outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
@@ -2556,12 +2617,12 @@ public class XPPMatrixCorrection2Test {
 						outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
 					}
 				}
-				final List<LabeledMultivariateJacobianFunction> preComps = Collections.emptyList();
-				final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, preComps, new ArrayList<>(outputs));
-				final UncertainValuesBase inputs = xpp.buildInput(unk.getValueMap(MaterialLabel.MassFraction.class));
-				UncertainValuesCalculator uvc = new UncertainValuesCalculator(xpp, inputs);
+				final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
+				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
 
-				// UncertainValuesBase results = UncertainValues.propagate(xpp, inputs);
+				// UncertainValuesBase<EPMALabel> results =
+				// UncertainValues.propagate(xpp, inputs);
 				outVals.put(i, uvc.getOutputValues(0.0));
 				if (i == MIN_E) {
 					outLabels = uvc.getOutputLabels();
@@ -2583,11 +2644,11 @@ public class XPPMatrixCorrection2Test {
 			}
 			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 			for (int oi = 0; oi < outLabels.size(); ++oi) {
-				final Object outTag = outLabels.get(oi);
-				if (outTag instanceof MatrixCorrectionLabel) {
-					final MatrixCorrectionLabel mcl = (MatrixCorrectionLabel) outTag;
+				final EPMALabel outTag = outLabels.get(oi);
+				if (outTag instanceof ZAFMultiLineLabel) {
+					final ZAFMultiLineLabel mcl = (ZAFMultiLineLabel) outTag;
 					for (int ii = 0; ii < inLabels.size(); ++ii) {
-						final Object inTag = inLabels.get(ii);
+						final EPMALabel inTag = inLabels.get(ii);
 						final List<Item> row = new ArrayList<>();
 						row.add(Table.td(mcl));
 						row.add(Table.td(mcl.getElementXRaySet()));
@@ -2632,7 +2693,7 @@ public class XPPMatrixCorrection2Test {
 		}
 	}
 
-	public double getComponentByName(final UncertainValue uv, final Object tag) {
+	public double getComponentByName(final UncertainValue uv, final EPMALabel tag) {
 		final String name = tag.toString();
 		for (final Map.Entry<Object, Double> me : uv.getComponents().entrySet())
 			if (me.getKey().toString().equals(name))
@@ -2640,10 +2701,10 @@ public class XPPMatrixCorrection2Test {
 		return 0.0;
 	}
 
-	public UncertainValue getByXRT(final Map<? extends Object, UncertainValue> oVals, final MatrixCorrectionLabel mcl) {
+	public UncertainValue getByXRT(final Map<? extends Object, UncertainValue> oVals, final ZAFMultiLineLabel mcl) {
 		for (final Map.Entry<? extends Object, UncertainValue> me : oVals.entrySet()) {
-			if (me.getKey() instanceof MatrixCorrectionLabel) {
-				final MatrixCorrectionLabel mcl2 = (MatrixCorrectionLabel) me.getKey();
+			if (me.getKey() instanceof ZAFMultiLineLabel) {
+				final ZAFMultiLineLabel mcl2 = (ZAFMultiLineLabel) me.getKey();
 				if (mcl2.toString().equals(mcl.toString()))
 					return me.getValue();
 			}

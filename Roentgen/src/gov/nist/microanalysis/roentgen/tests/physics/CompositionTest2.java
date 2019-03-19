@@ -9,7 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,14 +23,15 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.EstimateUncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
-import gov.nist.microanalysis.roentgen.physics.composition.ElementByStoichiometry;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
+import gov.nist.microanalysis.roentgen.physics.composition.ElementByStoichiometry;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.StoichiometeryRules;
@@ -166,65 +166,64 @@ public class CompositionTest2 {
 	public void testMassFraction() throws ArgumentException {
 		LabeledMultivariateJacobianFunction.sDump = null;
 		try {
-		final Map<Element, Number> massFracs = new HashMap<>();
-		final double total = 0.98;
-		massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
-		massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, "dP", 0.008));
-		massFracs.put(Element.Oxygen, new UncertainValue(0.41407 / total, "dO", 0.015));
-		massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, "dH", 0.001));
-		final Composition mf = Composition.massFraction("Apatite", massFracs);
+			final Map<Element, Number> massFracs = new HashMap<>();
+			final double total = 0.98;
+			massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
+			massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, "dP", 0.008));
+			massFracs.put(Element.Oxygen, new UncertainValue(0.41407 / total, "dO", 0.015));
+			massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, "dH", 0.001));
+			final Composition mf = Composition.massFraction("Apatite", massFracs);
 
-		Assert.assertEquals(5.0 / 22.0, mf.getAtomFraction(Element.Calcium).doubleValue(), 1.0e-6);
-		Assert.assertEquals(3.0 / 22.0, mf.getAtomFraction(Element.Phosphorus).doubleValue(), 1.0e-6);
-		Assert.assertEquals(13.0 / 22.0, mf.getAtomFraction(Element.Oxygen).doubleValue(), 1.0e-6);
-		Assert.assertEquals(1.0 / 22.0, mf.getAtomFraction(Element.Hydrogen).doubleValue(), 1.0e-6);
+			Assert.assertEquals(5.0 / 22.0, mf.getAtomFraction(Element.Calcium).doubleValue(), 1.0e-6);
+			Assert.assertEquals(3.0 / 22.0, mf.getAtomFraction(Element.Phosphorus).doubleValue(), 1.0e-6);
+			Assert.assertEquals(13.0 / 22.0, mf.getAtomFraction(Element.Oxygen).doubleValue(), 1.0e-6);
+			Assert.assertEquals(1.0 / 22.0, mf.getAtomFraction(Element.Hydrogen).doubleValue(), 1.0e-6);
 
-		final Material mat = mf.getMaterial();
-		final MaterialLabel.AtomFraction aft_ca = MaterialLabel.buildAtomFractionTag(mat, Element.Calcium);
-		final MaterialLabel.AtomFraction aft_p = MaterialLabel.buildAtomFractionTag(mat, Element.Phosphorus);
-		final MaterialLabel.AtomFraction aft_o = MaterialLabel.buildAtomFractionTag(mat, Element.Oxygen);
-		final MaterialLabel.AtomFraction aft_h = MaterialLabel.buildAtomFractionTag(mat, Element.Hydrogen);
-		Assert.assertEquals(0.0000767132, mf.getCovariance(aft_ca, aft_ca), 1.0e-7);
-		Assert.assertEquals(0.0000430936, mf.getCovariance(aft_p, aft_p), 1.0e-7);
-		Assert.assertEquals(0.000273062, mf.getCovariance(aft_o, aft_o), 1.0e-6);
-		Assert.assertEquals(0.000450103, mf.getCovariance(aft_h, aft_h), 1.0e-6);
-		Assert.assertEquals(-0.0000624525, mf.getCovariance(aft_h, aft_p), 1.0e-6);
-		Assert.assertEquals(0.0000176265, mf.getCovariance(aft_ca, aft_p), 1.0e-6);
-		Assert.assertEquals(-0.000284053, mf.getCovariance(aft_o, aft_h), 1.0e-6);
+			final Material mat = mf.getMaterial();
+			final MaterialLabel.AtomFraction aft_ca = MaterialLabel.buildAtomFractionTag(mat, Element.Calcium);
+			final MaterialLabel.AtomFraction aft_p = MaterialLabel.buildAtomFractionTag(mat, Element.Phosphorus);
+			final MaterialLabel.AtomFraction aft_o = MaterialLabel.buildAtomFractionTag(mat, Element.Oxygen);
+			final MaterialLabel.AtomFraction aft_h = MaterialLabel.buildAtomFractionTag(mat, Element.Hydrogen);
+			Assert.assertEquals(0.0000767132, mf.getCovariance(aft_ca, aft_ca), 1.0e-7);
+			Assert.assertEquals(0.0000430936, mf.getCovariance(aft_p, aft_p), 1.0e-7);
+			Assert.assertEquals(0.000273062, mf.getCovariance(aft_o, aft_o), 1.0e-6);
+			Assert.assertEquals(0.000450103, mf.getCovariance(aft_h, aft_h), 1.0e-6);
+			Assert.assertEquals(-0.0000624525, mf.getCovariance(aft_h, aft_p), 1.0e-6);
+			Assert.assertEquals(0.0000176265, mf.getCovariance(aft_ca, aft_p), 1.0e-6);
+			Assert.assertEquals(-0.000284053, mf.getCovariance(aft_o, aft_h), 1.0e-6);
 
-		if (mHTML) {
-			try {
-				final File f = File.createTempFile("MassFraction", ".html");
-				try (FileWriter fr = new FileWriter(f)) {
-					fr.append(HTML.createPageHeader("Mass Fraction Report", null));
-					fr.append(HTML.header("Mass Fraction"));
-					fr.append(HTML.subHeader("TERSE"));
-					fr.append(mf.toHTML(Mode.TERSE));
-					fr.append(HTML.subHeader("NORMAL"));
-					fr.append(mf.toHTML(Mode.NORMAL));
-					fr.append(HTML.subHeader("VERBOSE"));
-					fr.append(mf.toHTML(Mode.VERBOSE));
-					fr.append(HTML.subHeader("TERSE"));
-					final Table t = new Table();
-					t.addRow(Table.th("Element"), Table.thc("Verbose"), Table.thc("Normal"));
-					for (final Element elm : mf.getElementSet())
-						t.addRow(Table.td(elm.toHTML(Mode.TERSE)),
-								Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.VERBOSE)),
-								Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.NORMAL)));
-					fr.append(t.toHTML(Mode.NORMAL));
-					fr.append(HTML.createPageEnd());
+			if (mHTML) {
+				try {
+					final File f = File.createTempFile("MassFraction", ".html");
+					try (FileWriter fr = new FileWriter(f)) {
+						fr.append(HTML.createPageHeader("Mass Fraction Report", null));
+						fr.append(HTML.header("Mass Fraction"));
+						fr.append(HTML.subHeader("TERSE"));
+						fr.append(mf.toHTML(Mode.TERSE));
+						fr.append(HTML.subHeader("NORMAL"));
+						fr.append(mf.toHTML(Mode.NORMAL));
+						fr.append(HTML.subHeader("VERBOSE"));
+						fr.append(mf.toHTML(Mode.VERBOSE));
+						fr.append(HTML.subHeader("TERSE"));
+						final Table t = new Table();
+						t.addRow(Table.th("Element"), Table.thc("Verbose"), Table.thc("Normal"));
+						for (final Element elm : mf.getElementSet())
+							t.addRow(Table.td(elm.toHTML(Mode.TERSE)),
+									Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.VERBOSE)),
+									Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.NORMAL)));
+						fr.append(t.toHTML(Mode.NORMAL));
+						fr.append(HTML.createPageEnd());
+					}
+					Desktop.getDesktop().browse(f.toURI());
+				} catch (final IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				Desktop.getDesktop().browse(f.toURI());
-			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
+		} finally {
+			LabeledMultivariateJacobianFunction.sDump = null;
 		}
-		}
-		finally {
-			LabeledMultivariateJacobianFunction.sDump=null;
-		}
-		
+
 	}
 
 	@Test
@@ -324,9 +323,10 @@ public class CompositionTest2 {
 		assertEquals(0.0781, af.getMassFraction(Element.Iron).doubleValue(), 0.0001);
 
 		// Test MC against analytic
-		final UncertainValues mup = af.propagateMC(160000);
-		for (final Object label : af.massFractionTags())
-			assertEquals(af.getValue(label).fractionalUncertainty(), mup.getUncertainValue(label).fractionalUncertainty(), 0.001);
+		final EstimateUncertainValues<MaterialLabel> mup = af.propagateMC(160000);
+		for (final MaterialLabel label : af.massFractionTags())
+			assertEquals(af.getValue(label).fractionalUncertainty(),
+					mup.getUncertainValue(label).fractionalUncertainty(), 0.001);
 
 		if (mHTML) {
 			final Report rep = new Report("Atomic Fraction MC");
@@ -341,12 +341,12 @@ public class CompositionTest2 {
 				rep.addHTML(af.toHTML(Representation.MassFraction, Mode.VERBOSE));
 				rep.addSubHeader("VERBOSE - Monte Carlo");
 				rep.addHTML(mup.toHTML(Mode.VERBOSE, Composition.MASS_FRACTION_FORMAT));
-				
+
 				final ValueToLog3 v2l = new ValueToLog3(1.0);
 				final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
 				rep.addImage(af.reorder(mup.getLabels()).asCovarianceBitmap(8, v2l, l2c), "Jacobian");
 				rep.addImage(mup.asCovarianceBitmap(8, v2l, l2c), "Monte Carlo");
-				
+
 			}
 
 			catch (final Exception e) {
@@ -379,21 +379,21 @@ public class CompositionTest2 {
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
 		final Composition mix = Composition.combine(name, mcn, false);
 
-		final UncertainValues jres = UncertainValues.force(mix);
+		final UncertainValues<MaterialLabel> jres = UncertainValues.force(mix);
 
 		final RealVector dinp = mix.getValues().mapMultiply(0.0001);
 		mix.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
-		final UncertainValues dres = UncertainValues.force(mix);
+		final UncertainValues<MaterialLabel> dres = UncertainValues.force(mix);
 
-		final UncertainValues mcres = mix.propagateMC(160000);
+		final EstimateUncertainValues<MaterialLabel> mcres = mix.propagateMC(160000);
 
-		for (final Object row : dres.getLabels()) {
+		for (final MaterialLabel row : dres.getLabels()) {
 			final double mm = mix.getVariance(row);
 			final double dm = dres.getVariance(row);
 			if (mix.getVariance(row) > 1.0e-10) {
 				if (Math.abs(mm - dm) > 0.1 * Math.abs(mm))
 					System.out.println(row + " " + mm + " != " + dm);
-				for (final Object col : dres.getLabels())
+				for (final MaterialLabel col : dres.getLabels())
 					if (mix.getVariance(col) > 1.0e-10) {
 						final double mc = mix.getCorrelationCoefficient(row, col);
 						final double dc = dres.getCorrelationCoefficient(row, col);
@@ -454,16 +454,17 @@ public class CompositionTest2 {
 		final Composition albite = Composition.parse("Na(AlSi3O8)");
 		mcn.put(albite, new UncertainValue(0.60, 0.01));
 		final Composition combiner = Composition.combine(name, mcn, true);
-		
+
 		final Report r = new Report("Anorthoclase");
 		r.addHeader("Mixture");
 		r.addSubHeader("Jacobian");
 		r.add(albite);
 		r.add(sanidine);
 		r.add(combiner);
-		UncertainValues mix = UncertainValues.force(combiner);
-		combiner.setCalculator(new UncertainValuesCalculator.FiniteDifference(combiner.getInputValues().mapMultiply(0.001)));
-		UncertainValues dmix = UncertainValues.force(combiner);
+		final UncertainValues<MaterialLabel> mix = UncertainValues.force(combiner);
+		combiner.setCalculator(
+				new UncertainValuesCalculator.FiniteDifference(combiner.getInputValues().mapMultiply(0.001)));
+		final UncertainValues<MaterialLabel> dmix = UncertainValues.force(combiner);
 		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
 		r.addSubHeader("Delta");
 		r.add(dmix);
@@ -474,73 +475,73 @@ public class CompositionTest2 {
 
 		r.inBrowser(Mode.VERBOSE);
 	}
-	
+
 	@Test
 	public void testOByStoich() throws ArgumentException {
 		LabeledMultivariateJacobianFunction.sDump = null;
 		try {
-		final Map<Element, Number> massFracs = new HashMap<>();
-		final double total = 0.98;
-		massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
-		massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, "dP", 0.008));
-		massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, "dH", 0.001));
-		
-		Material mat = new Material("Apatite", Arrays.asList(Element.Calcium, Element.Phosphorus, Element.Hydrogen, Element.Oxygen));
-		ElementByStoichiometry oByStoic = new ElementByStoichiometry(mat, Element.Oxygen, StoichiometeryRules.getOxygenDefaults());
-		
-		
-		final Composition mf = Composition.massFraction(mat, massFracs, Collections.singletonList(oByStoic));
+			final Map<Element, Number> massFracs = new HashMap<>();
+			final double total = 0.98;
+			massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
+			massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, "dP", 0.008));
+			massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, "dH", 0.001));
 
-		Assert.assertEquals(5.0 / 22.0, mf.getAtomFraction(Element.Calcium).doubleValue(), 1.0e-6);
-		Assert.assertEquals(3.0 / 22.0, mf.getAtomFraction(Element.Phosphorus).doubleValue(), 1.0e-6);
-		Assert.assertEquals(13.0 / 22.0, mf.getAtomFraction(Element.Oxygen).doubleValue(), 1.0e-6);
-		Assert.assertEquals(1.0 / 22.0, mf.getAtomFraction(Element.Hydrogen).doubleValue(), 1.0e-6);
+			final Material mat = new Material("Apatite",
+					Arrays.asList(Element.Calcium, Element.Phosphorus, Element.Hydrogen, Element.Oxygen));
+			final ElementByStoichiometry oByStoic = new ElementByStoichiometry(mat, Element.Oxygen,
+					StoichiometeryRules.getOxygenDefaults());
 
-		final MaterialLabel.AtomFraction aft_ca = MaterialLabel.buildAtomFractionTag(mat, Element.Calcium);
-		final MaterialLabel.AtomFraction aft_p = MaterialLabel.buildAtomFractionTag(mat, Element.Phosphorus);
-		final MaterialLabel.AtomFraction aft_o = MaterialLabel.buildAtomFractionTag(mat, Element.Oxygen);
-		final MaterialLabel.AtomFraction aft_h = MaterialLabel.buildAtomFractionTag(mat, Element.Hydrogen);
-		Assert.assertEquals(0.0000917629, mf.getCovariance(aft_ca, aft_ca), 1.0e-7);
-		Assert.assertEquals(0.0000330836, mf.getCovariance(aft_p, aft_p), 1.0e-7);
-		Assert.assertEquals(0.0000812777, mf.getCovariance(aft_o, aft_o), 1.0e-6);
-		Assert.assertEquals(0.0004291211, mf.getCovariance(aft_h, aft_h), 1.0e-6);
-		Assert.assertEquals(-0.000095595, mf.getCovariance(aft_h, aft_p), 1.0e-6);
-		Assert.assertEquals(0.0000137997, mf.getCovariance(aft_ca, aft_p), 1.0e-6);
-		Assert.assertEquals(-0.000178976, mf.getCovariance(aft_o, aft_h), 1.0e-6);
+			final Composition mf = Composition.massFraction(mat, massFracs, oByStoic);
 
-		if (mHTML) {
-			try {
-				final File f = File.createTempFile("MassFraction", ".html");
-				try (FileWriter fr = new FileWriter(f)) {
-					fr.append(HTML.createPageHeader("Mass Fraction Report", null));
-					fr.append(HTML.header("Mass Fraction"));
-					fr.append(HTML.subHeader("TERSE"));
-					fr.append(mf.toHTML(Mode.TERSE));
-					fr.append(HTML.subHeader("NORMAL"));
-					fr.append(mf.toHTML(Mode.NORMAL));
-					fr.append(HTML.subHeader("VERBOSE"));
-					fr.append(mf.toHTML(Mode.VERBOSE));
-					fr.append(HTML.subHeader("TERSE"));
-					final Table t = new Table();
-					t.addRow(Table.th("Element"), Table.thc("Verbose"), Table.thc("Normal"));
-					for (final Element elm : mf.getElementSet())
-						t.addRow(Table.td(elm.toHTML(Mode.TERSE)),
-								Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.VERBOSE)),
-								Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.NORMAL)));
-					fr.append(t.toHTML(Mode.NORMAL));
-					fr.append(HTML.createPageEnd());
+			Assert.assertEquals(5.0 / 22.0, mf.getAtomFraction(Element.Calcium).doubleValue(), 1.0e-6);
+			Assert.assertEquals(3.0 / 22.0, mf.getAtomFraction(Element.Phosphorus).doubleValue(), 1.0e-6);
+			Assert.assertEquals(13.0 / 22.0, mf.getAtomFraction(Element.Oxygen).doubleValue(), 1.0e-6);
+			Assert.assertEquals(1.0 / 22.0, mf.getAtomFraction(Element.Hydrogen).doubleValue(), 1.0e-6);
+
+			final MaterialLabel.AtomFraction aft_ca = MaterialLabel.buildAtomFractionTag(mat, Element.Calcium);
+			final MaterialLabel.AtomFraction aft_p = MaterialLabel.buildAtomFractionTag(mat, Element.Phosphorus);
+			final MaterialLabel.AtomFraction aft_o = MaterialLabel.buildAtomFractionTag(mat, Element.Oxygen);
+			final MaterialLabel.AtomFraction aft_h = MaterialLabel.buildAtomFractionTag(mat, Element.Hydrogen);
+			Assert.assertEquals(0.0000917629, mf.getCovariance(aft_ca, aft_ca), 1.0e-7);
+			Assert.assertEquals(0.0000330836, mf.getCovariance(aft_p, aft_p), 1.0e-7);
+			Assert.assertEquals(0.0000812777, mf.getCovariance(aft_o, aft_o), 1.0e-6);
+			Assert.assertEquals(0.0004291211, mf.getCovariance(aft_h, aft_h), 1.0e-6);
+			Assert.assertEquals(-0.000095595, mf.getCovariance(aft_h, aft_p), 1.0e-6);
+			Assert.assertEquals(0.0000137997, mf.getCovariance(aft_ca, aft_p), 1.0e-6);
+			Assert.assertEquals(-0.000178976, mf.getCovariance(aft_o, aft_h), 1.0e-6);
+
+			if (mHTML) {
+				try {
+					final File f = File.createTempFile("MassFraction", ".html");
+					try (FileWriter fr = new FileWriter(f)) {
+						fr.append(HTML.createPageHeader("Mass Fraction Report", null));
+						fr.append(HTML.header("Mass Fraction"));
+						fr.append(HTML.subHeader("TERSE"));
+						fr.append(mf.toHTML(Mode.TERSE));
+						fr.append(HTML.subHeader("NORMAL"));
+						fr.append(mf.toHTML(Mode.NORMAL));
+						fr.append(HTML.subHeader("VERBOSE"));
+						fr.append(mf.toHTML(Mode.VERBOSE));
+						fr.append(HTML.subHeader("TERSE"));
+						final Table t = new Table();
+						t.addRow(Table.th("Element"), Table.thc("Verbose"), Table.thc("Normal"));
+						for (final Element elm : mf.getElementSet())
+							t.addRow(Table.td(elm.toHTML(Mode.TERSE)),
+									Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.VERBOSE)),
+									Table.tdc(mf.getAtomFraction(elm).toHTML(Mode.NORMAL)));
+						fr.append(t.toHTML(Mode.NORMAL));
+						fr.append(HTML.createPageEnd());
+					}
+					Desktop.getDesktop().browse(f.toURI());
+				} catch (final IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				Desktop.getDesktop().browse(f.toURI());
-			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
+		} finally {
+			LabeledMultivariateJacobianFunction.sDump = null;
 		}
-		}
-		finally {
-			LabeledMultivariateJacobianFunction.sDump=null;
-		}
-		
+
 	}
 
 }

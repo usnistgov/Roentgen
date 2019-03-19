@@ -24,14 +24,14 @@ import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
  *
  * @author Nicholas
  */
-public class MCPropagator {
+public class MCPropagator<H, K> {
 
-	private final LabeledMultivariateJacobianFunction mFunction;
+	private final LabeledMultivariateJacobianFunction<? extends H, ? extends K> mFunction;
 	private final MultivariateRealDistribution mDistribution;
 	private final Constraint[] mConstraints;
-	private final UncertainValues mValues;
-	private final EstimateUncertainValues mOutputs;
-	private final EstimateUncertainValues mInputs;
+	private final UncertainValues<? extends H> mValues;
+	private final EstimateUncertainValues<K> mOutputs;
+	private final EstimateUncertainValues<H> mInputs;
 
 	/**
 	 * An interface for limiting the range of values accessible to a random
@@ -95,7 +95,7 @@ public class MCPropagator {
 		}
 	}
 
-	private static Constraint[] buildSigma(final double sigma, final UncertainValuesBase uv) {
+	private static <J> Constraint[] buildSigma(final double sigma, final UncertainValuesBase<J> uv) {
 		final int n = uv.getDimension();
 		final Constraint[] res = new Constraint[n];
 		for (int i = 0; i < n; ++i) {
@@ -121,16 +121,16 @@ public class MCPropagator {
 		mOutputs.add(mFunction.compute(pt));
 	}
 
-	private final static class MultiEvaluate extends RecursiveAction {
+	private final static class MultiEvaluate<J, L> extends RecursiveAction {
 
 		private static final int MAX_ITERATIONS = 2000;
 
 		private static final long serialVersionUID = 2121417483581902926L;
 
-		private final MCPropagator mMCP;
+		private final MCPropagator<J, L> mMCP;
 		private final int mNEvals;
 
-		private MultiEvaluate(final MCPropagator mcp, final int nEvals) {
+		private MultiEvaluate(final MCPropagator<J, L> mcp, final int nEvals) {
 			super();
 			mNEvals = nEvals;
 			mMCP = mcp;
@@ -142,7 +142,7 @@ public class MCPropagator {
 				for (int i = 0; i < mNEvals; ++i)
 					mMCP.evaluate();
 			} else
-				invokeAll(new MultiEvaluate(mMCP, mNEvals / 2), new MultiEvaluate(mMCP, mNEvals - (mNEvals / 2)));
+				invokeAll(new MultiEvaluate<J, L>(mMCP, mNEvals / 2), new MultiEvaluate<J, L>(mMCP, mNEvals - (mNEvals / 2)));
 		}
 	}
 
@@ -160,15 +160,15 @@ public class MCPropagator {
 	 * @throws ArgumentException
 	 */
 	private MCPropagator( //
-			UncertainValuesCalculator uvc, //
+			UncertainValuesCalculator<H, K> uvc, //
 			final Constraint[] constraints, //
 			final MultivariateRealDistribution mrd//
 	) throws ArgumentException {
 		mFunction = uvc.getFunction();
 		mConstraints = constraints != null ? constraints.clone() : null;
 		mValues = uvc.getInputs();
-		mOutputs = new EstimateUncertainValues(mFunction.getOutputLabels());
-		mInputs = new EstimateUncertainValues(mFunction.getInputLabels());
+		mOutputs = new EstimateUncertainValues<K>(mFunction.getOutputLabels());
+		mInputs = new EstimateUncertainValues<H>(mFunction.getInputLabels());
 		mDistribution = mrd;
 	}
 
@@ -185,11 +185,11 @@ public class MCPropagator {
 	 * @throws ArgumentException
 	 */
 	public MCPropagator( //
-			final LabeledMultivariateJacobianFunction nmvjf, //
-			final UncertainValuesBase uv, //
+			final LabeledMultivariateJacobianFunction<? extends H, ? extends K> nmvjf, //
+			final UncertainValuesBase<H> uv, //
 			final MultivariateRealDistribution mrd //
 	) throws ArgumentException {
-		this(new UncertainValuesCalculator(nmvjf, uv), null, mrd);
+		this(new UncertainValuesCalculator<H,K>(nmvjf, uv), null, mrd);
 	}
 
 	/**
@@ -204,7 +204,7 @@ public class MCPropagator {
 	 *               order as the nmvjf input labels.
 	 * @throws ArgumentException
 	 */
-	public MCPropagator(final UncertainValuesCalculator uvc) throws ArgumentException {
+	public MCPropagator(final UncertainValuesCalculator<H, K> uvc) throws ArgumentException {
 		this(uvc, null, new SafeMultivariateNormalDistribution(uvc.getInputs()));
 	}
 
@@ -222,12 +222,12 @@ public class MCPropagator {
 	 * @throws ArgumentException
 	 */
 	public MCPropagator( //
-			final LabeledMultivariateJacobianFunction nmvjf, //
-			final UncertainValuesBase uv, //
+			final LabeledMultivariateJacobianFunction<? extends H, ? extends K> nmvjf, //
+			final UncertainValuesBase<H> uv, //
 			final double sigma, //
 			final MultivariateRealDistribution mrd //
 	) throws ArgumentException {
-		this(new UncertainValuesCalculator(nmvjf, uv), buildSigma(sigma, uv), mrd);
+		this(new UncertainValuesCalculator<H, K>(nmvjf, uv), buildSigma(sigma, uv), mrd);
 	}
 
 	/**
@@ -243,8 +243,8 @@ public class MCPropagator {
 	 */
 
 	public MCPropagator(//
-			final LabeledMultivariateJacobianFunction nmvjf, //
-			final UncertainValuesBase uv, //
+			final LabeledMultivariateJacobianFunction<? extends H, ? extends K> nmvjf, //
+			final UncertainValuesBase<H> uv, //
 			final double sigma //
 	) throws ArgumentException {
 		this(nmvjf, uv, sigma, new SafeMultivariateNormalDistribution(uv));
@@ -256,7 +256,7 @@ public class MCPropagator {
 	 * @param label
 	 * @param con
 	 */
-	public void setConstraint(final Object label, final Constraint con) {
+	public void setConstraint(final H label, final Constraint con) {
 		final int idx = mFunction.inputIndex(label);
 		mConstraints[idx] = con;
 	}
@@ -269,10 +269,10 @@ public class MCPropagator {
 	 * @param nEvals
 	 * @return {@link UncertainValues}
 	 */
-	public UncertainValues compute(final int nEvals) {
+	public EstimateUncertainValues<K> compute(final int nEvals) {
 		for (int eval = 0; eval < nEvals; ++eval)
 			evaluate();
-		return mOutputs.estimateDistribution();
+		return mOutputs;
 	}
 
 	/**
@@ -283,10 +283,10 @@ public class MCPropagator {
 	 * @param nEvals
 	 * @return {@link UncertainValues}
 	 */
-	public UncertainValues computeMT(final int nEvals) {
+	public EstimateUncertainValues<K> computeMT(final int nEvals) {
 		final ForkJoinPool fjp = new ForkJoinPool();
-		fjp.invoke(new MultiEvaluate(this, nEvals));
-		return mOutputs.estimateDistribution();
+		fjp.invoke(new MultiEvaluate<H, K>(this, nEvals));
+		return mOutputs;
 	}
 
 	/**
@@ -296,7 +296,7 @@ public class MCPropagator {
 	 *
 	 * @return {@link UncertainValues}
 	 */
-	public UncertainValues getInputDistribution() {
+	public UncertainValues<? extends H> getInputDistribution() {
 		return mValues;
 	}
 
@@ -307,8 +307,8 @@ public class MCPropagator {
 	 *
 	 * @return UncertainValues
 	 */
-	public UncertainValues estimatedInputDistribution() {
-		return mInputs.estimateDistribution();
+	public EstimateUncertainValues<? extends H> estimatedInputDistribution() {
+		return mInputs;
 	}
 
 	/**
@@ -318,8 +318,8 @@ public class MCPropagator {
 	 *
 	 * @return UncertainValues
 	 */
-	public UncertainValues estimatedOutputDistribution() {
-		return mOutputs.estimateDistribution();
+	public EstimateUncertainValues<K> estimatedOutputDistribution() {
+		return mOutputs;
 	}
 
 	/**
@@ -329,7 +329,7 @@ public class MCPropagator {
 	 * @param label An output variable label
 	 * @return {@link DescriptiveStatistics}
 	 */
-	public DescriptiveStatistics getOutputStatistics(final Object label) {
+	public DescriptiveStatistics getOutputStatistics(final K label) {
 		return mOutputs.getDescriptiveStatistics(label);
 	}
 
@@ -340,7 +340,7 @@ public class MCPropagator {
 	 * @param label An input variable label
 	 * @return {@link DescriptiveStatistics}
 	 */
-	public DescriptiveStatistics getInputStatistics(final Object label) {
+	public DescriptiveStatistics getInputStatistics(final H label) {
 		return mInputs.getDescriptiveStatistics(label);
 	}
 }

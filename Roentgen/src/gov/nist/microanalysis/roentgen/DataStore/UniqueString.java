@@ -11,6 +11,7 @@ public class UniqueString implements Comparable<UniqueString>, CharSequence {
 
 	private final String mString;
 	private final UUID mUUID;
+	private final int mHashCode;
 
 	/**
 	 *
@@ -18,11 +19,12 @@ public class UniqueString implements Comparable<UniqueString>, CharSequence {
 	public UniqueString(final String str) {
 		mString = str;
 		mUUID = UUID.randomUUID();
+		mHashCode = Objects.hash(mString, mUUID);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(mString, mUUID);
+		return mHashCode;
 	}
 
 	@Override
