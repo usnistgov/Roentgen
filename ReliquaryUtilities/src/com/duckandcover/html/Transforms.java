@@ -138,11 +138,11 @@ public class Transforms {
 		return new HTMLTransform(content, "<p>", "</p>");
 	}
 
-	public static IToHTML createList(final List<Object> items) {
+	public static IToHTML createList(final List<? extends Object> items) {
 		class HTMLList implements IToHTML {
 			private final List<Object> mItems;
 
-			private HTMLList(final List<Object> items) {
+			private HTMLList(final List<? extends Object> items) {
 				mItems = new ArrayList<>(items);
 			}
 

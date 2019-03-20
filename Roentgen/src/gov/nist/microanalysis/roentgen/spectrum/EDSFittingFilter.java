@@ -1,5 +1,7 @@
 package gov.nist.microanalysis.roentgen.spectrum;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -14,6 +16,8 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearJacobianFunct
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.spectrum.LineshapeCalibration.InvertMode;
+import gov.nist.microanalysis.roentgen.spectrum.SpectrumLabel.Filtered;
+import gov.nist.microanalysis.roentgen.spectrum.SpectrumLabel.Raw;
 
 /**
  * <p>
@@ -23,12 +27,26 @@ import gov.nist.microanalysis.roentgen.spectrum.LineshapeCalibration.InvertMode;
  * @author Nicholas
  * @version 1.0
  */
-abstract public class EDSFittingFilter extends MultiLinearJacobianFunction {
+abstract public class EDSFittingFilter extends MultiLinearJacobianFunction<Raw, Filtered> {
 
 	final static protected double GCONST = 1.0 / Math.sqrt(2.0 * Math.PI);
 
+	static private List<Filtered> buildFilteredLabels(final int n) {
+		final List<Filtered> lbls = new ArrayList<>();
+		for (int i = 0; i < n; ++i)
+			lbls.add(new Filtered(i));
+		return lbls;
+	}
+	static private List<Raw> buildSpectrumLabels(final int n) {
+		final List<Raw> lbls = new ArrayList<>();
+		for (int i = 0; i < n; ++i)
+			lbls.add(new Raw(i));
+		return lbls;
+	}
 	protected final EnergyCalibration mEnergy;
+
 	protected final LineshapeCalibration mLineshape;
+
 	protected double mMinE = 100.0; // eV
 
 	/**
@@ -39,7 +57,7 @@ abstract public class EDSFittingFilter extends MultiLinearJacobianFunction {
 	 * @param outputPrefix
 	 */
 	public EDSFittingFilter(final int nChannels, final EnergyCalibration ec, final LineshapeCalibration ls) {
-		super(nChannels, "C", "S");
+		super(buildSpectrumLabels(nChannels), buildFilteredLabels(nChannels));
 		mEnergy = ec;
 		mLineshape = ls;
 	}

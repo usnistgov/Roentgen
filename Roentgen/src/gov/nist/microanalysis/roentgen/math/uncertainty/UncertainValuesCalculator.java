@@ -167,8 +167,7 @@ public class UncertainValuesCalculator<H, K> extends UncertainValuesBase<K> {
 				final int base = val.getDimension();
 				RealVector val2 = new ArrayRealVector(base + extra);
 				val2.setSubVector(0, val);
-				RealMatrix jac2 = MatrixUtils.createRealMatrix(base + extra,
-						jac.getColumnDimension());
+				RealMatrix jac2 = MatrixUtils.createRealMatrix(base + extra, jac.getColumnDimension());
 				jac2.setSubMatrix(jac.getData(), 0, 0);
 				// The inputs are in the order of mRawInput not mInputs
 				for (int i = 0; i < extra; ++i) {
@@ -297,8 +296,9 @@ public class UncertainValuesCalculator<H, K> extends UncertainValuesBase<K> {
 		return res;
 	}
 
-	public void setInputs(final UncertainValuesBase<H> inputs) //
-			throws ArgumentException {
+	public void setInputs( //
+			final UncertainValuesBase<H> inputs //
+	) throws ArgumentException {
 		synchronized (this) {
 			final List<? extends H> inputLabels = mFunction.getInputLabels();
 			final UncertainValuesBase<? extends H> reorder = inputs.reorder(inputLabels);

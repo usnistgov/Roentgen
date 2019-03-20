@@ -28,9 +28,9 @@ public class FastIndex<H> extends ArrayList<H> {
 	}
 
 	public FastIndex(final List<? extends H> outputs) {
-		super();
+		super(outputs.size() == 0 ? 256 : outputs.size());
 		mIndex = new HashMap<>();
-		for(H h : outputs)
+		for (H h : outputs)
 			add(h);
 	}
 
@@ -58,8 +58,7 @@ public class FastIndex<H> extends ArrayList<H> {
 		} else
 			throw new UnsupportedOperationException("The item " + obj + " already exists in the FastIndex.");
 	}
-	
-	
+
 	public boolean addIfMissing(final H obj) {
 		if (indexOf(obj) == -1) {
 			final int len = super.size();
@@ -67,12 +66,14 @@ public class FastIndex<H> extends ArrayList<H> {
 				assert super.indexOf(obj) == len : obj + " " + super.indexOf(obj) + "!=" + len;
 				mIndex.put(obj, len);
 				return true;
-			} else
+			} else {
+				assert false : "Failed to add " + obj;
 				return false;
+			}
 		} else
 			return false;
 	}
-	
+
 	public boolean addMissing(final Collection<? extends H> hs) {
 		boolean added = false;
 		for (final H h : hs)
@@ -93,7 +94,6 @@ public class FastIndex<H> extends ArrayList<H> {
 		throw new UnsupportedOperationException("This method is not supported");
 	}
 
-	
 	@Override
 	public boolean remove(Object o) {
 		throw new UnsupportedOperationException("This method is not supported");

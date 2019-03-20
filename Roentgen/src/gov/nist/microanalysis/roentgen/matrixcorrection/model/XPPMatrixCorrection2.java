@@ -1627,7 +1627,9 @@ public class XPPMatrixCorrection2 //
 			return res;
 		}
 
-		public StepZA(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+		public StepZA( //
+				final UnknownMatrixCorrectionDatum unk, //
+				final StandardMatrixCorrectionDatum std, //
 				final CharacteristicXRay cxr) {
 			super(buildInputs(unk, std, cxr), buildOutputs(unk, std, cxr));
 			mUnknown = unk;
@@ -1775,8 +1777,9 @@ public class XPPMatrixCorrection2 //
 			return res;
 		}
 
-		public StepXPP(final MatrixCorrectionDatum datum, final CharacteristicXRaySet cxrs) throws ArgumentException {
-			super("XPP[" + datum + "]", buildSteps(datum, cxrs));
+		public StepXPP(final MatrixCorrectionDatum datum, final CharacteristicXRaySet cxrs, List<EPMALabel> outputs)
+				throws ArgumentException {
+			super("XPP[" + datum + "]", buildSteps(datum, cxrs), outputs);
 		}
 
 		@Override
@@ -1796,9 +1799,9 @@ public class XPPMatrixCorrection2 //
 	 * @throws ArgumentException
 	 */
 	private static List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> buildSteps( //
-			final Set<KRatioLabel> kratios //
+			final Set<KRatioLabel> kratios, //
+			final List<EPMALabel> outputLabels //
 	) throws ArgumentException {
-		final List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> res = new ArrayList<>();
 		final Map<UnknownMatrixCorrectionDatum, CharacteristicXRaySet> unks = new HashMap<>();
 		final Map<StandardMatrixCorrectionDatum, CharacteristicXRaySet> stds = new HashMap<>();
 		final Set<Composition> allComps = new HashSet<>();
@@ -1819,31 +1822,47 @@ public class XPPMatrixCorrection2 //
 			if (unk.hasCoating())
 				allComps.add(unk.getCoating().getComposition());
 		}
-		for (final Composition comp : allComps)
-			res.add(comp.getFunction());
-		for (final UnknownMatrixCorrectionDatum unk : unks.keySet())
-			res.add(buildMaterialMACFunctions(unk.getMaterial(), kratios));
-		{
-			final List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> step = new ArrayList<>();
-			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
-			for (final Map.Entry<StandardMatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
-				step.add(new StepXPP(me.getKey(), me.getValue()));
-				cxrs.addAll(me.getValue());
-			}
-			for (final Map.Entry<UnknownMatrixCorrectionDatum, CharacteristicXRaySet> me : unks.entrySet())
-				step.add(new StepXPP(me.getKey(), me.getValue()));
-			res.add(LabeledMultivariateJacobianFunctionBuilder.join("XPP", step));
-		}
+
+		// Build the LMJF list in reverse to determine the input required by later
+		// functions first
+		final List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> res = new ArrayList<>();
+		final FastIndex<EPMALabel> reqInputs = new FastIndex<>(outputLabels);
+		// Need to do it this way to ensure that certain items aren't double
+		// calculated...
+		final MultiE0MultiLineModel multiE0 = new MultiE0MultiLineModel(kratios);
+		res.add(multiE0);
+		reqInputs.addMissing(multiE0.getInputLabels());
 		{
 			final List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> step = new ArrayList<>();
 			for (final KRatioLabel krl : kratios)
 				for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay())
 					step.add(new StepZA(krl.getUnknown(), krl.getStandard(), cxr));
-			res.add(LabeledMultivariateJacobianFunctionBuilder.join("ZA", step));
+			final LabeledMultivariateJacobianFunction<EPMALabel, EPMALabel> za = LabeledMultivariateJacobianFunctionBuilder
+					.join("ZA", step);
+			reqInputs.addMissing(za.getInputLabels());
+			res.add(za);
 		}
-		// Need to do it this way to ensure that certain items aren't double
-		// calculated...
-		res.add(new MultiE0MultiLineModel(kratios));
+		{
+			if (outputLabels.size() == 0)
+				reqInputs.clear();
+			final List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> step = new ArrayList<>();
+			final CharacteristicXRaySet cxrs = new CharacteristicXRaySet();
+			for (final Map.Entry<StandardMatrixCorrectionDatum, CharacteristicXRaySet> me : stds.entrySet()) {
+				step.add(new StepXPP(me.getKey(), me.getValue(), reqInputs));
+				cxrs.addAll(me.getValue());
+			}
+			for (final Map.Entry<UnknownMatrixCorrectionDatum, CharacteristicXRaySet> me : unks.entrySet())
+				step.add(new StepXPP(me.getKey(), me.getValue(), reqInputs));
+			res.add(LabeledMultivariateJacobianFunctionBuilder.join("XPP", step));
+		}
+		for (final UnknownMatrixCorrectionDatum unk : unks.keySet())
+			res.add(buildMaterialMACFunctions(unk.getMaterial(), kratios));
+		LabeledMultivariateJacobianFunctionBuilder<MaterialLabel, MaterialLabel> builder = //
+				new LabeledMultivariateJacobianFunctionBuilder<>("Compositions");
+		for (final Composition comp : allComps)
+			builder.add(comp.getFunction());
+		res.add(builder.build());
+		Collections.reverse(res);
 		return res;
 	}
 
@@ -1876,7 +1895,7 @@ public class XPPMatrixCorrection2 //
 			final Set<KRatioLabel> kratios, //
 			final List<EPMALabel> outputLabels //
 	) throws ArgumentException {
-		super("XPP Matrix Correction", kratios, buildSteps(kratios), outputLabels);
+		super("XPP Matrix Correction", kratios, buildSteps(kratios, outputLabels), outputLabels);
 	}
 
 	/**
@@ -1941,16 +1960,14 @@ public class XPPMatrixCorrection2 //
 	/**
 	 * Many of the input parameters are computed or tabulated. Some are input as
 	 * experimental conditions like beam energy.
-	 *
-	 * @param withUnc true to return parameters with uncertainties or false for
-	 *                those without
-	 * @return UncertainValues object containing either the variable quantities or
-	 *         the constant quantities
+	 * 
+	 * @param estUnknown
+	 * @return {@link UncertainValues}&lt;EPMALabel&gt;
 	 * @throws ArgumentException
 	 */
 	private UncertainValues<EPMALabel> buildParameters( //
-			final UncertainValues<MassFraction> estUnknown) //
-			throws ArgumentException {
+			final UncertainValues<MassFraction> estUnknown //
+	) throws ArgumentException {
 		final List<UncertainValuesBase<? extends EPMALabel>> results = new ArrayList<>();
 		// Make sure that there are no replicated Compositions
 		{

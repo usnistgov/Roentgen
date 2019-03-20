@@ -360,7 +360,8 @@ public class Composition //
 		steps.add(new MixtureToComposition(newMat, mats, normalize));
 		CompositeLabeledMultivariateJacobianFunction<MaterialLabel> combine = //
 				new CompositeLabeledMultivariateJacobianFunction<MaterialLabel>("Mixture", steps);
-		final UncertainValues<MaterialLabel> inp = UncertainValues.<MaterialLabel>force(UncertainValuesBase.combine(input, true));
+		final UncertainValues<MaterialLabel> inp = UncertainValues
+				.<MaterialLabel>force(UncertainValuesBase.combine(input, true));
 		return new Composition(Representation.Mixture, newMat, combine, inp);
 	}
 
@@ -446,8 +447,8 @@ public class Composition //
 		final UncertainValues<MaterialLabel> mfracs = new UncertainValues<MaterialLabel>(labels, vals, cov);
 		final UncertainValues<MaterialLabel> wgts = new UncertainValues<MaterialLabel>(
 				buildAtomicWeights(mat, atomicWeights));
-		final UncertainValuesBase<MaterialLabel> input = UncertainValuesBase.combine(Arrays.asList(mfracs, wgts),
-				false);
+		final UncertainValues<MaterialLabel> input = UncertainValues.<MaterialLabel>force(//
+				UncertainValuesBase.combine(Arrays.asList(mfracs, wgts), false));
 		final MassFractionToComposition slmjf = new MassFractionToComposition(mat, otherElmRules);
 		return new Composition(Representation.MassFraction, mat, slmjf, input, density);
 	}

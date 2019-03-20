@@ -77,11 +77,11 @@ public class Report implements IToHTMLExt {
 		addSubHeader(Transforms.createHTML(html));
 	}
 
-	public void add(final List<Object> items, final IToHTML.Mode mode) {
+	public void add(final List<? extends Object> items, final IToHTML.Mode mode) {
 		add(Transforms.createList(items), mode);
 	}
 
-	public void add(final List<Object> items) {
+	public  void add(final List<? extends Object> items) {
 		mItems.add(Transforms.createList(items));
 	}
 

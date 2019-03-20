@@ -1,6 +1,5 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.linear.RealMatrix;
@@ -19,24 +18,18 @@ import com.duckandcover.lazy.SimplyLazy;
  * @author Nicholas
  * @version 1.0
  */
-public abstract class MultiLinearJacobianFunction //
-		extends LabeledMultivariateJacobianFunction<String, String> {
+public abstract class MultiLinearJacobianFunction<G, H> //
+		extends LabeledMultivariateJacobianFunction<G, H> //
+		implements ILabeledMultivariateFunction<G, H> {
 
 	private final SimplyLazy<RealMatrix> mJacobian = new SimplyLazy<RealMatrix>() {
 
 		@Override
 		protected RealMatrix initialize() {
-			return buildLinearTransform(getInputDimension());
+			return buildLinearTransform(getOutputDimension(), getInputDimension());
 		}
 
 	};
-
-	private static List<String> buildLabels(final String prefix, final int nCh) {
-		final List<String> labels = new ArrayList<>();
-		for (int i = 0; i < nCh; ++i)
-			labels.add(prefix + "[" + Integer.toString(i) + "]");
-		return labels;
-	}
 
 	/**
 	 * Constructs a MultiLinearJacobianFunction
@@ -44,8 +37,8 @@ public abstract class MultiLinearJacobianFunction //
 	 * @param inputPrefix
 	 * @param outputPrefix
 	 */
-	public MultiLinearJacobianFunction(final int nInput, final String inputPrefix, final String outputPrefix) {
-		super(buildLabels(inputPrefix, nInput), buildLabels(outputPrefix, nInput));
+	public MultiLinearJacobianFunction(List<G> inputLabels, List<H> outputLabels) {
+		super(inputLabels, outputLabels);
 	}
 
 	/**
@@ -57,11 +50,12 @@ public abstract class MultiLinearJacobianFunction //
 	 * Each row in the matrix represents a single linear function of the input
 	 * point. The width of the matrix is the same as the length of the input point.
 	 * </p>
-	 *
-	 * @param nCh
+	 * 
+	 * @param nRows
+	 * @param nCols
 	 * @return RealMatrix
 	 */
-	public abstract RealMatrix buildLinearTransform(int nCh);
+	public abstract RealMatrix buildLinearTransform(int nRows, int nCols);
 
 	/**
 	 * @see org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#value(org.apache.commons.math3.linear.RealVector)
@@ -70,5 +64,10 @@ public abstract class MultiLinearJacobianFunction //
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealMatrix jac = mJacobian.get();
 		return Pair.create(jac.operate(point), jac);
+	}
+
+	@Override
+	public RealVector optimized(RealVector point) {
+		return mJacobian.get().operate(point);
 	}
 }

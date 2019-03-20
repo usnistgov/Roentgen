@@ -118,15 +118,15 @@ public class XPPMatrixCorrection2Test {
 				r.add(std, Mode.VERBOSE);
 				r.addSubHeader("Unknown");
 				r.add(unk, Mode.VERBOSE);
-				
-				
+
 				final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 				r.addHeader("test1()");
 				r.addHTML(xpp.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
 				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp,
+						inputs);
 				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 				final EPMALabel tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagAu), 401.654, 0.001);
@@ -161,7 +161,8 @@ public class XPPMatrixCorrection2Test {
 				final EPMALabel tagZA = MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr);
 				assertEquals(results.getEntry(tagZA), 0.7797, 0.001);
 
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp,
+						inputs);
 
 				assertEquals(results.getEntry(tagAu), uvc.getEntry(tagAu), 0.001);
 				assertEquals(results.getEntry(tagau), uvc.getEntry(tagau), 0.001);
@@ -208,9 +209,10 @@ public class XPPMatrixCorrection2Test {
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
+						inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
 						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
@@ -352,12 +354,11 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Done!");
 			}
 		} catch (final Exception e) {
-			e.printStackTrace();
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-			throw e;
-		} finally {
+			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
 	}
 
 	public static Composition buildK412(final boolean combine) //
@@ -453,7 +454,8 @@ public class XPPMatrixCorrection2Test {
 				r.add(inputs);
 
 				final long start = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp,
+						inputs);
 				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 				System.out.println("Full Timing(2) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -486,9 +488,10 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
+						inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
@@ -580,12 +583,12 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Done!");
 
 			}
-		} catch (final Exception e) {
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-			throw e;
-		} finally {
+		} catch (final Throwable e) {
+			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
 	}
 
 	/**
@@ -646,7 +649,8 @@ public class XPPMatrixCorrection2Test {
 				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
 				final long start = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp,
+						inputs);
 				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 				System.out.println("Timing(3) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -679,9 +683,10 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
+						inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
@@ -779,7 +784,8 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Done!");
 			}
 		} catch (final Exception e) {
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
+			r.addThrowable(e);
+			r.inBrowser(Mode.VERBOSE);
 			throw e;
 		} finally {
 			r.inBrowser(Mode.VERBOSE);
@@ -923,8 +929,8 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (4) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1015,12 +1021,12 @@ public class XPPMatrixCorrection2Test {
 				}
 				r.addHeader("Done!");
 			}
-		} catch (final Exception e) {
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-			throw e;
-		} finally {
+		} catch (final Throwable e) {
+			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
 	}
 
 	/**
@@ -1185,8 +1191,8 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1276,12 +1282,12 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Done!");
 
 			}
-		} catch (final Exception e) {
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-			throw e;
-		} finally {
+		} catch (final Throwable e) {
+			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
 	}
 
 	/**
@@ -1447,8 +1453,8 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (6) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1538,12 +1544,12 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Done!");
 
 			}
-		} catch (final Exception e) {
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-			throw e;
-		} finally {
+		} catch (final Throwable e) {
+			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
 	}
 
 	public static Map<Element, Number> buildK240() {
@@ -1712,8 +1718,8 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (7) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -1828,12 +1834,12 @@ public class XPPMatrixCorrection2Test {
 					System.out.println(djac.toCSV());
 				}
 			}
-		} catch (final Exception e) {
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-			throw e;
-		} finally {
+		} catch (final Throwable e) {
+			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
 	}
 
 	/**
@@ -1982,8 +1988,8 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-						xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
+						inputs, xpp.delta(inputs, 0.001));
 				System.out.println(
 						"Trimmed Delta Timing (8) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
@@ -2073,12 +2079,12 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Done!");
 
 			}
-		} catch (final Exception e) {
-			r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-			throw e;
-		} finally {
+		} catch (final Throwable e) {
+			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
 	}
 
 	@Test
@@ -2301,13 +2307,15 @@ public class XPPMatrixCorrection2Test {
 				{
 					r.addHeader("test1()");
 					r.addHTML(xpp.toHTML(Mode.NORMAL));
+					r.add(xpp.getOutputLabels(), Mode.VERBOSE);
 					r.addHeader("Inputs");
 
 					final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 					assertTrue(UncertainValuesBase.testEquality(inputs, inputs.blockDiagnonalize()));
 					r.add(inputs.blockDiagnonalize());
 
-					final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> xppI = new UncertainValuesCalculator<>(xpp,
+							inputs);
 
 					assertTrue(UncertainValuesBase.testEquality(xppI, xppI.blockDiagnonalize()));
 					assertTrue(UncertainValuesBase.testEquality(xppI, xppI.sort()));
@@ -2333,7 +2341,8 @@ public class XPPMatrixCorrection2Test {
 					// assertEquals(results.getEntry(tagZAO), 1.077, 0.001);
 					assertEquals(results.getEntry(tagZAAl), 0.796, 0.002);
 
-					final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp,
+							inputs);
 
 					assertEquals(results.getEntry(tagAu), uvc.getEntry(tagAu), 0.001);
 					assertEquals(results.getEntry(tagau), uvc.getEntry(tagau), 0.001);
@@ -2383,9 +2392,10 @@ public class XPPMatrixCorrection2Test {
 
 					r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-					final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
-					final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp, inputs,
-							xpp.delta(inputs, 0.001));
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
+							inputs);
+					final UncertainValuesCalculator<EPMALabel, EPMALabel> djac = UncertainValuesCalculator
+							.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
 
 					for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
 						for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
@@ -2529,13 +2539,12 @@ public class XPPMatrixCorrection2Test {
 					}
 					r.addHeader("Done!");
 				}
-			} catch (final Exception e) {
-				e.printStackTrace();
-				r.addHTML(HTML.error(HTML.escape(e.getMessage())));
-				throw e;
-			} finally {
+			} catch (final Throwable e) {
+				r.addThrowable(e);
 				r.inBrowser(Mode.VERBOSE);
+				throw e;
 			}
+			r.inBrowser(Mode.VERBOSE);
 		} finally {
 			LabeledMultivariateJacobianFunction.sDump = null;
 		}
@@ -2619,7 +2628,8 @@ public class XPPMatrixCorrection2Test {
 				}
 				final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
-				final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
+				final UncertainValuesCalculator<EPMALabel, EPMALabel> uvc = new UncertainValuesCalculator<>(xpp,
+						inputs);
 
 				// UncertainValuesBase<EPMALabel> results =
 				// UncertainValues.propagate(xpp, inputs);
@@ -2688,9 +2698,13 @@ public class XPPMatrixCorrection2Test {
 				}
 			}
 			r.addHTML(valTable.toHTML(Mode.NORMAL));
-		} finally {
-			r.inBrowser(Mode.NORMAL);
+		} catch (final Throwable e) {
+			r.addThrowable(e);
+			r.inBrowser(Mode.VERBOSE);
+			throw e;
 		}
+		r.inBrowser(Mode.VERBOSE);
+
 	}
 
 	public double getComponentByName(final UncertainValue uv, final EPMALabel tag) {

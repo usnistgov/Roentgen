@@ -38,7 +38,7 @@ public class AdaptiveGaussianFilter extends EDSFittingFilter {
 	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearJacobianFunction#buildLinearTransform(int)
 	 */
 	@Override
-	public RealMatrix buildLinearTransform(final int nCh) {
+	public RealMatrix buildLinearTransform(final int nCh, final int ignored) {
 		final RealMatrix res = MatrixUtils.createRealMatrix(nCh, nCh);
 		for (int fCh = 0; fCh < nCh; ++fCh) {
 			final double eCh = mEnergy.averageEnergyForChannel(fCh);
