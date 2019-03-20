@@ -18,16 +18,23 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 public class MaterialLabel //
 		extends EPMALabel.BaseLabel<Material, Element, Object> {
 
-	public static class AnalyticalTotalTag extends MaterialLabel {
+	public static class CompositionalStatisticTag extends MaterialLabel {
+
+		protected CompositionalStatisticTag(final String name, final Material mat) {
+			super(name, mat);
+		}
+	}
+
+	public static class AnalyticalTotalTag extends CompositionalStatisticTag {
 
 		private AnalyticalTotalTag(final Material mat) {
-			super("&Sigma;", mat, null);
+			super("&Sigma;C<sub>z</sub>", mat);
 		}
 	}
 
 	public static class AtomFraction extends AtomType {
 		private AtomFraction(final Material mat, final Element elm) {
-			super("f<sub>atom</sub>", mat, elm);
+			super("f<sub>A</sub>", mat, elm);
 		}
 	}
 
@@ -45,14 +52,17 @@ public class MaterialLabel //
 
 	public static class MassFraction //
 			extends MaterialLabel {
+
 		private MassFraction(final Material mat, final Element elm) {
-			this(mat, elm, false);
+			super("C", mat, elm);
 		}
+	}
 
-		private MassFraction(final Material mat, final Element elm, final boolean normalized) {
-			super(normalized ? "N" : "C", mat, elm);
+	public static class NormalizedMassFraction //
+			extends MaterialLabel {
+		private NormalizedMassFraction(final Material mat, final Element elm) {
+			super("N", mat, elm);
 		}
-
 	}
 
 	public static final class MaterialMassFraction //
@@ -63,21 +73,21 @@ public class MaterialLabel //
 		}
 
 		public MaterialMassFraction(final Material mat, final boolean normalized) {
-			super(normalized ? "f<sub>mat,norm</sub>" : "f<sub>mat</sub>", mat);
+			super(normalized ? "f<sub>n</sub>" : "f", mat);
 		}
 	}
 
-	public static class MeanATag extends MaterialLabel {
+	public static class MeanATag extends CompositionalStatisticTag {
 
 		public MeanATag(final Material mat) {
-			super("A&#773;", mat, null);
+			super("A&#773;", mat);
 		}
 	}
 
-	public static class MeanZTag extends MaterialLabel {
+	public static class MeanZTag extends CompositionalStatisticTag {
 
 		public MeanZTag(final Material mat) {
-			super("Z&#773;", mat, null);
+			super("Z&#773;", mat);
 		}
 	}
 
@@ -157,14 +167,14 @@ public class MaterialLabel //
 		return new MeanATag(mat);
 	}
 
-	public static MassFraction buildNormalizedMassFractionTag(final Material mat, final Element elm) {
-		return new MassFraction(mat, elm, true);
+	public static NormalizedMassFraction buildNormalizedMassFractionTag(final Material mat, final Element elm) {
+		return new NormalizedMassFraction(mat, elm);
 	}
 
-	public static List<MassFraction> buildNormalizedMassFractionTags(final Material mat) {
-		final List<MassFraction> res = new ArrayList<>();
+	public static List<NormalizedMassFraction> buildNormalizedMassFractionTags(final Material mat) {
+		final List<NormalizedMassFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
-			res.add(new MassFraction(mat, elm, true));
+			res.add(new NormalizedMassFraction(mat, elm));
 		return res;
 	}
 
@@ -183,7 +193,7 @@ public class MaterialLabel //
 		return res;
 	}
 
-	public static <H extends EPMALabel> List<H> convert(List<? extends H> list){
+	public static <H extends EPMALabel> List<H> convert(List<? extends H> list) {
 		List<H> res = new ArrayList<>();
 		res.addAll(list);
 		return res;
@@ -214,11 +224,10 @@ public class MaterialLabel //
 			res.add(new Stoichiometry(mat, elm));
 		return res;
 	}
-	
+
 	private MaterialLabel(final String prefix, final Material material) {
 		super(prefix, material);
 	}
-
 
 	private MaterialLabel(final String prefix, final Material material, final Element elm) {
 		super(prefix, material, elm);
@@ -240,7 +249,7 @@ public class MaterialLabel //
 	public Element getElement() {
 		return getObject2();
 	}
-	
+
 	public Material getMaterial() {
 		return getObject1();
 	}

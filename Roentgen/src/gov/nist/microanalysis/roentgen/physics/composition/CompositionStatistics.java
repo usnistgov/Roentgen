@@ -6,8 +6,6 @@ package gov.nist.microanalysis.roentgen.physics.composition;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -15,6 +13,12 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AnalyticalTotalTag;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.CompositionalStatisticTag;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MeanATag;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MeanZTag;
 
 /**
  * <p>
@@ -30,8 +34,8 @@ import gov.nist.microanalysis.roentgen.physics.Element;
  *
  */
 public class CompositionStatistics //
-		extends LabeledMultivariateJacobianFunction<MaterialLabel, MaterialLabel> //
-		implements ILabeledMultivariateFunction<MaterialLabel, MaterialLabel> {
+		extends LabeledMultivariateJacobianFunction<MaterialLabel, CompositionalStatisticTag> //
+		implements ILabeledMultivariateFunction<MaterialLabel, CompositionalStatisticTag> {
 
 	private static List<MaterialLabel> buildInputs(final Material mat) {
 		final List<MaterialLabel> res = new ArrayList<>();
@@ -40,8 +44,8 @@ public class CompositionStatistics //
 		return res;
 	}
 
-	private static List<MaterialLabel> buildOutputTags(final Material mat) {
-		final List<MaterialLabel> res = new ArrayList<>();
+	private static List<CompositionalStatisticTag> buildOutputTags(final Material mat) {
+		final List<CompositionalStatisticTag> res = new ArrayList<>();
 		res.add(MaterialLabel.buildAnalyticalTotalTag(mat));
 		res.add(MaterialLabel.buildMeanAtomicNumberTag(mat));
 		res.add(MaterialLabel.buildMeanAtomicWeighTag(mat));
@@ -68,25 +72,19 @@ public class CompositionStatistics //
 	 */
 	@Override
 	public RealVector optimized(final RealVector point) {
-		assert point.getDimension() == getInputDimension();
+		final RealVector res = buildResult();
 		double meanA = 0.0, total = 0.0, meanZ = 0.0;
-		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		final int totIdx = outputIndex(MaterialLabel.buildAnalyticalTotalTag(mMaterial));
-		final int maIdx = outputIndex(MaterialLabel.buildMeanAtomicWeighTag(mMaterial));
-		final int mzIdx = outputIndex(MaterialLabel.buildMeanAtomicNumberTag(mMaterial));
 		for (final Element elm : mMaterial.getElementSet()) {
-			final int mft = inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm));
-			final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
-			final double mf = point.getEntry(mft);
-			final double aw = point.getEntry(awt);
+			final double mf = getArg(MaterialLabel.buildMassFractionTag(mMaterial, elm), point);
+			final double aw = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
 			total += mf;
 			meanA += mf * aw;
 			meanZ += mf * elm.getAtomicNumber();
 		}
-		rv.setEntry(totIdx, total);
-		rv.setEntry(maIdx, meanA);
-		rv.setEntry(mzIdx, meanZ);
-		return rv;
+		setResult(MaterialLabel.buildAnalyticalTotalTag(mMaterial), res, total);
+		setResult(MaterialLabel.buildMeanAtomicWeighTag(mMaterial), res, meanA);
+		setResult(MaterialLabel.buildMeanAtomicNumberTag(mMaterial), res, meanZ);
+		return res;
 	}
 
 	@Override
@@ -103,28 +101,28 @@ public class CompositionStatistics //
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		assert point.getDimension() == getInputDimension();
 		double meanA = 0.0, total = 0.0, meanZ = 0.0;
-		final RealVector rv = new ArrayRealVector(getOutputDimension());
-		final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), point.getDimension());
-		final int totIdx = outputIndex(MaterialLabel.buildAnalyticalTotalTag(mMaterial));
-		final int maIdx = outputIndex(MaterialLabel.buildMeanAtomicWeighTag(mMaterial));
-		final int mzIdx = outputIndex(MaterialLabel.buildMeanAtomicNumberTag(mMaterial));
+		final RealVector res = buildResult();
+		final RealMatrix jac = buildJacobian();
+		final AnalyticalTotalTag totTag = MaterialLabel.buildAnalyticalTotalTag(mMaterial);
+		final MeanATag maIdx = MaterialLabel.buildMeanAtomicWeighTag(mMaterial);
+		final MeanZTag mzIdx = MaterialLabel.buildMeanAtomicNumberTag(mMaterial);
 		for (final Element elm : mMaterial.getElementSet()) {
-			final int mft = inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm));
-			final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
-			final double mf = point.getEntry(mft);
-			final double aw = point.getEntry(awt);
+			final MassFraction mft = MaterialLabel.buildMassFractionTag(mMaterial, elm);
+			final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
+			final double mf = getArg(mft, point);
+			final double aw = getArg(awt, point);
 			total += mf;
 			meanA += mf * aw;
 			meanZ += mf * elm.getAtomicNumber();
-			rm.setEntry(totIdx, mft, 1.0);
-			rm.setEntry(maIdx, awt, mf);
-			rm.setEntry(maIdx, mft, aw);
-			rm.setEntry(mzIdx, mft, elm.getAtomicNumber());
+			setJacobian(totTag, mft, jac, 1.0);
+			setJacobian(maIdx, awt, jac, mf);
+			setJacobian(maIdx, mft, jac, aw);
+			setJacobian(mzIdx, mft, jac, elm.getAtomicNumber());
 		}
-		rv.setEntry(totIdx, total);
-		rv.setEntry(maIdx, meanA);
-		rv.setEntry(mzIdx, meanZ);
-		return Pair.create(rv, rm);
+		setResult(totTag, res, total);
+		setResult(maIdx, res, meanA);
+		setResult(mzIdx, res, meanZ);
+		return Pair.create(res, jac);
 	}
 
 }

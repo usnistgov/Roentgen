@@ -82,7 +82,7 @@ public class Normalize<H, K> //
 					for (int c = 0; c < dim; ++c)
 						j.setEntry(r, c, r == c ? dnada : dnadx);
 				}
-				resV.setEntry(r, a / norm);
+				resV.setEntry(r, n);
 			}
 			return Pair.create(resV, j);
 		}

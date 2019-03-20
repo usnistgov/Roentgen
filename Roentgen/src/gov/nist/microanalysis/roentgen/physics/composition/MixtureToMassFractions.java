@@ -14,7 +14,9 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MaterialMassFraction;
 
 /**
  * Converts a mixture of Composition objects into the mass fraction of the
@@ -55,7 +57,7 @@ final class MixtureToMassFractions //
 		return res;
 	}
 
-	private final List<MaterialLabel> mInputs;
+	private final List<MaterialMassFraction> mInputs;
 
 	private final Material mNewMaterial;
 
@@ -84,16 +86,17 @@ final class MixtureToMassFractions //
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		for (final Element elm : mNewMaterial.getElementSet()) {
 			double tmpCz = 0.0, tmpAz = 0.0;
-			final MaterialLabel.MassFraction resCz = MaterialLabel.buildMassFractionTag(mNewMaterial, elm);
-			final MaterialLabel.AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
+			final MassFraction resCz = MaterialLabel.buildMassFractionTag(mNewMaterial, elm);
+			final AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (int mmfti = 0; mmfti < mInputs.size(); ++mmfti) {
-				final MaterialLabel mmft = mInputs.get(mmfti);
+			for (int i = 0; i < mInputs.size(); ++i) {
+				final MaterialMassFraction mmft = mInputs.get(i);
 				final Material mat = mmft.getMaterial();
 				final int mfti = inputIndex(MaterialLabel.buildMassFractionTag(mat, elm));
 				// The material may or may not have the element...
-				final double mmf = point.getEntry(mmfti);
+				final int mmfi = inputIndex(mmft);
+				final double mmf = point.getEntry(mmfi);
 				if (mfti != -1) {
 					final int awti = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
 					assert awti != -1;
@@ -123,47 +126,49 @@ final class MixtureToMassFractions //
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		for (final Element elm : mNewMaterial.getElementSet()) {
 			double tmpCz = 0.0, tmpAz = 0.0;
-			final MaterialLabel.MassFraction resCz = MaterialLabel.buildMassFractionTag(mNewMaterial, elm);
-			final MaterialLabel.AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
+			final MassFraction resCz = MaterialLabel.buildMassFractionTag(mNewMaterial, elm);
+			final AtomicWeight resAz = MaterialLabel.buildAtomicWeightTag(mNewMaterial, elm);
 			final int iCz = outputIndex(resCz);
 			final int iAz = outputIndex(resAz);
-			for (int mmfti = 0; mmfti < mInputs.size(); ++mmfti) {
-				final MaterialLabel mmft = mInputs.get(mmfti);
+			for (int i = 0; i < mInputs.size(); ++i) {
+				final MaterialMassFraction mmft = mInputs.get(i);
 				final Material mat = mmft.getMaterial();
-				final int mfti = inputIndex(MaterialLabel.buildMassFractionTag(mat, elm));
+				final int mfi = inputIndex(MaterialLabel.buildMassFractionTag(mat, elm));
 				// The material may or may not have the element...
+				final int mmfti = inputIndex(mmft);
 				final double mmf = point.getEntry(mmfti);
-				if (mfti != -1) {
-					final int awti = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
-					assert awti != -1;
-					final double mf = point.getEntry(mfti);
-					final double aw = point.getEntry(awti);
+				if (mfi != -1) {
+					final int awi = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
+					assert awi != -1;
+					final double mf = point.getEntry(mfi);
+					final double aw = point.getEntry(awi);
 					tmpCz += mf * mmf;
 					tmpAz += mf * mmf / aw;
 				}
 			}
 			final double cZ = tmpCz;
 			final double aZ = tmpCz / tmpAz;
-			for (int mmfti = 0; mmfti < mInputs.size(); ++mmfti) {
-				final MaterialLabel mmft = mInputs.get(mmfti);
+			for (int i = 0; i < mInputs.size(); ++i) {
+				final MaterialLabel mmft = mInputs.get(i);
 				final Material mat = mmft.getMaterial();
 				final MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
-				final int mfti = inputIndex(mft);
+				final int mfi = inputIndex(mft);
 				// The material may or may not have the element...
-				final double mI = point.getEntry(mmfti);
-				if (mfti != -1) {
-					rm.setEntry(iCz, mfti, mI);
-					final int awti = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
-					assert awti != -1;
-					final double cIZ = point.getEntry(mfti);
-					rm.setEntry(iCz, mmfti, cIZ);
-					rm.setEntry(iCz, mfti, mI);
+				final int mmfi = inputIndex(mmft);
+				final double mmf = point.getEntry(mmfi);
+				if (mfi != -1) {
+					rm.setEntry(iCz, mfi, mmf);
+					final int awi = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
+					assert awi != -1;
+					final double mf = point.getEntry(mfi);
+					rm.setEntry(iCz, mmfi, mf);
+					rm.setEntry(iCz, mfi, mmf);
 
-					final double aIZ = point.getEntry(awti);
-					final double kk = aZ * (1.0 - aZ / aIZ) / cZ;
-					rm.setEntry(iAz, mfti, mI * kk);
-					rm.setEntry(iAz, awti, Math.pow(aZ / aIZ, 2.0) * (cIZ / cZ) * mI);
-					rm.setEntry(iAz, mmfti, cIZ * kk);
+					final double aw = point.getEntry(awi);
+					final double kk = aZ * (1.0 - aZ / aw) / cZ;
+					rm.setEntry(iAz, mfi, mmf * kk);
+					rm.setEntry(iAz, awi, Math.pow(aZ / aw, 2.0) * (mf / cZ) * mmf);
+					rm.setEntry(iAz, mmfi, mf * kk);
 				}
 			}
 			rv.setEntry(iCz, cZ);

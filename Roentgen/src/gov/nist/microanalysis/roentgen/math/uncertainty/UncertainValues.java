@@ -260,8 +260,13 @@ public class UncertainValues<H> //
 	) {
 		if (base instanceof UncertainValues)
 			return (UncertainValues<J>) base;
-		else
-			return new UncertainValues<J>(base.getLabels(), base.getValues(), base.getCovariances());
+		else {
+			// Compute getCovariances() first since this forces getValues() to be calculated
+			// simultaneously.
+			final RealMatrix covs = base.getCovariances();
+			return new UncertainValues<J>(base.getLabels(), base.getValues(), covs);
+
+		}
 	}
 
 	/**

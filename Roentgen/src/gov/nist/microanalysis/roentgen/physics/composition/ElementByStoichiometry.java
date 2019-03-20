@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -17,9 +15,13 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
+ * Calculates the specified element using a set of valences to compute the mass
+ * fraction of the element relative to the other elements in the material.
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -53,6 +55,8 @@ public class ElementByStoichiometry //
 
 	private final Element mElement;
 
+	private final Material mMaterial;
+
 	/**
 	 * @param inputLabels
 	 * @param outputLabels
@@ -62,6 +66,7 @@ public class ElementByStoichiometry //
 				Collections.singletonList(MaterialLabel.buildMassFractionTag(mat, outputElm)));
 		mValences.putAll(valences);
 		mElement = outputElm;
+		mMaterial = mat;
 	}
 
 	/*
@@ -73,26 +78,18 @@ public class ElementByStoichiometry //
 	 */
 	@Override
 	public RealVector optimized(final RealVector point) {
-		final RealVector rv = new ArrayRealVector(1);
-		double ai = Double.NaN;
+		final RealVector res = buildResult();
+		final double ai = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, mElement), point);
 		double ci = 0.0;
-		for (int j = 0; j < getInputDimension(); ++j) {
-			final Object lbl = getInputLabel(j);
-			if (lbl instanceof MassFraction) {
-				final MassFraction mft = (MassFraction) lbl;
-				final int awt = inputIndex(MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mft.getElement()));
-				if (Double.isNaN(ai)) {
-					final int awe = inputIndex(MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mElement));
-					ai = point.getEntry(awe);
-				}
-				final double cj = point.getEntry(j);
-				final double aj = point.getEntry(awt);
-				ci -= (ai / aj)
-						* (mValences.get(mft.getElement()).doubleValue() / mValences.get(mElement).doubleValue()) * cj;
+		for (final Element elm : mMaterial.getElementSet()) {
+			if (!elm.equals(mElement)) {
+				final double cj = getArg(MaterialLabel.buildMassFractionTag(mMaterial, elm), point);
+				final double aj = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
+				ci -= (ai / aj) * (mValences.get(elm).doubleValue() / mValences.get(mElement).doubleValue()) * cj;
 			}
 		}
-		rv.setEntry(0, ci);
-		return rv;
+		setResult(MaterialLabel.buildMassFractionTag(mMaterial, mElement), res, ci);
+		return res;
 	}
 
 	@Override
@@ -109,33 +106,27 @@ public class ElementByStoichiometry //
 	 */
 	@Override
 	public Pair<RealVector, RealMatrix> value(final RealVector point) {
-		final RealVector rv = new ArrayRealVector(1);
-		final RealMatrix rm = MatrixUtils.createRealMatrix(1, getInputDimension());
-		double awi = Double.NaN;
-		int awii = -1;
+		final RealVector res = buildResult();
+		final RealMatrix jac = buildJacobian();
+		final AtomicWeight awi = MaterialLabel.buildAtomicWeightTag(mMaterial, mElement);
+		final double ai = getArg(awi, point);
 		double ci = 0.0, dcidawi = 0.0;
-		for (int j = 0; j < getInputDimension(); ++j) {
-			final Object lbl = getInputLabel(j);
-			if (lbl instanceof MassFraction) {
-				final MassFraction cjt = (MassFraction) lbl;
-				final int awji = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), cjt.getElement()));
-				if (awii == -1) {
-					awii = inputIndex(MaterialLabel.buildAtomicWeightTag(cjt.getMaterial(), mElement));
-					awi = point.getEntry(awii);
-				}
-				final double cj = point.getEntry(j);
-				final double awj = point.getEntry(awji);
-				final double kkj = -(awi / awj)
-						* (mValences.get(cjt.getElement()).doubleValue() / mValences.get(mElement).doubleValue());
+		final MassFraction mfo = MaterialLabel.buildMassFractionTag(mMaterial, mElement);
+		for (final Element elm : mMaterial.getElementSet()) {
+			if (!elm.equals(mElement)) {
+				final MassFraction mft = MaterialLabel.buildMassFractionTag(mMaterial, elm);
+				final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
+				final double aj = getArg(awt, point), cj = getArg(mft, point);
+				final double kkj = -(ai / aj)
+						* (mValences.get(elm).doubleValue() / mValences.get(mElement).doubleValue());
 				ci += kkj * cj;
-				dcidawi += (kkj / awi) * cj;
-				rm.setEntry(0, j, kkj);
-				rm.setEntry(0, awji, -(kkj / awj) * cj);
+				dcidawi += (kkj / ai) * cj;
+				setJacobian(mfo, mft, jac, kkj);
+				setJacobian(mfo, awt, jac, -(kkj / aj) * cj);
 			}
-			rm.setEntry(0, awii, dcidawi);
 		}
-		rv.setEntry(0, ci);
-		return Pair.create(rv, rm);
+		setJacobian(mfo, awi, jac, dcidawi);
+		setResult(mfo, res, ci);
+		return Pair.create(res, jac);
 	}
-
 }

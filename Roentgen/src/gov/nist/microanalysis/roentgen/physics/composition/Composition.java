@@ -27,7 +27,6 @@ import com.duckandcover.html.Table.Item;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.RetainInputs;
 import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
@@ -76,13 +75,9 @@ public class Composition //
 		private static List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> buildSteps(
 				final Material mat) {
 			final List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> funcs = new ArrayList<>();
-			funcs.add(new RetainInputs<>(MaterialLabel.buildAtomFractionTags(mat)));
 			funcs.add(new AtomFractionToMassFraction(mat));
-			funcs.add(new Normalize<MassFraction, MassFraction>( //
-					MaterialLabel.buildMassFractionTags(mat), //
-					MaterialLabel.buildNormalizedMassFractionTags(mat)));
+			funcs.add(new MassFractionToNormalizedMassFraction(mat));
 			funcs.add(new CompositionStatistics(mat));
-			funcs.add(new RetainInputs<>(CompositeLabeledMultivariateJacobianFunction.buildInputs(funcs)));
 			return funcs;
 		}
 
@@ -101,11 +96,8 @@ public class Composition //
 			final List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> funcs = new ArrayList<>();
 			funcs.add(new ElementByDifference(mat, elm));
 			funcs.add(new MassFractionToAtomFraction(mat));
-			funcs.add(new Normalize<MassFraction, MassFraction>( //
-					MaterialLabel.buildMassFractionTags(mat), //
-					MaterialLabel.buildNormalizedMassFractionTags(mat)));
+			funcs.add(new MassFractionToNormalizedMassFraction(mat));
 			funcs.add(new CompositionStatistics(mat));
-			funcs.add(new RetainInputs<>(CompositeLabeledMultivariateJacobianFunction.buildInputs(funcs)));
 			return funcs;
 		}
 
@@ -118,17 +110,15 @@ public class Composition //
 	public static class MassFractionToComposition //
 			extends CompositeLabeledMultivariateJacobianFunction<MaterialLabel> {
 
-		final static List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> buildSteps(final Material mat,
+		final static List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> buildSteps(
+				final Material mat,
 				final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> otherElmRule) {
 			final List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> funcs = new ArrayList<>();
 			if (otherElmRule != null)
 				funcs.add(otherElmRule);
 			funcs.add(new MassFractionToAtomFraction(mat));
-			funcs.add(new Normalize<MassFraction, MassFraction>( //
-					MaterialLabel.buildMassFractionTags(mat), //
-					MaterialLabel.buildNormalizedMassFractionTags(mat)));
+			funcs.add(new MassFractionToNormalizedMassFraction(mat));
 			funcs.add(new CompositionStatistics(mat));
-			funcs.add(new RetainInputs<>(CompositeLabeledMultivariateJacobianFunction.buildInputs(funcs)));
 			return funcs;
 		}
 
@@ -137,7 +127,8 @@ public class Composition //
 		}
 
 		public MassFractionToComposition(final Material mat,
-				final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> otherElmRule) throws ArgumentException {
+				final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> otherElmRule)
+				throws ArgumentException {
 			super("MFtoC", buildSteps(mat, otherElmRule));
 		}
 
@@ -169,14 +160,10 @@ public class Composition //
 				}
 				funcs.add(new Normalize<MaterialMassFraction, MaterialMassFraction>(mmfts, nmfts));
 			}
-			final MixtureToMassFractions m2mf = new MixtureToMassFractions(newMat, mats, normalize);
-			funcs.add(m2mf);
+			funcs.add(new MixtureToMassFractions(newMat, mats, normalize));
 			funcs.add(new MassFractionToAtomFraction(newMat));
-			funcs.add(new Normalize<MassFraction, MassFraction>( //
-					MaterialLabel.buildMassFractionTags(newMat), //
-					MaterialLabel.buildNormalizedMassFractionTags(newMat)));
+			funcs.add(new MassFractionToNormalizedMassFraction(newMat));
 			funcs.add(new CompositionStatistics(newMat));
-			funcs.add(new RetainInputs<>(CompositeLabeledMultivariateJacobianFunction.buildInputs(funcs)));
 			return funcs;
 		}
 
@@ -217,11 +204,8 @@ public class Composition //
 			final List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> funcs = new ArrayList<>();
 			funcs.add(new StoichiometryToAtomFraction(mat));
 			funcs.add(new AtomFractionToMassFraction(mat));
-			funcs.add(new Normalize<MassFraction, MassFraction>( //
-					MaterialLabel.buildMassFractionTags(mat), //
-					MaterialLabel.buildNormalizedMassFractionTags(mat)));
+			funcs.add(new MassFractionToNormalizedMassFraction(mat));
 			funcs.add(new CompositionStatistics(mat));
-			funcs.add(new RetainInputs<>(CompositeLabeledMultivariateJacobianFunction.buildInputs(funcs)));
 			return funcs;
 		}
 
@@ -362,17 +346,21 @@ public class Composition //
 		final Set<Material> mats = new HashSet<>();
 		final Map<MaterialLabel, Number> fracs = new HashMap<>();
 		final Set<Element> elms = new HashSet<>();
+		final List<LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel>> steps = new ArrayList<>();
 		for (final Map.Entry<Composition, Number> pr : comps.entrySet()) {
 			final Composition comp = pr.getKey();
-			input.add(comp);
+			input.add(comp.getInputs());
+			steps.add(comp.getFunction());
 			fracs.put(new MaterialMassFraction(comp.getMaterial()), pr.getValue());
 			mats.add(comp.getMaterial());
 			elms.addAll(comp.getElementSet());
 		}
 		input.add(new UncertainValues<MaterialLabel>(fracs));
 		final Material newMat = new Material(htmlName, elms);
-		final MixtureToComposition combine = new MixtureToComposition(newMat, mats, normalize);
-		final UncertainValuesBase<MaterialLabel> inp = UncertainValuesBase.combine(input, true);
+		steps.add(new MixtureToComposition(newMat, mats, normalize));
+		CompositeLabeledMultivariateJacobianFunction<MaterialLabel> combine = //
+				new CompositeLabeledMultivariateJacobianFunction<MaterialLabel>("Mixture", steps);
+		final UncertainValues<MaterialLabel> inp = UncertainValues.<MaterialLabel>force(UncertainValuesBase.combine(input, true));
 		return new Composition(Representation.Mixture, newMat, combine, inp);
 	}
 
@@ -410,8 +398,8 @@ public class Composition //
 		for (final Element elm : mat.getElementSet())
 			tmp.put(MaterialLabel.buildAtomicWeightTag(mat, elm), mat.getAtomicWeight(elm));
 		final UncertainValues<MaterialLabel> inp = new UncertainValues<MaterialLabel>(tmp);
-		final LabeledMultivariateJacobianFunction<MaterialLabel, MaterialLabel> func = new ElementByDifferenceToComposition(mat,
-				diffElm);
+		final LabeledMultivariateJacobianFunction<MaterialLabel, MaterialLabel> func = new ElementByDifferenceToComposition(
+				mat, diffElm);
 		return new Composition(Representation.MassFraction, mat, func, inp);
 	}
 
@@ -810,7 +798,7 @@ public class Composition //
 			final UncertainValuesBase<MaterialLabel> inputs, //
 			final Number density //
 	) throws ArgumentException {
-		super(func, inputs);
+		super(func, inputs, true);
 		mMaterial = mat;
 		mPrimary = rep;
 		mDensity = Optional.ofNullable(density);
@@ -1156,13 +1144,12 @@ public class Composition //
 		switch (mode) {
 		default:
 		case NORMAL:
-			final List<MaterialMassFraction> tags = materialFractionTags();
 			final Table t = new Table();
 			t.addRow(Table.th("Material"), Table.th("Mass Fraction"), Table.th("Uncertainty"));
-			for (final MaterialMassFraction mmft : tags) {
+			for (final MaterialMassFraction mmft : materialFractionTags()) {
 				final UncertainValue uv = getValue(mmft);
 				t.addRow( //
-						Table.td(mmft.getMaterial()), //
+						Table.td(mmft.toHTML(Mode.TERSE)), //
 						Table.td(MASS_FRACTION_FORMAT.format(uv.doubleValue())), //
 						Table.td(MASS_FRACTION_FORMAT.format(uv.uncertainty())) //
 				);

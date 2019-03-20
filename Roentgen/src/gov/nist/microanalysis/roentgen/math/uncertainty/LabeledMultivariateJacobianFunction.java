@@ -14,6 +14,7 @@ import java.util.Set;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
 import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -88,12 +89,12 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 	 */
 	final public RealVector compute(final RealVector inp) {
 		if (this instanceof ILabeledMultivariateFunction)
-			return ((ILabeledMultivariateFunction<?,?>) this).optimized(inp);
+			return ((ILabeledMultivariateFunction<?, ?>) this).optimized(inp);
 		else
 			return value(inp).getFirst();
 	}
 
-	protected void dumpArguments(final RealVector point, final LabeledMultivariateJacobianFunction<?,?> parent) {
+	protected void dumpArguments(final RealVector point, final LabeledMultivariateJacobianFunction<?, ?> parent) {
 		if (sDump != null) {
 			final StringBuffer sb = new StringBuffer();
 			final NumberFormat nf = new HalfUpFormat("0.00E0");
@@ -175,6 +176,66 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 			res.setEntry(i, point.getEntry(idx));
 		}
 		return res;
+	}
+
+	/**
+	 * Gets the value associated with the specified input variable label from the
+	 * {@link RealVector} point which is the argument to the value(...) function.
+	 * 
+	 * @param inLabel
+	 * @param point
+	 * @return double
+	 */
+	final protected double getArg(H inLabel, RealVector point) {
+		return point.getEntry(inputIndex(inLabel));
+	}
+
+	/**
+	 * Sets the value associated with the specified output variable label to the
+	 * result {@link RealVector} point which is to be returned by the value(...)
+	 * function.
+	 * 
+	 * @param outLabel K
+	 * @param result   {@link RealVector}
+	 * @param value    double The value to be assigned to
+	 *                 result[outputIndex(outLabel)]
+	 */
+	final protected void setResult(K outLabel, RealVector result, double value) {
+		result.setEntry(outputIndex(outLabel), value);
+	}
+
+	/**
+	 * Sets the value associated with the specified output variable label to the
+	 * result {@link RealVector} point which is to be returned by the value(...)
+	 * function.
+	 * 
+	 * @param outLabel K
+	 * @param inLabel  H
+	 * @param jacobian {@link RealMatrix}
+	 * @param value    double The value to be assigned to
+	 *                 jacobian[outputIndex(outLabel),inputIndex(inLabel)]
+	 */
+	final protected void setJacobian(K outLabel, H inlabel, RealMatrix jacobian, double value) {
+		jacobian.setEntry(outputIndex(outLabel), inputIndex(inlabel), value);
+	}
+
+	/**
+	 * A helper to build a zeroed vector to contain the result for value(...)
+	 * 
+	 * @return {@link RealVector}
+	 */
+	final protected RealVector buildResult() {
+		return new ArrayRealVector(getOutputDimension());
+	}
+
+	/**
+	 * A helper to build an zeroed matrix to contain the result Jacobian in
+	 * value(...)
+	 * 
+	 * @return {@link RealMatrix}
+	 */
+	final protected RealMatrix buildJacobian() {
+		return MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 	}
 
 	/**
@@ -305,7 +366,8 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 	}
 
 	/**
-	 * Returns the index of the output function identified by the specified instance of H.
+	 * Returns the index of the output function identified by the specified instance
+	 * of H.
 	 *
 	 * @param label
 	 * @return int Index or -1 for not found.

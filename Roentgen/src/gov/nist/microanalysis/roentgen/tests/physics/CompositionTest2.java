@@ -227,7 +227,7 @@ public class CompositionTest2 {
 	}
 
 	@Test
-	public void testAtomicFraction() throws ArgumentException {
+	public void testAtomicFraction() throws ArgumentException, IOException {
 		final Map<Element, Number> atFracs = new HashMap<>();
 		atFracs.put(Element.Oxygen, new UncertainValue(0.593981, "dO", 0.05));
 		atFracs.put(Element.Magnesium, new UncertainValue(0.106595, "dMg", 0.005));
@@ -271,6 +271,7 @@ public class CompositionTest2 {
 		if (mHTML) {
 			final Report rep = new Report("Atomic Fraction");
 			try {
+				rep.addVerbatim("THis\nis a test \tcase and\n<<<<<>>>>>\n We like it.");
 				rep.addHeader("Atom Fraction");
 				rep.addSubHeader("TERSE");
 				rep.addHTML(af.toHTML(Representation.MassFraction, Mode.TERSE));
@@ -291,20 +292,15 @@ public class CompositionTest2 {
 							Table.tdc(af.getMassFraction(elm).toHTML(Mode.NORMAL)));
 				rep.addHTML(t.toHTML(Mode.NORMAL));
 			} catch (final Exception e) {
-				rep.addHTML(HTML.error(e.getMessage()));
+				rep.addThrowable(e);
 			}
-			try {
-				rep.inBrowser(Mode.NORMAL);
-			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			rep.inBrowser(Mode.NORMAL);
 		}
 	}
 
 	@Test
 	public void testAtomicFractionMC() //
-			throws ArgumentException {
+			throws ArgumentException, IOException {
 		final Map<Element, UncertainValue> atFracs = new HashMap<>();
 		atFracs.put(Element.Oxygen, new UncertainValue(0.593981, "dO", 0.05));
 		atFracs.put(Element.Magnesium, new UncertainValue(0.106595, "dMg", 0.005));
@@ -346,17 +342,11 @@ public class CompositionTest2 {
 				final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
 				rep.addImage(af.reorder(mup.getLabels()).asCovarianceBitmap(8, v2l, l2c), "Jacobian");
 				rep.addImage(mup.asCovarianceBitmap(8, v2l, l2c), "Monte Carlo");
-
 			}
-
 			catch (final Exception e) {
-				rep.addHTML(HTML.error(e.getMessage()));
+				rep.addThrowable(e);
 			}
-			try {
-				rep.inBrowser(Mode.NORMAL);
-			} catch (final IOException e) {
-				e.printStackTrace();
-			}
+			rep.inBrowser(Mode.NORMAL);
 		}
 	}
 
@@ -377,7 +367,7 @@ public class CompositionTest2 {
 		mcn.put(Composition.parse("MgO"), new UncertainValue(fMgO, unc));
 		mcn.put(Composition.parse("CaO"), new UncertainValue(fCaO, unc));
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
-		final Composition mix = Composition.combine(name, mcn, false);
+		final Composition mix = Composition.combine(name, mcn, true);
 
 		final UncertainValues<MaterialLabel> jres = UncertainValues.force(mix);
 
@@ -385,6 +375,8 @@ public class CompositionTest2 {
 		mix.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
 		final UncertainValues<MaterialLabel> dres = UncertainValues.force(mix);
 
+		mix.setCalculator(new UncertainValuesCalculator.Jacobian());
+		
 		final EstimateUncertainValues<MaterialLabel> mcres = mix.propagateMC(160000);
 
 		for (final MaterialLabel row : dres.getLabels()) {
@@ -422,6 +414,9 @@ public class CompositionTest2 {
 		final Composition uv = Composition.massFraction(name, res);
 
 		final Report r = new Report("Mixture");
+		r.addHeader("Mixture - Normalized");
+		r.add(mix, Mode.NORMAL);
+		r.add(dres, Mode.NORMAL);
 		r.addHeader("Jacobian");
 		r.add(jres, Mode.NORMAL);
 		r.addHeader("Delta");
@@ -445,14 +440,101 @@ public class CompositionTest2 {
 	}
 
 	@Test
+	public void testMixture2() throws ArgumentException, ParseException, IOException {
+
+		final String name = "K412";
+
+		final double fSiO2 = 0.4535;
+		final double fFeO = 0.0996;
+		final double fMgO = 0.1933;
+		final double fCaO = 0.1525;
+		final double fAl2O3 = 0.0927;
+		final double unc = 0.0020;
+		final Map<Composition, Number> mcn = new HashMap<>();
+		mcn.put(Composition.parse("SiO2"), new UncertainValue(fSiO2, unc));
+		mcn.put(Composition.parse("FeO"), new UncertainValue(fFeO, unc));
+		mcn.put(Composition.parse("MgO"), new UncertainValue(fMgO, unc));
+		mcn.put(Composition.parse("CaO"), new UncertainValue(fCaO, unc));
+		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
+		final Composition mix = Composition.combine(name, mcn, false);
+
+		final UncertainValues<MaterialLabel> jres = UncertainValues.force(mix);
+
+		final RealVector dinp = mix.getValues().mapMultiply(0.0001);
+		mix.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
+		final UncertainValues<MaterialLabel> dres = UncertainValues.force(mix);
+		
+		mix.setCalculator(new UncertainValuesCalculator.Jacobian());
+
+		for (final MaterialLabel row : dres.getLabels()) {
+			final double mm = mix.getVariance(row);
+			final double dm = dres.getVariance(row);
+			if (mix.getVariance(row) > 1.0e-10) {
+				if (Math.abs(mm - dm) > 0.1 * Math.abs(mm))
+					System.out.println(row + " " + mm + " != " + dm);
+				for (final MaterialLabel col : dres.getLabels())
+					if (mix.getVariance(col) > 1.0e-10) {
+						final double mc = mix.getCorrelationCoefficient(row, col);
+						final double dc = dres.getCorrelationCoefficient(row, col);
+						if (Math.abs(mc - dc) > 0.1 * Math.abs(mc))
+							System.out.println("Row: " + row + "   Col: " + col);
+					}
+			}
+		}
+
+		final Map<Element, Number> res = new HashMap<Element, Number>();
+		res.put(Element.Silicon, new UncertainValue(fSiO2 * 0.4674350, unc * 0.4674350));
+		res.put(Element.Iron, new UncertainValue(fFeO * 0.777305, unc * 0.777305));
+		res.put(Element.Magnesium, new UncertainValue(fMgO * 0.603036, unc * 0.603036));
+		res.put(Element.Calcium, new UncertainValue(fCaO * 0.714691, unc * 0.714691));
+		res.put(Element.Aluminum, new UncertainValue(fAl2O3 * 0.529251, unc * 0.529251));
+		res.put(Element.Oxygen, new UncertainValue(fSiO2 * 0.532565 + // Si
+				fFeO * 0.222695 + // Fe
+				fMgO * 0.396964 + // Mg
+				fCaO * 0.285309 + // Ca
+				fAl2O3 * 0.470749, // Al
+				unc * 0.532565 + // Si
+						unc * 0.222695 + // Fe
+						unc * 0.396964 + // Mg
+						unc * 0.285309 + // Ca
+						unc * 0.470749)); // Al
+		final Composition uv = Composition.massFraction(name, res);
+
+		final Report r = new Report("Mixture - Not normalized");
+		r.addHeader("Mixture - Not normalized");
+		r.add(mix, Mode.NORMAL);
+		r.add(dres, Mode.NORMAL);
+		r.addHeader("Jacobian");
+		r.add(jres, Mode.NORMAL);
+		r.addHeader("Delta");
+		r.add(dres, Mode.NORMAL);
+		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
+		r.addHTML(mix.getAnalyticalTotal().toHTML(Mode.TERSE));
+		r.addHeader("Mass Fractions");
+		r.add(uv);
+		r.addHTML(uv.toSimpleHTML(new BasicNumberFormat("0.00E0")));
+		r.addHTML(uv.getAnalyticalTotal().toHTML(Mode.TERSE));
+		r.addHeader("Compare");
+		final ValueToLog3 v2l = new ValueToLog3(1.0);
+		final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
+		r.addImage(dres.asCovarianceBitmap(8, v2l, l2c), "Delta");
+		r.addImage(jres.asCovarianceBitmap(8, v2l, l2c), "Mixture");
+		r.addImage(UncertainValues.compareAsBitmap(dres, jres, v2l, 8), "Mass Fractions");
+
+		r.inBrowser(Mode.VERBOSE);
+	}
+
+	
+	
+	@Test
 	public void runAnorthoclase() //
 			throws ArgumentException, ParseException, IOException {
 		final String name = "Anorthoclase";
 		final Map<Composition, Number> mcn = new HashMap<>();
 		final Composition sanidine = Composition.parse("K(AlSi3O8)");
-		mcn.put(sanidine, new UncertainValue(0.40, 0.01));
+		mcn.put(sanidine, new UncertainValue(0.39, 0.01));
 		final Composition albite = Composition.parse("Na(AlSi3O8)");
-		mcn.put(albite, new UncertainValue(0.60, 0.01));
+		mcn.put(albite, new UncertainValue(0.59, 0.01));
 		final Composition combiner = Composition.combine(name, mcn, true);
 
 		final Report r = new Report("Anorthoclase");

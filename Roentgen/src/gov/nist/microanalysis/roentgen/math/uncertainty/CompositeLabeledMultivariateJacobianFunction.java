@@ -96,7 +96,7 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 			if (nmjf instanceof ImplicitMeasurementModel<?>)
 				inputs.addAll(nmjf.getOutputLabels());
 		}
-		return new FastIndex<>(new ArrayList<>(inputs));
+		return new FastIndex<G>(new ArrayList<G>(inputs));
 	}
 
 	public static <G> FastIndex<G> buildInputs( //
@@ -121,6 +121,20 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 			return allOutputs(steps);
 	}
 
+	private void checkForReplication(
+			final List<? extends LabeledMultivariateJacobianFunction<? extends G, ? extends G>> steps) //
+			throws ArgumentException {
+		Set<G> outputs = new HashSet<>();
+		for (LabeledMultivariateJacobianFunction<? extends G, ? extends G> step : steps) {
+			outputs.addAll(step.getInputLabels());
+			for (G lbl : step.getOutputLabels()) {
+				if (outputs.contains(lbl)  && (!(step instanceof RetainInputs<?>)))
+					throw new ArgumentException("The " + lbl + " is being redefined in " + step+ " in "+ toString());
+				outputs.add(lbl);
+			}
+		}
+	}
+
 	public CompositeLabeledMultivariateJacobianFunction( //
 			final String name, //
 			final List<? extends LabeledMultivariateJacobianFunction<? extends G, ? extends G>> steps, //
@@ -138,6 +152,7 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 		assert finalOutputs.containsAll(outputLabels);
 		outList.add(finalOutputs);
 		mOutputs = Collections.unmodifiableList(outList);
+		checkForReplication(steps);
 	}
 
 	public CompositeLabeledMultivariateJacobianFunction( //

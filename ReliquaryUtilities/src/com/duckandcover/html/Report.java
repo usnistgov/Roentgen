@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,9 +51,6 @@ public class Report implements IToHTMLExt {
 			else
 				return mBase.toHTML(mMode);
 		}
-		
-		
-		
 	}
 	
 	/**
@@ -89,7 +88,19 @@ public class Report implements IToHTMLExt {
 	public void addHTML(final String html) {
 		mItems.add(Transforms.createHTML(html));
 	}
+	
+	public void addVerbatim(final String text) {
+		mItems.add(Transforms.verbatim(text));
+	}
+	
+	public void addThrowable(final Throwable e) {
+		final StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		mItems.add(Transforms.verbatim(sw.toString(),"Tomato"));
+	}
 
+	
 	public void addTable(final List<String> colHeaders, final List<String> rowHeaders, final List<List<String>> items) {
 		addHTML(HTML.asTable(colHeaders, rowHeaders, items));
 	}

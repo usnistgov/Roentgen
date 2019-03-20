@@ -1,16 +1,12 @@
 package gov.nist.microanalysis.roentgen.physics.composition;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
-import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.physics.Element;
@@ -22,14 +18,12 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  * Converts compositional data in atom fraction into mass fraction. Requires
  * also the atomic weights for each element in the material.
  *
- * @author nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
 public class AtomFractionToMassFraction //
 		extends LabeledMultivariateJacobianFunction<MaterialLabel, MassFraction> //
 		implements ILabeledMultivariateFunction<MaterialLabel, MassFraction> {
-
-	public final Material mMaterial;
 
 	private static List<MaterialLabel> buildInputTags(final Material mat) {
 		final List<MaterialLabel> res = new ArrayList<>();
@@ -37,6 +31,8 @@ public class AtomFractionToMassFraction //
 		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
 		return res;
 	}
+
+	public final Material mMaterial;
 
 	/**
 	 * Constructs a AtomicFractionToMassFraction instance.
@@ -49,81 +45,66 @@ public class AtomFractionToMassFraction //
 		mMaterial = mat;
 	}
 
-	private double denom(final RealVector point) {
-		final Map<Element, Number> frac = new HashMap<>();
-		final Map<Element, Number> wgt = new HashMap<>();
-
-		for (int i = 0; i < getInputDimension(); ++i) {
-			final Object tag = getInputLabel(i);
-			final double val = point.getEntry(i);
-			if (tag instanceof MaterialLabel.AtomFraction)
-				frac.put(((MaterialLabel.AtomFraction) tag).getElement(), val);
-			else if (tag instanceof MaterialLabel.AtomicWeight)
-				wgt.put(((MaterialLabel.AtomicWeight) tag).getElement(), val);
-		}
-		double res = 0.0;
-		for (final Map.Entry<Element, Number> me : frac.entrySet())
-			res += me.getValue().doubleValue() * wgt.get(me.getKey()).doubleValue();
-		return res;
-	}
-
-	private double delta(final MaterialLabel a1, final MaterialLabel a2) {
-		return a1.getElement().equals(a2.getElement()) ? 1.0 : 0.0;
-	}
-
-	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
-		final RealVector vals = new ArrayRealVector(getOutputDimension());
-		final RealMatrix jac = NullableRealMatrix.build(getOutputDimension(), getInputDimension());
-		final double den = denom(point);
-		for (int o1 = 0; o1 < getOutputDimension(); ++o1) {
-			final MaterialLabel.MassFraction mft = (MaterialLabel.MassFraction) getOutputLabel(o1);
-			final int awt1 = inputIndex(MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mft.getElement()));
-			final int aft1 = inputIndex(MaterialLabel.buildAtomFractionTag(mft.getMaterial(), mft.getElement()));
-			final double w1 = point.getEntry(awt1);
-			final double a1 = point.getEntry(aft1);
-			final double c1 = a1 * w1 / den;
-			vals.setEntry(o1, c1);
-			for (int i2 = 0; i2 < getInputDimension(); ++i2) {
-				final Object inLabel = getInputLabel(i2);
-				if (inLabel instanceof MaterialLabel.AtomFraction) {
-					final MaterialLabel.AtomFraction aft = (MaterialLabel.AtomFraction) inLabel;
-					final int awt2 = inputIndex(
-							MaterialLabel.buildAtomicWeightTag(aft.getMaterial(), aft.getElement()));
-					final double w2 = point.getEntry(awt2);
-					jac.setEntry(o1, i2, (w1 / den) * (delta(mft, aft) - a1 * w2 / den));
-				} else {
-					assert inLabel instanceof MaterialLabel.AtomicWeight;
-					final MaterialLabel.AtomicWeight awt = (MaterialLabel.AtomicWeight) inLabel;
-					final AtomFraction aft2 = MaterialLabel.buildAtomFractionTag(awt.getMaterial(), awt.getElement());
-					final int aft2i = inputIndex(aft2);
-					final double a2 = point.getEntry(aft2i);
-					jac.setEntry(o1, i2, (a1 / den) * (delta(mft, aft2) - w1 * a2 / den));
-				}
-			}
-		}
-		return Pair.create(vals, jac);
-	}
-
 	@Override
 	public RealVector optimized(final RealVector point) {
-		final RealVector vals = new ArrayRealVector(getOutputDimension());
-		final double den = denom(point);
-		for (int i1 = 0; i1 < getOutputDimension(); ++i1) {
-			final MaterialLabel.MassFraction mft = (MaterialLabel.MassFraction) getOutputLabel(i1);
-			final AtomicWeight awt1 = MaterialLabel.buildAtomicWeightTag(mft.getMaterial(), mft.getElement());
-			final double w1 = point.getEntry(inputIndex(awt1));
-			final AtomFraction aft1 = MaterialLabel.buildAtomFractionTag(mft.getMaterial(), mft.getElement());
-			final double a1 = point.getEntry(inputIndex(aft1));
-			final double c1 = a1 * w1 / den;
-			vals.setEntry(i1, c1);
+		final RealVector res = buildResult();
+		double den = 0.0;
+		for (final Element elm : mMaterial.getElementSet()) {
+			final double aw = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
+			final double af = getArg(MaterialLabel.buildAtomFractionTag(mMaterial, elm), point);
+			den += aw * af;
 		}
-		return vals;
+		for (final MassFraction mft : getOutputLabels()) {
+			final Material mat = mft.getMaterial();
+			final Element elm = mft.getElement();
+			final double w1 = getArg(MaterialLabel.buildAtomicWeightTag(mat, elm), point);
+			final double a1 = getArg(MaterialLabel.buildAtomFractionTag(mat, elm), point);
+			setResult(mft, res, a1 * w1 / den);
+		}
+		return res;
 	}
 
 	@Override
 	public String toString() {
-		return "Atom fraction to Mass fraction[" + mMaterial + "]";
+		return "Atom Fraction-to-Mass Fraction[" + mMaterial + "]";
+	}
+
+	@Override
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		final RealVector res = buildResult();
+		final RealMatrix jac = buildJacobian();
+		double den = 0.0;
+		for (final Element elm : mMaterial.getElementSet()) {
+			final double aw = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
+			final double af = getArg(MaterialLabel.buildAtomFractionTag(mMaterial, elm), point);
+			den += aw * af;
+		}
+		for (final MassFraction mft1 : getOutputLabels()) {
+			final Material mat1 = mft1.getMaterial();
+			final Element elm1 = mft1.getElement();
+			final AtomicWeight awt1 = MaterialLabel.buildAtomicWeightTag(mat1, elm1);
+			final AtomFraction aft1 = MaterialLabel.buildAtomFractionTag(mat1, elm1);
+			final double w1 = getArg(awt1, point);
+			final double a1 = getArg(aft1, point);
+			final double c1 = a1 * w1 / den;
+			setResult(mft1, res, c1);
+			for (final MassFraction mft2 : getOutputLabels()) {
+				final Material mat2 = mft2.getMaterial();
+				final Element elm2 = mft2.getElement();
+				final AtomicWeight awt2 = MaterialLabel.buildAtomicWeightTag(mat2, elm2);
+				final AtomFraction aft2 = MaterialLabel.buildAtomFractionTag(mat2, elm2);
+				final double w2 = getArg(awt2, point);
+				final double a2 = getArg(aft2, point);
+				if (elm1.equals(elm2)) {
+					setJacobian(mft1, aft2, jac, (w1 / den) * (1.0 - a1 * w2 / den));
+					setJacobian(mft1, awt2, jac, (a1 / den) * (1.0 - w1 * a2 / den));
+				} else {
+					setJacobian(mft1, aft2, jac, (w1 / den) * (-a1 * w2 / den));
+					setJacobian(mft1, awt2, jac, (a1 / den) * (-w1 * a2 / den));
+				}
+			}
+		}
+		return Pair.create(res, jac);
 	}
 
 }

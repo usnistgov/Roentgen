@@ -122,6 +122,7 @@ public class UncertainValuesCalculator<H, K> extends UncertainValuesBase<K> {
 	private UncertainValues<H> mInputs;
 	private UncertainValuesBase<? extends H> mRawInputs;
 	private ICalculator mCalculator;
+	private boolean mRetainInputs;
 
 	@Override
 	public int hashCode() {
@@ -158,11 +159,30 @@ public class UncertainValuesCalculator<H, K> extends UncertainValuesBase<K> {
 		@Override
 		protected UncertainValues<K> initialize() {
 			final Pair<RealVector, RealMatrix> eval = mEvaluated.get();
-			final RealMatrix jac = eval.getSecond();
+			RealMatrix jac = eval.getSecond();
+			final int extra = mInputs.getDimension();
+			assert jac.getColumnDimension() == extra;
+			RealVector val = eval.getFirst();
+			if (mRetainInputs) {
+				final int base = val.getDimension();
+				RealVector val2 = new ArrayRealVector(base + extra);
+				val2.setSubVector(0, val);
+				RealMatrix jac2 = MatrixUtils.createRealMatrix(base + extra,
+						jac.getColumnDimension());
+				jac2.setSubMatrix(jac.getData(), 0, 0);
+				// The inputs are in the order of mRawInput not mInputs
+				for (int i = 0; i < extra; ++i) {
+					final int outIdx = indexOf(mInputs.getLabel(i));
+					jac2.setEntry(outIdx, i, 1.0);
+					val2.setEntry(outIdx, mInputs.getEntry(i));
+				}
+				jac = jac2;
+				val = val2;
+			}
 			final RealMatrix cov = jac.multiply(mInputs.getCovariances().multiply(jac.transpose()));
 			return new UncertainValues<K>(//
 					getOutputLabels(), //
-					eval.getFirst(), //
+					val, //
 					cov);
 		}
 	};
@@ -170,40 +190,95 @@ public class UncertainValuesCalculator<H, K> extends UncertainValuesBase<K> {
 	transient private SimplyLazy<RealVector> mOutputValues = new SimplyLazy<RealVector>() {
 		@Override
 		protected RealVector initialize() {
+			RealVector val;
 			if (mFullOutputs.initialized())
-				return mFullOutputs.get().getValues();
-			else 
-				return mFunction.compute(mInputs.getValues());
+				val = mFullOutputs.get().getValues();
+			else {
+				val = mFunction.compute(mInputs.getValues());
+				if (mRetainInputs) {
+					RealVector val2 = new ArrayRealVector(val.getDimension() + mInputs.getDimension());
+					val2.setSubVector(0, val);
+					final int extra = mInputs.getDimension();
+					// The inputs are in the order of mRawInput not mInputs
+					for (int i = 0; i < extra; ++i) {
+						final int outIdx = indexOf(mInputs.getLabel(i));
+						val2.setEntry(outIdx, mInputs.getEntry(i));
+					}
+					val = val2;
+				}
+			}
+			return val;
 		}
 	};
 
-	private final static <K> List<K> buildOutputs(//
-			final LabeledMultivariateJacobianFunction<?, ? extends K> func //
+	private final static <H, K> List<K> buildOutputs1(//
+			final LabeledMultivariateJacobianFunction<? extends H, ? extends K> func //
 	) {
 		final FastIndex<K> res = new FastIndex<>();
-		res.addMissing(func.getOutputLabels());
+		res.addAll(func.getOutputLabels());
+		return (FastIndex<K>) res;
+	}
+
+	private final static <H> List<H> buildOutputs2(//
+			final LabeledMultivariateJacobianFunction<? extends H, ? extends H> func, //
+			final UncertainValuesBase<H> inputs, //
+			final boolean retainInputs //
+	) {
+		final FastIndex<H> res = new FastIndex<>();
+		res.addAll(func.getOutputLabels());
+		if (retainInputs)
+			res.addAll(inputs.getLabels());
 		return res;
+	}
+
+	/**
+	 * It is intentional that both the generic parameters on func are the same type.
+	 * This is necessary so that when the inputs and outputs are combined, the
+	 * result is compatible with both types.
+	 * 
+	 * 
+	 * @param func
+	 * @param inputs
+	 * @param retainInputs
+	 * @throws ArgumentException
+	 */
+	@SuppressWarnings("unchecked")
+	public UncertainValuesCalculator(//
+			final LabeledMultivariateJacobianFunction<? extends K, ? extends K> func, //
+			final UncertainValuesBase<K> inputs, //
+			final boolean retainInputs //
+	) throws ArgumentException {
+		super(buildOutputs2(func, inputs, retainInputs));
+		mFunction = (LabeledMultivariateJacobianFunction<? extends H, ? extends K>) func;
+		if (inputs != null) {
+			mRawInputs = (UncertainValuesBase<? extends H>) inputs;
+			setInputs((UncertainValuesBase<H>) inputs);
+		}
+		mCalculator = new Jacobian();
+		mRetainInputs = retainInputs;
 	}
 
 	public UncertainValuesCalculator(//
 			final LabeledMultivariateJacobianFunction<? extends H, ? extends K> func, //
 			final UncertainValuesBase<H> inputs //
 	) throws ArgumentException {
-		super(buildOutputs(func));
+		super(buildOutputs1(func));
 		mFunction = func;
 		if (inputs != null) {
 			mRawInputs = inputs;
 			setInputs(inputs);
 		}
 		mCalculator = new Jacobian();
+		mRetainInputs = false;
 	}
 
 	public static <J, L> UncertainValuesCalculator<J, L> buildDelta(//
 			final LabeledMultivariateJacobianFunction<? extends J, ? extends L> func, //
 			final UncertainValuesBase<J> inps, //
-			final double sigma//
+			final double sigma, //
+			final boolean retainInputs //
 	) throws ArgumentException {
-		final UncertainValuesCalculator<J,L> res = new UncertainValuesCalculator<J, L>(func, inps);
+		final UncertainValuesCalculator<J, L> res = new UncertainValuesCalculator<J, L>(func, inps);
 		final RealVector rv = inps.getValues(func.getInputLabels()).mapMultiply(sigma);
 		res.setCalculator(new FiniteDifference(rv));
 		return res;
@@ -214,7 +289,7 @@ public class UncertainValuesCalculator<H, K> extends UncertainValuesBase<K> {
 			final UncertainValuesBase<J> inps, //
 			final RealVector delta //
 	) throws ArgumentException {
-		final UncertainValuesCalculator<J,L> res = new UncertainValuesCalculator<J, L>(func, inps);
+		final UncertainValuesCalculator<J, L> res = new UncertainValuesCalculator<J, L>(func, inps);
 		final RealVector reordered = new ArrayRealVector(delta.getDimension());
 		for (int i = 0; i < res.getInputDimension(); ++i)
 			reordered.setEntry(i, delta.getEntry(inps.indexOf(res.getInputLabels().get(i))));
@@ -438,7 +513,7 @@ public class UncertainValuesCalculator<H, K> extends UncertainValuesBase<K> {
 	 */
 	public EstimateUncertainValues<K> propagateMC(final int nEvals) //
 			throws ArgumentException {
-		final MCPropagator<H ,K> mcp = new MCPropagator<H, K>(this);
+		final MCPropagator<H, K> mcp = new MCPropagator<H, K>(this);
 		return mcp.compute(nEvals);
 	}
 
