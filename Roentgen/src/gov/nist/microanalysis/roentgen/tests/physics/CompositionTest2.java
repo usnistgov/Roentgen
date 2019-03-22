@@ -166,10 +166,10 @@ public class CompositionTest2 {
 		try {
 			final Map<Element, Number> massFracs = new HashMap<>();
 			final double total = 0.98;
-			massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
-			massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, "dP", 0.008));
-			massFracs.put(Element.Oxygen, new UncertainValue(0.41407 / total, "dO", 0.015));
-			massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, "dH", 0.001));
+			massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, 0.012));
+			massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, 0.008));
+			massFracs.put(Element.Oxygen, new UncertainValue(0.41407 / total, 0.015));
+			massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, 0.001));
 			final Composition mf = Composition.massFraction("Apatite", massFracs);
 
 			Assert.assertEquals(5.0 / 22.0, mf.getAtomFraction(Element.Calcium).doubleValue(), 1.0e-6);
@@ -227,12 +227,12 @@ public class CompositionTest2 {
 	@Test
 	public void testAtomicFraction() throws ArgumentException, IOException {
 		final Map<Element, Number> atFracs = new HashMap<>();
-		atFracs.put(Element.Oxygen, new UncertainValue(0.593981, "dO", 0.05));
-		atFracs.put(Element.Magnesium, new UncertainValue(0.106595, "dMg", 0.005));
-		atFracs.put(Element.Aluminum, new UncertainValue(0.0404141, "dAl", 0.001));
-		atFracs.put(Element.Silicon, new UncertainValue(0.167755, "dSi", 0.002));
-		atFracs.put(Element.Calcium, new UncertainValue(0.0604423, "dCa", 0.0021));
-		atFracs.put(Element.Iron, new UncertainValue(0.0308124, "dFe", 0.0012));
+		atFracs.put(Element.Oxygen, new UncertainValue(0.593981, 0.05));
+		atFracs.put(Element.Magnesium, new UncertainValue(0.106595, 0.005));
+		atFracs.put(Element.Aluminum, new UncertainValue(0.0404141, 0.001));
+		atFracs.put(Element.Silicon, new UncertainValue(0.167755, 0.002));
+		atFracs.put(Element.Calcium, new UncertainValue(0.0604423, 0.0021));
+		atFracs.put(Element.Iron, new UncertainValue(0.0308124, 0.0012));
 		final Composition af = Composition.atomFraction("K412", atFracs);
 
 		Assert.assertEquals(0.431202, af.getMassFraction(Element.Oxygen).doubleValue(), 1.0e-5);
@@ -300,12 +300,12 @@ public class CompositionTest2 {
 	public void testAtomicFractionMC() //
 			throws ArgumentException, IOException {
 		final Map<Element, UncertainValue> atFracs = new HashMap<>();
-		atFracs.put(Element.Oxygen, new UncertainValue(0.593981, "dO", 0.05));
-		atFracs.put(Element.Magnesium, new UncertainValue(0.106595, "dMg", 0.005));
-		atFracs.put(Element.Aluminum, new UncertainValue(0.0404141, "dAl", 0.001));
-		atFracs.put(Element.Silicon, new UncertainValue(0.167755, "dSi", 0.002));
-		atFracs.put(Element.Calcium, new UncertainValue(0.0604423, "dCa", 0.0021));
-		atFracs.put(Element.Iron, new UncertainValue(0.0308124, "dFe", 0.0012));
+		atFracs.put(Element.Oxygen, new UncertainValue(0.593981, 0.05));
+		atFracs.put(Element.Magnesium, new UncertainValue(0.106595, 0.005));
+		atFracs.put(Element.Aluminum, new UncertainValue(0.0404141, 0.001));
+		atFracs.put(Element.Silicon, new UncertainValue(0.167755, 0.002));
+		atFracs.put(Element.Calcium, new UncertainValue(0.0604423, 0.0021));
+		atFracs.put(Element.Iron, new UncertainValue(0.0308124, 0.0012));
 		final Composition af = Composition.atomFraction("K412", atFracs);
 
 		// From DTSA-II
@@ -317,15 +317,14 @@ public class CompositionTest2 {
 		assertEquals(0.0781, af.getMassFraction(Element.Iron).doubleValue(), 0.0001);
 
 		// Test MC against analytic
-		
+
 		af.setCalculator(af.new MonteCarlo(160000));
-		final UncertainValues<MaterialLabel> mup = UncertainValues.force(af);
+		final UncertainValues<MaterialLabel> mup = UncertainValues.asUncertainValues(af);
 		af.setCalculator(af.new Analytical());
-		
-		
+
 		for (final MaterialLabel label : af.massFractionTags())
 			assertEquals(af.getValue(label).fractionalUncertainty(),
-					mup.getUncertainValue(label).fractionalUncertainty(), 0.001);
+					mup.getUncertainValue(label).fractionalUncertainty(), 0.01);
 
 		if (mHTML) {
 			final Report rep = new Report("Atomic Fraction MC");
@@ -371,13 +370,13 @@ public class CompositionTest2 {
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
 		final Composition mix = Composition.combine(name, mcn, true);
 
-		final UncertainValues<MaterialLabel> jres = UncertainValues.force(mix);
+		final UncertainValues<MaterialLabel> jres = UncertainValues.asUncertainValues(mix);
 
-		final RealVector dinp = mix.getValues().mapMultiply(0.0001);
+		final RealVector dinp = mix.getInputValues().mapMultiply(0.0001);
 		mix.setCalculator(mix.new FiniteDifference(dinp));
-		final UncertainValues<MaterialLabel> dres = UncertainValues.force(mix);
+		final UncertainValues<MaterialLabel> dres = UncertainValues.asUncertainValues(mix);
 		mix.setCalculator(mix.new MonteCarlo(160000));
-		final UncertainValues<MaterialLabel> mcres = UncertainValues.force(mix);
+		final UncertainValues<MaterialLabel> mcres = UncertainValues.asUncertainValues(mix);
 		mix.setCalculator(mix.new Analytical());
 
 		for (final MaterialLabel row : dres.getLabels()) {
@@ -459,11 +458,11 @@ public class CompositionTest2 {
 		mcn.put(Composition.parse("Al2O3"), new UncertainValue(fAl2O3, unc));
 		final Composition mix = Composition.combine(name, mcn, false);
 
-		final UncertainValues<MaterialLabel> jres = UncertainValues.force(mix);
+		final UncertainValues<MaterialLabel> jres = UncertainValues.asUncertainValues(mix);
 
-		final RealVector dinp = mix.getValues().mapMultiply(0.0001);
+		final RealVector dinp = mix.getInputValues().mapMultiply(0.0001);
 		mix.setCalculator(mix.new FiniteDifference(dinp));
-		final UncertainValues<MaterialLabel> dres = UncertainValues.force(mix);
+		final UncertainValues<MaterialLabel> dres = UncertainValues.asUncertainValues(mix);
 
 		mix.setCalculator(mix.new Analytical());
 
@@ -542,9 +541,9 @@ public class CompositionTest2 {
 		r.add(albite);
 		r.add(sanidine);
 		r.add(combiner);
-		final UncertainValues<MaterialLabel> mix = UncertainValues.force(combiner);
+		final UncertainValues<MaterialLabel> mix = UncertainValues.asUncertainValues(combiner);
 		combiner.setCalculator(combiner.new FiniteDifference(combiner.getInputValues().mapMultiply(0.001)));
-		final UncertainValues<MaterialLabel> dmix = UncertainValues.force(combiner);
+		final UncertainValues<MaterialLabel> dmix = UncertainValues.asUncertainValues(combiner);
 		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
 		r.addSubHeader("Delta");
 		r.add(dmix);
@@ -562,9 +561,9 @@ public class CompositionTest2 {
 		try {
 			final Map<Element, Number> massFracs = new HashMap<>();
 			final double total = 0.98;
-			massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, "dCa", 0.012));
-			massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, "dP", 0.008));
-			massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, "dH", 0.001));
+			massFracs.put(Element.Calcium, new UncertainValue(0.398936 / total, 0.012));
+			massFracs.put(Element.Phosphorus, new UncertainValue(0.184987 / total, 0.008));
+			massFracs.put(Element.Hydrogen, new UncertainValue(0.0020066 / total, 0.001));
 
 			final Material mat = new Material("Apatite",
 					Arrays.asList(Element.Calcium, Element.Phosphorus, Element.Hydrogen, Element.Oxygen));

@@ -21,8 +21,13 @@ public interface Constraint {
 		public double limit(final double val) {
 			return val;
 		}
-	}
 
+		public String toString() {
+			return "None";
+		}
+	
+	}
+	
 	/**
 	 * Constrains a value to within a [min,max] range. Values less than min are set
 	 * to min and values larger than max are set to max.
@@ -40,6 +45,11 @@ public interface Constraint {
 			mMin = Math.min(min, max);
 			mMax = Math.max(min, max);
 		}
+		
+		public Range(double nominal, double lowPct, double highPct){
+			this(nominal*lowPct, nominal*highPct);
+		}
+
 
 		@Override
 		public double limit(final double val) {
@@ -49,6 +59,10 @@ public interface Constraint {
 				return mMax;
 			else
 				return val;
+		}
+		
+		public String toString() {
+			return "Range[" + mMin + "," + mMax + "]";
 		}
 	}
 	

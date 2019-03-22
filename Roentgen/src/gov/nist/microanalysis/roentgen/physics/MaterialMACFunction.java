@@ -121,7 +121,7 @@ public class MaterialMACFunction //
 			mats.add(comp.getMaterial());
 		final MaterialMACFunction mmf = new MaterialMACFunction(mats, xray);
 		final UncertainValuesBase<EPMALabel> inputs = mmf.buildInputs(materials, xray);
-		return UncertainValuesBase.propagate(mmf, inputs);
+		return UncertainValuesBase.propagateAnalytical(mmf, inputs);
 	}
 
 	/**

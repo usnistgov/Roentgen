@@ -1,3 +1,6 @@
+/**
+ *
+ */
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
 import java.util.ArrayList;
@@ -8,17 +11,18 @@ import java.util.List;
 import java.util.Map;
 
 import com.duckandcover.html.HTML;
-import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
- * @author Nicholas W. M. Ritchie
+ * @author nicho
  *
  */
-public class UncertainValue2<H> //
-		extends Number //
-		implements Comparable<UncertainValue2<H>>, IToHTML {
+public class UncertainValueEx<H> extends UncertainValue {
+
+	private static final long serialVersionUID = -5637027270542233886L;
+
+	final List<Sigma> mSigmas;
 
 	private class Sigma {
 		private final H mLabel;
@@ -34,70 +38,81 @@ public class UncertainValue2<H> //
 			return mLabel + " = " + mOneSigma;
 		}
 	}
-	public static final UncertainValue2<?> ONE = new UncertainValue2<Object>(1.0);
-	public static final UncertainValue2<?> ZERO = new UncertainValue2<Object>(0.0);
-	public static final UncertainValue2<?> NaN = new UncertainValue2<Object>(Double.NaN);
-	public static final UncertainValue2<?> POSITIVE_INFINITY = new UncertainValue2<Object>(Double.POSITIVE_INFINITY);
-	public static final UncertainValue2<?> NEGATIVE_INFINITY = new UncertainValue2<Object>(Double.NEGATIVE_INFINITY);
-
-	private static final long serialVersionUID = -7284125207920225793L;
-	final Double mValue;
-	final double mSigma;
-
-	final List<Sigma> mSigmas;
-
-	public UncertainValue2(final double value) {
-		this(value, 0.0, Collections.emptyMap());
-	}
 
 	/**
-	 *
+	 * @param value
+	 * @param sigma
+	 * @param variances
 	 */
-	public UncertainValue2(final double value, final double sigma) {
-		this(value, sigma, Collections.emptyMap());
-	}
-
-	/**
-	 *
-	 */
-	public UncertainValue2(final double value, final double sigma, final Map<? extends H, Double> variances) {
-		mValue = Double.valueOf(value);
-		mSigma = sigma;
+	public UncertainValueEx(final double value, final double sigma, final Map<? extends H, Double> variances) {
+		super(value, sigma);
 		mSigmas = new ArrayList<>();
 		for (final Map.Entry<? extends H, Double> me : variances.entrySet())
 			mSigmas.add(new Sigma(me.getKey(), me.getValue()));
 	}
 
+	/**
+	 * @param value
+	 * @param sigma
+	 */
+	public UncertainValueEx(final double value, final double sigma) {
+		this(value, sigma, Collections.emptyMap());
+	}
+
+	/**
+	 * @param value
+	 * @param sigma
+	 * @param variances
+	 */
+	public UncertainValueEx(final double value) {
+		this(value, 0.0);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
 	@Override
-	public int compareTo(final UncertainValue2<H> arg0) {
+	public int compareTo(final UncertainValue arg0) {
 		int res = Double.compare(mValue, arg0.mValue);
 		if (res == 0)
 			res = Double.compare(mSigma, arg0.mSigma);
-		if (res == 0) {
-			final List<Sigma> ss = sortedSigmas();
-			final List<Sigma> ss0 = arg0.sortedSigmas();
-			for (int i = 0; i < Math.min(ss.size(), ss0.size()); ++i) {
-				final Sigma s = ss.get(i), s0 = ss0.get(i);
-				res = Double.compare(s.mOneSigma, s0.mOneSigma);
-				if (res != 0)
-					return res;
+		if (arg0 instanceof UncertainValueEx<?>)
+			if (res == 0) {
+				final List<Sigma> ss = sortedSigmas();
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				final List<Sigma> ss0 = ((UncertainValueEx) arg0).sortedSigmas();
+				for (int i = 0; i < Math.min(ss.size(), ss0.size()); ++i) {
+					final Sigma s = ss.get(i), s0 = ss0.get(i);
+					res = Double.compare(s.mOneSigma, s0.mOneSigma);
+					if (res != 0)
+						return res;
+				}
+				if (ss.size() > ss0.size())
+					return 1;
+				else if (ss0.size() > ss.size())
+					return -1;
 			}
-			if (ss.size() > ss0.size())
-				return 1;
-			else if (ss0.size() > ss.size())
-				return -1;
-		}
 		return res;
 	}
 
-	@Override
-	public double doubleValue() {
-		return mValue.doubleValue();
+	private List<Sigma> sortedSigmas() {
+		final List<Sigma> sigmas = new ArrayList<>(mSigmas);
+		sigmas.sort(new Comparator<Sigma>() {
+			@Override
+			public int compare(final Sigma o1, final Sigma o2) {
+				return -Double.compare(o1.mOneSigma, o2.mOneSigma);
+			}
+		});
+		return sigmas;
 	}
-
-	@Override
-	public float floatValue() {
-		return mValue.floatValue();
+	
+	public List<H> getComponentNames(){
+		final List<H> res = new ArrayList<>();
+		for (final Sigma s : mSigmas)
+			res.add(s.mLabel);
+		return res;
 	}
 
 	public Map<H, Double> getComponents() {
@@ -115,20 +130,6 @@ public class UncertainValue2<H> //
 	}
 
 	@Override
-	public int intValue() {
-		return mValue.intValue();
-	}
-
-	@Override
-	public long longValue() {
-		return mValue.longValue();
-	}
-
-	@Override
-	public String toHTML(final Mode mode) {
-		return toHTML(mode, new BasicNumberFormat());
-	}
-
 	public String toHTML(final Mode mode, final BasicNumberFormat bnf) {
 		switch (mode) {
 		case TERSE: {
@@ -177,33 +178,20 @@ public class UncertainValue2<H> //
 		}
 	}
 
-	/**
-	 * Returns the one-&sigma; uncertainty.
-	 *
-	 * @return double
-	 */
-	public double uncertainty() {
-		return mSigma;
-	}
-
-	/**
-	 * Returns the variance = sigma<sup>2</sup>
-	 *
-	 * @return variance
-	 */
-	public double variance() {
-		return mSigma * mSigma;
-	}
-
-	private List<Sigma> sortedSigmas() {
-		final List<Sigma> sigmas = new ArrayList<>(mSigmas);
-		sigmas.sort(new Comparator<Sigma>() {
-			@Override
-			public int compare(final Sigma o1, final Sigma o2) {
-				return -Double.compare(o1.mOneSigma, o2.mOneSigma);
+	public void assignComponent(final H label, final double val) {
+		for (final Sigma s : mSigmas)
+			if (s.mLabel.equals(label)) {
+				mSigmas.remove(s);
+				break;
 			}
-		});
-		return sigmas;
+		mSigmas.add(new Sigma(label, val));
+	}
+
+	public double getComponent(final Object label) {
+		for (final Sigma s : mSigmas)
+			if (s.mLabel.equals(label))
+				return s.mOneSigma;
+		return 0.0;
 	}
 
 }

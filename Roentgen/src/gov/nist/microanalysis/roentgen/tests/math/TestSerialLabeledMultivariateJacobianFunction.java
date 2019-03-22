@@ -108,7 +108,7 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 	private final UncertainValues<String> mInput1 = new UncertainValues<>(mInputs, mValues1, mCov1);
 
 	public void test1() throws IOException, ArgumentException {
-		final UncertainValuesBase<String> uv = UncertainValuesBase.propagate(mStep1, mInput0);
+		final UncertainValuesBase<String> uv = UncertainValuesBase.propagateAnalytical(mStep1, mInput0);
 		final Report rep = new Report("Step 1");
 		rep.addHeader("Inputs");
 		rep.add(mInput0);
@@ -130,7 +130,7 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		final List<LabeledMultivariateJacobianFunction<String, String>> steps = Arrays.asList(mStep1, mStep2);
 		final CompositeLabeledMultivariateJacobianFunction<String> msnmjf = //
 				new CompositeLabeledMultivariateJacobianFunction<String>("Test1", steps);
-		final UncertainValues<String> uv = UncertainValues.force(UncertainValuesBase.propagate(msnmjf, mInput1));
+		final UncertainValues<String> uv = UncertainValues.asUncertainValues(UncertainValuesBase.propagateAnalytical(msnmjf, mInput1));
 		final UncertainValuesBase<String> mc = UncertainValuesBase.propagateMonteCarlo(msnmjf, mInput1, 100000);
 		final UncertainValuesCalculator<String> delta = UncertainValuesBase.propagateFiniteDifference(//
 				msnmjf, mInput1, mInput1.getValues().mapMultiply(0.001));
@@ -162,8 +162,8 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		final CompositeLabeledMultivariateJacobianFunction<String> full = //
 				new CompositeLabeledMultivariateJacobianFunction<String>("Full", steps);
 
-		final UncertainValuesBase<String> trimRes = UncertainValuesBase.propagate(trimmed, mInput1);
-		final UncertainValuesBase<String> fullRes = UncertainValuesBase.propagate(full, mInput1);
+		final UncertainValuesBase<String> trimRes = UncertainValuesBase.propagateAnalytical(trimmed, mInput1);
+		final UncertainValuesBase<String> fullRes = UncertainValuesBase.propagateAnalytical(full, mInput1);
 
 		final Report rep = new Report("Step 1 and 2");
 		rep.addHeader("Trimmed");

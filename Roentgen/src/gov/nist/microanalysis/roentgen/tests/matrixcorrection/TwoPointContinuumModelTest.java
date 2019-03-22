@@ -19,7 +19,7 @@ import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue2;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
@@ -47,7 +47,7 @@ public class TwoPointContinuumModelTest {
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 		final RealVector vals = new ArrayRealVector(12);
 		final RealVector vars = new ArrayRealVector(12);
-		final List<ModelLabels<?,?>> labels = Arrays.asList(new ModelLabels[12]);
+		final List<ModelLabels<?, ?>> labels = Arrays.asList(new ModelLabels[12]);
 		// LOW
 		labels.set(0, ModelLabels.buildSpectrometerPosition(mcd, cxr, TwoPointContinuumModel.LOW_BACK));
 		vals.setEntry(0, 69.96629);
@@ -87,7 +87,7 @@ public class TwoPointContinuumModelTest {
 		labels.set(11, ModelLabels.buildLiveTime(mcd, cxr, TwoPointContinuumModel.HIGH_BACK));
 		vals.setEntry(11, 5.0);
 		vars.setEntry(11, sqr(0.01));
-		final UncertainValues<ModelLabels<?,?>> uvs = new UncertainValues<>(labels, vals, vars);
+		final UncertainValues<ModelLabels<?, ?>> uvs = new UncertainValues<>(labels, vals, vars);
 
 		final Report r = new Report("2Point");
 		try {
@@ -105,13 +105,14 @@ public class TwoPointContinuumModelTest {
 				l.addAll(tpcm.getOutputLabels());
 				r.addHTML(l.toHTML(Mode.NORMAL));
 			}
-			final UncertainValuesBase<ModelLabels<?,?>> res = UncertainValues.propagate(tpcm, uvs);
+			final UncertainValuesBase<ModelLabels<?, ?>> res = UncertainValuesBase.propagateAnalytical(tpcm, uvs);
 			r.add(res);
 
-			UncertainValuesCalculator<ModelLabels<?,?>> uvc = new UncertainValuesCalculator<ModelLabels<?,?>>(tpcm, uvs);
-			final HashMap<ModelLabels<?,?>, UncertainValue2<ModelLabels<?,?>>> ovals = uvc.getOutputValues(0.0);
+			final UncertainValuesCalculator<ModelLabels<?, ?>> uvc = new UncertainValuesCalculator<ModelLabels<?, ?>>(
+					tpcm, uvs);
+			final HashMap<ModelLabels<?, ?>, UncertainValueEx<ModelLabels<?, ?>>> ovals = uvc.getOutputValues(0.0);
 			final Table tt = new Table();
-			for (final Map.Entry<ModelLabels<?,?>, UncertainValue2<ModelLabels<?,?>>> me : ovals.entrySet()) {
+			for (final Map.Entry<ModelLabels<?, ?>, UncertainValueEx<ModelLabels<?, ?>>> me : ovals.entrySet()) {
 				tt.addRow(Table.td(me.getKey()), Table.td((IToHTML) me.getValue()));
 			}
 			r.addHTML(tt.toHTML(Mode.VERBOSE));

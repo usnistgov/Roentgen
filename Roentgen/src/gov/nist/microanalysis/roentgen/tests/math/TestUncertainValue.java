@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.tests.math;
 import org.junit.Assert;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 import junit.framework.TestCase;
 
@@ -20,31 +21,31 @@ import junit.framework.TestCase;
  */
 public class TestUncertainValue extends TestCase {
 
-	private final UncertainValue mA = new UncertainValue(1.24, "A", 0.3);
+	private final UncertainValue mA = new UncertainValue(1.24, 0.3);
 	private final UncertainValue mA2a = makeA2a();
 
-	private final UncertainValue mB = new UncertainValue(8.82, "B", 1.2);
+	private final UncertainValue mB = new UncertainValue(8.82, 1.2);
 	private final UncertainValue mB2a = makeB2a();
 
-	private final UncertainValue mC = new UncertainValue(-9.3, "C", 2.1);
+	private final UncertainValue mC = new UncertainValue(-9.3, 2.1);
 	private final UncertainValue mC2a = makeC2a();
 
 	private static final UncertainValue makeA2a() {
-		final UncertainValue res = new UncertainValue(1.24);
+		final UncertainValueEx<String> res = new UncertainValueEx<>(1.24);
 		res.assignComponent("V1", Math.sqrt(0.05));
 		res.assignComponent("V2", Math.sqrt(0.04));
 		return res;
 	}
 
 	private static final UncertainValue makeB2a() {
-		final UncertainValue res = new UncertainValue(8.82);
+		final UncertainValueEx<String> res = new UncertainValueEx<>(8.82);
 		res.assignComponent("V1", Math.sqrt(0.84));
 		res.assignComponent("V2", Math.sqrt(0.6));
 		return res;
 	}
 
 	private static final UncertainValue makeC2a() {
-		final UncertainValue res = new UncertainValue(-9.3);
+		final UncertainValueEx<String> res = new UncertainValueEx<>(-9.3);
 		// 2.1 * 2.1 = 4.2 + 0.21 = 4.41
 		res.assignComponent("V1", Math.sqrt(3.0));
 		res.assignComponent("V3", Math.sqrt(1.41));

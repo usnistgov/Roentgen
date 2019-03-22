@@ -20,6 +20,7 @@ import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -58,8 +59,7 @@ public class MathUtilities {
 			// The +- symbol or "+-"
 			final String[] terms = tmp.split("\\xB1|\\+\\-");
 			assert terms.length > 1;
-			return new UncertainValue(Double.parseDouble(terms[0].trim()), "dname",
-					Double.parseDouble(terms[1].trim()));
+			return new UncertainValue(Double.parseDouble(terms[0].trim()), Double.parseDouble(terms[1].trim()));
 		} else
 			return new Double(Double.parseDouble(tmp));
 	}
@@ -126,18 +126,22 @@ public class MathUtilities {
 		final StringBuffer sb = new StringBuffer();
 		sb.append(nf.format(uv.doubleValue()));
 		sb.append("&pm;");
-		boolean first = true;
-		for (final Object obj : uv.getComponentNames()) {
-			if (!first) {
-				sb.append(",");
-				first = false;
+		if (uv instanceof UncertainValueEx<?>) {
+			UncertainValueEx<?> uvx = (UncertainValueEx<?>) uv;
+			boolean first = true;
+			for (final Object obj : uvx.getComponentNames()) {
+				if (!first) {
+					sb.append(",");
+					first = false;
+				}
+				sb.append("(");
+				sb.append(obj.toString());
+				sb.append(":");
+				sb.append(nf.format(uvx.getComponent(obj)));
+				sb.append(")");
 			}
-			sb.append("(");
-			sb.append(obj.toString());
-			sb.append(":");
-			sb.append(nf.format(uv.getComponent(obj)));
-			sb.append(")");
-		}
+		} else
+			sb.append(nf.format(uv.uncertainty()));
 		return sb.toString();
 	}
 

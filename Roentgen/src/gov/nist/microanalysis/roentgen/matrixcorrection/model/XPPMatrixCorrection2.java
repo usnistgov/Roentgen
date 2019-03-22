@@ -23,6 +23,7 @@ import com.duckandcover.html.Table;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
+import gov.nist.microanalysis.roentgen.math.Constraint;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
@@ -31,6 +32,7 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.Layer;
@@ -99,6 +101,8 @@ public class XPPMatrixCorrection2 //
 	private static final String QLA = "<html>Q<sub>l</sub><sup>a</sup>";
 	private static final String ZBARB = "Z<sub>barb</sub>";
 	private static final String RBAR = "R<sub>bar</sub>";
+	
+	private final Map<EPMALabel, Constraint> mConstraint = new HashMap<>();
 
 	private static final double eVtokeV(final double eV) {
 		return 0.001 * eV;
@@ -1807,6 +1811,90 @@ public class XPPMatrixCorrection2 //
 	) throws ArgumentException {
 		super("XPP Matrix Correction", kratios, buildSteps(kratios, outputLabels), outputLabels);
 	}
+	
+	public static UncertainValuesCalculator<EPMALabel> buildCalculator( //
+			Set<KRatioLabel> kratios, //
+			final UncertainValues<MassFraction> estUnknown, //
+			List<EPMALabel> outputLabels //
+	) throws ArgumentException {
+		XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, outputLabels);
+		UncertainValues<EPMALabel> inputs = xpp.buildInput(estUnknown);
+		return new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
+	}
+
+	
+	/**
+	 * Builds a {@link UncertainValuesCalculator} around an instance of the
+	 * {@link XPPMatrixCorrection2} algorithm that returns a basic set
+	 * of default outputs.
+	 * 
+	 * @param kratios
+	 * @param estUnknown
+	 * @return {@link UncertainValuesCalculator}
+	 * @throws ArgumentException
+	 */
+	public static UncertainValuesCalculator<EPMALabel> buildAnalytical( //
+			Set<KRatioLabel> kratios, //
+			final UncertainValues<MassFraction> estUnknown, //
+			final boolean allOutputs
+	) throws ArgumentException {
+		final List<EPMALabel> outputs = allOutputs ? Collections.emptyList() : buildDefaultOutputs(kratios);
+		XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, outputs);
+		UncertainValues<EPMALabel> inputs = xpp.buildInput(estUnknown);
+		UncertainValuesCalculator<EPMALabel> res = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
+		res.addConstraints(xpp.getConstraints());
+		return res;
+	}
+
+	
+	
+	/**
+	 * Builds a {@link UncertainValuesCalculator} around an instance of the
+	 * {@link XPPMatrixCorrection2} algorithm that returns a basic set
+	 * of default outputs.
+	 * 
+	 * @param kratios
+	 * @param estUnknown
+	 * @return {@link UncertainValuesCalculator}
+	 * @throws ArgumentException
+	 */
+	public static UncertainValuesCalculator<EPMALabel> buildFiniteDifference( //
+			Set<KRatioLabel> kratios, //
+			final UncertainValues<MassFraction> estUnknown, //
+			final double frac, //
+			final boolean allOutputs
+	) throws ArgumentException {
+		final List<EPMALabel> outputs = allOutputs ? Collections.emptyList() : buildDefaultOutputs(kratios);
+		XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, outputs);
+		UncertainValues<EPMALabel> inputs = xpp.buildInput(estUnknown);
+		final UncertainValuesCalculator<EPMALabel> res = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
+		res.addConstraints(xpp.getConstraints());
+		res.setCalculator(res.new FiniteDifference(xpp.delta(inputs, frac)));
+		return res;
+	}
+	
+	/**
+	 * Builds a {@link UncertainValuesCalculator} around an instance of the
+	 * {@link XPPMatrixCorrection2} algorithm that returns a basic set
+	 * of default outputs.
+	 * 
+	 * @param kratios
+	 * @param estUnknown
+	 * @return {@link UncertainValuesCalculator}
+	 * @throws ArgumentException
+	 */
+	public static UncertainValuesCalculator<EPMALabel> buildMonteCarlo( //
+			Set<KRatioLabel> kratios, //
+			final UncertainValues<MassFraction> estUnknown, //
+			final int nEvals, //
+			final boolean allOutputs
+	) throws ArgumentException {
+		final UncertainValuesCalculator<EPMALabel> res = buildAnalytical(kratios, estUnknown, allOutputs);
+		res.setCalculator(res.new MonteCarlo(nEvals));
+		return res;
+	}
+
+	
 
 	/**
 	 * Mean ionization potential
@@ -1817,7 +1905,7 @@ public class XPPMatrixCorrection2 //
 	public UncertainValue computeJi(final Element elm) {
 		final double z = elm.getAtomicNumber();
 		final double j = 1.0e-3 * z * (10.04 + 8.25 * Math.exp(-z / 11.22));
-		return new UncertainValue(j, "J[" + elm.getAbbrev() + "]", 0.03 * j);
+		return new UncertainValue(j, 0.03 * j);
 	}
 
 	/**
@@ -1971,7 +2059,7 @@ public class XPPMatrixCorrection2 //
 				}
 		}
 		results.add(new UncertainValues<>(mon));
-		return UncertainValues.<EPMALabel>force(UncertainValuesBase.combine(results, true));
+		return UncertainValues.<EPMALabel>asUncertainValues(UncertainValuesBase.combine(results, true));
 	}
 
 	public Set<Element> getElements() {
@@ -1981,6 +2069,16 @@ public class XPPMatrixCorrection2 //
 		return elms;
 	}
 
+	public void setConstraint(EPMALabel lbl, Constraint con) {
+		mConstraint.put(lbl, con);
+	}
+	
+	public Map<EPMALabel, Constraint> getConstraints(){
+		return Collections.unmodifiableMap(mConstraint);
+	}
+	
+	
+	
 	private static LabeledMultivariateJacobianFunction<EPMALabel, MaterialMAC> buildMaterialMACFunctions( //
 			final Material estUnknown, //
 			final Set<KRatioLabel> kratios) //
@@ -2044,8 +2142,13 @@ public class XPPMatrixCorrection2 //
 		final Map<EPMALabel, Number> macInps = new HashMap<>();
 		final ElementalMAC em = new ElementalMAC();
 		for (final Element elm : elms)
-			for (final CharacteristicXRay cxr : scxr)
-				macInps.put(new ElementalMAC.ElementMAC(elm, cxr), em.compute(elm, cxr));
+			for (final CharacteristicXRay cxr : scxr) {
+				final ElementalMAC.ElementMAC label = new ElementalMAC.ElementMAC(elm, cxr);
+				final UncertainValue mac = em.compute(elm, cxr);
+				macInps.put(label, mac);
+				setConstraint(label, new Constraint.Range(0.1*mac.doubleValue(), 10.0*mac.doubleValue()));
+				
+			}
 		return new UncertainValues<EPMALabel>(macInps);
 	}
 

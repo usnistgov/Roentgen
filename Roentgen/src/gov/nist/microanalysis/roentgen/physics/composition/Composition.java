@@ -361,7 +361,7 @@ public class Composition //
 		final CompositeLabeledMultivariateJacobianFunction<MaterialLabel> combine = //
 				new CompositeLabeledMultivariateJacobianFunction<MaterialLabel>("Mixture", steps);
 		final UncertainValues<MaterialLabel> inp = UncertainValues
-				.<MaterialLabel>force(UncertainValuesBase.combine(input, true));
+				.<MaterialLabel>asUncertainValues(UncertainValuesBase.combine(input, true));
 		return new Composition(Representation.Mixture, newMat, combine, inp);
 	}
 
@@ -447,7 +447,7 @@ public class Composition //
 		final UncertainValues<MaterialLabel> mfracs = new UncertainValues<MaterialLabel>(labels, vals, cov);
 		final UncertainValues<MaterialLabel> wgts = new UncertainValues<MaterialLabel>(
 				buildAtomicWeights(mat, atomicWeights));
-		final UncertainValues<MaterialLabel> input = UncertainValues.<MaterialLabel>force(//
+		final UncertainValues<MaterialLabel> input = UncertainValues.<MaterialLabel>asUncertainValues(//
 				UncertainValuesBase.combine(Arrays.asList(mfracs, wgts), false));
 		final MassFractionToComposition slmjf = new MassFractionToComposition(mat, otherElmRules);
 		return new Composition(Representation.MassFraction, mat, slmjf, input, density);
@@ -621,7 +621,7 @@ public class Composition //
 	 */
 	public static Composition pureElement(final Element elm, final double purity) {
 		final Map<Element, Number> men = new TreeMap<>();
-		men.put(elm, new UncertainValue(purity, "d" + elm.toString(), 1.0 - purity));
+		men.put(elm, new UncertainValue(purity,  1.0 - purity));
 		try {
 			return massFraction("Pure " + elm.getAbbrev(),
 					Collections.singletonMap(elm, new UncertainValue(purity, 1.0 - purity)), Collections.emptyMap());

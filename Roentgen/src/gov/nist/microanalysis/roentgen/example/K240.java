@@ -21,7 +21,7 @@ import com.duckandcover.html.Table.Item;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue2;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
@@ -62,6 +62,7 @@ public class K240 {
 		res.put(Element.Oxygen, new UncertainValue(0.340023, 0.00340023));
 		return res;
 	}
+
 	public static void main(final String[] args) {
 		final K240 k240 = new K240();
 		try {
@@ -130,10 +131,10 @@ public class K240 {
 		final Composition zr = Composition.parse("Zr");
 		final Composition benitoite = Composition.parse("BaTiSi3O9");
 
-		final Map<Integer, Map<? extends EPMALabel, UncertainValue2<String>>> outVals = new TreeMap<>();
+		final Map<Integer, Map<EPMALabel, UncertainValueEx<String>>> outVals = new TreeMap<>();
 		final Map<Integer, UncertainValuesBase<EPMALabel>> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
-		List<? extends EPMALabel> outLabels = null;
+		List<EPMALabel> outLabels = null;
 		List<String> inLabels = null;
 		{
 			final Report initReport = new Report("K-Ratio - Initialization");
@@ -204,7 +205,7 @@ public class K240 {
 					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
-				final UncertainValuesCalculator<EPMALabel> res = UncertainValuesBase.propagate(cfk, msInp);
+				final UncertainValuesCalculator<EPMALabel> res = UncertainValuesBase.propagateAnalytical(cfk, msInp);
 				final Map<String, Collection<? extends EPMALabel>> labels = extractLabelBlocks(msInp);
 				resVals.put(ie0, res);
 				if ((ie0 - MIN_E) % 5 == 0) {
@@ -252,16 +253,16 @@ public class K240 {
 						row.add(Table.td(mft.getElement()));
 						row.add(Table.td(inTag));
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table.td(bnf.format(tmp.doubleValue())));
 							else
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null) {
 								final double cbn = getComponentByName(tmp, inTag);
 								if (cbn != 0.0)
@@ -271,8 +272,8 @@ public class K240 {
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table
 										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //
@@ -353,7 +354,7 @@ public class K240 {
 		final Composition si = Composition.parse("Si");
 		final Composition o = Composition.parse("O");
 
-		final Map<Integer, Map<? extends EPMALabel, UncertainValue2<String>>> outVals = new TreeMap<>();
+		final Map<Integer, Map<EPMALabel, UncertainValueEx<String>>> outVals = new TreeMap<>();
 		final Map<Integer, UncertainValuesBase<EPMALabel>> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
 		List<? extends EPMALabel> outLabels = null;
@@ -480,16 +481,16 @@ public class K240 {
 						row.add(Table.td(mft.getElement()));
 						row.add(Table.td(inTag));
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table.td(bnf.format(tmp.doubleValue())));
 							else
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null) {
 								final double cbn = getComponentByName(tmp, inTag);
 								if (cbn != 0.0)
@@ -499,8 +500,8 @@ public class K240 {
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table
 										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //
@@ -542,9 +543,9 @@ public class K240 {
 		return res;
 	}
 
-	public <H> UncertainValue2<H> getByMFT(final Map<? extends EPMALabel, UncertainValue2<H>> oVals,
+	public <H> UncertainValueEx<String> getByMFT(final Map<H, UncertainValueEx<String>> oVals,
 			final MaterialLabel.MassFraction mft) {
-		for (final Map.Entry<? extends EPMALabel, UncertainValue2<H>> me : oVals.entrySet()) {
+		for (final Map.Entry<H, UncertainValueEx<String>> me : oVals.entrySet()) {
 			if (me.getKey() instanceof MaterialLabel.MassFraction) {
 				final MaterialLabel.MassFraction mft2 = (MaterialLabel.MassFraction) me.getKey();
 				if (mft2.toString().equals(mft.toString()))
@@ -554,7 +555,7 @@ public class K240 {
 		return null;
 	}
 
-	public double getComponentByName(final UncertainValue2<String> uv, final String name) {
+	public double getComponentByName(final UncertainValueEx<String> uv, final String name) {
 		for (final Map.Entry<String, Double> me : uv.getComponents().entrySet())
 			if (me.getKey().toString().equals(name))
 				return me.getValue().doubleValue();
@@ -604,7 +605,7 @@ public class K240 {
 
 		final Composition std = Composition.massFraction("K240s", buildK240());
 
-		final Map<Integer, Map<? extends EPMALabel, UncertainValue2<String>>> outVals = new TreeMap<>();
+		final Map<Integer, Map<EPMALabel, UncertainValueEx<String>>> outVals = new TreeMap<>();
 		final Map<Integer, UncertainValuesBase<EPMALabel>> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
 		List<? extends EPMALabel> outLabels = null;
@@ -687,7 +688,7 @@ public class K240 {
 					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
 				// cfk.trimOutputs(finalOutputs);
-				final UncertainValuesCalculator<EPMALabel> res = UncertainValuesBase.propagate(cfk, msInp);
+				final UncertainValuesCalculator<EPMALabel> res = UncertainValuesBase.propagateAnalytical(cfk, msInp);
 				final Map<String, Collection<? extends EPMALabel>> labels = extractLabelBlocks(msInp);
 				if (ie0 % 5 == 0) {
 					initReport.addSubHeader("Inputs");
@@ -737,16 +738,16 @@ public class K240 {
 						row.add(Table.td(mft.getElement()));
 						row.add(Table.td(inTag));
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table.td(bnf.format(tmp.doubleValue())));
 							else
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null) {
 								final double cbn = getComponentByName(tmp, inTag);
 								if (cbn != 0.0)
@@ -756,8 +757,8 @@ public class K240 {
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table
 										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //
@@ -840,7 +841,7 @@ public class K240 {
 		final Composition ti = Composition.parse("Ti");
 		final Composition si = Composition.parse("Si");
 
-		final Map<Integer, Map<? extends EPMALabel, UncertainValue2<String>>> outVals = new TreeMap<>();
+		final Map<Integer, Map<EPMALabel, UncertainValueEx<String>>> outVals = new TreeMap<>();
 		final Map<Integer, UncertainValuesBase<EPMALabel>> resVals = new TreeMap<>();
 		final int MIN_E = 12, MAX_E = 31;
 		List<? extends EPMALabel> outLabels = null;
@@ -886,7 +887,7 @@ public class K240 {
 				// Calculate the optimal k-ratios
 				final RealVector inputs = input.extractValues(mcm.getInputLabels());
 				final RealVector calculated = mcm.optimized(inputs);
-				final UncertainValues<KRatioLabel> krs = UncertainValues.force(//
+				final UncertainValues<KRatioLabel> krs = UncertainValues.asUncertainValues(//
 						KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Calculated));
 				final Map<KRatioLabel, UncertainValue> measKrs = new HashMap<>();
 				for (final KRatioLabel label : krs.getLabels()) {
@@ -930,7 +931,7 @@ public class K240 {
 				for (final EPMALabel output : cfk.getOutputLabels())
 					if (output instanceof MaterialLabel.MassFraction)
 						finalOutputs.add(output);
-				final UncertainValuesCalculator<EPMALabel> res = UncertainValuesBase.propagate(cfk, msInp);
+				final UncertainValuesCalculator<EPMALabel> res = UncertainValuesBase.propagateAnalytical(cfk, msInp);
 				labels = extractLabelBlocks(msInp);
 				if (ie0 % 5 == 0) {
 					initReport.addSubHeader("Inputs");
@@ -980,16 +981,16 @@ public class K240 {
 						row.add(Table.td(inTag));
 						boolean addRow = false;
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table.td(bnf.format(tmp.doubleValue())));
 							else
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null) {
 								final double cbn = getComponentByName(tmp, inTag);
 								if (cbn != 0.0)
@@ -999,8 +1000,8 @@ public class K240 {
 								row.add(Table.td("---"));
 						}
 						for (int ie0 = MIN_E; ie0 < MAX_E; ++ie0) {
-							final Map<? extends EPMALabel, UncertainValue2<String>> oVals = outVals.get(ie0);
-							final UncertainValue2<String> tmp = getByMFT(oVals, mft);
+							final Map<EPMALabel, UncertainValueEx<String>> oVals = outVals.get(ie0);
+							final UncertainValueEx<String> tmp = getByMFT(oVals, mft);
 							if (tmp != null)
 								row.add(Table
 										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //

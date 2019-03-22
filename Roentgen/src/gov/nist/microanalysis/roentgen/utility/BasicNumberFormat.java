@@ -3,7 +3,6 @@ package gov.nist.microanalysis.roentgen.utility;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.ParseException;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -11,6 +10,7 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.Transforms;
 
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
 
 /**
  * <p>
@@ -109,53 +109,60 @@ public class BasicNumberFormat extends DecimalFormat {
 
 	/**
 	 * Uses the SIUnits package to format Number instances in LaTeX format.
-	 * 
+	 *
 	 * @param num
 	 * @return String in LaTeX format
 	 */
 	public String formatLaTeX(final Number num) {
-		StringBuffer res=new StringBuffer();
+		final StringBuffer res = new StringBuffer();
 		res.append("\\num{");
-		if(num instanceof UncertainValue) {
+		if (num instanceof UncertainValue) {
 			res.append(format(num.doubleValue()));
 			res.append("\\pm");
 			res.append(format(((UncertainValue) num).uncertainty()));
 		} else {
-			if((num instanceof Integer) || (num instanceof Long) || (num instanceof Byte))
+			if ((num instanceof Integer) || (num instanceof Long) || (num instanceof Byte))
 				res.append(format(num.longValue()));
-			else 
+			else
 				res.append(format(num.doubleValue()));
 		}
 		res.append("}");
-		return res.toString().replace(Character.toString(THIN_SPACE),"");
+		return res.toString().replace(Character.toString(THIN_SPACE), "");
 	}
-	
+
 	/**
 	 * Uses the SIUnits package to format a double in LaTeX format.
-	 * 
+	 *
 	 * @param num
 	 * @return String in LaTeX format
 	 */
 	public String formatLaTeX(final double num) {
-		StringBuffer res=new StringBuffer();
+		final StringBuffer res = new StringBuffer();
 		res.append("\\num{");
 		res.append(format(num));
 		res.append("}");
-		return res.toString().replace(Character.toString(THIN_SPACE),"");
+		return res.toString().replace(Character.toString(THIN_SPACE), "");
 	}
-	
+
 	public String format(final Number num) {
 		if (num instanceof UncertainValue) {
 			final UncertainValue uv = (UncertainValue) num;
 			final StringBuffer sb = new StringBuffer();
 			sb.append(extFormat(uv.doubleValue()));
-			for (final Object comp : uv.getComponentNames()) {
-				sb.append("�");
-				sb.append(extFormat(uv.getComponent(comp)));
-				sb.append("(");
-				sb.append(comp);
-				sb.append(")");
+			if (uv instanceof UncertainValueEx<?>) {
+				final UncertainValueEx<?> uvx = (UncertainValueEx<?>) uv;
+				for (final Object comp : uvx.getComponentNames()) {
+					sb.append("�");
+					sb.append(extFormat(uvx.getComponent(comp)));
+					sb.append("(");
+					sb.append(comp);
+					sb.append(")");
+				}
+			} else {
+				sb.append("\u00B1");
+				sb.append(extFormat(uv.uncertainty()));
 			}
+
 			return sb.toString();
 		} else if ((num instanceof Double) || (num instanceof Float))
 			return extFormat(num.doubleValue());
@@ -183,19 +190,26 @@ public class BasicNumberFormat extends DecimalFormat {
 				break;
 			case ValuePlusUncertainty:
 				sb.append(extFormat(uv.doubleValue()));
-				sb.append("�");
+				sb.append("\u00B1");
 				sb.append(extFormat(uv.uncertainty()));
 				break;
 			case ValueWithExtendedUncertainty:
 				sb.append(extFormat(uv.doubleValue()));
-				for (final Object comp : uv.getComponentNames()) {
-					sb.append("�");
-					sb.append(extFormat(uv.getComponent(comp)));
-					sb.append("(");
-					sb.append(comp);
-					sb.append(")");
+				if (uv instanceof UncertainValueEx<?>) {
+					final UncertainValueEx<?> uvx = (UncertainValueEx<?>) uv;
+					for (final Object comp : uvx.getComponentNames()) {
+						sb.append("\u00B1");
+						sb.append(extFormat(uvx.getComponent(comp)));
+						sb.append("(");
+						sb.append(comp);
+						sb.append(")");
+					}
+				} else {
+					sb.append("\u00B1");
+					sb.append(extFormat(uv.uncertainty()));
 				}
 				break;
+
 			}
 			return sb.toString();
 		} else if ((num instanceof Double) || (num instanceof Float))
@@ -247,18 +261,26 @@ public class BasicNumberFormat extends DecimalFormat {
 			case ValueWithExtendedUncertainty:
 				sb.append("(&thinsp;");
 				sb.append(formatHTML(uv.doubleValue()));
-				boolean first = true;
-				for (final Object comp : uv.getComponentNames()) {
-					if (first)
-						sb.append("&thinsp;&plusmn;&thinsp;(&thinsp;");
-					else
-						sb.append(",&thinsp;");
-					sb.append(HTML.escape(comp.toString()));
-					sb.append("&thinsp;:&thinsp;");
-					sb.append(formatHTML(uv.getComponent(comp)));
-					first = false;
+
+				sb.append(extFormat(uv.doubleValue()));
+				if (uv instanceof UncertainValueEx<?>) {
+					final UncertainValueEx<?> uvx = (UncertainValueEx<?>) uv;
+					boolean first = true;
+					for (final Object comp : uvx.getComponentNames()) {
+						if (first)
+							sb.append("&thinsp;&plusmn;&thinsp;(&thinsp;");
+						else
+							sb.append(",&thinsp;");
+						sb.append(HTML.escape(comp.toString()));
+						sb.append("&thinsp;:&thinsp;");
+						sb.append(formatHTML(uvx.getComponent(comp)));
+						first = false;
+					}
+					sb.append("&thinsp;)&thinsp;)");
+				} else {
+					sb.append("&thinsp;&plusmn;&thinsp;");
+					sb.append(extFormat(uv.uncertainty()));
 				}
-				sb.append("&thinsp;)&thinsp;)");
 				break;
 			}
 			return sb.toString();
@@ -267,27 +289,5 @@ public class BasicNumberFormat extends DecimalFormat {
 		else if ((num instanceof Long) || (num instanceof Integer))
 			return format(num.longValue());
 		return format(num);
-	}
-
-	@Override
-	public Number parse(final String str) throws ParseException {
-		final String[] items = str.split("�");
-		Number res = Double.valueOf(Double.NaN);
-		if (items.length > 0)
-			res = super.parse(items[0]);
-		if (items.length > 1) {
-			final UncertainValue uv = new UncertainValue(res);
-			for (int i = 1; i < items.length; ++i) {
-				final int st = items[i].indexOf("(");
-				final int end = items[i].indexOf(")", st + 1);
-				if ((st > 0) && (end > st)) {
-					final String name = items[i].substring(st + 1, end).trim();
-					final Number sigma = super.parse(items[i].substring(0, st).trim());
-					uv.assignComponent(name, sigma.doubleValue());
-				}
-			}
-			res = uv;
-		}
-		return res;
 	}
 }

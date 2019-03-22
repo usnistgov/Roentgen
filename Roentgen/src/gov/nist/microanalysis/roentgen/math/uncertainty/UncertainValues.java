@@ -69,6 +69,7 @@ public class UncertainValues<H> //
 		}
 
 	}
+
 	/**
 	 * Builds an {@link UncertainValues} object representing the specified labeled
 	 * quantities as extracted from the list of {@link UncertainValues} objects.
@@ -86,7 +87,7 @@ public class UncertainValues<H> //
 		for (final J label : labels) {
 			int count = 0;
 			for (final UncertainValues<J> uv : uvs)
-				if (uv.hasEntry(label))
+				if (uv.hasLabel(label))
 					count++;
 			if (count < 1)
 				throw new ArgumentException(
@@ -98,10 +99,10 @@ public class UncertainValues<H> //
 		final UncertainValues<J> res = new UncertainValues<J>(labels);
 		for (final UncertainValues<J> uv : uvs)
 			for (final J label1 : labels)
-				if (uv.hasEntry(label1)) {
+				if (uv.hasLabel(label1)) {
 					res.set(label1, uv.getEntry(label1), uv.getVariance(label1));
 					for (final J label2 : uv.getLabels())
-						if (res.hasEntry(label2)) {
+						if (res.hasLabel(label2)) {
 							final double cv = uv.getCovariance(label1, label2);
 							if (cv != 0.0)
 								res.setCovariance(label1, label2, cv);
@@ -109,6 +110,7 @@ public class UncertainValues<H> //
 				}
 		return res;
 	}
+
 	/**
 	 * <p>
 	 * Copies those entries labeled in <i>from</i> that are also labeled in
@@ -201,7 +203,7 @@ public class UncertainValues<H> //
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <J> UncertainValues<J> force(//
+	public static <J> UncertainValues<J> asUncertainValues(//
 			final UncertainValuesBase<? extends J> base//
 	) {
 		if (base instanceof UncertainValues)
@@ -555,6 +557,18 @@ public class UncertainValues<H> //
 		if (mHashCode == 0)
 			mHashCode = Objects.hash(super.hashCode(), mValues, mCovariance);
 		return mHashCode;
+	}
+
+	/**
+	 * Initializes the value associated with the specified label, the variance is left
+	 * unmodified.
+	 *
+	 * @param label
+	 * @param val
+	 */
+	final public void set(final H label, final double val) {
+		final int p = indexOf(label);
+		mValues.setEntry(p, val);
 	}
 
 	/**

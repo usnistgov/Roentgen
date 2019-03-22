@@ -38,5 +38,5 @@ public interface IUncertainValues<H> {
 	 */
 	public List<H> getLabels();
 	
-	public boolean hasEntry(H lbl);
+	public boolean hasLabel(H lbl);
 }

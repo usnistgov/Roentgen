@@ -310,7 +310,7 @@ public class ElementalMAC {
 		assert energy > MIN_E : "Can't compute a MAC for a negative or zero x-ray energy";
 		assert energy < MAX_E : "Energy too high.";
 		final double res = Math.exp(mImplementation.mData.get(el).value(Math.log(energy)));
-		return new UncertainValue(res, new ElementMAC(el, new XRay(energy)), res * fractionalUncertainty(el, energy));
+		return new UncertainValue(res, res * fractionalUncertainty(el, energy));
 	}
 
 	/**
@@ -374,7 +374,7 @@ public class ElementalMAC {
 		assert energy > MIN_E : "Can't compute a MAC for a negative or zero x-ray energy";
 		assert energy < MAX_E : "Energy too high.";
 		final double res = Math.exp(mImplementation.mData.get(el).value(Math.log(energy)));
-		return new UncertainValue(res, new ElementMAC(el, xr), res * fractionalUncertainty(el, energy));
+		return new UncertainValue(res, res * fractionalUncertainty(el, energy));
 	}
 
 	/**

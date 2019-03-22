@@ -101,7 +101,7 @@ public class TestMassAbsorptionCoefficient {
 				final List<Composition> comps = Arrays.asList(mfs);
 				final MaterialMACFunction mmf = MaterialMACFunction.build(comps, cxr);
 				final UncertainValuesBase<EPMALabel> inps = mmf.buildInputs(comps, cxr);
-				final UncertainValuesCalculator<EPMALabel> uv = UncertainValuesBase.propagate(mmf, inps);
+				final UncertainValuesCalculator<EPMALabel> uv = UncertainValuesBase.propagateAnalytical(mmf, inps);
 				// final UncertainValuesBase mc =
 				// UncertainValues.propagateDeltaOrdered(pr.getSecond(), pr.getFirst(),
 				// pr.getFirst().getValues().mapMultiply(0.001));
@@ -151,9 +151,9 @@ public class TestMassAbsorptionCoefficient {
 		final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Iron, XRayTransition.LA1);
 		final UncertainValuesCalculator<EPMALabel> uvc = MaterialMACFunction.compute(Arrays.asList(mfs), cxr);
 
-		final UncertainValues<EPMALabel> uv = UncertainValues.force(uvc);
+		final UncertainValues<EPMALabel> uv = UncertainValues.asUncertainValues(uvc);
 		uvc.setCalculator(uvc.new MonteCarlo(16000));
-		final UncertainValues<EPMALabel> mc = UncertainValues.force(uvc);
+		final UncertainValues<EPMALabel> mc = UncertainValues.asUncertainValues(uvc);
 
 		if (REPORT) {
 			final Report r = new Report("TestMultiMAC");

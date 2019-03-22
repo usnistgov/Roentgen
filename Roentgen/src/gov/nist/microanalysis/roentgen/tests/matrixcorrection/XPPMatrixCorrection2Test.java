@@ -31,9 +31,10 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
 import gov.nist.microanalysis.roentgen.math.uncertainty.EstimateUncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.Jacobian;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue2;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
@@ -108,7 +109,7 @@ public class XPPMatrixCorrection2Test {
 		skrl.add(krlSi);
 		skrl.add(krlO);
 
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, Collections.emptyList());
+		final UncertainValuesCalculator<EPMALabel> xppI = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
 		final Report r = new Report("XPP Report - test1");
 		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
@@ -121,12 +122,12 @@ public class XPPMatrixCorrection2Test {
 
 				final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 				r.addHeader("test1()");
-				r.addHTML(xpp.toHTML(Mode.NORMAL));
+				r.addHTML(xppI.toHTML(Mode.NORMAL));
 				r.addHeader("Inputs");
-				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
+				final UncertainValues<EPMALabel> inputs = xppI.getInputs();
 				r.add(inputs);
-				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
-				final UncertainValuesBase<EPMALabel> results = xppI.sort();
+				final UncertainValuesBase<EPMALabel> results = xppI.force().sort();
+				
 				final EPMALabel tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
 				assertEquals(results.getEntry(tagAu), 401.654, 0.001);
 				final EPMALabel tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
@@ -160,37 +161,36 @@ public class XPPMatrixCorrection2Test {
 				final EPMALabel tagZA = MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr);
 				assertEquals(results.getEntry(tagZA), 0.7797, 0.001);
 
-				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp,
-						inputs);
+				final UncertainValuesCalculator<EPMALabel> xppFd = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true);
 
-				assertEquals(results.getEntry(tagAu), uvc.getEntry(tagAu), 0.001);
-				assertEquals(results.getEntry(tagau), uvc.getEntry(tagau), 0.001);
-				assertEquals(results.getEntry(tagBu), uvc.getEntry(tagBu), 0.001);
-				assertEquals(results.getEntry(tagbu), uvc.getEntry(tagbu), 0.001);
-				assertEquals(results.getEntry(tagPhi0u), uvc.getEntry(tagPhi0u), 0.001);
+				assertEquals(results.getEntry(tagAu), xppFd.getEntry(tagAu), 0.001);
+				assertEquals(results.getEntry(tagau), xppFd.getEntry(tagau), 0.001);
+				assertEquals(results.getEntry(tagBu), xppFd.getEntry(tagBu), 0.001);
+				assertEquals(results.getEntry(tagbu), xppFd.getEntry(tagbu), 0.001);
+				assertEquals(results.getEntry(tagPhi0u), xppFd.getEntry(tagPhi0u), 0.001);
 
-				assertEquals(results.getEntry(tagAs), uvc.getEntry(tagAs), 0.001);
-				assertEquals(results.getEntry(tagas), uvc.getEntry(tagas), 0.001);
-				assertEquals(results.getEntry(tagBs), uvc.getEntry(tagBs), 0.001);
-				assertEquals(results.getEntry(tagbs), uvc.getEntry(tagbs), 0.001);
-				assertEquals(results.getEntry(tagPhi0s), uvc.getEntry(tagPhi0s), 0.001);
+				assertEquals(results.getEntry(tagAs), xppFd.getEntry(tagAs), 0.001);
+				assertEquals(results.getEntry(tagas), xppFd.getEntry(tagas), 0.001);
+				assertEquals(results.getEntry(tagBs), xppFd.getEntry(tagBs), 0.001);
+				assertEquals(results.getEntry(tagbs), xppFd.getEntry(tagbs), 0.001);
+				assertEquals(results.getEntry(tagPhi0s), xppFd.getEntry(tagPhi0s), 0.001);
 
-				assertEquals(results.getEntry(tagChiu), uvc.getEntry(tagChiu), 0.001);
-				assertEquals(results.getEntry(tagChis), uvc.getEntry(tagChis), 0.001);
-				assertEquals(results.getEntry(tagFChiFu), uvc.getEntry(tagFChiFu), 0.001);
-				assertEquals(results.getEntry(tagFChiFs), uvc.getEntry(tagFChiFs), 0.001);
-				assertEquals(results.getEntry(tagZA), uvc.getEntry(tagZA), 0.001);
+				assertEquals(results.getEntry(tagChiu), xppFd.getEntry(tagChiu), 0.001);
+				assertEquals(results.getEntry(tagChis), xppFd.getEntry(tagChis), 0.001);
+				assertEquals(results.getEntry(tagFChiFu), xppFd.getEntry(tagFChiFu), 0.001);
+				assertEquals(results.getEntry(tagFChiFs), xppFd.getEntry(tagFChiFs), 0.001);
+				assertEquals(results.getEntry(tagZA), xppFd.getEntry(tagZA), 0.001);
 
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = xppI.getOutputValues();
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final EPMALabel outTag : xpp.getOutputLabels()) {
-					final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+				for (final EPMALabel outTag : xppI.getOutputLabels()) {
+					final UncertainValue uv = outVals.get(outTag);
 					valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 							Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 							Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -207,33 +207,35 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(HTML.p(sb.toString()));
 
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
+				
+				assertTrue(xppI.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = xppI.getJacobian().get();
+				assertTrue(xppFd.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> djacMat = xppFd.getJacobian().get();
 
-				final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
-						inputs);
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > //
-							0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-									Math.abs(djac.getJacobianEntry(oIdx, iIdx)))) {
-								System.out.print(jac.getOutputLabels().get(oIdx));
-								System.out.print(jac.getInputLabels().get(iIdx));
-								checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-										jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-										0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-												Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
 							}
 						}
+				
 				if (DUMP) {
 					System.out.println("Results");
 					System.out.println(results.toCSV());
 
 					System.out.println("Jacobian");
-					System.out.println(jac.toCSV());
-					System.out.println("Jacobian(estimated)");
-					System.out.println(djac.toCSV());
+					System.out.println(jacMat.toHTML(Mode.NORMAL));
+					System.out.println("Jacobian(Finite Difference)");
+					System.out.println(djacMat.toHTML(Mode.NORMAL));
 				}
 
 				// final Object unkCompTag = new MatrixCorrectionModel2.MaterialBasedLabel("J",
@@ -245,7 +247,7 @@ public class XPPMatrixCorrection2Test {
 				// MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)), 0.609601,
 				// 0.00001);
 
-				resultsD = djac.sort();
+				resultsD = xppFd.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
 				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
 						"Comparing uncertainty matrix");
@@ -253,12 +255,12 @@ public class XPPMatrixCorrection2Test {
 			}
 			if (MC_ITERATIONS > 0) {
 				final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Oxygen, XRayTransition.KA1);
+				final UncertainValuesCalculator<EPMALabel> xppMc = XPPMatrixCorrection2.buildMonteCarlo(skrl, unk.toMassFraction(), MC_ITERATIONS,  true).force();
 				r.addHeader("Monte Carlo Results");
-				r.add(xpp);
+				r.add(xppMc);
 				r.addHeader("Inputs");
-				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
-				r.add(inputs);
-				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagate(xpp, inputs).sort();
+				r.add(xppMc.getInputs());
+				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 
 				assertEquals(results.getEntry(MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner())), 2366.373,
 						0.001);
@@ -289,12 +291,8 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Analyic Results");
 				r.add(results);
 
-				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
-				
-				UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, ordered);
-				uvc.setCalculator(uvc.new MonteCarlo(MC_ITERATIONS));
-				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.force(uvc).sort();
-				EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>)uvc.getUncertainValues();
+				final UncertainValuesBase<EPMALabel> resultsMc = xppMc.sort();
+				final EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>) xppMc.getUncertainValues();
 
 				if (DUMP) {
 					System.out.println("Monte Carlo Results");
@@ -315,7 +313,7 @@ public class XPPMatrixCorrection2Test {
 
 				r.addSubHeader("Phi0");
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
-				for (final EPMALabel tag : xpp.getOutputLabels()) {
+				for (final EPMALabel tag : xppI.getOutputLabels()) {
 					r.addSubHeader(HTML.toHTML(tag, Mode.NORMAL));
 					r.add(MathUtilities.toHTML(mcp.getDescriptiveStatistics(tag), bnf));
 				}
@@ -331,7 +329,7 @@ public class XPPMatrixCorrection2Test {
 							Table.th("V(Delta)"), //
 							Table.th("U(Delta)"));
 					final BasicNumberFormat bnf2 = new BasicNumberFormat("0.0000");
-					for (final EPMALabel tag : xpp.getOutputLabels())
+					for (final EPMALabel tag : xppI.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
@@ -341,7 +339,7 @@ public class XPPMatrixCorrection2Test {
 									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 						}
-					for (final EPMALabel tag : xpp.getOutputLabels())
+					for (final EPMALabel tag : xppI.getOutputLabels())
 						if (tag instanceof KRatioLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
 									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
@@ -456,22 +454,22 @@ public class XPPMatrixCorrection2Test {
 				r.add(inputs);
 
 				final long start = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp,
-						inputs);
+				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
 				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 				System.out.println("Full Timing(2) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp, inputs)
+						.getOutputValues();
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof ZAFMultiLineLabel) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -490,18 +488,27 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
-						inputs);
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
+				final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8)
-							checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-									jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-									0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-											Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
+				assertTrue(jac.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+				Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
+							}
+						}
 
 				if (DUMP) {
 					System.out.println("Results");
@@ -527,18 +534,17 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Inputs");
 				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
-				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagate(xpp, inputs).sort();
+				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagateAnalytical(xpp, inputs).sort();
 				r.addHeader("Analytic Results");
 				r.add(results);
 
 				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
-				
-				
-				
+
 				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<EPMALabel>(xpp, ordered);
 				uvc.setCalculator(uvc.new MonteCarlo(MC_ITERATIONS));
 				final UncertainValuesBase<EPMALabel> resultsMc = uvc.sort();
-				EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>)uvc.getUncertainValues();
+				final EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>) uvc
+						.getUncertainValues();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -656,23 +662,23 @@ public class XPPMatrixCorrection2Test {
 				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
 				final long start = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp,
-						inputs);
+				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
 				final UncertainValuesBase<EPMALabel> results = xppI.sort();
 				System.out.println("Timing(3) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
-				
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp, inputs)
+						.getOutputValues();
+
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof ZAFMultiLineLabel) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -691,23 +697,26 @@ public class XPPMatrixCorrection2Test {
 				r.addHTML(HTML.p(sb.toString()));
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-				final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
-						inputs);
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
+				final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > 0.01
-									* Math.abs(jac.getJacobianEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputLabels().get(iIdx) + ", "
-										+ xpp.getOutputLabels().get(oIdx) + "=[ " + jac.getJacobianEntry(oIdx, iIdx)
-										+ " ?=? " + djac.getJacobianEntry(oIdx, iIdx) + "]");
-							checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-									jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-									0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-											Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
+				assertTrue(jac.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+				Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
+							}
 						}
 
 				if (DUMP) {
@@ -721,7 +730,7 @@ public class XPPMatrixCorrection2Test {
 				}
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+				r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD.extract(results.getLabels()), L2C, 8),
 						"Comparing uncertainty matrix");
 
 			}
@@ -731,18 +740,18 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Inputs");
 				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 				r.add(inputs);
-				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagate(xpp, inputs).sort();
+				final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagateAnalytical(xpp, inputs).sort();
 				r.addHeader("Analytic Results");
 				r.add(results);
 
 				final UncertainValuesBase<EPMALabel> ordered = inputs.reorder(xpp.getInputLabels());
-				
+
 				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<EPMALabel>(xpp, ordered);
 				uvc.setCalculator(uvc.new MonteCarlo(MC_ITERATIONS));
-				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.force(uvc).sort();
-				EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>)uvc.getUncertainValues();
+				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.asUncertainValues(uvc).sort();
+				final EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>) uvc
+						.getUncertainValues();
 
-				
 				if (DUMP) {
 					System.out.println("MC Results");
 					System.out.println(resultsMc.toCSV());
@@ -872,7 +881,7 @@ public class XPPMatrixCorrection2Test {
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
 		final UncertainValuesBase<EPMALabel> results = jac.sort();
 
 		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
@@ -880,7 +889,7 @@ public class XPPMatrixCorrection2Test {
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
-		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagateAnalytical(xpp2, inputs2).sort();
 		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
@@ -913,15 +922,16 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Results");
 				r.add(results.sort());
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
-				
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp, inputs)
+						.getOutputValues();
+
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof ZAFMultiLineLabel) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -942,24 +952,28 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (4) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > 0.01
-									* Math.abs(jac.getJacobianEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputLabels().get(iIdx) + ", "
-										+ xpp.getOutputLabels().get(oIdx) + "=[ " + jac.getJacobianEntry(oIdx, iIdx)
-										+ " ?=? " + djac.getJacobianEntry(oIdx, iIdx) + "]");
-							checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-									jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-									0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-											Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
-						}
 
+				assertTrue(jac.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+				Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
+							}
+						}
 				if (DUMP) {
 					System.out.println("Results");
 					System.out.println(results.toCSV());
@@ -981,8 +995,8 @@ public class XPPMatrixCorrection2Test {
 				inputs.validateCovariance();
 				Report.dump(inputs.blockDiagnonalize().toSimpleHTML(new BasicNumberFormat("0.00E0")));
 
-				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.propagateMonteCarlo(xpp, inputs, MC_ITERATIONS)
-						.sort();
+				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValuesBase
+						.propagateMonteCarlo(xpp, inputs, MC_ITERATIONS).sort();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -1138,14 +1152,14 @@ public class XPPMatrixCorrection2Test {
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
 		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (5) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
-		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagateAnalytical(xpp2, inputs2).sort();
 		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
@@ -1178,14 +1192,15 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp, inputs)
+						.getOutputValues();
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof ZAFMultiLineLabel) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -1204,22 +1219,27 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > 0.01
-									* Math.abs(jac.getJacobianEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputLabels().get(iIdx) + ", "
-										+ xpp.getOutputLabels().get(oIdx) + "=[ " + jac.getJacobianEntry(oIdx, iIdx)
-										+ " ?=? " + djac.getJacobianEntry(oIdx, iIdx) + "]");
-							checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-									jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-									0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-											Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
+
+				assertTrue(jac.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+				Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
+							}
 						}
 
 				resultsD = djac.sort();
@@ -1242,8 +1262,9 @@ public class XPPMatrixCorrection2Test {
 
 				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
 				uvc.setCalculator(uvc.new MonteCarlo(MC_ITERATIONS));
-				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.force(uvc).sort();
-				EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>)uvc.getUncertainValues();
+				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.asUncertainValues(uvc).sort();
+				final EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>) uvc
+						.getUncertainValues();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -1400,7 +1421,7 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
 		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (6) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -1408,7 +1429,7 @@ public class XPPMatrixCorrection2Test {
 
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
-		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagateAnalytical(xpp2, inputs2).sort();
 		System.out.println("Full Timing (6) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
@@ -1441,14 +1462,15 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp, inputs)
+						.getOutputValues();
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof ZAFMultiLineLabel) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -1467,23 +1489,29 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (6) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > 0.01
-									* Math.abs(jac.getJacobianEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputLabels().get(iIdx) + ", "
-										+ xpp.getOutputLabels().get(oIdx) + "=[ " + jac.getJacobianEntry(oIdx, iIdx)
-										+ " ?=? " + djac.getJacobianEntry(oIdx, iIdx) + "]");
-							checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-									jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-									0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-											Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
+
+				assertTrue(jac.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+				Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
+							}
 						}
+
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
@@ -1502,11 +1530,12 @@ public class XPPMatrixCorrection2Test {
 			}
 			if (MC_ITERATIONS > 0) {
 				r.addHeader("Monte Carlo Results");
-				
+
 				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
 				uvc.setCalculator(uvc.new MonteCarlo(MC_ITERATIONS));
-				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.force(uvc).sort();
-				EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>)uvc.getUncertainValues();
+				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.asUncertainValues(uvc).sort();
+				final EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>) uvc
+						.getUncertainValues();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -1665,7 +1694,7 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
 		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (7) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -1673,7 +1702,7 @@ public class XPPMatrixCorrection2Test {
 
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
-		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagateAnalytical(xpp2, inputs2).sort();
 		System.out.println("Full Timing (7) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
@@ -1706,14 +1735,15 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp, inputs)
+						.getOutputValues();
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof ZAFMultiLineLabel) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -1732,24 +1762,29 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (7) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > 0.01
-									* Math.abs(jac.getJacobianEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputLabels().get(iIdx) + ", "
-										+ xpp.getOutputLabels().get(oIdx) + "=[ " + jac.getJacobianEntry(oIdx, iIdx)
-										+ " ?=? " + djac.getJacobianEntry(oIdx, iIdx) + "]");
-							checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-									jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-									0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-											Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
+
+				assertTrue(jac.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+				Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
+							}
 						}
+
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
@@ -1936,7 +1971,9 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp, inputs);
+		
+		final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
+
 		final UncertainValuesBase<EPMALabel> results = jac.sort();
 		System.out.println("Trimmed Timing (8) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
@@ -1944,7 +1981,7 @@ public class XPPMatrixCorrection2Test {
 
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.toMassFraction());
-		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagate(xpp2, inputs2).sort();
+		final UncertainValuesBase<EPMALabel> results2 = UncertainValuesBase.propagateAnalytical(xpp2, inputs2).sort();
 		System.out.println("Full Timing (8) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
@@ -1977,14 +2014,15 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Results");
 				r.add(results);
 				r.addHeader("Uncertain Values (relative to inputs, trimmed)");
-				final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
+				final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp, inputs)
+						.getOutputValues();
 				final Table valTable = new Table();
 				valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 						Table.td("Value (Verbose)"));
 				final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 				for (final EPMALabel outTag : xpp.getOutputLabels()) {
 					if (outTag instanceof ZAFMultiLineLabel) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValue uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -2003,23 +2041,29 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Results uncertainty matrix");
 
 				final long start3 = System.currentTimeMillis();
-				final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator.buildDelta(xpp,
-						inputs, xpp.delta(inputs, 0.001));
+				final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (8) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
-				for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-					for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-						if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > 0.01
-									* Math.abs(jac.getJacobianEntry(oIdx, iIdx)))
-								System.out.println(xpp.getInputLabels().get(iIdx) + ", "
-										+ xpp.getOutputLabels().get(oIdx) + "=[ " + jac.getJacobianEntry(oIdx, iIdx)
-										+ " ?=? " + djac.getJacobianEntry(oIdx, iIdx) + "]");
-							checkEquals(jac.getOutputLabels().get(oIdx), jac.getInputLabels().get(iIdx),
-									jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx),
-									0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-											Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
+
+				assertTrue(jac.getJacobian().isPresent());
+				Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+				Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+				for (EPMALabel output : jacMat.getOutputLabels())
+					for (EPMALabel input : jacMat.getInputLabels())
+						if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+							if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+							0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+									Math.abs(djacMat.getEntry(input, output)))) {
+								System.out.print(input);
+								System.out.print(output);
+								checkEquals(input, output, jacMat.getEntry(input, output),
+										djacMat.getEntry(input, output),
+										0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+												Math.abs(djacMat.getEntry(input, output))));
+							}
 						}
+
 
 				resultsD = djac.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
@@ -2039,11 +2083,12 @@ public class XPPMatrixCorrection2Test {
 			if (MC_ITERATIONS > 0) {
 				r.addHeader("Monte Carlo Results");
 				Report.dump(inputs.blockDiagnonalize().toSimpleHTML(new BasicNumberFormat("0.00E0")));
-				
+
 				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
 				uvc.setCalculator(uvc.new MonteCarlo(MC_ITERATIONS));
-				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.force(uvc).sort();
-				EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>)uvc.getUncertainValues();
+				final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.asUncertainValues(uvc).sort();
+				final EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>) uvc
+						.getUncertainValues();
 
 				if (DUMP) {
 					System.out.println("MC Results");
@@ -2173,7 +2218,7 @@ public class XPPMatrixCorrection2Test {
 		for (final KRatioLabel krl : skrl)
 			outputs.add(MatrixCorrectionModel2.zafLabel(krl));
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, Collections.emptyList());
-		final UncertainValuesBase<EPMALabel> results = UncertainValues.propagate(xpp,
+		final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagateAnalytical(xpp,
 				xpp.buildInput(unk.toMassFraction()));
 
 		final DataFrame<Double> df = xpp.computePhiRhoZCurve(results.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
@@ -2331,8 +2376,7 @@ public class XPPMatrixCorrection2Test {
 					assertTrue(UncertainValuesBase.testEquality(inputs, inputs.blockDiagnonalize()));
 					r.add(inputs.blockDiagnonalize());
 
-					final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp,
-							inputs);
+					final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
 
 					assertTrue(UncertainValuesBase.testEquality(xppI, xppI.blockDiagnonalize()));
 					assertTrue(UncertainValuesBase.testEquality(xppI, xppI.sort()));
@@ -2358,8 +2402,7 @@ public class XPPMatrixCorrection2Test {
 					// assertEquals(results.getEntry(tagZAO), 1.077, 0.001);
 					assertEquals(results.getEntry(tagZAAl), 0.796, 0.002);
 
-					final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp,
-							inputs);
+					final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
 
 					assertEquals(results.getEntry(tagAu), uvc.getEntry(tagAu), 0.001);
 					assertEquals(results.getEntry(tagau), uvc.getEntry(tagau), 0.001);
@@ -2385,13 +2428,14 @@ public class XPPMatrixCorrection2Test {
 					assertTrue(UncertainValuesBase.testEquality(results, results.blockDiagnonalize()));
 					r.add(results.blockDiagnonalize());
 					r.addHeader("Uncertain Values (relative to inputs)");
-					final Map<EPMALabel, UncertainValue2<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,inputs).getOutputValues();
+					final Map<EPMALabel, UncertainValueEx<EPMALabel>> outVals = new UncertainValuesCalculator<>(xpp,
+							inputs).getOutputValues();
 					final Table valTable = new Table();
 					valTable.addRow(Table.td("Name"), Table.td("Value"), Table.td("Value (Normal)"),
 							Table.td("Value (Verbose)"));
 					final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
 					for (final EPMALabel outTag : xpp.getOutputLabels()) {
-						final UncertainValue2<EPMALabel> uv = outVals.get(outTag);
+						final UncertainValueEx<EPMALabel> uv = outVals.get(outTag);
 						valTable.addRow(Table.td(HTML.toHTML(outTag, Mode.TERSE)),
 								Table.td(results.getUncertainValue(outTag).toHTML(Mode.TERSE, bnf)),
 								Table.td(uv.toHTML(Mode.TERSE, bnf)), Table.td(uv.toHTML(Mode.VERBOSE, bnf)));
@@ -2409,33 +2453,27 @@ public class XPPMatrixCorrection2Test {
 
 					r.addImage(results.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
-					final UncertainValuesCalculator<EPMALabel> jac = new UncertainValuesCalculator<>(xpp,
-							inputs);
-					final UncertainValuesCalculator<EPMALabel> djac = UncertainValuesCalculator
-							.buildDelta(xpp, inputs, xpp.delta(inputs, 0.001));
+					final UncertainValuesCalculator<EPMALabel> jac = XPPMatrixCorrection2.buildAnalytical(skrl, unk.toMassFraction(), true);
+					final UncertainValuesCalculator<EPMALabel> djac = XPPMatrixCorrection2.buildFiniteDifference(skrl, unk.toMassFraction(), 0.001, true).force();
 
-					for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-						for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8) {
-								if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > //
-								0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-										Math.abs(djac.getJacobianEntry(oIdx, iIdx)))) {
-									System.out.println("J[" + jac.getOutputLabels().get(oIdx) + ","
-											+ jac.getInputLabels().get(iIdx) + "]");
+					assertTrue(jac.getJacobian().isPresent());
+					Jacobian<EPMALabel, EPMALabel> jacMat = jac.getJacobian().get();
+					Jacobian<EPMALabel, EPMALabel> djacMat = djac.getJacobian().get();
+
+					for (EPMALabel output : jacMat.getOutputLabels())
+						for (EPMALabel input : jacMat.getInputLabels())
+							if (Math.abs(jacMat.getEntry(input, output)) > 1.0e-8) {
+								if (Math.abs(jacMat.getEntry(input, output) - djacMat.getEntry(input, output)) > //
+								0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+										Math.abs(djacMat.getEntry(input, output)))) {
+									System.out.print(input);
+									System.out.print(output);
+									checkEquals(input, output, jacMat.getEntry(input, output),
+											djacMat.getEntry(input, output),
+											0.01 * Math.max(Math.abs(jacMat.getEntry(input, output)),
+													Math.abs(djacMat.getEntry(input, output))));
 								}
 							}
-					final List<? extends EPMALabel> outLbl = jac.getOutputLabels();
-					final List<? extends EPMALabel> inLbl = jac.getInputLabels();
-					for (int oIdx = 0; oIdx < jac.getOutputDimension(); ++oIdx)
-						for (int iIdx = 0; iIdx < jac.getInputDimension(); ++iIdx)
-							if (Math.abs(jac.getJacobianEntry(oIdx, iIdx)) > 1.0e-8)
-								if (Math.abs(jac.getJacobianEntry(oIdx, iIdx) - djac.getJacobianEntry(oIdx, iIdx)) > //
-								0.01 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-										Math.abs(djac.getJacobianEntry(oIdx, iIdx))))
-									checkEquals(outLbl.get(oIdx), inLbl.get(iIdx), //
-											jac.getJacobianEntry(oIdx, iIdx), djac.getJacobianEntry(oIdx, iIdx), //
-											0.1 * Math.max(Math.abs(jac.getJacobianEntry(oIdx, iIdx)),
-													Math.abs(djac.getJacobianEntry(oIdx, iIdx))));
 
 					if (DUMP) {
 						System.out.println("Results");
@@ -2455,10 +2493,9 @@ public class XPPMatrixCorrection2Test {
 					// assertEquals(jac.getJacobianEntry(unkCompTag,
 					// MatrixCorrectionModel2.meanIonizationLabel(Element.Oxygen)), 0.609601,
 					// 0.00001);
-
-					resultsD = djac.sort();
-					r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-					r.addImage(UncertainValuesBase.compareAsBitmap(results, resultsD, L2C, 8),
+					resultsD = djac;
+					r.addImage(djac.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
+					r.addImage(UncertainValuesBase.compareAsBitmap(jac, djac, L2C, 8),
 							"Comparing uncertainty matrix");
 
 				}
@@ -2468,7 +2505,7 @@ public class XPPMatrixCorrection2Test {
 					r.addHeader("Inputs");
 					final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
 					r.add(inputs);
-					final UncertainValuesBase<EPMALabel> results = UncertainValues.propagate(xpp, inputs).sort();
+					final UncertainValuesBase<EPMALabel> results = UncertainValuesBase.propagateAnalytical(xpp, inputs).sort();
 
 					assertEquals(results.getEntry(shellLabelA), 2366.373, 0.001);
 					assertEquals(results.getEntry(shellLabela), 11052.8730, 0.001);
@@ -2491,10 +2528,12 @@ public class XPPMatrixCorrection2Test {
 					r.addHeader("Analytic Results");
 					r.add(results);
 
-					final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
+					final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<EPMALabel>(xpp,
+							inputs);
 					uvc.setCalculator(uvc.new MonteCarlo(MC_ITERATIONS));
-					final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.force(uvc).sort();
-					EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>)uvc.getUncertainValues();
+					final UncertainValuesBase<EPMALabel> resultsMc = UncertainValues.asUncertainValues(uvc).sort();
+					final EstimateUncertainValues<EPMALabel> mcp = (EstimateUncertainValues<EPMALabel>) uvc
+							.getUncertainValues();
 					if (DUMP) {
 						System.out.println("Monte Carlo Results");
 						System.out.println(resultsMc.toCSV());
@@ -2590,7 +2629,7 @@ public class XPPMatrixCorrection2Test {
 		final Report r = new Report("XPP Report - Test11()");
 		final int MIN_E = 9;
 		final int MAX_E = 31;
-		final Map<Integer, Map<EPMALabel, UncertainValue2<EPMALabel>>> outVals = new TreeMap<>();
+		final Map<Integer, Map<EPMALabel, UncertainValueEx<EPMALabel>>> outVals = new TreeMap<>();
 		List<? extends EPMALabel> outLabels = null, inLabels = null;
 
 		try {
@@ -2643,8 +2682,7 @@ public class XPPMatrixCorrection2Test {
 				}
 				final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.toMassFraction());
-				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp,
-						inputs);
+				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
 
 				// UncertainValuesBase<EPMALabel> results =
 				// UncertainValues.propagate(xpp, inputs);
@@ -2680,16 +2718,16 @@ public class XPPMatrixCorrection2Test {
 						row.add(Table.td(inTag));
 						boolean addRow = false;
 						for (int i = MIN_E; i < MAX_E; ++i) {
-							final Map<EPMALabel, UncertainValue2<EPMALabel>> oVals = outVals.get(i);
-							final UncertainValue2<EPMALabel> tmp = getByXRT(oVals, mcl);
+							final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals = outVals.get(i);
+							final UncertainValueEx<EPMALabel> tmp = getByXRT(oVals, mcl);
 							if (tmp != null)
 								row.add(Table.td(bnf.format(tmp.doubleValue())));
 							else
 								row.add(Table.td("---"));
 						}
 						for (int i = MIN_E; i < MAX_E; ++i) {
-							final Map<EPMALabel, UncertainValue2<EPMALabel>> oVals = outVals.get(i);
-							final UncertainValue2<EPMALabel> tmp = getByXRT(oVals, mcl);
+							final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals = outVals.get(i);
+							final UncertainValueEx<EPMALabel> tmp = getByXRT(oVals, mcl);
 							if (tmp != null) {
 								final double cbn = getComponentByName(tmp, inTag);
 								if (cbn != 0.0)
@@ -2699,8 +2737,8 @@ public class XPPMatrixCorrection2Test {
 								row.add(Table.td("---"));
 						}
 						for (int i = MIN_E; i < MAX_E; ++i) {
-							final Map<EPMALabel, UncertainValue2<EPMALabel>> oVals = outVals.get(i);
-							final UncertainValue2<EPMALabel> tmp = getByXRT(oVals, mcl);
+							final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals = outVals.get(i);
+							final UncertainValueEx<EPMALabel> tmp = getByXRT(oVals, mcl);
 							if (tmp != null)
 								row.add(Table
 										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //
@@ -2722,16 +2760,17 @@ public class XPPMatrixCorrection2Test {
 
 	}
 
-	public double getComponentByName(final UncertainValue2<EPMALabel> uv, final EPMALabel tag) {
+	public double getComponentByName(final UncertainValueEx<EPMALabel> tmp, final EPMALabel tag) {
 		final String name = tag.toString();
-		for (final Map.Entry<EPMALabel, Double> me : uv.getComponents().entrySet())
+		for (final Map.Entry<EPMALabel, Double> me : tmp.getComponents().entrySet())
 			if (me.getKey().toString().equals(name))
 				return me.getValue().doubleValue();
 		return 0.0;
 	}
 
-	public UncertainValue2<EPMALabel> getByXRT(final Map<EPMALabel, UncertainValue2<EPMALabel>> oVals, final ZAFMultiLineLabel mcl) {
-		for (final Map.Entry<EPMALabel, UncertainValue2<EPMALabel>> me : oVals.entrySet()) {
+	public UncertainValueEx<EPMALabel> getByXRT(final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals,
+			final ZAFMultiLineLabel mcl) {
+		for (final Map.Entry<EPMALabel, UncertainValueEx<EPMALabel>> me : oVals.entrySet()) {
 			if (me.getKey() instanceof ZAFMultiLineLabel) {
 				final ZAFMultiLineLabel mcl2 = (ZAFMultiLineLabel) me.getKey();
 				if (mcl2.toString().equals(mcl.toString()))
