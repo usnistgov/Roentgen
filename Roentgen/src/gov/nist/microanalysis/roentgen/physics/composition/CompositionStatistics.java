@@ -114,10 +114,10 @@ public class CompositionStatistics //
 			total += mf;
 			meanA += mf * aw;
 			meanZ += mf * elm.getAtomicNumber();
-			setJacobian(totTag, mft, jac, 1.0);
-			setJacobian(maIdx, awt, jac, mf);
-			setJacobian(maIdx, mft, jac, aw);
-			setJacobian(mzIdx, mft, jac, elm.getAtomicNumber());
+			setJacobian(mft, totTag, jac, 1.0);
+			setJacobian(awt, maIdx, jac, mf);
+			setJacobian(mft, maIdx, jac, aw);
+			setJacobian(mft, mzIdx, jac, elm.getAtomicNumber());
 		}
 		setResult(totTag, res, total);
 		setResult(maIdx, res, meanA);

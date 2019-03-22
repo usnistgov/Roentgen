@@ -51,8 +51,6 @@ final public class UncertainValue //
 		extends Number //
 		implements Comparable<UncertainValue>, IToHTML {
 
-	private static final long serialVersionUID = 119495064970078787L;
-
 	/**
 	 * The one sigma standard deviation value associated with a specific label
 	 */
@@ -74,170 +72,27 @@ final public class UncertainValue //
 		}
 	}
 
-	@XStreamAlias("value")
-	private final Double mValue;
-
-	/**
-	 * A map of one-sigma width uncertainty components.
-	 */
-	@XStreamImplicit
-	@XStreamAlias("sigmas")
-	private final List<Sigma> mSigmas = new ArrayList<>();
+	private static final long serialVersionUID = 119495064970078787L;
 
 	public static final UncertainValue ONE = new UncertainValue(1.0);
+
 	public static final UncertainValue ZERO = new UncertainValue(0.0);
+
 	public static final UncertainValue NaN = new UncertainValue(Double.NaN);
 	public static final UncertainValue POSITIVE_INFINITY = new UncertainValue(Double.POSITIVE_INFINITY);
 	public static final UncertainValue NEGATIVE_INFINITY = new UncertainValue(Double.NEGATIVE_INFINITY);
-
 	private static final Random sRandom = new Random(System.currentTimeMillis());
-
-	static final private boolean isSpecialNumber(final Number n) {
-		return n instanceof UncertainValue;
-	}
-
-	static final private Number unwrap(final Number n) {
-		if (n instanceof UncertainValue) {
-			final UncertainValue uv = (UncertainValue) n;
-			if (!uv.isUncertain())
-				return Double.valueOf(n.doubleValue());
-		}
-		return n;
-	}
-
 	/**
-	 * Constructs a UncertainValue with value <code>v</code> and uncertainty
-	 * <code>dv</code>. The uncertainty is given a default name "DEFAULTXXX"= where
-	 * XXX is an auto-incrementing index to ensure every unnamed uncertainty is
-	 * considered independent.
+	 * A method to convert any Number into the equivalent UncertainValue.
 	 *
-	 * @param v  The value
-	 * @param dv The associated uncertainty
+	 * @param n
+	 * @return {@link UncertainValue}
 	 */
-	public UncertainValue(final double v, final double dv) {
-		this(v, "dx", dv);
-	}
-
-	private UncertainValue(final double v, final List<Sigma> sigmas) {
-		mValue = v;
-		if (sigmas != null)
-			mSigmas.addAll(sigmas);
-	}
-
-	public UncertainValue(final Number n) {
-		this(n.doubleValue(), n instanceof UncertainValue ? ((UncertainValue) n).mSigmas : null);
-	}
-
-	/**
-	 * Constructs a UncertainValue with value <code>v</code> and no uncertainty.
-	 *
-	 * @param v The value
-	 */
-	public UncertainValue(final double v) {
-		this(v, "dv", 0.0);
-	}
-
-	/**
-	 * Constructs a UncertainValue
-	 *
-	 * @param v      double
-	 * @param source String The name of the source of the uncertainty
-	 * @param dv     The associate uncertainty
-	 */
-	public UncertainValue(final double v, final Object source, final double dv) {
-		mValue = v;
-		assignComponent(source, dv);
-	}
-
-	public static UncertainValue normal(final double v, final Object src) {
-		return new UncertainValue(v, src, Math.sqrt(v));
-	}
-
-	public static UncertainValue toRadians(final double degrees, final double ddegrees) {
-		return new UncertainValue(Math.toRadians(degrees), Math.toRadians(ddegrees));
-	}
-
-	/**
-	 * Constructs a UncertainValue with value <code>v</code> and uncertainties
-	 * <code>sigmas</code>.
-	 *
-	 * @param v      The value
-	 * @param sigmas The associated uncertainties
-	 */
-	public UncertainValue(final double v, final Map<Object, Double> sigmas) {
-		mValue = v;
-		if (sigmas != null)
-			for (final Map.Entry<Object, Double> me : sigmas.entrySet())
-				assignComponent(me.getKey(), me.getValue());
-	}
-
-	/**
-	 * @see java.lang.Number#doubleValue()
-	 */
-	@Override
-	public double doubleValue() {
-		return mValue.doubleValue();
-	}
-
-	/**
-	 * @see java.lang.Number#floatValue()
-	 */
-	@Override
-	public float floatValue() {
-		return mValue.floatValue();
-	}
-
-	/**
-	 * @see java.lang.Number#intValue()
-	 */
-	@Override
-	public int intValue() {
-		return mValue.intValue();
-	}
-
-	/**
-	 * @see java.lang.Number#longValue()
-	 */
-	@Override
-	public long longValue() {
-		return mValue.longValue();
-	}
-
-	/**
-	 * Assigns the magnitude (abs(sigma)) of the specified source of uncertainty.
-	 * Any previous value assigned to this source is replaced. If sigma is zero then
-	 * any earlier value is erased.
-	 *
-	 * @param name  The name of the source of the uncertainty
-	 * @param sigma The magnitude of the uncertainty
-	 */
-	public void assignComponent(final Object name, final double sigma) {
-		if (sigma != 0.0) {
-			final int idx = indexOf(name);
-			if (idx >= 0)
-				mSigmas.set(idx, new Sigma(name, Math.abs(sigma)));
-			else
-				mSigmas.add(new Sigma(name, Math.abs(sigma)));
-		} else
-			mSigmas.remove(name);
-	}
-
-	private int indexOf(final Object name) {
-		for (int i = 0; i < mSigmas.size(); ++i)
-			if (mSigmas.get(i).mLabel.equals(name))
-				return i;
-		return -1;
-	}
-
-	/**
-	 * Flattens the various different uncertainties associated with this
-	 * UncertainValue down to a single value associated with a single source.
-	 *
-	 * @param name
-	 * @returns UncertainValue
-	 */
-	public Number flatten(final Object name) {
-		return unwrap(new UncertainValue(mValue, name, uncertainty()));
+	static public UncertainValue asUncertainValue(final Number n) {
+		if (n instanceof UncertainValue)
+			return (UncertainValue) n;
+		else
+			return new UncertainValue(n.doubleValue());
 	}
 
 	/**
@@ -254,28 +109,6 @@ final public class UncertainValue //
 			return n;
 	}
 
-	@Override
-	public String toString() {
-		if (mSigmas.size() > 0)
-			return Double.toString(mValue) + " \u00B1 " + Double.toString(uncertainty());
-		else
-			return Double.toString(mValue);
-	}
-
-	/**
-	 * Formats the {@link UncertainValue} as a val +- uncertainty using the
-	 * specified NumberFormat for both.
-	 *
-	 * @param nf
-	 * @return String
-	 */
-	public String format(final NumberFormat nf) {
-		if (mSigmas.size() > 0)
-			return nf.format(mValue) + "\u00B1" + nf.format(uncertainty());
-		else
-			return nf.format(mValue);
-	}
-
 	public static String format(final NumberFormat nf, final Number n) {
 		if (n instanceof UncertainValue)
 			return ((UncertainValue) n).format(nf);
@@ -283,101 +116,24 @@ final public class UncertainValue //
 			return nf.format(n);
 	}
 
-	/**
-	 * Formats the {@link UncertainValue} as a val +- dv1(src1) +- dv2(src2)...
-	 * using the specified NumberFormat.
-	 *
-	 * @param nf
-	 * @return String
-	 */
-	public String formatLong(final NumberFormat nf) {
-		final StringBuffer sb = new StringBuffer();
-		sb.append(nf.format(mValue));
-		for (final Sigma sigma : mSigmas) {
-			sb.append("\u00B1");
-			sb.append(nf.format(sigma.mOneSigma));
-			sb.append("(");
-			sb.append(sigma.mLabel);
-			sb.append(")");
-		}
-		return sb.toString();
+	public static boolean isNaN(final Number n) {
+		return Double.isNaN(n.doubleValue());
 	}
 
-	/**
-	 * Format the specified uncertainty source in the format "U(src)=df".
-	 *
-	 * @param src
-	 * @param nf
-	 * @return String
-	 */
-	public String format(final Object src, final NumberFormat nf) {
-		return "U(" + src + ")=" + nf.format(getComponent(src));
+	public static double mean(final Number n) {
+		return n.doubleValue();
 	}
 
-	/**
-	 * Returns the specified source of uncertainty.
-	 *
-	 * @param src
-	 * @return The specified uncertainty or 0.0 if src not defined.
-	 */
-	public double getComponent(final Object src) {
-		final int idx = indexOf(src);
-		final Double dv = (idx >= 0 ? mSigmas.get(idx).mOneSigma : Double.valueOf(0.0));
-		return dv.doubleValue();
+	public static UncertainValue normal(final double v, final Object src) {
+		return new UncertainValue(v, src, Math.sqrt(v));
 	}
 
-	public String formatComponent(final String comp, final NumberFormat nf) {
-		return nf.format(getComponent(comp)) + "(" + comp + ")";
+	public static UncertainValue toRadians(final double degrees, final double ddegrees) {
+		return new UncertainValue(Math.toRadians(degrees), Math.toRadians(ddegrees));
 	}
 
-	/**
-	 * Is this component defined?
-	 *
-	 * @param src
-	 * @return true or false
-	 */
-	public boolean hasComponent(final Object src) {
-		return indexOf(src) != -1;
-	}
-
-	public Map<Object, Double> getComponents() {
-		final Map<Object, Double> res = new HashMap<>();
-		for (final Sigma s : mSigmas)
-			res.put(s.mLabel, s.mOneSigma);
-		return Collections.unmodifiableMap(res);
-	}
-
-	public Set<Object> getComponentNames() {
-		final Set<Object> res = new HashSet<>();
-		for (final Sigma s : mSigmas)
-			res.add(s.mLabel);
-		return Collections.unmodifiableSet(res);
-	}
-
-	/**
-	 * Rename an uncertainty component. Fails with an EPQException if a component
-	 * with the new name already exists.
-	 *
-	 * @param oldName
-	 * @param newName
-	 */
-	public void renameComponent(final String oldName, final String newName) {
-		final int idx = indexOf(oldName);
-		if (idx != -1)
-			mSigmas.set(idx, new Sigma(newName, mSigmas.get(idx).mOneSigma));
-	}
-
-	/**
-	 * A method to convert any Number into the equivalent UncertainValue.
-	 *
-	 * @param n
-	 * @return {@link UncertainValue}
-	 */
-	static public UncertainValue asUncertainValue(final Number n) {
-		if (n instanceof UncertainValue)
-			return (UncertainValue) n;
-		else
-			return new UncertainValue(n.doubleValue());
+	public static double uncertainty(final Number n) {
+		return isSpecialNumber(n) ? asUncertainValue(n).uncertainty() : 0.0;
 	}
 
 	/**
@@ -405,76 +161,134 @@ final public class UncertainValue //
 				: new UncertainValue(sum / varSum, "WM", Math.sqrt(1.0 / varSum));
 	}
 
-	public static double uncertainty(final Number n) {
-		return isSpecialNumber(n) ? asUncertainValue(n).uncertainty() : 0.0;
+	static final private boolean isSpecialNumber(final Number n) {
+		return n instanceof UncertainValue;
 	}
 
-	public static double mean(final Number n) {
-		return n.doubleValue();
+	static final private Number unwrap(final Number n) {
+		if (n instanceof UncertainValue) {
+			final UncertainValue uv = (UncertainValue) n;
+			if (!uv.isUncertain())
+				return Double.valueOf(n.doubleValue());
+		}
+		return n;
 	}
+
+	@XStreamAlias("value")
+	private final Double mValue;
 
 	/**
-	 * True if the uncertainty associated with this item is non-zero.
-	 *
-	 * @return boolean
+	 * A map of one-sigma width uncertainty components.
 	 */
-	public boolean isUncertain() {
-		return mSigmas.size() > 0;
-	}
+	@XStreamImplicit
+	@XStreamAlias("sigmas")
+	private final List<Sigma> mSigmas = new ArrayList<>();
 
 	/**
-	 * The uncertainty in the UncertainValue.
+	 * Constructs a UncertainValue with value <code>v</code> and no uncertainty.
 	 *
-	 * @return A double
+	 * @param v The value
 	 */
-	public double uncertainty() {
-		return Math.sqrt(variance());
+	public UncertainValue(final double v) {
+		this(v, "dv", 0.0);
 	}
 
 	/**
-	 * The standard deviation in the UncertainValue (equal to uncertainty()).
+	 * Constructs a UncertainValue with value <code>v</code> and uncertainty
+	 * <code>dv</code>. The uncertainty is given a default name "DEFAULTXXX"= where
+	 * XXX is an auto-incrementing index to ensure every unnamed uncertainty is
+	 * considered independent.
 	 *
-	 * @return A double
+	 * @param v  The value
+	 * @param dv The associated uncertainty
 	 */
-	public double getStandardDeviation() {
-		return Math.sqrt(variance());
+	public UncertainValue(final double v, final double dv) {
+		this(v, "dx", dv);
 	}
 
 	/**
-	 * The variance associated with this UncertainValue
+	 * Constructs a UncertainValue with value <code>v</code> and uncertainties
+	 * <code>sigmas</code>.
 	 *
-	 * @return double
+	 * @param v      The value
+	 * @param sigmas The associated uncertainties
 	 */
-	public double variance() {
-		double sigma2 = 0.0;
-		for (final Sigma s : mSigmas)
-			sigma2 += s.mOneSigma * s.mOneSigma;
-		return sigma2;
+	public UncertainValue(final double v, final Map<Object, Double> sigmas) {
+		mValue = v;
+		if (sigmas != null)
+			for (final Map.Entry<Object, Double> me : sigmas.entrySet())
+				assignComponent(me.getKey(), me.getValue());
 	}
 
 	/**
-	 * The fractional uncertainty = Math.abs(uncertainty()/doubleValue())
+	 * Constructs a UncertainValue
 	 *
-	 * @return A double
+	 * @param v      double
+	 * @param source String The name of the source of the uncertainty
+	 * @param dv     The associate uncertainty
 	 */
-	public double fractionalUncertainty() {
-		return Double.isNaN(1.0 / mValue) ? Double.NaN : Math.abs(uncertainty() / mValue);
+	public UncertainValue(final double v, final Object source, final double dv) {
+		mValue = v;
+		assignComponent(source, dv);
 	}
 
-	public boolean isNaN() {
-		return Double.isNaN(mValue);
+	public UncertainValue(final Number n) {
+		this(n.doubleValue(), n instanceof UncertainValue ? ((UncertainValue) n).mSigmas : null);
 	}
 
-	public static boolean isNaN(final Number n) {
-		return Double.isNaN(n.doubleValue());
+	private UncertainValue(final double v, final List<Sigma> sigmas) {
+		mValue = v;
+		if (sigmas != null)
+			mSigmas.addAll(sigmas);
 	}
 
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * Assigns the magnitude (abs(sigma)) of the specified source of uncertainty.
+	 * Any previous value assigned to this source is replaced. If sigma is zero then
+	 * any earlier value is erased.
+	 *
+	 * @param name  The name of the source of the uncertainty
+	 * @param sigma The magnitude of the uncertainty
+	 */
+	public void assignComponent(final Object name, final double sigma) {
+		if (sigma != 0.0) {
+			final int idx = indexOf(name);
+			if (idx >= 0)
+				mSigmas.set(idx, new Sigma(name, Math.abs(sigma)));
+			else
+				mSigmas.add(new Sigma(name, Math.abs(sigma)));
+		} else
+			mSigmas.remove(name);
+	}
+
+	/**
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
 	@Override
-	public int hashCode() {
-		return Objects.hash(mValue, mSigmas);
+	public int compareTo(final UncertainValue o) {
+		final int res = Double.compare(doubleValue(), o.doubleValue());
+		return res != 0 ? res : Double.compare(uncertainty(this), uncertainty(o));
+	}
+
+	/**
+	 * Returns a new {@link UncertainValue} which is the this divide by k.
+	 *
+	 * @param k
+	 * @return {@link UncertainValue}
+	 */
+	public UncertainValue divide(final double k) {
+		final List<Sigma> sigmas = new ArrayList<>();
+		for (final Sigma ss : mSigmas)
+			sigmas.add(new Sigma(ss.mLabel, ss.mOneSigma / k));
+		return new UncertainValue(mValue.doubleValue() / k, sigmas);
+	}
+
+	/**
+	 * @see java.lang.Number#doubleValue()
+	 */
+	@Override
+	public double doubleValue() {
+		return mValue.doubleValue();
 	}
 
 	/**
@@ -493,6 +307,165 @@ final public class UncertainValue //
 	}
 
 	/**
+	 * Flattens the various different uncertainties associated with this
+	 * UncertainValue down to a single value associated with a single source.
+	 *
+	 * @param name
+	 * @returns UncertainValue
+	 */
+	public Number flatten(final Object name) {
+		return unwrap(new UncertainValue(mValue, name, uncertainty()));
+	}
+
+	/**
+	 * @see java.lang.Number#floatValue()
+	 */
+	@Override
+	public float floatValue() {
+		return mValue.floatValue();
+	}
+
+	/**
+	 * Formats the {@link UncertainValue} as a val +- uncertainty using the
+	 * specified NumberFormat for both.
+	 *
+	 * @param nf
+	 * @return String
+	 */
+	public String format(final NumberFormat nf) {
+		if (mSigmas.size() > 0)
+			return nf.format(mValue) + "\u00B1" + nf.format(uncertainty());
+		else
+			return nf.format(mValue);
+	}
+
+	/**
+	 * Format the specified uncertainty source in the format "U(src)=df".
+	 *
+	 * @param src
+	 * @param nf
+	 * @return String
+	 */
+	public String format(final Object src, final NumberFormat nf) {
+		return "U(" + src + ")=" + nf.format(getComponent(src));
+	}
+
+	public String formatComponent(final String comp, final NumberFormat nf) {
+		return nf.format(getComponent(comp)) + "(" + comp + ")";
+	}
+
+	/**
+	 * Formats the {@link UncertainValue} as a val +- dv1(src1) +- dv2(src2)...
+	 * using the specified NumberFormat.
+	 *
+	 * @param nf
+	 * @return String
+	 */
+	public String formatLong(final NumberFormat nf) {
+		final StringBuffer sb = new StringBuffer();
+		sb.append(nf.format(mValue));
+		for (final Sigma sigma : mSigmas) {
+			sb.append("\u00B1");
+			sb.append(nf.format(sigma.mOneSigma));
+			sb.append("(");
+			sb.append(sigma.mLabel);
+			sb.append(")");
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * The fractional uncertainty = Math.abs(uncertainty()/doubleValue())
+	 *
+	 * @return A double
+	 */
+	public double fractionalUncertainty() {
+		return Double.isNaN(1.0 / mValue) ? Double.NaN : Math.abs(uncertainty() / mValue);
+	}
+
+	/**
+	 * Returns the specified source of uncertainty.
+	 *
+	 * @param src
+	 * @return The specified uncertainty or 0.0 if src not defined.
+	 */
+	public double getComponent(final Object src) {
+		final int idx = indexOf(src);
+		final Double dv = (idx >= 0 ? mSigmas.get(idx).mOneSigma : Double.valueOf(0.0));
+		return dv.doubleValue();
+	}
+
+	public Set<Object> getComponentNames() {
+		final Set<Object> res = new HashSet<>();
+		for (final Sigma s : mSigmas)
+			res.add(s.mLabel);
+		return Collections.unmodifiableSet(res);
+	}
+
+	public Map<Object, Double> getComponents() {
+		final Map<Object, Double> res = new HashMap<>();
+		for (final Sigma s : mSigmas)
+			res.put(s.mLabel, s.mOneSigma);
+		return Collections.unmodifiableMap(res);
+	}
+
+	/**
+	 * The standard deviation in the UncertainValue (equal to uncertainty()).
+	 *
+	 * @return A double
+	 */
+	public double getStandardDeviation() {
+		return Math.sqrt(variance());
+	}
+
+	/**
+	 * Is this component defined?
+	 *
+	 * @param src
+	 * @return true or false
+	 */
+	public boolean hasComponent(final Object src) {
+		return indexOf(src) != -1;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(mValue, mSigmas);
+	}
+
+	/**
+	 * @see java.lang.Number#intValue()
+	 */
+	@Override
+	public int intValue() {
+		return mValue.intValue();
+	}
+
+	public boolean isNaN() {
+		return Double.isNaN(mValue);
+	}
+
+	/**
+	 * True if the uncertainty associated with this item is non-zero.
+	 *
+	 * @return boolean
+	 */
+	public boolean isUncertain() {
+		return mSigmas.size() > 0;
+	}
+
+	/**
+	 * @see java.lang.Number#longValue()
+	 */
+	@Override
+	public long longValue() {
+		return mValue.longValue();
+	}
+
+	/**
 	 * Returns a new {@link UncertainValue} which is the product of this and k.
 	 *
 	 * @param k
@@ -503,28 +476,6 @@ final public class UncertainValue //
 		for (final Sigma ss : mSigmas)
 			sigmas.add(new Sigma(ss.mLabel, k * ss.mOneSigma));
 		return new UncertainValue(k * mValue.doubleValue(), sigmas);
-	}
-
-	/**
-	 * Returns a new {@link UncertainValue} which is the this divide by k.
-	 *
-	 * @param k
-	 * @return {@link UncertainValue}
-	 */
-	public UncertainValue divide(final double k) {
-		final List<Sigma> sigmas = new ArrayList<>();
-		for (final Sigma ss : mSigmas)
-			sigmas.add(new Sigma(ss.mLabel, ss.mOneSigma / k));
-		return new UncertainValue(mValue.doubleValue() / k, sigmas);
-	}
-
-	/**
-	 * @see java.lang.Comparable#compareTo(java.lang.Object)
-	 */
-	@Override
-	public int compareTo(final UncertainValue o) {
-		final int res = Double.compare(doubleValue(), o.doubleValue());
-		return res != 0 ? res : Double.compare(uncertainty(this), uncertainty(o));
 	}
 
 	public UncertainValue positiveDefinite() {
@@ -540,6 +491,29 @@ final public class UncertainValue //
 	 */
 	public double randomVariate() {
 		return mValue + (sRandom.nextGaussian() * uncertainty());
+	}
+
+	/**
+	 * Rename an uncertainty component. Fails with an EPQException if a component
+	 * with the new name already exists.
+	 *
+	 * @param oldName
+	 * @param newName
+	 */
+	public void renameComponent(final String oldName, final String newName) {
+		final int idx = indexOf(oldName);
+		if (idx != -1)
+			mSigmas.set(idx, new Sigma(newName, mSigmas.get(idx).mOneSigma));
+	}
+
+	/**
+	 * @param mode
+	 * @return
+	 * @see gov.nist.microanalysis.roentgen.html.IToHTML#toHTML(gov.nist.microanalysis.roentgen.Representation.IToHTML.Mode)
+	 */
+	@Override
+	public String toHTML(final Mode mode) {
+		return toHTML(mode, new BasicNumberFormat());
 	}
 
 	public String toHTML(final Mode mode, final BasicNumberFormat bnf) {
@@ -605,14 +579,40 @@ final public class UncertainValue //
 
 	}
 
-	/**
-	 * @param mode
-	 * @return
-	 * @see gov.nist.microanalysis.roentgen.html.IToHTML#toHTML(gov.nist.microanalysis.roentgen.Representation.IToHTML.Mode)
-	 */
 	@Override
-	public String toHTML(final Mode mode) {
-		return toHTML(mode, new BasicNumberFormat());
+	public String toString() {
+		if (mSigmas.size() > 0)
+			return Double.toString(mValue) + " \u00B1 " + Double.toString(uncertainty());
+		else
+			return Double.toString(mValue);
+	}
+
+	/**
+	 * The uncertainty in the UncertainValue.
+	 *
+	 * @return A double
+	 */
+	public double uncertainty() {
+		return Math.sqrt(variance());
+	}
+
+	/**
+	 * The variance associated with this UncertainValue
+	 *
+	 * @return double
+	 */
+	public double variance() {
+		double sigma2 = 0.0;
+		for (final Sigma s : mSigmas)
+			sigma2 += s.mOneSigma * s.mOneSigma;
+		return sigma2;
+	}
+
+	private int indexOf(final Object name) {
+		for (int i = 0; i < mSigmas.size(); ++i)
+			if (mSigmas.get(i).mLabel.equals(name))
+				return i;
+		return -1;
 	}
 
 }

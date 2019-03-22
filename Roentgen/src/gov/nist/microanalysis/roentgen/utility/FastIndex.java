@@ -29,7 +29,7 @@ public class FastIndex<H> extends ArrayList<H> {
 
 	public FastIndex(final List<? extends H> outputs) {
 		super(outputs.size() == 0 ? 256 : outputs.size());
-		mIndex = new HashMap<>();
+		mIndex = new HashMap<>(outputs.size() == 0 ? 256 : outputs.size());
 		for (H h : outputs)
 			add(h);
 	}

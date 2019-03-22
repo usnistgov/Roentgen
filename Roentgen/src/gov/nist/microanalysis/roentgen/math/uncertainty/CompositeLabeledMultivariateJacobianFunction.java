@@ -109,7 +109,8 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 		// Remove all the outputs from this and subsequent steps
 		for (int st = step; st < steps.size() - 1; ++st) {
 			final LabeledMultivariateJacobianFunction<? extends G, ? extends G> func = steps.get(st);
-			inputs.removeAll(func.getOutputLabels());
+			if(!(func instanceof ImplicitMeasurementModel<?>))
+				inputs.removeAll(func.getOutputLabels());
 		}
 		// Add all the outputs from previous steps that are in the final output list
 		final Set<G> retain = new HashSet<>();

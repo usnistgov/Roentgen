@@ -4,10 +4,8 @@ import java.io.PrintStream;
 import java.text.NumberFormat;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -23,7 +21,6 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
-import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
@@ -41,7 +38,7 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
-abstract public class LabeledMultivariateJacobianFunction<H, K> //
+abstract public class LabeledMultivariateJacobianFunction<G, H> //
 		implements MultivariateJacobianFunction, IToHTML //
 {
 
@@ -50,12 +47,12 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 	 * Unique object labels identifying each of the random variable arguments to the
 	 * functions
 	 */
-	private final List<H> mInputLabels;
+	private final List<G> mInputLabels;
 
 	/***
 	 * Unique object labels identifying each of the functions (in order)
 	 */
-	private final List<K> mOutputLabels;
+	private final List<H> mOutputLabels;
 
 	/**
 	 * Constructs an instance of the LabeledMultivariateJacobianFunction class for a
@@ -65,8 +62,8 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 	 * @param outputLabels A list containing labels for N output values
 	 */
 	public LabeledMultivariateJacobianFunction( //
-			final List<H> inputLabels, //
-			final List<K> outputLabels) //
+			final List<G> inputLabels, //
+			final List<H> outputLabels) //
 	{
 		validateLabels(inputLabels);
 		// assert inputLabels != outputLabels;
@@ -92,27 +89,6 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 			return ((ILabeledMultivariateFunction<?, ?>) this).optimized(inp);
 		else
 			return value(inp).getFirst();
-	}
-
-	protected void dumpArguments(final RealVector point, final LabeledMultivariateJacobianFunction<?, ?> parent) {
-		if (sDump != null) {
-			final StringBuffer sb = new StringBuffer();
-			final NumberFormat nf = new HalfUpFormat("0.00E0");
-			sb.append(toString());
-			sb.append("[");
-			for (int i = 0; i < getInputDimension(); ++i) {
-				if (i != 0)
-					sb.append(",");
-				final Object lbl = getInputLabel(i);
-				sb.append(lbl);
-				sb.append("=");
-				sb.append(nf.format(point.getEntry(i)));
-			}
-			sb.append("] in ");
-			sb.append(parent);
-			sb.append("\n");
-			sDump.append(sb);
-		}
 	}
 
 	@Override
@@ -169,73 +145,13 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 		assert point.getDimension() == nmvj.getInputDimension();
 		final int dim = getInputDimension();
 		final RealVector res = new ArrayRealVector(dim);
-		final List<? extends H> labels = getInputLabels();
+		final List<? extends G> labels = getInputLabels();
 		for (int i = 0; i < dim; ++i) {
 			final int idx = nmvj.inputIndex(labels.get(i));
 			assert idx != -1 : "Can't find " + labels.get(i) + " in the arguments to " + nmvj.toString();
 			res.setEntry(i, point.getEntry(idx));
 		}
 		return res;
-	}
-
-	/**
-	 * Gets the value associated with the specified input variable label from the
-	 * {@link RealVector} point which is the argument to the value(...) function.
-	 * 
-	 * @param inLabel
-	 * @param point
-	 * @return double
-	 */
-	final protected double getArg(H inLabel, RealVector point) {
-		return point.getEntry(inputIndex(inLabel));
-	}
-
-	/**
-	 * Sets the value associated with the specified output variable label to the
-	 * result {@link RealVector} point which is to be returned by the value(...)
-	 * function.
-	 * 
-	 * @param outLabel K
-	 * @param result   {@link RealVector}
-	 * @param value    double The value to be assigned to
-	 *                 result[outputIndex(outLabel)]
-	 */
-	final protected void setResult(K outLabel, RealVector result, double value) {
-		result.setEntry(outputIndex(outLabel), value);
-	}
-
-	/**
-	 * Sets the value associated with the specified output variable label to the
-	 * result {@link RealVector} point which is to be returned by the value(...)
-	 * function.
-	 * 
-	 * @param outLabel K
-	 * @param inLabel  H
-	 * @param jacobian {@link RealMatrix}
-	 * @param value    double The value to be assigned to
-	 *                 jacobian[outputIndex(outLabel),inputIndex(inLabel)]
-	 */
-	final protected void setJacobian(K outLabel, H inlabel, RealMatrix jacobian, double value) {
-		jacobian.setEntry(outputIndex(outLabel), inputIndex(inlabel), value);
-	}
-
-	/**
-	 * A helper to build a zeroed vector to contain the result for value(...)
-	 * 
-	 * @return {@link RealVector}
-	 */
-	final protected RealVector buildResult() {
-		return new ArrayRealVector(getOutputDimension());
-	}
-
-	/**
-	 * A helper to build an zeroed matrix to contain the result Jacobian in
-	 * value(...)
-	 * 
-	 * @return {@link RealMatrix}
-	 */
-	final protected RealMatrix buildJacobian() {
-		return MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 	}
 
 	/**
@@ -247,7 +163,7 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 		return mInputLabels.size();
 	}
 
-	final public H getInputLabel(final int idx) {
+	final public G getInputLabel(final int idx) {
 		return mInputLabels.get(idx);
 	}
 
@@ -257,7 +173,7 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 	 *
 	 * @return List&lt;Object&gt;
 	 */
-	final public List<H> getInputLabels() {
+	final public List<G> getInputLabels() {
 		return Collections.unmodifiableList(mInputLabels);
 	}
 
@@ -270,7 +186,7 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 		return mOutputLabels.size();
 	}
 
-	final public K getOutputLabel(final int idx) {
+	final public H getOutputLabel(final int idx) {
 		return mOutputLabels.get(idx);
 	}
 
@@ -280,63 +196,8 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 	 *
 	 * @return List&lt;Object&gt;
 	 */
-	final public List<K> getOutputLabels() {
+	final public List<H> getOutputLabels() {
 		return Collections.unmodifiableList(mOutputLabels);
-	}
-
-	/**
-	 * <p>
-	 * Get the resulting UncertainValue for each output quantity with sources
-	 * grouped and named according to the map of names to a collection of labels.
-	 * </p>
-	 * </p>
-	 * Returns a map from output value to an UncertainValue with discretely broken
-	 * out uncertainty components according to the labels map.
-	 * </p>
-	 *
-	 * @param uvs
-	 * @param labels Group according to this mapping
-	 * @param tol    Minimum size uncertainty to include
-	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
-	 * @throws ArgumentException
-	 */
-	public HashMap<K, UncertainValue> getOutputValues( //
-			final UncertainValues<H> uvs, //
-			final Map<String, Collection<? extends K>> labels, //
-			final double tol //
-	) throws ArgumentException {
-		final UncertainValuesCalculator<H, K> uvc = new UncertainValuesCalculator<H, K>(this, uvs);
-		return uvc.getOutputValues(labels, tol);
-	}
-
-	/**
-	 * Returns a Map of the labels associated with output values expressed as
-	 * {@link UncertainValue} objects. Equivalent to
-	 * <code>getOutputValues(uvs, 1.0e-6)</code>
-	 *
-	 * @param uvs Input {@link UncertainValues}
-	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
-	 * @throws ArgumentException
-	 */
-	public HashMap<K, UncertainValue> getOutputValues(final UncertainValuesBase<H> uvs) throws ArgumentException {
-		return getOutputValues(uvs, 1.0e-6);
-	}
-
-	/**
-	 * Returns a Map of the labels associated with output values expressed as
-	 * {@link UncertainValue} objects.
-	 *
-	 * @param uvs Input {@link UncertainValues}
-	 * @param tol Tolerance relative to value
-	 * @return HashMap&lt;? extends Object, UncertainValue&gt;
-	 * @throws ArgumentException
-	 */
-	public HashMap<K, UncertainValue> getOutputValues( //
-			final UncertainValuesBase<H> uvs, //
-			final double tol//
-	) throws ArgumentException {
-		final UncertainValuesCalculator<H, K> uvc = new UncertainValuesCalculator<H, K>(this, uvs);
-		return uvc.getOutputValues(tol);
 	}
 
 	@Override
@@ -350,7 +211,7 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 	 * @param label
 	 * @return true if a value has been defined.
 	 */
-	final public boolean hasValue(final H label) {
+	final public boolean hasValue(final G label) {
 		return (inputIndex(label) != -1);
 	}
 
@@ -410,6 +271,88 @@ abstract public class LabeledMultivariateJacobianFunction<H, K> //
 			return t.toHTML(Mode.NORMAL);
 		}
 		}
+	}
+
+	/**
+	 * A helper to build an zeroed matrix to contain the result Jacobian in
+	 * value(...)
+	 *
+	 * @return {@link RealMatrix}
+	 */
+	final protected RealMatrix buildJacobian() {
+		return MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+	}
+
+	/**
+	 * A helper to build a zeroed vector to contain the result for value(...)
+	 *
+	 * @return {@link RealVector}
+	 */
+	final protected RealVector buildResult() {
+		return new ArrayRealVector(getOutputDimension());
+	}
+
+	protected void dumpArguments(final RealVector point, final LabeledMultivariateJacobianFunction<?, ?> parent) {
+		if (sDump != null) {
+			final StringBuffer sb = new StringBuffer();
+			final NumberFormat nf = new HalfUpFormat("0.00E0");
+			sb.append(toString());
+			sb.append("[");
+			for (int i = 0; i < getInputDimension(); ++i) {
+				if (i != 0)
+					sb.append(",");
+				final Object lbl = getInputLabel(i);
+				sb.append(lbl);
+				sb.append("=");
+				sb.append(nf.format(point.getEntry(i)));
+			}
+			sb.append("] in ");
+			sb.append(parent);
+			sb.append("\n");
+			sDump.append(sb);
+		}
+	}
+
+	/**
+	 * Gets the value associated with the specified input variable label from the
+	 * {@link RealVector} point which is the argument to the value(...) function.
+	 * Typically used to implement the value(...) function.
+	 *
+	 * @param inLabel A G class label
+	 * @param point   The argument to the value(...) function
+	 * @return double The value at point.getEntry(inputIndex(inLabel))
+	 */
+	final protected double getArg(final G inLabel, final RealVector point) {
+		return point.getEntry(inputIndex(inLabel));
+	}
+
+	/**
+	 * Sets the value associated with the specified row (outLabel) and column
+	 * (inLabel) in the Jacobian matrix in jacobian to value. Typically used to
+	 * implement the value(...) function.
+	 *
+	 * @param inLabel  G
+	 * @param outLabel H
+	 * @param jacobian {@link RealMatrix}
+	 * @param value    double The value to be assigned to
+	 *                 jacobian[outputIndex(outLabel),inputIndex(inLabel)]
+	 */
+	final protected void setJacobian(final G inlabel, final H outLabel, final RealMatrix jacobian, final double value) {
+		jacobian.setEntry(outputIndex(outLabel), inputIndex(inlabel), value);
+	}
+
+	/**
+	 * Sets the value associated with the specified output variable label to the
+	 * result {@link RealVector} point which is to be returned by the value(...)
+	 * function. Typically used to implement the value(...) function.
+	 *
+	 * @param outLabel H A H-class label
+	 * @param result   {@link RealVector}
+	 * @param value    double The value to be assigned to
+	 *                 result[outputIndex(outLabel)]
+	 */
+	final protected void setResult(final H outLabel, final RealVector result, final double value) {
+		result.setEntry(outputIndex(outLabel), value);
 	}
 
 	/**

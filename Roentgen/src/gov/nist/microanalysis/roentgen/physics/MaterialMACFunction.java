@@ -114,7 +114,7 @@ public class MaterialMACFunction //
 		return new MaterialMACFunction(mats, xray);
 	}
 
-	final static public UncertainValuesCalculator<EPMALabel, MaterialMAC> compute(final List<Composition> materials, final XRay xray) //
+	final static public UncertainValuesCalculator<EPMALabel> compute(final List<Composition> materials, final XRay xray) //
 			throws ArgumentException {
 		final List<Material> mats = new ArrayList<>();
 		for (final Composition comp : materials)

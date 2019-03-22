@@ -178,11 +178,11 @@ public class TestImplicitMeasurementModel {
 
 		final UncertainValues<String> inputs = new UncertainValues<>(imm.getInputLabels());
 
-		final UncertainValuesCalculator<String, String> uvc = new UncertainValuesCalculator<>(imm, inputs);
+		final UncertainValuesCalculator<String> uvc = new UncertainValuesCalculator<>(imm, inputs);
 		final UncertainValues<String> jres = UncertainValues.<String>force(uvc);
 
 		final RealVector dinp = inputs.getValues().mapMultiply(0.001);
-		uvc.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
+		uvc.setCalculator(uvc.new FiniteDifference(dinp));
 		final UncertainValues<String> fdres = UncertainValues.<String>force(uvc);
 
 		assertTrue("Finite difference does not equal Jacobian", jres.equals(fdres, 0.00001));

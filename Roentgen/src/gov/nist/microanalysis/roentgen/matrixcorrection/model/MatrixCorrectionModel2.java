@@ -287,17 +287,12 @@ abstract public class MatrixCorrectionModel2 //
 				if (!inputTags.contains(inpLabel))
 					throw new ArgumentException(toString() + " must take " + inpLabel.toString() + " as an argument.");
 			}
-			/*
-			 * final Material unkMat = krl.getUnknown().getMaterial(); for (final Element
-			 * elm : unkMat.getElementSet()) { final MaterialLabel.MassFraction mft =
-			 * MaterialLabel.buildMassFractionTag(unkMat, elm); if
-			 * (!inputTags.contains(mft)) throw new ArgumentException(toString() +
-			 * " must take " + mft.toString() + " as an argument."); }
-			 */ }
+		}
 	}
 
-	abstract public UncertainValuesBase<EPMALabel> buildInput(UncertainValues<MassFraction> estUnknown)
-			throws ArgumentException;
+	abstract public UncertainValuesBase<EPMALabel> buildInput( //
+			UncertainValues<MassFraction> estUnknown //
+	) throws ArgumentException;
 
 	public Set<Element> getElementSet() {
 		final Set<Element> res = new HashSet<>();

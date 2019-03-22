@@ -121,11 +121,11 @@ public class ElementByStoichiometry //
 						* (mValences.get(elm).doubleValue() / mValences.get(mElement).doubleValue());
 				ci += kkj * cj;
 				dcidawi += (kkj / ai) * cj;
-				setJacobian(mfo, mft, jac, kkj);
-				setJacobian(mfo, awt, jac, -(kkj / aj) * cj);
+				setJacobian(mft, mfo, jac, kkj);
+				setJacobian(awt, mfo, jac, -(kkj / aj) * cj);
 			}
 		}
-		setJacobian(mfo, awi, jac, dcidawi);
+		setJacobian(awi, mfo, jac, dcidawi);
 		setResult(mfo, res, ci);
 		return Pair.create(res, jac);
 	}

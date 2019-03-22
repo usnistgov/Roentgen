@@ -63,7 +63,7 @@ public class ElementByDifference //
 		double sum = 0.0;
 		for (final MassFraction mft : getInputLabels()) {
 			sum += getArg(mft, point);
-			setJacobian(mfo, mft, rm, -1.0);
+			setJacobian(mft, mfo, rm, -1.0);
 		}
 		rv.setEntry(0, 1.0 - sum);
 		return Pair.create(rv, rm);

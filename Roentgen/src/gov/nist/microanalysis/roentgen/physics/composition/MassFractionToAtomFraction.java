@@ -105,11 +105,11 @@ public class MassFractionToAtomFraction //
 				final double w2 = getArg(awl2, point);
 				final double c2 = getArg(mfl2, point);
 				if (elm1.equals(elm2)) {
-					setJacobian(afl1, mfl2, jac, (1.0 - (c1 / (w2 * denom))) / (w1 * denom));
-					setJacobian(afl1, awl2, jac, (c2 / (denom * w2 * w2)) * (c1 / (w1 * denom) - 1.0));
+					setJacobian(mfl2, afl1, jac, (1.0 - (c1 / (w2 * denom))) / (w1 * denom));
+					setJacobian(awl2, afl1, jac, (c2 / (denom * w2 * w2)) * (c1 / (w1 * denom) - 1.0));
 				} else {
-					setJacobian(afl1, mfl2, jac, (-1.0 * (c1 / (w2 * denom))) / (w1 * denom));
-					setJacobian(afl1, awl2, jac, (c2 / (denom * w2 * w2)) * (c1 / (w1 * denom)));
+					setJacobian(mfl2, afl1, jac, (-1.0 * (c1 / (w2 * denom))) / (w1 * denom));
+					setJacobian(awl2, afl1, jac, (c2 / (denom * w2 * w2)) * (c1 / (w1 * denom)));
 				}
 			}
 		}

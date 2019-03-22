@@ -23,11 +23,9 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.EstimateUncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
@@ -319,7 +317,12 @@ public class CompositionTest2 {
 		assertEquals(0.0781, af.getMassFraction(Element.Iron).doubleValue(), 0.0001);
 
 		// Test MC against analytic
-		final EstimateUncertainValues<MaterialLabel> mup = af.propagateMC(160000);
+		
+		af.setCalculator(af.new MonteCarlo(160000));
+		final UncertainValues<MaterialLabel> mup = UncertainValues.force(af);
+		af.setCalculator(af.new Analytical());
+		
+		
 		for (final MaterialLabel label : af.massFractionTags())
 			assertEquals(af.getValue(label).fractionalUncertainty(),
 					mup.getUncertainValue(label).fractionalUncertainty(), 0.001);
@@ -342,8 +345,7 @@ public class CompositionTest2 {
 				final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
 				rep.addImage(af.reorder(mup.getLabels()).asCovarianceBitmap(8, v2l, l2c), "Jacobian");
 				rep.addImage(mup.asCovarianceBitmap(8, v2l, l2c), "Monte Carlo");
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 				rep.addThrowable(e);
 			}
 			rep.inBrowser(Mode.NORMAL);
@@ -372,12 +374,11 @@ public class CompositionTest2 {
 		final UncertainValues<MaterialLabel> jres = UncertainValues.force(mix);
 
 		final RealVector dinp = mix.getValues().mapMultiply(0.0001);
-		mix.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
+		mix.setCalculator(mix.new FiniteDifference(dinp));
 		final UncertainValues<MaterialLabel> dres = UncertainValues.force(mix);
-
-		mix.setCalculator(new UncertainValuesCalculator.Jacobian());
-		
-		final EstimateUncertainValues<MaterialLabel> mcres = mix.propagateMC(160000);
+		mix.setCalculator(mix.new MonteCarlo(160000));
+		final UncertainValues<MaterialLabel> mcres = UncertainValues.force(mix);
+		mix.setCalculator(mix.new Analytical());
 
 		for (final MaterialLabel row : dres.getLabels()) {
 			final double mm = mix.getVariance(row);
@@ -461,10 +462,10 @@ public class CompositionTest2 {
 		final UncertainValues<MaterialLabel> jres = UncertainValues.force(mix);
 
 		final RealVector dinp = mix.getValues().mapMultiply(0.0001);
-		mix.setCalculator(new UncertainValuesCalculator.FiniteDifference(dinp));
+		mix.setCalculator(mix.new FiniteDifference(dinp));
 		final UncertainValues<MaterialLabel> dres = UncertainValues.force(mix);
-		
-		mix.setCalculator(new UncertainValuesCalculator.Jacobian());
+
+		mix.setCalculator(mix.new Analytical());
 
 		for (final MaterialLabel row : dres.getLabels()) {
 			final double mm = mix.getVariance(row);
@@ -524,8 +525,6 @@ public class CompositionTest2 {
 		r.inBrowser(Mode.VERBOSE);
 	}
 
-	
-	
 	@Test
 	public void runAnorthoclase() //
 			throws ArgumentException, ParseException, IOException {
@@ -544,8 +543,7 @@ public class CompositionTest2 {
 		r.add(sanidine);
 		r.add(combiner);
 		final UncertainValues<MaterialLabel> mix = UncertainValues.force(combiner);
-		combiner.setCalculator(
-				new UncertainValuesCalculator.FiniteDifference(combiner.getInputValues().mapMultiply(0.001)));
+		combiner.setCalculator(combiner.new FiniteDifference(combiner.getInputValues().mapMultiply(0.001)));
 		final UncertainValues<MaterialLabel> dmix = UncertainValues.force(combiner);
 		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
 		r.addSubHeader("Delta");
@@ -559,7 +557,7 @@ public class CompositionTest2 {
 	}
 
 	@Test
-	public void testOByStoich() throws ArgumentException {
+	public void testOByStoich() throws ArgumentException, IOException {
 		LabeledMultivariateJacobianFunction.sDump = null;
 		try {
 			final Map<Element, Number> massFracs = new HashMap<>();
@@ -616,8 +614,8 @@ public class CompositionTest2 {
 					}
 					Desktop.getDesktop().browse(f.toURI());
 				} catch (final IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
+					throw e;
 				}
 			}
 		} finally {

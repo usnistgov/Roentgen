@@ -106,9 +106,11 @@ abstract public class UncertainValuesBase<H> //
 
 		};
 
-		protected CombinedUncertainValues(final List<J> labels, final List<? extends UncertainValuesBase<? extends J>> bases,
-				final boolean first)//
-				throws ArgumentException {
+		protected CombinedUncertainValues( //
+				final List<J> labels, //
+				final List<? extends UncertainValuesBase<? extends J>> bases, //
+				final boolean first //
+		) throws ArgumentException {
 			super(labels);
 			mIndices = new ArrayList<>();
 			for (final J lbl : labels) {
@@ -173,18 +175,21 @@ abstract public class UncertainValuesBase<H> //
 			}
 		};
 
-		protected ReorderedUncertainValues(final List<L> labels, final UncertainValuesBase<? super L> base)//
+		protected ReorderedUncertainValues(final List<? extends L> labels, final UncertainValuesBase<? super L> base)//
 				throws ArgumentException {
-			super(labels);
+			super(new ArrayList<L>(labels));
 			mIndexes = new int[labels.size()];
 			mBase = base;
+			List<L> missing = new ArrayList<>();
 			for (int i = 0; i < mIndexes.length; ++i) {
 				final L label = labels.get(i);
 				final int idx = mBase.indexOf(label);
 				if (idx < 0)
-					throw new ArgumentException("The argument label " + label + " is missing.");
+					missing.add(label);
 				mIndexes[i] = idx;
 			}
+			if (missing.size() > 0)
+				throw new ArgumentException("The argument labels " + missing + " are missing.");
 		}
 
 		@Override
@@ -290,7 +295,7 @@ abstract public class UncertainValuesBase<H> //
 	 * @param corr
 	 * @param pixDim
 	 * @return BufferedImage
-	 * @throws ArgumentException 
+	 * @throws ArgumentException
 	 */
 	public static <J> BufferedImage compareAsBitmap(//
 			final UncertainValuesBase<J> uvs1, //
@@ -362,11 +367,51 @@ abstract public class UncertainValuesBase<H> //
 	 * @return UncertainValues
 	 * @throws ArgumentException
 	 */
-	public static <J,L> UncertainValuesCalculator<J,L> propagate( //
-			final LabeledMultivariateJacobianFunction<J,L> nmjf, //
+	public static <J> UncertainValuesCalculator<J> propagate( //
+			final LabeledMultivariateJacobianFunction<? extends J, ? extends J> nmjf, //
 			final UncertainValuesBase<J> input //
 	) throws ArgumentException {
-		return new UncertainValuesCalculator<J,L>(nmjf, input);
+		return new UncertainValuesCalculator<J>(nmjf, input);
+	}
+
+	/**
+	 * Returns the UncertainValues that result from applying the function/Jacobian
+	 * in <code>nmjf</code> to the input values/variances in <code>input</code>.
+	 *
+	 *
+	 * @param nmjf
+	 * @param input
+	 * @return UncertainValues
+	 * @throws ArgumentException
+	 */
+	public static <J> UncertainValuesCalculator<J> propagateFiniteDifference( //
+			final LabeledMultivariateJacobianFunction<? extends J, ? extends J> nmjf, //
+			final UncertainValuesBase<J> input, //
+			final RealVector dinp //
+	) throws ArgumentException {
+		UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(nmjf, input);
+		res.setCalculator(res.new FiniteDifference(dinp));
+		return res;
+	}
+
+	/**
+	 * Returns the UncertainValues that result from applying the function/Jacobian
+	 * in <code>nmjf</code> to the input values/variances in <code>input</code>.
+	 *
+	 *
+	 * @param nmjf
+	 * @param input
+	 * @return UncertainValues
+	 * @throws ArgumentException
+	 */
+	public static <J> UncertainValuesCalculator<J> propagateMonteCarlo( //
+			final LabeledMultivariateJacobianFunction<? extends J, ? extends J> nmjf, //
+			final UncertainValuesBase<J> input, //
+			final int nEvals //
+	) throws ArgumentException {
+		UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(nmjf, input);
+		res.setCalculator(res.new MonteCarlo(nEvals));
+		return res;
 	}
 
 	public static <J> boolean testEquality(final UncertainValuesBase<J> uvs1, final UncertainValuesBase<J> uvs2) {
@@ -586,11 +631,23 @@ abstract public class UncertainValuesBase<H> //
 		return Objects.equals(mLabels, other.getLabels());
 	}
 
+	/**
+	 * Tests the equality of the values, variances and correlation coefficients to
+	 * within the fractional tolerance.
+	 * 
+	 * @param uv2
+	 * @param tol
+	 * @return boolean
+	 */
 	public boolean equals(final UncertainValuesBase<H> uv2, final double tol) {
 		for (int r = 0; r < this.getDimension(); ++r) {
 			final double tmp = Math.abs((getEntry(r) - uv2.getEntry(mLabels.get(r))) / getEntry(r));
 			if (Double.isFinite(tmp))
 				if (tmp > tol)
+					return false;
+			final double var = Math.abs((getVariance(r) - getVariance(mLabels.get(r))) / getEntry(r));
+			if (Double.isFinite(var))
+				if (var > tol)
 					return false;
 			for (int c = r; c < this.getDimension(); ++c)
 				if (Math.abs(getCorrelationCoefficient(r, c)
@@ -611,8 +668,23 @@ abstract public class UncertainValuesBase<H> //
 	 */
 	final public UncertainValuesBase<H> extract(final int[] indices) //
 			throws ArgumentException {
-		return reorder(getLabels(indices));
+		return extract(getLabels(indices));
 	}
+	
+	/**
+	 * Creates a new {@link UncertainValues} object representing only those
+	 * rows/columns whose indexes are in idx. Can be used to create a sub-set of
+	 * this {@link UncertainValues} or reorder this {@link UncertainValues}.
+	 *
+	 * @param idx
+	 * @return {@link UncertainValues} A new object
+	 * @throws ArgumentException
+	 */
+	final public UncertainValuesBase<H> extract(final List<? extends H> labels) //
+			throws ArgumentException {
+		return reorder(labels);
+	}
+
 
 	/**
 	 * Extract an array of values from this UncertainValue object for the specified
@@ -1045,7 +1117,7 @@ abstract public class UncertainValuesBase<H> //
 	 * @throws ArgumentException
 	 */
 	@SuppressWarnings("unchecked")
-	public <L extends H> UncertainValuesBase<L> reorder(final List<L> list) throws ArgumentException {
+	public <L extends H> UncertainValuesBase<L> reorder(final List<? extends L> list) throws ArgumentException {
 		if (mLabels.size() == list.size()) {
 			// Check if already in correct order...
 			boolean eq = true;
@@ -1055,7 +1127,7 @@ abstract public class UncertainValuesBase<H> //
 					break;
 				}
 			if (eq)
-				return (UncertainValuesBase<L>)this;
+				return (UncertainValuesBase<L>) this;
 		}
 		return new ReorderedUncertainValues<L>(list, this);
 	}

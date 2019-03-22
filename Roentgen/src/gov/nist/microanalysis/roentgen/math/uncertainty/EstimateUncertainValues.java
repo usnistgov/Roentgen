@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.math;
+package gov.nist.microanalysis.roentgen.math.uncertainty;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,9 +12,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import com.duckandcover.lazy.SimplyLazy;
-
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 
 /**
  * Computes an estimated UncertainValues object give a set of samples
@@ -82,23 +79,22 @@ public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 
 	/**
 	 * Add a measurement / sample to the data set used to compute the estimated
-	 * uncertainties.
+	 * uncertainties. The length of sample must match the size and order of the
+	 * labels List passed to the constructor.
 	 *
 	 *
 	 * @param sample double[]
 	 * @return {@link RealVector} The input vector
 	 */
 	public double[] add(final double[] sample) {
-		assert sample.length == mDimension;
-		synchronized (mSamples) {
-			mSamples.add(new ArrayRealVector(sample));
-		}
+		add(new ArrayRealVector(sample));
 		return sample;
 	}
 
 	/**
 	 * Add a measurement / sample to the data set used to compute the estimated
-	 * uncertainties.
+	 * uncertainties. The length of rv must match the size and order of the labels
+	 * List passed to the constructor.
 	 *
 	 *
 	 * @param rv {@link RealVector}
@@ -108,6 +104,7 @@ public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 		assert rv.getDimension() == mDimension;
 		synchronized (mSamples) {
 			mSamples.add(rv);
+			mResults.reset();
 		}
 		return rv;
 	}

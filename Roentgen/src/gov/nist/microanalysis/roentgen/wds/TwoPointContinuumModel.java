@@ -26,69 +26,11 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class TwoPointContinuumModel extends CompositeLabeledMultivariateJacobianFunction<ModelLabels<?, ?>> {
+public class TwoPointContinuumModel //
+		extends CompositeLabeledMultivariateJacobianFunction<ModelLabels<?, ?>> {
 
-	public static final int HIGH_BACK = 1;
-	public static final int ON_PEAK = 0;
-	public static final int LOW_BACK = -1;
-
-	static private List<ModelLabels<?,?>> buildNIInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
-			final int index) {
-		final List<ModelLabels<?,?>> res = new ArrayList<>();
-		res.add(ModelLabels.buildRawIntensity(mcd, cxr, index));
-		res.add(ModelLabels.buildLiveTime(mcd, cxr, index));
-		res.add(ModelLabels.buildProbeCurrent(mcd, cxr, index));
-		return res;
-	}
-
-	static private List<ModelLabels<?,?>> buildPCInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
-		final List<ModelLabels<?,?>> res = new ArrayList<>();
-		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, LOW_BACK));
-		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, ON_PEAK));
-		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, HIGH_BACK));
-		res.add(ModelLabels.buildSpectrometerPosition(mcd, cxr, LOW_BACK));
-		res.add(ModelLabels.buildSpectrometerPosition(mcd, cxr, ON_PEAK));
-		res.add(ModelLabels.buildSpectrometerPosition(mcd, cxr, HIGH_BACK));
-		return res;
-	}
-
-	private static class NormalizeIntensity extends LabeledMultivariateJacobianFunction<ModelLabels<?,?>, ModelLabels<?,?>> {
-
-		private final MatrixCorrectionDatum mMcd;
-		private final CharacteristicXRay mCxr;
-		private final int mIndex;
-
-		private NormalizeIntensity(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr, final int index) {
-			super(buildNIInputs(mcd, cxr, index),
-					Collections.singletonList(ModelLabels.buildNormalizedIntensity(mcd, cxr, index)));
-			mMcd = mcd;
-			mCxr = cxr;
-			mIndex = index;
-		}
-
-		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final int iI = inputIndex(ModelLabels.buildRawIntensity(mMcd, mCxr, mIndex));
-			final int ltI = inputIndex(ModelLabels.buildLiveTime(mMcd, mCxr, mIndex));
-			final int pcI = inputIndex(ModelLabels.buildProbeCurrent(mMcd, mCxr, mIndex));
-
-			final double i = point.getEntry(iI);
-			final double lt = point.getEntry(ltI);
-			final double pc = point.getEntry(pcI);
-
-			final RealVector rv = new ArrayRealVector(1);
-			rv.setEntry(0, i / (lt * pc));
-
-			final RealMatrix rm = MatrixUtils.createRealMatrix(1, 3);
-			rm.setEntry(0, iI, 1.0 / (lt * pc));
-			rm.setEntry(0, ltI, -i / (lt * lt * pc));
-			rm.setEntry(0, pcI, -1 / (lt * pc * pc));
-
-			return Pair.create(rv, rm);
-		}
-	}
-
-	public static class ComputePeakContinuum extends LabeledMultivariateJacobianFunction<ModelLabels<?,?>,ModelLabels<?,?>> {
+	public static class ComputePeakContinuum
+			extends LabeledMultivariateJacobianFunction<ModelLabels<?, ?>, ModelLabels<?, ?>> {
 
 		private final MatrixCorrectionDatum mMcd;
 		private final CharacteristicXRay mCxr;
@@ -141,11 +83,54 @@ public class TwoPointContinuumModel extends CompositeLabeledMultivariateJacobian
 
 	}
 
-	static public List<? extends LabeledMultivariateJacobianFunction<? extends ModelLabels<?,?>, ? extends ModelLabels<?,?>>> buildModel( //
+	private static class NormalizeIntensity
+			extends LabeledMultivariateJacobianFunction<ModelLabels<?, ?>, ModelLabels<?, ?>> {
+
+		private final MatrixCorrectionDatum mMcd;
+		private final CharacteristicXRay mCxr;
+		private final int mIndex;
+
+		private NormalizeIntensity(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr, final int index) {
+			super(buildNIInputs(mcd, cxr, index),
+					Collections.singletonList(ModelLabels.buildNormalizedIntensity(mcd, cxr, index)));
+			mMcd = mcd;
+			mCxr = cxr;
+			mIndex = index;
+		}
+
+		@Override
+		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+			final int iI = inputIndex(ModelLabels.buildRawIntensity(mMcd, mCxr, mIndex));
+			final int ltI = inputIndex(ModelLabels.buildLiveTime(mMcd, mCxr, mIndex));
+			final int pcI = inputIndex(ModelLabels.buildProbeCurrent(mMcd, mCxr, mIndex));
+
+			final double i = point.getEntry(iI);
+			final double lt = point.getEntry(ltI);
+			final double pc = point.getEntry(pcI);
+
+			final RealVector rv = new ArrayRealVector(1);
+			rv.setEntry(0, i / (lt * pc));
+
+			final RealMatrix rm = MatrixUtils.createRealMatrix(1, 3);
+			rm.setEntry(0, iI, 1.0 / (lt * pc));
+			rm.setEntry(0, ltI, -i / (lt * lt * pc));
+			rm.setEntry(0, pcI, -1 / (lt * pc * pc));
+
+			return Pair.create(rv, rm);
+		}
+	}
+
+	public static final int HIGH_BACK = 1;
+
+	public static final int ON_PEAK = 0;
+
+	public static final int LOW_BACK = -1;
+
+	static public List<? extends LabeledMultivariateJacobianFunction<? extends ModelLabels<?, ?>, ? extends ModelLabels<?, ?>>> buildModel( //
 			final MatrixCorrectionDatum mcd, //
 			final CharacteristicXRay cxr //
 	) throws ArgumentException {
-		final List<LabeledMultivariateJacobianFunction<? extends ModelLabels<?,?>, ? extends ModelLabels<?,?>>> res = new ArrayList<>();
+		final List<LabeledMultivariateJacobianFunction<? extends ModelLabels<?, ?>, ? extends ModelLabels<?, ?>>> res = new ArrayList<>();
 		final LabeledMultivariateJacobianFunctionBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>> builder = //
 				new LabeledMultivariateJacobianFunctionBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>>("Normalizer");
 		builder.add(new NormalizeIntensity(mcd, cxr, LOW_BACK));
@@ -153,6 +138,27 @@ public class TwoPointContinuumModel extends CompositeLabeledMultivariateJacobian
 		builder.add(new NormalizeIntensity(mcd, cxr, HIGH_BACK));
 		res.add(builder.build());
 		res.add(new ComputePeakContinuum(mcd, cxr));
+		return res;
+	}
+
+	static private List<ModelLabels<?, ?>> buildNIInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
+			final int index) {
+		final List<ModelLabels<?, ?>> res = new ArrayList<>();
+		res.add(ModelLabels.buildRawIntensity(mcd, cxr, index));
+		res.add(ModelLabels.buildLiveTime(mcd, cxr, index));
+		res.add(ModelLabels.buildProbeCurrent(mcd, cxr, index));
+		return res;
+	}
+
+	static private List<ModelLabels<?, ?>> buildPCInputs(final MatrixCorrectionDatum mcd,
+			final CharacteristicXRay cxr) {
+		final List<ModelLabels<?, ?>> res = new ArrayList<>();
+		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, LOW_BACK));
+		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, ON_PEAK));
+		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, HIGH_BACK));
+		res.add(ModelLabels.buildSpectrometerPosition(mcd, cxr, LOW_BACK));
+		res.add(ModelLabels.buildSpectrometerPosition(mcd, cxr, ON_PEAK));
+		res.add(ModelLabels.buildSpectrometerPosition(mcd, cxr, HIGH_BACK));
 		return res;
 	}
 

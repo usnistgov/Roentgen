@@ -43,6 +43,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * <p>
@@ -118,8 +119,8 @@ public class KRatioCorrectionModel2 //
 				final List<KRatioLabel> kratios //
 		) {
 			final Set<EPMALabel> res = new HashSet<>();
-			for(int i=0;i<kratios.size();++i)
-				res.add(new EPMALabel("H["+i+"]"));
+			for (int i = 0; i < kratios.size(); ++i)
+				res.add(new EPMALabel("H[" + i + "]"));
 			return new ArrayList<>(res);
 		}
 
@@ -302,7 +303,7 @@ public class KRatioCorrectionModel2 //
 
 	}
 
-	private static List<LabeledMultivariateJacobianFunction<? extends EPMALabel,? extends EPMALabel>> buildSteps(//
+	private static List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> buildSteps(//
 			final Set<KRatioLabel> krs, //
 			final MatrixCorrectionModel2 mcm, //
 			final LabeledMultivariateJacobianFunction<MaterialLabel, MaterialLabel> extraElms //
@@ -367,12 +368,10 @@ public class KRatioCorrectionModel2 //
 	 */
 	public UncertainValuesBase<EPMALabel> buildInput(//
 			final UncertainValues<MassFraction> estUnknown, //
-			final UncertainValuesBase<KRatioLabel> measKratios) //
-			throws ArgumentException {
-		assert measKratios.getLabels(KRatioLabel.class).size() == measKratios
-				.getDimension() : "Not all the measured k-ratios are k-ratios";
-		List<UncertainValuesBase<? extends EPMALabel>> list = Arrays
-				.asList(mModel.buildInput(estUnknown), measKratios);
+			final UncertainValuesBase<KRatioLabel> measKratios //
+	) throws ArgumentException {
+		List<UncertainValuesBase<? extends EPMALabel>> list = //
+				Arrays.asList(mModel.buildInput(estUnknown), measKratios);
 		return UncertainValuesBase.<EPMALabel>combine(list, false);
 	}
 
@@ -392,8 +391,13 @@ public class KRatioCorrectionModel2 //
 			final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> extraElms, //
 			final List<EPMALabel> outputLabels //
 	) throws ArgumentException {
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(keySet, outputLabels);
-		return new KRatioCorrectionModel2(keySet, xpp, extraElms, outputLabels);
+		List<EPMALabel> outputs = new ArrayList<>(outputLabels);
+		if (outputs.size() > 0)
+			for (EPMALabel lbl : buildDefaultOutputs(keySet))
+				if (!outputs.contains(lbl))
+					outputs.add(lbl);
+		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(keySet, outputs);
+		return new KRatioCorrectionModel2(keySet, xpp, extraElms, outputs);
 	}
 
 	/**
@@ -416,9 +420,16 @@ public class KRatioCorrectionModel2 //
 	}
 
 	public static List<EPMALabel> buildDefaultOutputs(final Set<KRatioLabel> keySet) {
-		final List<EPMALabel> outputs = XPPMatrixCorrection2.buildDefaultOutputs(keySet);
-		for (final KRatioLabel krl : keySet)
-			outputs.add(MaterialLabel.buildMassFractionTag(krl.getUnknown().getMaterial(), krl.getElement()));
+		final FastIndex<EPMALabel> outputs = new FastIndex<>(XPPMatrixCorrection2.buildDefaultOutputs(keySet));
+		Material unk = null;
+		for (final KRatioLabel krl : keySet) {
+			if(unk==null)
+				unk=krl.getUnknown().getMaterial();
+			assert unk.equals(krl.getUnknown().getMaterial());
+			outputs.addIfMissing(MaterialLabel.buildMassFractionTag(krl.getUnknown().getMaterial(), krl.getElement()));
+			outputs.addIfMissing(krl.asCalculated());
+		}
+		outputs.addMissing(MaterialLabel.buildAtomicWeightTags(unk));
 		return outputs;
 	}
 
@@ -552,7 +563,7 @@ public class KRatioCorrectionModel2 //
 		}
 		return est;
 	}
-	
+
 	/**
 	 * This method performs the iteration and then returns an
 	 * UncertainValuesCalculator object with the results of the measurement.
@@ -562,12 +573,12 @@ public class KRatioCorrectionModel2 //
 	 * @return {@link UncertainValuesBase}
 	 * @throws ArgumentException
 	 */
-	public final UncertainValuesCalculator<EPMALabel, EPMALabel> iterate(
+	public final UncertainValuesCalculator<EPMALabel> iterate(
 			final UncertainValuesBase<KRatioLabel> measKratios) //
 			throws ArgumentException {
 		final Composition unkComp = performIteration(measKratios);
 		final UncertainValuesBase<EPMALabel> inps = buildInput(unkComp.toMassFraction(), measKratios);
-		return new UncertainValuesCalculator<>(this, inps);
+		return new UncertainValuesCalculator<EPMALabel>(this, inps);
 	}
 
 }

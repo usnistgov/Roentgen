@@ -31,7 +31,6 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.Layer;
@@ -101,8 +100,6 @@ public class XPPMatrixCorrection2 //
 	private static final String ZBARB = "Z<sub>barb</sub>";
 	private static final String RBAR = "R<sub>bar</sub>";
 
-	private static final boolean VALIDATE = false;
-
 	private static final double eVtokeV(final double eV) {
 		return 0.001 * eV;
 	}
@@ -125,48 +122,6 @@ public class XPPMatrixCorrection2 //
 			for (int j = i + 1; j < len; ++j)
 				assert idxs[i] != idxs[j];
 		}
-	}
-
-	/**
-	 * Ensure that the optimized and compute value are identical.
-	 *
-	 * @param lmjf     {@link ILabeledMultivariateFunction}
-	 * @param point    Evaluation point
-	 * @param computed Comparison value
-	 */
-	static private void checkOptimized(final ILabeledMultivariateFunction<EPMALabel, EPMALabel> lmjf,
-			final RealVector inp, final RealVector computed) {
-		final RealVector optimized = lmjf.optimized(inp);
-		for (int i = 0; i < optimized.getDimension(); ++i) {
-			final double opt = optimized.getEntry(i);
-			final double val = computed.getEntry(i);
-			assert Math.abs(opt - val) < 1.0e-6 * Math.abs(val + 1.0e-6);
-		}
-	}
-
-	/**
-	 *
-	 *
-	 * @param lmjf
-	 * @param inp
-	 * @param dinp
-	 * @param computed
-	 */
-	static private void checkPartials(//
-			final LabeledMultivariateJacobianFunction<EPMALabel, EPMALabel> lmjf, //
-			final RealVector inp, //
-			final RealVector dinp, //
-			final RealMatrix computed //
-	) {
-		final UncertainValuesCalculator.ICalculator calc = new UncertainValuesCalculator.FiniteDifference(dinp);
-		final Pair<RealVector, RealMatrix> pr = calc.compute(lmjf, inp);
-		final RealMatrix delta = pr.getSecond();
-		for (int r = 0; r < delta.getRowDimension(); r++)
-			for (int c = 0; c < delta.getColumnDimension(); ++c)
-				assert Math.abs(delta.getEntry(r, c) - computed.getEntry(r, c)) < 1.0e-3
-						* (Math.abs(computed.getEntry(r, c)) + 1.0e-6) : //
-				lmjf.getOutputLabel(r) + " " + lmjf.getInputLabel(c) + " <=> " + delta.getEntry(r, c) + "!="
-						+ computed.getEntry(r, c);
 	}
 
 	private static class StepMJZBarb // Checked 14-Jan-2019
@@ -265,10 +220,6 @@ public class XPPMatrixCorrection2 //
 			rv.setEntry(oZbarb, Zbt * Zbt);
 			for (int i = 0; i < elms.size(); ++i)
 				rm.setEntry(oZbarb, iCi[i], 2.0 * Math.sqrt(Z[i]) * Zbt); // Ci
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -417,10 +368,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oOneOverS, tagE0, dOoSdU0 * du0de0); // C2
 			rm.setEntry(oOneOverS, tagm, dOoSdm);
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -573,10 +520,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oPhi0, iZbarb, dphi0dZbarb);
 			rm.setEntry(oPhi0, tagE0, dphi0de0);
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -721,10 +664,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oRbar, iR, dRbardF * dFdR);
 			rm.setEntry(oRbar, iOneOverS, dRbardF * dFdOneOverS);
 			rm.setEntry(oRbar, iQlaE0, dRbardF * dFdQlaE0);
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -886,10 +825,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(ob, iphi0, -Math.sqrt(2.0) / (2. * F * k3));
 			rm.setEntry(ob, iF, (phi0 * Math.sqrt(2.0)) / (2. * Math.pow(F, 2) * k3));
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -1012,10 +947,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oa, iF, dadF); // C1
 			rm.setEntry(oa, iRbar, dadRbar); // C1
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -1102,10 +1033,7 @@ public class XPPMatrixCorrection2 //
 				// rm.setEntry(oeps, ia, 0.0); // C1
 				// rm.setEntry(oeps, ib, 0.0); // C1
 			}
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
+
 			return Pair.create(rv, rm);
 		}
 
@@ -1218,10 +1146,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oA, ib, dAdb); // C1-Ok
 			rm.setEntry(oA, ieps, dAdeps); // C1-Ok
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -1333,10 +1257,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(ochi, toai, -1.0 * chi / Math.tan(toa)); // C1
 			rv.setEntry(ochi, chi);
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -1445,13 +1365,7 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFx, iChi, dFxdchi); // C2
 			rm.setEntry(oFx, ieps, dFxdeps); // C2
 			rm.setEntry(oFx, itr, dFxddz);
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				final RealVector dpt = point.mapMultiply(1.0e-6);
-				if (itr >= 0)
-					dpt.setEntry(itr, 1.0e-12);
-				checkPartials(this, point, dpt, rm);
-			}
+
 			return Pair.create(rv, rm);
 		}
 
@@ -1556,10 +1470,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFxRed, iFx, coatTrans);
 			rv.setEntry(oFxRed, coatTrans * Fx);
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -1682,10 +1592,6 @@ public class XPPMatrixCorrection2 //
 			rm.setEntry(oFxFs, iFs, -FxFs / Fs); // C2
 			rm.setEntry(oFxFs, iFxs, 1.0 / Fs); // C2
 
-			if (VALIDATE) {
-				checkOptimized(this, point, rv);
-				checkPartials(this, point, point.mapMultiply(1.0e-6), rm);
-			}
 			return Pair.create(rv, rm);
 		}
 
@@ -1777,8 +1683,8 @@ public class XPPMatrixCorrection2 //
 			return res;
 		}
 
-		public StepXPP(final MatrixCorrectionDatum datum, final CharacteristicXRaySet cxrs, List<EPMALabel> outputs)
-				throws ArgumentException {
+		public StepXPP(final MatrixCorrectionDatum datum, final CharacteristicXRaySet cxrs,
+				final List<EPMALabel> outputs) throws ArgumentException {
 			super("XPP[" + datum + "]", buildSteps(datum, cxrs), outputs);
 		}
 
@@ -1857,7 +1763,7 @@ public class XPPMatrixCorrection2 //
 		}
 		for (final UnknownMatrixCorrectionDatum unk : unks.keySet())
 			res.add(buildMaterialMACFunctions(unk.getMaterial(), kratios));
-		LabeledMultivariateJacobianFunctionBuilder<MaterialLabel, MaterialLabel> builder = //
+		final LabeledMultivariateJacobianFunctionBuilder<MaterialLabel, MaterialLabel> builder = //
 				new LabeledMultivariateJacobianFunctionBuilder<>("Compositions");
 		for (final Composition comp : allComps)
 			builder.add(comp.getFunction());
@@ -1867,8 +1773,8 @@ public class XPPMatrixCorrection2 //
 	}
 
 	/**
-	 * Returns a very basic set of output that includes the ZAF, Z, A terms for each
-	 * k-ratio in the set.
+	 * Returns a very basic set of output that includes the ZAF, Z, A terms and the
+	 * C<sub>Z</sub> in the standard for each k-ratio in the set.
 	 *
 	 *
 	 * @param kratios Set&lt;EPMALabel&gt;
@@ -1877,10 +1783,14 @@ public class XPPMatrixCorrection2 //
 	static public List<EPMALabel> buildDefaultOutputs(final Set<KRatioLabel> kratios) {
 		final FastIndex<EPMALabel> res = new FastIndex<>();
 		for (final KRatioLabel krl : kratios) {
+			final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
+			final StandardMatrixCorrectionDatum std = krl.getStandard();
 			res.add(MatrixCorrectionModel2.zafLabel(krl));
+			res.add(MaterialLabel.buildMassFractionTag(std.getMaterial(), krl.getElement()));
+			res.add(MaterialLabel.buildMassFractionTag(unk.getMaterial(), krl.getElement()));
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
-				res.add(MatrixCorrectionModel2.zLabel(krl.getUnknown(), krl.getStandard(), cxr));
-				res.add(MatrixCorrectionModel2.aLabel(krl.getUnknown(), krl.getStandard(), cxr));
+				res.add(MatrixCorrectionModel2.zLabel(unk, std, cxr));
+				res.add(MatrixCorrectionModel2.aLabel(unk, std, cxr));
 			}
 		}
 		return res;
@@ -1947,27 +1857,12 @@ public class XPPMatrixCorrection2 //
 	 * necessary inputs to this {@link LabeledMultivariateJacobianFunction}.
 	 *
 	 * @param estUnknown
-	 * @return {@link UncertainValues}
+	 * @return {@link UncertainValues}&lt;EPMALabel&gt;
 	 * @throws ArgumentException
 	 */
 	@Override
 	public UncertainValues<EPMALabel> buildInput(final UncertainValues<MassFraction> estUnknown) //
 			throws ArgumentException {
-		final UncertainValues<EPMALabel> bp = buildParameters(estUnknown);
-		return bp;
-	}
-
-	/**
-	 * Many of the input parameters are computed or tabulated. Some are input as
-	 * experimental conditions like beam energy.
-	 * 
-	 * @param estUnknown
-	 * @return {@link UncertainValues}&lt;EPMALabel&gt;
-	 * @throws ArgumentException
-	 */
-	private UncertainValues<EPMALabel> buildParameters( //
-			final UncertainValues<MassFraction> estUnknown //
-	) throws ArgumentException {
 		final List<UncertainValuesBase<? extends EPMALabel>> results = new ArrayList<>();
 		// Make sure that there are no replicated Compositions
 		{
@@ -1994,7 +1889,6 @@ public class XPPMatrixCorrection2 //
 			for (final Composition comp : allComps)
 				results.add(comp.getInputs());
 		}
-
 		results.add(buildMeanIonizationPotentials());
 		results.add(buildElementalMACs(estUnknown));
 		{

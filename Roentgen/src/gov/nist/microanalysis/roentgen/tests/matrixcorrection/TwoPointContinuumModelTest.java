@@ -19,8 +19,10 @@ import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue2;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
@@ -106,9 +108,10 @@ public class TwoPointContinuumModelTest {
 			final UncertainValuesBase<ModelLabels<?,?>> res = UncertainValues.propagate(tpcm, uvs);
 			r.add(res);
 
-			final HashMap<? extends Object, UncertainValue> ovals = tpcm.getOutputValues(uvs, 0.0);
+			UncertainValuesCalculator<ModelLabels<?,?>> uvc = new UncertainValuesCalculator<ModelLabels<?,?>>(tpcm, uvs);
+			final HashMap<ModelLabels<?,?>, UncertainValue2<ModelLabels<?,?>>> ovals = uvc.getOutputValues(0.0);
 			final Table tt = new Table();
-			for (final Map.Entry<? extends Object, UncertainValue> me : ovals.entrySet()) {
+			for (final Map.Entry<ModelLabels<?,?>, UncertainValue2<ModelLabels<?,?>>> me : ovals.entrySet()) {
 				tt.addRow(Table.td(me.getKey()), Table.td((IToHTML) me.getValue()));
 			}
 			r.addHTML(tt.toHTML(Mode.VERBOSE));

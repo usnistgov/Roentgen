@@ -15,7 +15,6 @@ import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
@@ -24,6 +23,14 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 import gov.nist.microanalysis.roentgen.utility.WriteToLaTeX;
 
 public class CompExamples {
+
+	public static void main(final String[] args) {
+		try {
+			new CompExamples();
+		} catch (ArgumentException | ParseException | IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public CompExamples() //
 			throws ArgumentException, ParseException, IOException {
@@ -191,8 +198,7 @@ public class CompExamples {
 			{
 				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men,
 						Collections.emptyMap());
-				comp.setCalculator(
-						new UncertainValuesCalculator.FiniteDifference(comp.getInputValues().mapMultiply(0.001)));
+				comp.setCalculator(comp.new FiniteDifference(comp.getInputValues().mapMultiply(0.001)));
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 			}
@@ -224,14 +230,6 @@ public class CompExamples {
 
 		} finally {
 			r.inBrowser(Mode.VERBOSE);
-		}
-	}
-
-	public static void main(final String[] args) {
-		try {
-			new CompExamples();
-		} catch (ArgumentException | ParseException | IOException e) {
-			e.printStackTrace();
 		}
 	}
 

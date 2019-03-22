@@ -26,8 +26,8 @@ import com.duckandcover.html.Table.Item;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
@@ -60,7 +60,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  *
  */
 public class Composition //
-		extends UncertainValuesCalculator<MaterialLabel, MaterialLabel> {
+		extends UncertainValuesCalculator<MaterialLabel> {
 
 	/**
 	 * Performs the necessary calculations to convert compositional data in atom
@@ -358,7 +358,7 @@ public class Composition //
 		input.add(new UncertainValues<MaterialLabel>(fracs));
 		final Material newMat = new Material(htmlName, elms);
 		steps.add(new MixtureToComposition(newMat, mats, normalize));
-		CompositeLabeledMultivariateJacobianFunction<MaterialLabel> combine = //
+		final CompositeLabeledMultivariateJacobianFunction<MaterialLabel> combine = //
 				new CompositeLabeledMultivariateJacobianFunction<MaterialLabel>("Mixture", steps);
 		final UncertainValues<MaterialLabel> inp = UncertainValues
 				.<MaterialLabel>force(UncertainValuesBase.combine(input, true));
@@ -382,7 +382,7 @@ public class Composition //
 			final Map<Composition, Number> comps, //
 			final boolean normalize) throws ArgumentException {
 		final Composition res = combine(htmlName, comps, normalize);
-		final FiniteDifference delta = new FiniteDifference(res.getInputValues().mapMultiply(0.001));
+		final FiniteDifference delta = res.new FiniteDifference(res.getInputValues().mapMultiply(0.001));
 		res.setCalculator(delta);
 		return res;
 	}
@@ -510,11 +510,14 @@ public class Composition //
 
 	public static Composition massFraction(//
 			final Material mat, //
-			final UncertainValuesBase<? extends EPMALabel> uvs //
+			final UncertainValuesBase<EPMALabel> uvs //
 	) throws ArgumentException {
 		final List<Element> elms = new ArrayList<>(mat.getElementSet());
-		final RealVector vals = uvs.getValues();
-		final RealMatrix covs = uvs.getCovariances();
+		final List<EPMALabel> inputs = new ArrayList<>();
+		inputs.addAll(MaterialLabel.buildMassFractionTags(mat));
+		inputs.addAll(MaterialLabel.buildAtomicWeightTags(mat));
+		final RealVector vals = uvs.extractValues(inputs);
+		final RealMatrix covs = uvs.extractCovariances(inputs);
 		return massFraction(mat, elms, vals, covs, null);
 	}
 
@@ -799,7 +802,7 @@ public class Composition //
 			final UncertainValuesBase<MaterialLabel> inputs, //
 			final Number density //
 	) throws ArgumentException {
-		super(func, inputs, true);
+		super(func, inputs);
 		mMaterial = mat;
 		mPrimary = rep;
 		mDensity = Optional.ofNullable(density);
@@ -810,7 +813,7 @@ public class Composition //
 	public UncertainValues<Stoichiometry> asStoichiometry() {
 		try {
 			return UncertainValues.<Stoichiometry>extract(MaterialLabel.buildStoichiometryTags(mMaterial), this);
-		} catch (ArgumentException e) {
+		} catch (final ArgumentException e) {
 			// Should never happen!!!
 			e.printStackTrace();
 		}
@@ -857,7 +860,7 @@ public class Composition //
 	public UncertainValues<AtomicWeight> getAtomicWeights() {
 		try {
 			return UncertainValues.extract(MaterialLabel.atomWeightTags(this.getMaterial()), this);
-		} catch (ArgumentException e) {
+		} catch (final ArgumentException e) {
 			// Should never happen!!!
 			e.printStackTrace();
 		}
@@ -995,7 +998,7 @@ public class Composition //
 	public UncertainValues<MassFraction> toMassFraction() {
 		try {
 			return UncertainValues.extract(massFractionTags(), this);
-		} catch (ArgumentException e) {
+		} catch (final ArgumentException e) {
 			// Should never happen
 			e.printStackTrace();
 		}

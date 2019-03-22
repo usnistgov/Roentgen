@@ -13,8 +13,8 @@ import org.junit.Test;
 import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
-import gov.nist.microanalysis.roentgen.math.EstimateUncertainValues;
 import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
+import gov.nist.microanalysis.roentgen.math.uncertainty.EstimateUncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
