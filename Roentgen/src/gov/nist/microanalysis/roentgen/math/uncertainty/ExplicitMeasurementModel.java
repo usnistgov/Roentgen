@@ -4,8 +4,10 @@ import java.io.PrintStream;
 import java.text.NumberFormat;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -21,6 +23,8 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.Constraint;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
@@ -38,11 +42,37 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
-abstract public class LabeledMultivariateJacobianFunction<G, H> //
+abstract public class ExplicitMeasurementModel<G, H> //
 		implements MultivariateJacobianFunction, IToHTML //
 {
 
 	public static PrintStream sDump = null;
+	/**
+	 * Check labels are only used once.
+	 *
+	 * @param inLabels
+	 * @param outLabels
+	 * @throws ArgumentException
+	 */
+	private static <G, H> void validateLabels(
+			final Collection<? extends G> inLabels, //
+			final Collection<? extends H> outLabels
+	) //
+			throws ArgumentException {
+		final Set<? extends G> gset = new HashSet<>(inLabels);
+		for (final Object lbl : inLabels)
+			if (!gset.remove(lbl))
+				throw new ArgumentException("The input label " + lbl + " is duplicated.");
+		final Set<? extends H> hset = new HashSet<>(outLabels);
+		for (final Object lbl : outLabels)
+			if (!hset.remove(lbl))
+				throw new ArgumentException("The input label " + lbl + " is duplicated.");
+		gset.retainAll(hset);
+		if (gset.size() > 0) {
+			throw new ArgumentException("The labels " + gset + " are in both the inputs and the outputs.");
+		}
+	}
+
 	/***
 	 * Unique object labels identifying each of the random variable arguments to the
 	 * functions
@@ -54,22 +84,38 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 */
 	private final List<H> mOutputLabels;
 
+	/***
+	 * A mechanism to ensure that input values remain with constrained ranges.
+	 */
+	private final Map<G, Constraint> mConstraint = new HashMap<>();
+
 	/**
 	 * Constructs an instance of the LabeledMultivariateJacobianFunction class for a
 	 * N dimensional function of M input values.
 	 *
 	 * @param inputLabels  A List containing labels for M input variables
 	 * @param outputLabels A list containing labels for N output values
+	 * @throws ArgumentException
 	 */
-	public LabeledMultivariateJacobianFunction( //
+	public ExplicitMeasurementModel(
 			final List<G> inputLabels, //
-			final List<H> outputLabels) //
+			final List<H> outputLabels //
+	) throws ArgumentException //
 	{
-		validateLabels(inputLabels);
 		// assert inputLabels != outputLabels;
 		mInputLabels = new FastIndex<>(inputLabels);
-		validateLabels(outputLabels);
 		mOutputLabels = new FastIndex<>(outputLabels);
+		validateLabels(inputLabels, outputLabels);
+	}
+
+	public void addConstraints(
+			final Map<? extends G, Constraint> constraints
+	) {
+		mConstraint.putAll(constraints);
+	}
+
+	public void clearConstraints() {
+		mConstraint.clear();
 	}
 
 	/**
@@ -84,22 +130,31 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * @param inp Evaluation point
 	 * @return {@link RealVector} The result values
 	 */
-	final public RealVector compute(final RealVector inp) {
-		if (this instanceof ILabeledMultivariateFunction)
+	final public RealVector compute(
+			final RealVector inp
+	) {
+		if (this instanceof ILabeledMultivariateFunction) {
+			for (final Map.Entry<G, Constraint> con : mConstraint.entrySet()) {
+				final int idx = inputIndex(con.getKey());
+				if (idx >= 0)
+					inp.setEntry(idx, con.getValue().limit(inp.getEntry(idx)));
+			}
 			return ((ILabeledMultivariateFunction<?, ?>) this).optimized(inp);
-		else
+		} else
 			return value(inp).getFirst();
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(
+			final Object obj
+	) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		final LabeledMultivariateJacobianFunction<?, ?> other = (LabeledMultivariateJacobianFunction<?, ?>) obj;
+		final ExplicitMeasurementModel<?, ?> other = (ExplicitMeasurementModel<?, ?>) obj;
 		return Objects.equals(mInputLabels, other.mInputLabels) && //
 				Objects.equals(mOutputLabels, other.mOutputLabels);
 	}
@@ -113,14 +168,23 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * then checks the output {@link RealVector} and {@link RealMatrix} to ensure
 	 * that they are all the correct dimensions.
 	 * </p>
+	 * <p>
+	 * Also applies any applicable {@link Constraint}s to the input values.
 	 *
 	 * @param x
 	 * @return Pair&lt;{@link RealVector}, {@link RealMatrix}&gt; As from a call to
 	 *         <code>value(x)</code>.
 	 */
-	final public Pair<RealVector, RealMatrix> evaluate(final RealVector x) {
+	final public Pair<RealVector, RealMatrix> evaluate(
+			final RealVector x
+	) {
 		if (x.getDimension() != getInputDimension())
 			throw new DimensionMismatchException(x.getDimension(), getInputDimension());
+		for (final Map.Entry<G, Constraint> con : mConstraint.entrySet()) {
+			final int idx = inputIndex(con.getKey());
+			if (idx >= 0)
+				x.setEntry(idx, con.getValue().limit(x.getEntry(idx)));
+		}
 		final Pair<RealVector, RealMatrix> res = value(x);
 		if (res.getFirst().getDimension() != getOutputDimension())
 			throw new DimensionMismatchException(res.getFirst().getDimension(), getOutputDimension());
@@ -131,27 +195,8 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 		return res;
 	}
 
-	/**
-	 * Extracts from <code>point</code> representing an argument to
-	 * <code>nmvj.compute(point)</code> the input RealArray that is suitable as the
-	 * argument to <code>this.comptue(...)</code>.
-	 *
-	 * @param nmvj  The outer {@link LabeledMultivariateJacobianFunction}
-	 * @param point A {@link RealVector} of length nmvj.getInputDimension()
-	 * @return {@link RealVector} of length this.getInputDimension() containing the
-	 *         appropriate input values from point.
-	 */
-	public RealVector extractArgument(final LabeledMultivariateJacobianFunction<?, ?> nmvj, final RealVector point) {
-		assert point.getDimension() == nmvj.getInputDimension();
-		final int dim = getInputDimension();
-		final RealVector res = new ArrayRealVector(dim);
-		final List<? extends G> labels = getInputLabels();
-		for (int i = 0; i < dim; ++i) {
-			final int idx = nmvj.inputIndex(labels.get(i));
-			assert idx != -1 : "Can't find " + labels.get(i) + " in the arguments to " + nmvj.toString();
-			res.setEntry(i, point.getEntry(idx));
-		}
-		return res;
+	public Map<G, Constraint> getConstraints() {
+		return Collections.unmodifiableMap(mConstraint);
 	}
 
 	/**
@@ -163,7 +208,9 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 		return mInputLabels.size();
 	}
 
-	final public G getInputLabel(final int idx) {
+	final public G getInputLabel(
+			final int idx
+	) {
 		return mInputLabels.get(idx);
 	}
 
@@ -186,7 +233,9 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 		return mOutputLabels.size();
 	}
 
-	final public H getOutputLabel(final int idx) {
+	final public H getOutputLabel(
+			final int idx
+	) {
 		return mOutputLabels.get(idx);
 	}
 
@@ -211,7 +260,9 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * @param label
 	 * @return true if a value has been defined.
 	 */
-	final public boolean hasValue(final G label) {
+	final public boolean hasValue(
+			final G label
+	) {
 		return (inputIndex(label) != -1);
 	}
 
@@ -222,7 +273,9 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * @param label
 	 * @return int Index or -1 for not found.
 	 */
-	final public int inputIndex(final Object label) {
+	final public int inputIndex(
+			final Object label
+	) {
 		return mInputLabels.indexOf(label);
 	}
 
@@ -233,12 +286,23 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * @param label
 	 * @return int Index or -1 for not found.
 	 */
-	final public int outputIndex(final Object label) {
+	final public int outputIndex(
+			final Object label
+	) {
 		return mOutputLabels.indexOf(label);
 	}
 
+	public void setConstraint(
+			final G lbl, //
+			final Constraint con
+	) {
+		mConstraint.put(lbl, con);
+	}
+
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 		switch (mode) {
 		case TERSE: {
 			return HTML
@@ -292,7 +356,9 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 		return new ArrayRealVector(getOutputDimension());
 	}
 
-	protected void dumpArguments(final RealVector point, final LabeledMultivariateJacobianFunction<?, ?> parent) {
+	protected void dumpArguments(
+			final RealVector point, final ExplicitMeasurementModel<?, ?> parent
+	) {
 		if (sDump != null) {
 			final StringBuffer sb = new StringBuffer();
 			final NumberFormat nf = new HalfUpFormat("0.00E0");
@@ -322,7 +388,9 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * @param point   The argument to the value(...) function
 	 * @return double The value at point.getEntry(inputIndex(inLabel))
 	 */
-	final protected double getArg(final G inLabel, final RealVector point) {
+	final protected double getArg(
+			final G inLabel, final RealVector point
+	) {
 		return point.getEntry(inputIndex(inLabel));
 	}
 
@@ -337,7 +405,9 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * @param value    double The value to be assigned to
 	 *                 jacobian[outputIndex(outLabel),inputIndex(inLabel)]
 	 */
-	final protected void setJacobian(final G inlabel, final H outLabel, final RealMatrix jacobian, final double value) {
+	final protected void setJacobian(
+			final G inlabel, final H outLabel, final RealMatrix jacobian, final double value
+	) {
 		jacobian.setEntry(outputIndex(outLabel), inputIndex(inlabel), value);
 	}
 
@@ -351,19 +421,10 @@ abstract public class LabeledMultivariateJacobianFunction<G, H> //
 	 * @param value    double The value to be assigned to
 	 *                 result[outputIndex(outLabel)]
 	 */
-	final protected void setResult(final H outLabel, final RealVector result, final double value) {
+	final protected void setResult(
+			final H outLabel, final RealVector result, final double value
+	) {
 		result.setEntry(outputIndex(outLabel), value);
 	}
 
-	/**
-	 * Check labels are only used once.
-	 *
-	 * @param labels
-	 */
-	private void validateLabels(final Collection<? extends Object> labels) {
-		final Set<? extends Object> set = new HashSet<>(labels);
-		for (final Object lbl : labels)
-			if (!set.remove(lbl))
-				throw new RuntimeException("The label " + lbl + " is duplicated.");
-	}
 }

@@ -66,7 +66,7 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  * @version 1.0
  */
 abstract public class UncertainValuesBase<H> //
-		implements IToHTML, IUncertainValues<H> {
+		implements IToHTML {
 
 	private static class CombinedUncertainValues<J> extends UncertainValuesBase<J> {
 
@@ -107,7 +107,8 @@ abstract public class UncertainValuesBase<H> //
 
 		};
 
-		protected CombinedUncertainValues( //
+		protected CombinedUncertainValues(
+				//
 				final List<J> labels, //
 				final List<? extends UncertainValuesBase<? extends J>> bases, //
 				final boolean first //
@@ -176,7 +177,9 @@ abstract public class UncertainValuesBase<H> //
 			}
 		};
 
-		protected ReorderedUncertainValues(final List<? extends L> labels, final UncertainValuesBase<L> base) {
+		protected ReorderedUncertainValues(
+				final List<? extends L> labels, final UncertainValuesBase<L> base
+		) {
 			super(new ArrayList<L>(labels));
 			mIndexes = new int[labels.size()];
 			mBase = base;
@@ -210,7 +213,9 @@ abstract public class UncertainValuesBase<H> //
 
 		private final String mExtra;
 
-		public UVSOutOfRangeException(final Number wrong, final Number low, final Number high, final String extra) {
+		public UVSOutOfRangeException(
+				final Number wrong, final Number low, final Number high, final String extra
+		) {
 			super(wrong, low, high);
 			mExtra = extra;
 		}
@@ -234,7 +239,8 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValuesBase}
 	 * @throws ArgumentException
 	 */
-	public static <J> UncertainValues<J> build(//
+	public static <J> UncertainValues<J> build(
+			//
 			final List<J> labels, //
 			final List<UncertainValuesBase<J>> uvs //
 	) throws ArgumentException {
@@ -274,7 +280,7 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValues}
 	 * @throws ArgumentException
 	 */
-	public static <J> UncertainValuesBase<J> combine( //
+	public static <J> UncertainValuesBase<J> combine(
 			final List<? extends UncertainValuesBase<? extends J>> uvs, //
 			final boolean takeFirst//
 	) throws ArgumentException {
@@ -297,7 +303,7 @@ abstract public class UncertainValuesBase<H> //
 	 * @return BufferedImage
 	 * @throws ArgumentException
 	 */
-	public static <J> BufferedImage compareAsBitmap(//
+	public static <J> BufferedImage compareAsBitmap(
 			final UncertainValuesBase<J> uvs1, //
 			final UncertainValuesBase<J> uvs2, //
 			final IValueToColor corr, //
@@ -350,8 +356,10 @@ abstract public class UncertainValuesBase<H> //
 		return bi;
 	}
 
-	public static <J> UncertainValues<J> forceMinCovariance(final UncertainValuesBase<J> vals,
-			final RealVector minCov) {
+	public static <J> UncertainValues<J> forceMinCovariance(
+			final UncertainValuesBase<J> vals, //
+			final RealVector minCov
+	) {
 		assert vals.getDimension() == minCov.getDimension();
 		final RealMatrix cov = vals.getCovariances().copy();
 		for (int rc = 0; rc < vals.getDimension(); ++rc)
@@ -370,8 +378,8 @@ abstract public class UncertainValuesBase<H> //
 	 * @return UncertainValues
 	 * @throws ArgumentException
 	 */
-	public static <J> UncertainValuesCalculator<J> propagateAnalytical( //
-			final LabeledMultivariateJacobianFunction<? extends J, ? extends J> nmjf, //
+	public static <J> UncertainValuesCalculator<J> propagateAnalytical(
+			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
 			final UncertainValuesBase<J> input //
 	) throws ArgumentException {
 		return new UncertainValuesCalculator<J>(nmjf, input);
@@ -387,8 +395,8 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValuesCalculator}
 	 * @throws ArgumentException
 	 */
-	public static <J> UncertainValuesCalculator<J> propagateFiniteDifference( //
-			final LabeledMultivariateJacobianFunction<? extends J, ? extends J> nmjf, //
+	public static <J> UncertainValuesCalculator<J> propagateFiniteDifference(
+			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
 			final UncertainValuesBase<J> input, //
 			final RealVector dinp //
 	) throws ArgumentException {
@@ -396,9 +404,10 @@ abstract public class UncertainValuesBase<H> //
 		final RealVector reordered = new ArrayRealVector(res.getInputDimension());
 		for (int i = 0; i < res.getInputDimension(); ++i) {
 			final int nidx = nmjf.inputIndex(res.getLabel(i));
-			reordered.setEntry(i, dinp.getEntry(nidx));
+			if (nidx != -1)
+				reordered.setEntry(i, dinp.getEntry(nidx));
 		}
-		res.setCalculator(res.new FiniteDifference(dinp));
+		res.setCalculator(res.new FiniteDifference(reordered));
 		return res;
 	}
 
@@ -414,13 +423,13 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValuesCalculator}
 	 * @throws ArgumentException
 	 */
-	public static <J> UncertainValuesCalculator<J> propagateFiniteDifference( //
-			final LabeledMultivariateJacobianFunction<? extends J, ? extends J> nmjf, //
+	public static <J> UncertainValuesCalculator<J> propagateFiniteDifference(
+			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
 			final UncertainValuesBase<J> input, //
 			final double frac //
 	) throws ArgumentException {
 		final UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(nmjf, input);
-		res.setCalculator(res.new FiniteDifference(res.getInputValues().mapMultiply(frac)));
+		res.setCalculator(res.new FiniteDifference(frac));
 		return res;
 	}
 
@@ -434,8 +443,8 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValuesCalculator}
 	 * @throws ArgumentException
 	 */
-	public static <J> UncertainValuesCalculator<J> propagateMonteCarlo( //
-			final LabeledMultivariateJacobianFunction<? extends J, ? extends J> nmjf, //
+	public static <J> UncertainValuesCalculator<J> propagateMonteCarlo(
+			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
 			final UncertainValuesBase<J> input, //
 			final int nEvals //
 	) throws ArgumentException {
@@ -444,7 +453,9 @@ abstract public class UncertainValuesBase<H> //
 		return res;
 	}
 
-	public static <J> boolean testEquality(final UncertainValuesBase<J> uvs1, final UncertainValuesBase<J> uvs2) {
+	public static <J> boolean testEquality(
+			final UncertainValuesBase<J> uvs1, final UncertainValuesBase<J> uvs2
+	) {
 		if (uvs1.getDimension() != uvs2.getDimension())
 			return false;
 		for (final J label1 : uvs1.getLabels()) {
@@ -466,7 +477,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param input
 	 * @return {@link UncertainValues}
 	 */
-	public static <J> UncertainValues<J> zeroBut(final J label, final UncertainValuesBase<J> input) {
+	public static <J> UncertainValues<J> zeroBut(
+			final J label, final UncertainValuesBase<J> input
+	) {
 		final UncertainValues<J> res = new UncertainValues<J>(input.getLabels(), input.getValues(), 0.0);
 		final int idx = input.indexOf(label);
 		res.setCovariance(idx, idx, input.getCovariance(idx, idx));
@@ -480,7 +493,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param m
 	 * @param covar
 	 */
-	private static void validateCovariance(final int m, final RealMatrix covar, final double maxVal) {
+	private static void validateCovariance(
+			final int m, final RealMatrix covar, final double maxVal
+	) {
 		if (covar.getRowDimension() != m)
 			throw new DimensionMismatchException(covar.getRowDimension(), m);
 		if (covar.getColumnDimension() != m)
@@ -523,13 +538,18 @@ abstract public class UncertainValuesBase<H> //
 	 * @param labels List&lt;Object&gt; A list of objects implementing hashCode()
 	 *               and equals().
 	 */
-	protected UncertainValuesBase(//
+	protected UncertainValuesBase(
+			//
 			final List<H> labels //
 	) {
 		mLabels = new FastIndex<>(labels);
 	}
 
-	public BufferedImage asCovarianceBitmap(final int dim, final IValueToColor sigma, final IValueToColor corr) {
+	public BufferedImage asCovarianceBitmap(
+			final int dim, //
+			final IValueToColor sigma, //
+			final IValueToColor corr
+	) {
 		final RealMatrix sc = NullableRealMatrix.build(getDimension(), getDimension());
 		final RealVector values = getValues();
 		for (int r = 0; r < getDimension(); ++r) {
@@ -575,7 +595,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param indices
 	 * @return true
 	 */
-	public boolean assertIndices(final int[] indices) {
+	public boolean assertIndices(
+			final int[] indices
+	) {
 		for (int i = 0; i < indices.length; ++i) {
 			assert indices[i] >= 0 : "Index[" + i + "] is less than zero.";
 			assert indices[i] < mLabels.size() : "Index[" + i + "] is larger than the number of labels.";
@@ -639,19 +661,23 @@ abstract public class UncertainValuesBase<H> //
 		return null;
 	}
 
-	final public RealMatrix delta(final UncertainValuesBase<H> zeroed) {
+	final public RealMatrix delta(
+			final UncertainValuesBase<H> zeroed
+	) {
 		return getCovariances().subtract(zeroed.getCovariances());
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(
+			final Object obj
+	) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		final IUncertainValues<?> other = (IUncertainValues<?>) obj;
+		final UncertainValuesBase<?> other = (UncertainValuesBase<?>) obj;
 		return Objects.equals(mLabels, other.getLabels());
 	}
 
@@ -663,7 +689,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param tol
 	 * @return boolean
 	 */
-	public boolean equals(final UncertainValuesBase<H> uv2, final double tol) {
+	public boolean equals(
+			final UncertainValuesBase<H> uv2, //
+			final double tol
+	) {
 		for (int r = 0; r < this.getDimension(); ++r) {
 			final double tmp = Math.abs((getEntry(r) - uv2.getEntry(mLabels.get(r))) / getEntry(r));
 			if (Double.isFinite(tmp))
@@ -690,8 +719,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValues} A new object
 	 * @throws ArgumentException
 	 */
-	final public UncertainValuesBase<H> extract(final int[] indices) //
-			throws ArgumentException {
+	final public UncertainValuesBase<H> extract(
+			final int[] indices
+	) throws ArgumentException {
 		return extract(getLabels(indices));
 	}
 
@@ -704,7 +734,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValues} A new object
 	 * @throws ArgumentException
 	 */
-	final public UncertainValuesBase<H> extract(final List<? extends H> labels) //
+	final public UncertainValuesBase<H> extract(
+			final List<? extends H> labels
+	) //
 			throws ArgumentException {
 		return reorder(labels);
 	}
@@ -716,7 +748,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param labels List&lt;H&gt;
 	 * @return RealVector
 	 */
-	final public RealMatrix extractCovariances(final List<H> labels) {
+	final public RealMatrix extractCovariances(
+			final List<H> labels
+	) {
 		final RealMatrix res = MatrixUtils.createRealMatrix(labels.size(), labels.size());
 		for (int r = 0; r < labels.size(); ++r) {
 			final int ridx = indexOf(labels.get(r));
@@ -738,7 +772,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param labels List&lt;H&gt;
 	 * @return RealVector
 	 */
-	final public RealVector extractValues(final List<? extends H> labels) {
+	final public RealVector extractValues(
+			final List<? extends H> labels
+	) {
 		final RealVector res = new ArrayRealVector(labels.size());
 		int i = 0;
 		for (final H label : labels) {
@@ -749,7 +785,9 @@ abstract public class UncertainValuesBase<H> //
 		return res;
 	}
 
-	public List<H> findMissing(final List<H> inputLabels) {
+	public List<H> findMissing(
+			final List<H> inputLabels
+	) {
 		final List<H> res = new ArrayList<>();
 		for (final H lbl : inputLabels)
 			if (indexOf(lbl) == -1)
@@ -764,7 +802,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param p2 H
 	 * @return double The correlation coefficient associated with indices p1 and p2
 	 */
-	final public double getCorrelationCoefficient(final H p1, final H p2) {
+	final public double getCorrelationCoefficient(
+			final H p1, //
+			final H p2
+	) {
 		return getCorrelationCoefficient(indexOf(p1), indexOf(p2));
 	}
 
@@ -775,7 +816,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param p2 int
 	 * @return double The correlation coefficient associated with indices p1 and p2
 	 */
-	final public double getCorrelationCoefficient(final int p1, final int p2) {
+	final public double getCorrelationCoefficient(
+			final int p1, //
+			final int p2
+	) {
 		final RealMatrix cov = getCovariances();
 		final double c12 = cov.getEntry(p1, p2);
 		if (c12 == 0.0)
@@ -812,7 +856,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @return double The covariance associated with labels label1 and label2 or 0
 	 *         if one or both labels unknown
 	 */
-	final public double getCovariance(final H label1, final H label2) {
+	final public double getCovariance(
+			final H label1, //
+			final H label2
+	) {
 		final int p1 = indexOf(label1), p2 = indexOf(label2);
 		return (p1 != -1) && (p2 != -1) ? getCovariance(p1, p2) : 0.0;
 	}
@@ -824,7 +871,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param p2int
 	 * @return double The covariance associated with indices p1 and p2
 	 */
-	final public double getCovariance(final int p1, final int p2) {
+	final public double getCovariance(
+			final int p1, //
+			final int p2
+	) {
 		return getCovariances().getEntry(p1, p2);
 	}
 
@@ -835,7 +885,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label
 	 * @return Map&lt;H, Double&gt;
 	 */
-	final public Map<H, Double> getCovariances(final H label) {
+	final public Map<H, Double> getCovariances(
+			final H label
+	) {
 		final Map<H, Double> res = new HashMap<>();
 		final int p = indexOf(label);
 		if (p != -1) {
@@ -855,7 +907,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label
 	 * @return Map&lt;H, Double&gt;
 	 */
-	final public RealMatrix getCovariances(final List<H> labels) {
+	final public RealMatrix getCovariances(
+			final List<H> labels
+	) {
 		final int[] idx = new int[labels.size()];
 		for (int i = 0; i < idx.length; ++i)
 			idx[i] = indexOf(labels.get(i));
@@ -884,7 +938,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label Object
 	 * @return double
 	 */
-	final public double getEntry(final H label) {
+	final public double getEntry(
+			final H label
+	) {
 		final int p = indexOf(label);
 		assert p >= 0 : "Label " + label.toString() + " missing.";
 		return getValues().getEntry(p);
@@ -896,7 +952,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param p
 	 * @return double
 	 */
-	final public double getEntry(final int p) {
+	final public double getEntry(
+			final int p
+	) {
 		return getValues().getEntry(p);
 	}
 
@@ -909,7 +967,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param defVal
 	 * @return double
 	 */
-	final public double getEntryWithDefault(final H label, final double defVal) {
+	final public double getEntryWithDefault(
+			final H label, //
+			final double defVal
+	) {
 		final int p = indexOf(label);
 		return p >= 0 ? getEntry(p) : defVal;
 	}
@@ -921,7 +982,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param p
 	 * @return Object
 	 */
-	final public H getLabel(final int p) {
+	final public H getLabel(
+			final int p
+	) {
 		return getLabels().get(p);
 	}
 
@@ -931,7 +994,6 @@ abstract public class UncertainValuesBase<H> //
 	 *
 	 * @return List&lt;Object&gt;
 	 */
-	@Override
 	final public List<H> getLabels() {
 		return Collections.unmodifiableList(mLabels);
 	}
@@ -942,7 +1004,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param cls<T> The class type
 	 * @return List&lt;T&gt;
 	 */
-	final public <T> List<T> getLabels(final Class<T> cls) {
+	final public <T> List<T> getLabels(
+			final Class<T> cls
+	) {
 		final List<T> res = new ArrayList<>();
 		for (final Object tag : getLabels())
 			if (cls.isInstance(tag))
@@ -956,7 +1020,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label H
 	 * @return double The uncertainty associated with label or 0.0 if label unknown
 	 */
-	final public double getUncertainty(final H label) {
+	final public double getUncertainty(
+			final H label
+	) {
 		final int p = indexOf(label);
 		return p != -1 ? Math.sqrt(getCovariance(p, p)) : 0.0;
 	}
@@ -967,7 +1033,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param p int
 	 * @return double The uncertainty associated with index p
 	 */
-	final public double getUncertainty(final int p) {
+	final public double getUncertainty(
+			final int p
+	) {
 		return Math.sqrt(getCovariance(p, p));
 	}
 
@@ -979,7 +1047,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label
 	 * @return UncertanValue
 	 */
-	final public UncertainValue getUncertainValue(final H label) {
+	final public UncertainValue getUncertainValue(
+			final H label
+	) {
 		final int p = indexOf(label);
 		return new UncertainValue(getEntry(p), Math.sqrt(getCovariance(p, p)));
 	}
@@ -1001,7 +1071,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param defVal
 	 * @return UncertanValue
 	 */
-	final public UncertainValue getUncertainValueWithDefault(final H label, final UncertainValue defVal) {
+	final public UncertainValue getUncertainValueWithDefault(
+			final H label, //
+			final UncertainValue defVal
+	) {
 		final int p = indexOf(label);
 		return p >= 0 ? new UncertainValue(getEntry(p), getCovariance(p, p)) : defVal;
 
@@ -1014,7 +1087,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label
 	 * @return {@link UncertainValue}
 	 */
-	final public UncertainValue getValue(final H label) {
+	final public UncertainValue getValue(
+			final H label
+	) {
 		return new UncertainValue(getEntry(label), Math.sqrt(getVariance(label)));
 	}
 
@@ -1022,7 +1097,9 @@ abstract public class UncertainValuesBase<H> //
 		return getValueMap(getLabels());
 	}
 
-	final public <T> Map<T, Double> getValueMap(final Class<T> cls) {
+	final public <T> Map<T, Double> getValueMap(
+			final Class<T> cls
+	) {
 		final Map<T, Double> res = new HashMap<>();
 		for (final H label : getLabels())
 			if (cls.isInstance(label))
@@ -1030,7 +1107,9 @@ abstract public class UncertainValuesBase<H> //
 		return res;
 	}
 
-	final public Map<H, Double> getValueMap(final List<H> labels) {
+	final public Map<H, Double> getValueMap(
+			final List<H> labels
+	) {
 		final Map<H, Double> res = new HashMap<>();
 		for (final H label : labels)
 			res.put(label, getEntry(label));
@@ -1044,7 +1123,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param labels
 	 * @return {@link RealVector}
 	 */
-	final public RealVector getValues(final List<? extends H> labels) {
+	final public RealVector getValues(
+			final List<? extends H> labels
+	) {
 		final RealVector res = new ArrayRealVector(labels.size());
 		for (int i = 0; i < res.getDimension(); ++i)
 			res.setEntry(i, getValues().getEntry(indexOf(labels.get(i))));
@@ -1057,7 +1138,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label H
 	 * @return double The variance associated with label
 	 */
-	final public double getVariance(final H label) {
+	final public double getVariance(
+			final H label
+	) {
 		final int p = indexOf(label);
 		return getCovariance(p, p);
 	}
@@ -1068,7 +1151,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param idx int
 	 * @return double The variance associated with label
 	 */
-	final public double getVariance(final int idx) {
+	final public double getVariance(
+			final int idx
+	) {
 		return getCovariance(idx, idx);
 	}
 
@@ -1078,8 +1163,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param label
 	 * @return boolean
 	 */
-	@Override
-	final public boolean hasLabel(final Object label) {
+	final public boolean hasLabel(
+			final Object label
+	) {
 		return getLabels().indexOf(label) != -1;
 	}
 
@@ -1090,7 +1176,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param desired
 	 * @return List&lt;H&gt;
 	 */
-	public List<H> missing(final List<? extends H> desired) {
+	public List<H> missing(
+			final List<? extends H> desired
+	) {
 		final List<H> res = new ArrayList<>();
 		for (final H lbl : desired)
 			if (!hasLabel(lbl))
@@ -1104,7 +1192,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param p
 	 * @return Object
 	 */
-	final public int indexOf(final Object label) {
+	final public int indexOf(
+			final Object label
+	) {
 		return getLabels().indexOf(label);
 	}
 
@@ -1114,7 +1204,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param labels
 	 * @return Returns an array of integer indices for the specified labels in order
 	 */
-	final public int[] indices(final List<?> labels) {
+	final public int[] indices(
+			final List<?> labels
+	) {
 		final int[] res = new int[labels.size()];
 		for (int i = 0; i < res.length; ++i)
 			res[i] = indexOf(labels.get(i));
@@ -1147,7 +1239,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValuesBase}
 	 * @throws ArgumentException
 	 */
-	public UncertainValuesBase<H> reorder(final List<? extends H> list) {
+	public UncertainValuesBase<H> reorder(
+			final List<? extends H> list
+	) {
 		if (mLabels.size() == list.size()) {
 			// Check if already in correct order...
 			boolean eq = true;
@@ -1172,7 +1266,9 @@ abstract public class UncertainValuesBase<H> //
 		return sort(new Comparator<H>() {
 
 			@Override
-			public int compare(final H o1, final H o2) {
+			public int compare(
+					final H o1, final H o2
+			) {
 				return o1.toString().compareTo(o2.toString());
 			}
 		});
@@ -1185,7 +1281,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @param compare
 	 * @return {@link UncertainValues} A new instance with the same data reordered.
 	 */
-	final public UncertainValuesBase<H> sort(final Comparator<H> compare) {
+	final public UncertainValuesBase<H> sort(
+			final Comparator<H> compare
+	) {
 		final List<H> labels = new ArrayList<>(getLabels());
 		labels.sort(compare);
 		return reorder(labels);
@@ -1221,7 +1319,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @see gov.nist.microanalysis.roentgen.html.IToHTML#toHTML(gov.nist.microanalysis.roentgen.Representation.IToHTML.Mode)
 	 */
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 		return toHTML(mode, new BasicNumberFormat("0.00E0"));
 	}
 
@@ -1233,7 +1333,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param nf
 	 * @return String
 	 */
-	final public String toHTML(final Mode mode, final BasicNumberFormat nf) {
+	final public String toHTML(
+			final Mode mode, //
+			final BasicNumberFormat nf
+	) {
 		switch (mode) {
 		case TERSE: {
 			final Table table = new Table();
@@ -1301,7 +1404,10 @@ abstract public class UncertainValuesBase<H> //
 	 * @param c
 	 * @return String
 	 */
-	final public String toHTML_Covariance(final int r, final int c) {
+	final public String toHTML_Covariance(
+			final int r, //
+			final int c
+	) {
 		final double val = getCovariance(r, c);
 		if (r == c) {
 			final BasicNumberFormat nf = new BasicNumberFormat("0.00E0");
@@ -1335,7 +1441,9 @@ abstract public class UncertainValuesBase<H> //
 		}
 	}
 
-	final public String toSimpleHTML(final BasicNumberFormat bnf) {
+	final public String toSimpleHTML(
+			final BasicNumberFormat bnf
+	) {
 		final Table t0 = new Table();
 		{
 			final List<Table.Item> row = new ArrayList<>();
@@ -1386,11 +1494,26 @@ abstract public class UncertainValuesBase<H> //
 	 * @param indices An integer list of indices
 	 * @return List&lt;T&gt;
 	 */
-	final private List<H> getLabels(final int[] indices) {
+	final private List<H> getLabels(
+			final int[] indices
+	) {
 		final List<H> res = new ArrayList<>();
 		for (int i = 0; i < indices.length; ++i)
 			res.add(getLabel(i));
 		return Collections.unmodifiableList(res);
 	}
 
+	/**
+	 * Returns a {@link RealVector} containing the L-values.
+	 *
+	 * @return {@link RealVector}
+	 */
+	abstract public RealVector getValues();
+
+	/**
+	 * Returns an L x L matrix containing the covariances.
+	 * 
+	 * @return RealMatrix
+	 */
+	abstract public RealMatrix getCovariances();
 }

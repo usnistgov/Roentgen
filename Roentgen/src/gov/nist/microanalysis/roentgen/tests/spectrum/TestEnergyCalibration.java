@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.spectrum.EnergyCalibration;
 import gov.nist.microanalysis.roentgen.spectrum.EnergyCalibration.Polynomial;
 
@@ -22,7 +23,7 @@ import gov.nist.microanalysis.roentgen.spectrum.EnergyCalibration.Polynomial;
 public class TestEnergyCalibration {
 
 	@Test
-	public void testLinear() {
+	public void testLinear() throws ArgumentException {
 		final Polynomial l = EnergyCalibration.Linear(0.0, 10.0, 2048);
 		assertEquals(l.averageEnergyForChannel(0), 5.0, 1.0e-6);
 		assertEquals(l.averageEnergyForChannel(1000), 10005.0, 1.0e-6);
@@ -45,7 +46,7 @@ public class TestEnergyCalibration {
 	}
 
 	@Test
-	public void testQuadratic() {
+	public void testQuadratic() throws ArgumentException {
 		final Polynomial q = EnergyCalibration.Quadratic(-100.0, 10.0, 1.0e-6, 2048);
 		assertEquals(q.averageEnergyForChannel(0), -94.9999999, 1.0e-5);
 		assertEquals(q.averageEnergyForChannel(1000), 9906.0010005, 1.0e-4);
@@ -68,7 +69,7 @@ public class TestEnergyCalibration {
 	}
 
 	@Test
-	public void testQuadratic2() {
+	public void testQuadratic2() throws ArgumentException {
 		final Polynomial q = EnergyCalibration.Quadratic(-100.0, 10.0, -1.0e-6, 2048);
 		assertEquals(q.averageEnergyForChannel(0), -94.9999999, 1.0e-5);
 		assertEquals(q.averageEnergyForChannel(1000), 9903.9989995, 1.0e-4);
@@ -91,7 +92,7 @@ public class TestEnergyCalibration {
 	}
 
 	@Test
-	public void testPolynomial() {
+	public void testPolynomial() throws ArgumentException {
 		final Polynomial q = new Polynomial(new double[] { -100.0, 10.0, 1.0e-6, -1.0e-9 }, 2048);
 		assertEquals(q.averageEnergyForChannel(0), -94.9999999, 1.0e-5);
 		assertEquals(q.averageEnergyForChannel(1000), 9904.9995, 1.0e-4);
@@ -114,12 +115,14 @@ public class TestEnergyCalibration {
 		assertEquals(q.equals(null), false);
 	}
 
-	public double e(final double a, final double b, final double c, final double ch) {
+	public double e(
+			final double a, final double b, final double c, final double ch
+	) {
 		return (a * ch) + (Math.sqrt(ch) * b) + c;
 	}
 
 	@Test
-	public void testQuadraticInSqrt() {
+	public void testQuadraticInSqrt() throws ArgumentException {
 		final EnergyCalibration.QuadraticInSqrt q = new EnergyCalibration.QuadraticInSqrt(-100.0, 0.01, 10.0, 2048);
 		assertEquals(q.averageEnergyForChannel(0), 0.5 * (e(10.0, 0.01, -100.0, 0) + e(10.0, 0.01, -100.0, 1.0)),
 				1.0e-5);

@@ -8,8 +8,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 
 /**
  * Normalize takes the input values and normalizes them to a sum of unity.
@@ -20,13 +21,17 @@ import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacob
  *
  */
 public class Normalize<H, K> //
-		extends LabeledMultivariateJacobianFunction<H, K> //
+		extends ExplicitMeasurementModel<H, K> //
 		implements ILabeledMultivariateFunction<H, K> {
 
 	/**
 	 * @param inputLabels
+	 * @throws ArgumentException
 	 */
-	public Normalize(final List<H> inputLabels, final List<K> outputLabels) {
+	public Normalize(
+			final List<H> inputLabels, //
+			final List<K> outputLabels
+	) throws ArgumentException {
 		super(inputLabels, outputLabels);
 	}
 
@@ -38,7 +43,9 @@ public class Normalize<H, K> //
 	 * #optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		assert getInputDimension() == getOutputDimension();
 		final int dim = point.getDimension();
 		assert getInputDimension() == dim;
@@ -61,7 +68,9 @@ public class Normalize<H, K> //
 	 * value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		assert getInputDimension() == getOutputDimension();
 		final int dim = point.getDimension();
 		assert getInputDimension() == dim;

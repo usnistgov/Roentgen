@@ -1,12 +1,10 @@
 package gov.nist.microanalysis.roentgen.spectrum;
 
-import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.math3.linear.RealVector;
 
 import com.duckandcover.lazy.SimplyLazy;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 
@@ -29,25 +27,22 @@ public class FilterFit {
 	private final EnergyCalibration mEnergy;
 	private final LineshapeCalibration mLineshape;
 
-	private class ElementData {
-		private Element mElement;
-		private Map<Element, ElementXRaySet> mXRays;
-		private EDSSpectrum mSpectrum;
-		private RealVector mFiltered;
-
-	};
-
 	private final SimplyLazy<EDSFittingFilter> mFilter = new SimplyLazy<EDSFittingFilter>() {
 
 		@Override
 		protected EDSFittingFilter initialize() {
-			switch (mMode) {
-			case AdaptiveGaussian:
-				return new AdaptiveGaussianFilter(mChannelCount, mEnergy, mLineshape);
-			case AdaptiveTophat:
-			default:
-				return new AdaptiveTophatFilter(mChannelCount, mEnergy, mLineshape);
+			try {
+				switch (mMode) {
+				case AdaptiveGaussian:
+					return new AdaptiveGaussianFilter(mChannelCount, mEnergy, mLineshape);
+				case AdaptiveTophat:
+				default:
+					return new AdaptiveTophatFilter(mChannelCount, mEnergy, mLineshape);
+				}
+			} catch (final ArgumentException e) {
+				e.printStackTrace();
 			}
+			return null;
 		}
 
 	};
@@ -55,14 +50,18 @@ public class FilterFit {
 	/**
 	 * Constructs a FilterFit
 	 */
-	public FilterFit(final int nChannels, final EnergyCalibration ec, final LineshapeCalibration ls) {
+	public FilterFit(
+			final int nChannels, final EnergyCalibration ec, final LineshapeCalibration ls
+	) {
 		mChannelCount = nChannels;
 		mEnergy = ec;
 		mLineshape = ls;
 	}
 
-	public FilterFit addReference(final ElementXRaySet xrays, final Set<Element> elms, final EDSSpectrum spec) {
-
+	public FilterFit addReference(
+			final ElementXRaySet xrays, final Set<Element> elms, final EDSSpectrum spec
+	) {
+		mFilter.get();
 		return this;
 	}
 

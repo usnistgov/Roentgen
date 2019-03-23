@@ -51,7 +51,9 @@ public class MathUtilities {
 	 * @param number
 	 * @return Number
 	 */
-	public static Number parseNumber(final String number, final String dname) throws NumberFormatException {
+	public static Number parseNumber(
+			final String number, final String dname
+	) throws NumberFormatException {
 		String tmp = number.trim();
 		if (tmp.contains("+-") || tmp.contains("\u00B1")) {
 			if (tmp.startsWith("(") && tmp.endsWith(")"))
@@ -61,15 +63,18 @@ public class MathUtilities {
 			assert terms.length > 1;
 			return new UncertainValue(Double.parseDouble(terms[0].trim()), Double.parseDouble(terms[1].trim()));
 		} else
-			return new Double(Double.parseDouble(tmp));
+			return Double.valueOf(Double.parseDouble(tmp));
 	}
 
-	public static String toHTML(final RealMatrix rm, final NumberFormat nf) {
+	public static String toHTML(
+			final RealMatrix rm, final NumberFormat nf
+	) {
 		return toHTML(rm, null, null, nf);
 	}
 
-	public static String toHTML(final RealMatrix rm, final List<Object> rowLabel, final List<Object> colLabel,
-			final NumberFormat nf) {
+	public static String toHTML(
+			final RealMatrix rm, final List<Object> rowLabel, final List<Object> colLabel, final NumberFormat nf
+	) {
 		final Table t = new Table();
 		if (colLabel != null) {
 			final List<Item> header = new ArrayList<>();
@@ -89,7 +94,9 @@ public class MathUtilities {
 		return t.toHTML(Mode.NORMAL);
 	}
 
-	public static String toHTML_Vertical(final RealVector rv, final List<Object> label, final NumberFormat nf) {
+	public static String toHTML_Vertical(
+			final RealVector rv, final List<Object> label, final NumberFormat nf
+	) {
 		final Table t = new Table();
 		for (int i = 0; i < rv.getDimension(); ++i) {
 			final List<Item> items = new ArrayList<>();
@@ -101,7 +108,9 @@ public class MathUtilities {
 		return t.toHTML(Mode.NORMAL);
 	}
 
-	public static String toHTML_Horizontal(final RealVector rv, final List<Object> label, final NumberFormat nf) {
+	public static String toHTML_Horizontal(
+			final RealVector rv, final List<Object> label, final NumberFormat nf
+	) {
 		final Table t = new Table();
 		final List<Item> hdr = new ArrayList<>();
 		final List<Item> data = new ArrayList<>();
@@ -114,20 +123,26 @@ public class MathUtilities {
 		return t.toHTML(Mode.NORMAL);
 	}
 
-	public static String toHTML_Terse(final UncertainValue uv, final NumberFormat nf) {
+	public static String toHTML_Terse(
+			final UncertainValue uv, final NumberFormat nf
+	) {
 		return nf.format(uv.doubleValue());
 	}
 
-	public static String toHTML_Normal(final UncertainValue uv, final NumberFormat nf) {
+	public static String toHTML_Normal(
+			final UncertainValue uv, final NumberFormat nf
+	) {
 		return nf.format(uv.doubleValue()) + "&pm;" + nf.format(uv.uncertainty());
 	}
 
-	public static String toHTML_Verbose(final UncertainValue uv, final NumberFormat nf) {
+	public static String toHTML_Verbose(
+			final UncertainValue uv, final NumberFormat nf
+	) {
 		final StringBuffer sb = new StringBuffer();
 		sb.append(nf.format(uv.doubleValue()));
 		sb.append("&pm;");
 		if (uv instanceof UncertainValueEx<?>) {
-			UncertainValueEx<?> uvx = (UncertainValueEx<?>) uv;
+			final UncertainValueEx<?> uvx = (UncertainValueEx<?>) uv;
 			boolean first = true;
 			for (final Object obj : uvx.getComponentNames()) {
 				if (!first) {
@@ -145,8 +160,9 @@ public class MathUtilities {
 		return sb.toString();
 	}
 
-	public static String toHTML_Image(final RealMatrix rm, final String caption, final File base, final String dir)
-			throws IOException {
+	public static String toHTML_Image(
+			final RealMatrix rm, final String caption, final File base, final String dir
+	) throws IOException {
 		double min = 1.0e300, max = -1.0e-300;
 		for (int r = 0; r < rm.getRowDimension(); ++r)
 			for (int c = 0; c < rm.getColumnDimension(); ++c) {
@@ -160,7 +176,9 @@ public class MathUtilities {
 		return HTML.image(img, caption, base, dir);
 	}
 
-	public static double min(final RealMatrix rm) {
+	public static double min(
+			final RealMatrix rm
+	) {
 		double min = Double.MAX_VALUE;
 		for (int r = 0; r < rm.getRowDimension(); ++r)
 			for (int c = 0; c < rm.getColumnDimension(); ++c)
@@ -169,7 +187,9 @@ public class MathUtilities {
 		return min;
 	}
 
-	public static double max(final RealMatrix rm) {
+	public static double max(
+			final RealMatrix rm
+	) {
 		double max = -Double.MAX_VALUE;
 		for (int r = 0; r < rm.getRowDimension(); ++r)
 			for (int c = 0; c < rm.getColumnDimension(); ++c)
@@ -186,7 +206,9 @@ public class MathUtilities {
 		 * @param v
 		 * @return Color
 		 */
-		public Color compute(double v);
+		public Color compute(
+				double v
+		);
 	}
 
 	public static class PositiveNegativeAsColor implements IDoubleAsColor {
@@ -197,8 +219,10 @@ public class MathUtilities {
 		final Color mOutOfRange;
 		final Color mTransparent = new Color(0, 0, 0, 0xFF);
 
-		public PositiveNegativeAsColor(final double min, final Color minColor, final double max, final Color maxColor,
-				final Color outOfRange, final double gamma) {
+		public PositiveNegativeAsColor(
+				final double min, final Color minColor, final double max, final Color maxColor, final Color outOfRange,
+				final double gamma
+		) {
 			mRange = Math.max(Math.abs(min), Math.abs(max));
 			mMinRgb = new int[] { minColor.getRed(), minColor.getGreen(), minColor.getBlue() };
 			mMaxRgb = new int[] { maxColor.getRed(), maxColor.getGreen(), maxColor.getBlue() };
@@ -212,7 +236,9 @@ public class MathUtilities {
 		 * @see gov.nist.microanalysis.roentgen.math.MathUtilities.IDoubleAsColor#compute(double)
 		 */
 		@Override
-		public Color compute(final double val) {
+		public Color compute(
+				final double val
+		) {
 			if ((val >= -mRange) && (val <= mRange) && (!Double.isNaN(val))) {
 				final double sc = Math.pow(Utility.bound(Math.abs(val) / mRange, 0.0, 1.0), mGamma);
 				if (val == 0.0)
@@ -235,8 +261,10 @@ public class MathUtilities {
 		final double mGamma;
 		final Color mOutOfRange;
 
-		public LinearDoubleAsColor(final double min, final Color minColor, final double max, final Color maxColor,
-				final Color outOfRange, final double gamma) {
+		public LinearDoubleAsColor(
+				final double min, final Color minColor, final double max, final Color maxColor, final Color outOfRange,
+				final double gamma
+		) {
 			mMin = min;
 			mMinRgb = new int[] { minColor.getRed(), minColor.getGreen(), minColor.getBlue() };
 			mMax = max;
@@ -245,7 +273,9 @@ public class MathUtilities {
 			mOutOfRange = outOfRange;
 		}
 
-		public static LinearDoubleAsColor blackAndWhite(final double min, final double max, final double gamma) {
+		public static LinearDoubleAsColor blackAndWhite(
+				final double min, final double max, final double gamma
+		) {
 			return new LinearDoubleAsColor(min, Color.BLACK, max, Color.WHITE, Color.YELLOW, gamma);
 		}
 
@@ -255,7 +285,9 @@ public class MathUtilities {
 		 * @see gov.nist.microanalysis.roentgen.math.MathUtilities.IDoubleAsColor#compute(double)
 		 */
 		@Override
-		public Color compute(final double val) {
+		public Color compute(
+				final double val
+		) {
 			if ((val >= mMin) && (val <= mMax) && (!Double.isNaN(val))) {
 				final double sc = 255.0 * Math.pow(Utility.bound((val - mMin) / (mMax - mMin), 0.0, 1.0), mGamma);
 				return new Color( //
@@ -268,7 +300,9 @@ public class MathUtilities {
 		}
 	}
 
-	public static BufferedImage RealMatrixAsBitmap(final RealMatrix rm, final IDoubleAsColor colorize) {
+	public static BufferedImage RealMatrixAsBitmap(
+			final RealMatrix rm, final IDoubleAsColor colorize
+	) {
 		final BufferedImage res = new BufferedImage(rm.getColumnDimension(), rm.getRowDimension(),
 				BufferedImage.TYPE_3BYTE_BGR);
 		for (int r = 0; r < rm.getRowDimension(); ++r)
@@ -277,7 +311,9 @@ public class MathUtilities {
 		return res;
 	}
 
-	public static String getKurtosisDescription(final double kurtosis) {
+	public static String getKurtosisDescription(
+			final double kurtosis
+	) {
 		if (Math.abs(kurtosis) < 0.3)
 			return "Similar to normal";
 		else if (Math.abs(kurtosis) < 1000.0)
@@ -287,7 +323,9 @@ public class MathUtilities {
 
 	}
 
-	public static String getSkewnessDescription(final double skewness) {
+	public static String getSkewnessDescription(
+			final double skewness
+	) {
 		if (Math.abs(skewness) < 0.1)
 			return "Highly symmetric";
 		else if (Math.abs(skewness) < 1.0)
@@ -298,20 +336,26 @@ public class MathUtilities {
 			return skewness > 0.0 ? "Highly skew positive" : "Highly skew negative";
 	}
 
-	public static IToHTML toHTML(final DescriptiveStatistics desc, final NumberFormat bnf) {
+	public static IToHTML toHTML(
+			final DescriptiveStatistics desc, final NumberFormat bnf
+	) {
 
 		class DescStatTable implements IToHTML {
 
 			final DescriptiveStatistics mDescStat;
 			final NumberFormat mFormat;
 
-			DescStatTable(final DescriptiveStatistics d, final NumberFormat b) {
+			DescStatTable(
+					final DescriptiveStatistics d, final NumberFormat b
+			) {
 				mDescStat = d;
 				mFormat = b;
 			}
 
 			@Override
-			public String toHTML(final Mode mode) {
+			public String toHTML(
+					final Mode mode
+			) {
 				final List<List<String>> items = new ArrayList<>();
 				final List<String> colHeaders = Arrays.asList("Statistic", "Value", "Note");
 				items.add(Arrays.asList("Mean (&mu;)", mFormat.format(mDescStat.getMean()), ""));
@@ -337,11 +381,15 @@ public class MathUtilities {
 		return new DescStatTable(desc, bnf);
 	}
 
-	public static final Table.Item td(final Number n, final BasicNumberFormat bnf) {
+	public static final Table.Item td(
+			final Number n, final BasicNumberFormat bnf
+	) {
 		return Table.td(bnf.formatHTML(n));
 	}
 
-	public static final Table.Item td(final double n, final BasicNumberFormat bnf) {
+	public static final Table.Item td(
+			final double n, final BasicNumberFormat bnf
+	) {
 		return Table.td(bnf.formatHTML(n));
 	}
 

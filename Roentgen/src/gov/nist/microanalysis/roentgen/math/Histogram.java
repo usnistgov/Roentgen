@@ -38,18 +38,23 @@ public class Histogram implements IToHTML {
 		private final int mBin;
 		private final String mString;
 
-		private BinName(final int bin, final String format) {
+		private BinName(
+				final int bin, final String format
+		) {
 			assert (bin >= -1);
 			assert (bin < (binCount() + 1));
 			mBin = bin;
 			mString = "["
-					+ (mBin < 0 ? "-inf" : MessageFormat.format(format, new Object[] { new Double(minValue(mBin)) }))
+					+ (mBin < 0 ? "-inf"
+							: MessageFormat.format(format, new Object[] { Double.valueOf(minValue(mBin)) }))
 					+ "-" + (mBin >= binCount() ? "inf"
-							: MessageFormat.format(format, new Object[] { new Double(maxValue(mBin)) }))
+							: MessageFormat.format(format, new Object[] { Double.valueOf(maxValue(mBin)) }))
 					+ ")";
 		}
 
-		private BinName(final int bin, final NumberFormat nf) {
+		private BinName(
+				final int bin, final NumberFormat nf
+		) {
 			assert (bin >= -1);
 			assert (bin < (binCount() + 1));
 			mBin = bin;
@@ -64,7 +69,9 @@ public class Histogram implements IToHTML {
 		}
 
 		@Override
-		public int compareTo(final BinName o) {
+		public int compareTo(
+				final BinName o
+		) {
 			return Integer.compare(mBin, o.mBin);
 		}
 	}
@@ -85,7 +92,9 @@ public class Histogram implements IToHTML {
 	 * @param max   double
 	 * @param nBins int - The number of bins (excluding over- and under-range)
 	 */
-	public Histogram(final double min, final double max, final int nBins) {
+	public Histogram(
+			final double min, final double max, final int nBins
+	) {
 		Preconditions.checkArgument(max > min);
 		Preconditions.checkArgument(nBins > 0);
 		mCounts = new int[nBins + 2]; // nBins + under + over
@@ -106,7 +115,9 @@ public class Histogram implements IToHTML {
 	 * @param ratio
 	 * @throws EPQException
 	 */
-	public Histogram(double min, final double max, final double ratio) {
+	public Histogram(
+			double min, final double max, final double ratio
+	) {
 		Preconditions.checkArgument(ratio > 1.0);
 		Preconditions.checkArgument(max > min);
 		final int nBins = (int) (Math.log(max / min) / Math.log(ratio));
@@ -123,7 +134,9 @@ public class Histogram implements IToHTML {
 	 * @param binMins
 	 * @param max
 	 */
-	public Histogram(final double[] binMins, final double max) {
+	public Histogram(
+			final double[] binMins, final double max
+	) {
 		mBinMin = new double[binMins.length + 1];
 		for (int i = 0; i < binMins.length; ++i)
 			mBinMin[i] = binMins[i];
@@ -133,7 +146,9 @@ public class Histogram implements IToHTML {
 		mCounts = new int[binMins.length + 2];
 	}
 
-	public Histogram(final Histogram hist) {
+	public Histogram(
+			final Histogram hist
+	) {
 		mBinMin = new double[hist.mBinMin.length];
 		mCounts = new int[hist.mCounts.length];
 		System.arraycopy(hist.mBinMin, 0, mBinMin, 0, mBinMin.length);
@@ -150,7 +165,9 @@ public class Histogram implements IToHTML {
 	 * @param approxNBins The approximate number of bins
 	 * @return Histogram
 	 */
-	public static Histogram build(final DescriptiveStatistics ds, final int approxNBins) {
+	public static Histogram build(
+			final DescriptiveStatistics ds, final int approxNBins
+	) {
 		final double min = ds.getMin(), max = ds.getMax();
 		final double sc = Math.pow(10.0, Math.round(Math.log10((max - min) / approxNBins)));
 		final int xtra = Math.max(1, approxNBins / 40);
@@ -170,7 +187,9 @@ public class Histogram implements IToHTML {
 		return maxBin;
 	}
 
-	public void addBin(final double binMin) {
+	public void addBin(
+			final double binMin
+	) {
 		final double[] newBinMin = new double[mBinMin.length + 1];
 		System.arraycopy(mBinMin, 0, newBinMin, 0, mBinMin.length);
 		newBinMin[mBinMin.length] = binMin;
@@ -185,7 +204,9 @@ public class Histogram implements IToHTML {
 	 * @param val double
 	 * @return int
 	 */
-	public int bin(final double val) {
+	public int bin(
+			final double val
+	) {
 		int i = Arrays.binarySearch(mBinMin, val);
 		i = (i >= 0 ? i : -i - 2);
 		assert i >= -1 : "index is " + Integer.toString(i) + " for " + Double.toString(val);
@@ -199,7 +220,9 @@ public class Histogram implements IToHTML {
 	 * @param bin int
 	 * @return double
 	 */
-	public double minValue(final int bin) {
+	public double minValue(
+			final int bin
+	) {
 		return bin > -1 ? mBinMin[bin] : Double.NEGATIVE_INFINITY;
 	}
 
@@ -210,7 +233,9 @@ public class Histogram implements IToHTML {
 	 * @param bin int
 	 * @return double
 	 */
-	public double maxValue(final int bin) {
+	public double maxValue(
+			final int bin
+	) {
 		return (bin + 1) < mBinMin.length ? mBinMin[bin + 1] : Double.POSITIVE_INFINITY;
 	}
 
@@ -219,7 +244,9 @@ public class Histogram implements IToHTML {
 	 *
 	 * @param val double
 	 */
-	public void add(final double val) {
+	public void add(
+			final double val
+	) {
 		++mCounts[bin(val) + 1];
 	}
 
@@ -228,7 +255,9 @@ public class Histogram implements IToHTML {
 	 *
 	 * @param vals double[]
 	 */
-	public void add(final double[] vals) {
+	public void add(
+			final double[] vals
+	) {
 		for (final double v : vals)
 			add(v);
 	}
@@ -252,7 +281,9 @@ public class Histogram implements IToHTML {
 	 * @param format String
 	 * @return String
 	 */
-	public String binName(final int bin, final String format) {
+	public String binName(
+			final int bin, final String format
+	) {
 		return (new BinName(bin, format)).toString();
 	}
 
@@ -265,7 +296,9 @@ public class Histogram implements IToHTML {
 	 * @param nf  NumberFormat
 	 * @return String
 	 */
-	public String binName(final int bin, final NumberFormat nf) {
+	public String binName(
+			final int bin, final NumberFormat nf
+	) {
 		return (new BinName(bin, nf)).toString();
 	}
 
@@ -275,7 +308,9 @@ public class Histogram implements IToHTML {
 	 * @param bin int - -1 to binCount()
 	 * @return int
 	 */
-	public int counts(final int bin) {
+	public int counts(
+			final int bin
+	) {
 		return mCounts[bin + 1];
 	}
 
@@ -318,12 +353,16 @@ public class Histogram implements IToHTML {
 		return res;
 	}
 
-	public boolean isBinMin(final double binMin) {
+	public boolean isBinMin(
+			final double binMin
+	) {
 		final int i = Arrays.binarySearch(mBinMin, binMin);
 		return i >= 0;
 	}
 
-	public void removeBin(final int binNum) {
+	public void removeBin(
+			final int binNum
+	) {
 		Preconditions.checkArgument((binNum < 0) || (binNum > (mCounts.length - 2)));
 		final double[] newBinMin = new double[mBinMin.length - 1];
 		for (int index = 0; index < mBinMin.length; index++)
@@ -346,7 +385,9 @@ public class Histogram implements IToHTML {
 		mCounts = newCounts;
 	}
 
-	public TreeMap<BinName, Integer> getResultMap(final String format) {
+	public TreeMap<BinName, Integer> getResultMap(
+			final String format
+			) {
 		final TreeMap<BinName, Integer> res = new TreeMap<>();
 		for (int i = -1; i < (binCount() + 1); ++i)
 			res.put(new BinName(i, format), counts(i));
@@ -354,7 +395,9 @@ public class Histogram implements IToHTML {
 	}
 
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+			) {
 		final Report report = new Report("Histogram");
 		if ((mode == Mode.NORMAL) || (mode == Mode.VERBOSE)) {
 			if (mode == Mode.VERBOSE)

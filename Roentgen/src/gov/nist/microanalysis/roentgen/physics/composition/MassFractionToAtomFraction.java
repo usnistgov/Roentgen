@@ -9,8 +9,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
@@ -18,15 +19,17 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
 
 /**
  * Converts from MassFraction to AtomFraction
- * 
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
 public class MassFractionToAtomFraction //
-		extends LabeledMultivariateJacobianFunction<MaterialLabel, AtomFraction> //
+		extends ExplicitMeasurementModel<MaterialLabel, AtomFraction> //
 		implements ILabeledMultivariateFunction<MaterialLabel, AtomFraction> {
 
-	private static List<MaterialLabel> buildInputTags(final Material mat) {
+	private static List<MaterialLabel> buildInputTags(
+			final Material mat
+	) {
 		final List<MaterialLabel> res = new ArrayList<>();
 		res.addAll(MaterialLabel.buildMassFractionTags(mat));
 		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
@@ -40,8 +43,11 @@ public class MassFractionToAtomFraction //
 	 *
 	 * @param Composition   comp
 	 * @param atomicWeights
+	 * @throws ArgumentException
 	 */
-	public MassFractionToAtomFraction(final Material mat) {
+	public MassFractionToAtomFraction(
+			final Material mat
+	) throws ArgumentException {
 		this(mat, Collections.emptySet());
 	}
 
@@ -50,24 +56,29 @@ public class MassFractionToAtomFraction //
 	 *
 	 * @param Composition   comp
 	 * @param atomicWeights
+	 * @throws ArgumentException
 	 */
-	public MassFractionToAtomFraction(//
-			final Material mat, final Collection<Element> atomicWeightElms) {
+	public MassFractionToAtomFraction(
+			//
+			final Material mat, final Collection<Element> atomicWeightElms
+	) throws ArgumentException {
 		super(buildInputTags(mat), MaterialLabel.buildAtomFractionTags(mat));
 		mMaterial = mat;
 	}
 
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector vals = buildResult();
 		final List<MassFraction> mfTags = MaterialLabel.buildMassFractionTags(mMaterial);
 		double denom = 0.0;
-		for (MassFraction mfl : mfTags) {
+		for (final MassFraction mfl : mfTags) {
 			final double c1 = getArg(mfl, point);
 			final double w1 = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, mfl.getElement()), point);
 			denom += c1 / w1;
 		}
-		for (MassFraction mfl1 : mfTags) {
+		for (final MassFraction mfl1 : mfTags) {
 			final Element elm1 = mfl1.getElement();
 			final double c1 = getArg(mfl1, point);
 			final double w1 = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm1), point);
@@ -82,24 +93,26 @@ public class MassFractionToAtomFraction //
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector vals = buildResult();
 		final RealMatrix jac = buildJacobian();
 		final List<MassFraction> mfTags = MaterialLabel.buildMassFractionTags(mMaterial);
 		double denom = 0.0;
-		for (MassFraction mfl : mfTags) {
+		for (final MassFraction mfl : mfTags) {
 			final double c1 = getArg(mfl, point);
 			final double w1 = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, mfl.getElement()), point);
 			denom += c1 / w1;
 		}
-		for (MassFraction mfl1 : mfTags) {
+		for (final MassFraction mfl1 : mfTags) {
 			final Element elm1 = mfl1.getElement();
 			final AtomFraction afl1 = MaterialLabel.buildAtomFractionTag(mMaterial, elm1);
 			final AtomicWeight awl1 = MaterialLabel.buildAtomicWeightTag(mMaterial, elm1);
 			final double c1 = getArg(mfl1, point);
 			final double w1 = getArg(awl1, point);
 			setResult(afl1, vals, (c1 / w1) / denom);
-			for (MassFraction mfl2 : mfTags) {
+			for (final MassFraction mfl2 : mfTags) {
 				final Element elm2 = mfl2.getElement();
 				final AtomicWeight awl2 = MaterialLabel.buildAtomicWeightTag(mMaterial, elm2);
 				final double w2 = getArg(awl2, point);

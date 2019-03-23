@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.math3.linear.RealVector;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,9 +22,10 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
@@ -162,7 +162,7 @@ public class CompositionTest2 {
 
 	@Test
 	public void testMassFraction() throws ArgumentException {
-		LabeledMultivariateJacobianFunction.sDump = null;
+		ExplicitMeasurementModel.sDump = null;
 		try {
 			final Map<Element, Number> massFracs = new HashMap<>();
 			final double total = 0.98;
@@ -219,7 +219,7 @@ public class CompositionTest2 {
 				}
 			}
 		} finally {
-			LabeledMultivariateJacobianFunction.sDump = null;
+			ExplicitMeasurementModel.sDump = null;
 		}
 
 	}
@@ -372,8 +372,7 @@ public class CompositionTest2 {
 
 		final UncertainValues<MaterialLabel> jres = UncertainValues.asUncertainValues(mix);
 
-		final RealVector dinp = mix.getInputValues().mapMultiply(0.0001);
-		mix.setCalculator(mix.new FiniteDifference(dinp));
+		mix.setCalculator(mix.new FiniteDifference(0.001));
 		final UncertainValues<MaterialLabel> dres = UncertainValues.asUncertainValues(mix);
 		mix.setCalculator(mix.new MonteCarlo(160000));
 		final UncertainValues<MaterialLabel> mcres = UncertainValues.asUncertainValues(mix);
@@ -434,7 +433,7 @@ public class CompositionTest2 {
 		final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
 		r.addImage(dres.asCovarianceBitmap(8, v2l, l2c), "Delta");
 		r.addImage(jres.asCovarianceBitmap(8, v2l, l2c), "Mixture");
-		r.addImage(UncertainValues.compareAsBitmap(dres, jres, v2l, 8), "Mass Fractions");
+		r.addImage(UncertainValuesBase.compareAsBitmap(dres, jres, v2l, 8), "Mass Fractions");
 
 		r.inBrowser(Mode.VERBOSE);
 	}
@@ -460,8 +459,7 @@ public class CompositionTest2 {
 
 		final UncertainValues<MaterialLabel> jres = UncertainValues.asUncertainValues(mix);
 
-		final RealVector dinp = mix.getInputValues().mapMultiply(0.0001);
-		mix.setCalculator(mix.new FiniteDifference(dinp));
+		mix.setCalculator(mix.new FiniteDifference(0.001));
 		final UncertainValues<MaterialLabel> dres = UncertainValues.asUncertainValues(mix);
 
 		mix.setCalculator(mix.new Analytical());
@@ -519,7 +517,7 @@ public class CompositionTest2 {
 		final LinearToColor l2c = new LinearToColor(1.0, Color.blue, Color.red);
 		r.addImage(dres.asCovarianceBitmap(8, v2l, l2c), "Delta");
 		r.addImage(jres.asCovarianceBitmap(8, v2l, l2c), "Mixture");
-		r.addImage(UncertainValues.compareAsBitmap(dres, jres, v2l, 8), "Mass Fractions");
+		r.addImage(UncertainValuesBase.compareAsBitmap(dres, jres, v2l, 8), "Mass Fractions");
 
 		r.inBrowser(Mode.VERBOSE);
 	}
@@ -542,13 +540,13 @@ public class CompositionTest2 {
 		r.add(sanidine);
 		r.add(combiner);
 		final UncertainValues<MaterialLabel> mix = UncertainValues.asUncertainValues(combiner);
-		combiner.setCalculator(combiner.new FiniteDifference(combiner.getInputValues().mapMultiply(0.001)));
+		combiner.setCalculator(combiner.new FiniteDifference(0.001));
 		final UncertainValues<MaterialLabel> dmix = UncertainValues.asUncertainValues(combiner);
 		r.addHTML(mix.toSimpleHTML(new BasicNumberFormat("0.00E0")));
 		r.addSubHeader("Delta");
 		r.add(dmix);
 		r.addImage(
-				UncertainValues.compareAsBitmap(UncertainValues.extract(dmix.getLabels(), mix), dmix,
+				UncertainValuesBase.compareAsBitmap(UncertainValues.extract(dmix.getLabels(), mix), dmix,
 						new LinearToColor(1.0, Color.blue, Color.red), 8),
 				"Comparing analytical with finite difference.");
 
@@ -557,7 +555,7 @@ public class CompositionTest2 {
 
 	@Test
 	public void testOByStoich() throws ArgumentException, IOException {
-		LabeledMultivariateJacobianFunction.sDump = null;
+		ExplicitMeasurementModel.sDump = null;
 		try {
 			final Map<Element, Number> massFracs = new HashMap<>();
 			final double total = 0.98;
@@ -618,7 +616,7 @@ public class CompositionTest2 {
 				}
 			}
 		} finally {
-			LabeledMultivariateJacobianFunction.sDump = null;
+			ExplicitMeasurementModel.sDump = null;
 		}
 
 	}

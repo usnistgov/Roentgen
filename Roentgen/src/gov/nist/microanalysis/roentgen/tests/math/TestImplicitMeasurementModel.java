@@ -41,7 +41,9 @@ public class TestImplicitMeasurementModel {
 		private static final String MW = "m<sub>w</sub>";
 		private static final String DTHETA = "&delta;&Theta;";
 
-		static private String idx(final String base, final int i) {
+		static private String idx(
+				final String base, final int i
+		) {
 			return base + "[" + i + "]";
 		}
 
@@ -51,7 +53,9 @@ public class TestImplicitMeasurementModel {
 		 * @param len The number of pressure measurements
 		 * @return List<String> A list of labels
 		 */
-		static private List<String> xLabels(final int len) {
+		static private List<String> xLabels(
+				final int len
+		) {
 			final List<String> res = new ArrayList<>();
 			for (int i = 0; i < len; ++i) {
 				res.add(idx(DTHETA, i));
@@ -68,7 +72,9 @@ public class TestImplicitMeasurementModel {
 		 * @param len The number of pressure measurements
 		 * @return List<String> A list of labels
 		 */
-		static private List<String> yLabels(final int len) {
+		static private List<String> yLabels(
+				final int len
+		) {
 			final List<String> res = new ArrayList<>();
 			for (int i = 0; i < len; ++i)
 				res.add(idx(PRESSURE, i));
@@ -81,7 +87,9 @@ public class TestImplicitMeasurementModel {
 		 * @param len The number of pressure measurements
 		 * @return List<String> A list of labels
 		 */
-		static private List<String> hLabels(final int len) {
+		static private List<String> hLabels(
+				final int len
+		) {
 			final List<String> res = new ArrayList<>();
 			for (int i = 0; i < len; ++i)
 				res.add(idx("HHH", i));
@@ -93,13 +101,17 @@ public class TestImplicitMeasurementModel {
 		 */
 		private final int mLength;
 
-		public Pressure102Example(final int len) {
+		public Pressure102Example(
+				final int len
+		) throws ArgumentException {
 			super(xLabels(len), yLabels(len), hLabels(len));
 			mLength = len;
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 			// Initialize input variables
 			final double rhoa = point.getEntry(inputIndex(RHOA));
 			final double rhow = point.getEntry(inputIndex(RHOW));
@@ -141,7 +153,9 @@ public class TestImplicitMeasurementModel {
 		}
 
 		@Override
-		public RealVector optimized(final RealVector point) {
+		public RealVector optimized(
+				final RealVector point
+		) {
 			// Initialize input variables
 			final double rhoa = point.getEntry(inputIndex(RHOA));
 			final double rhow = point.getEntry(inputIndex(RHOW));
@@ -173,16 +187,14 @@ public class TestImplicitMeasurementModel {
 
 		final Pressure102Example hmodel = new Pressure102Example(3);
 
-		final ImplicitMeasurementModel<String> imm = new ImplicitMeasurementModel<>(hmodel,
-				hmodel.getOutputLabels());
+		final ImplicitMeasurementModel<String> imm = new ImplicitMeasurementModel<>(hmodel, hmodel.getOutputLabels());
 
 		final UncertainValues<String> inputs = new UncertainValues<>(imm.getInputLabels());
 
 		final UncertainValuesCalculator<String> uvc = new UncertainValuesCalculator<>(imm, inputs);
 		final UncertainValues<String> jres = UncertainValues.<String>asUncertainValues(uvc);
 
-		final RealVector dinp = uvc.getInputValues().mapMultiply(0.001);
-		uvc.setCalculator(uvc.new FiniteDifference(dinp));
+		uvc.setCalculator(uvc.new FiniteDifference(0.001));
 		final UncertainValues<String> fdres = UncertainValues.<String>asUncertainValues(uvc);
 
 		assertTrue("Finite difference does not equal Jacobian", jres.equals(fdres, 0.00001));

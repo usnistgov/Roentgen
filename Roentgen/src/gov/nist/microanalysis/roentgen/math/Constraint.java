@@ -18,16 +18,19 @@ public interface Constraint {
 	public static class None //
 			implements Constraint {
 		@Override
-		public double limit(final double val) {
+		public double limit(
+				final double val
+		) {
 			return val;
 		}
 
+		@Override
 		public String toString() {
 			return "None";
 		}
-	
+
 	}
-	
+
 	/**
 	 * Constrains a value to within a [min,max] range. Values less than min are set
 	 * to min and values larger than max are set to max.
@@ -41,18 +44,23 @@ public interface Constraint {
 		private final double mMin;
 		private final double mMax;
 
-		public Range(final double min, final double max) {
+		public Range(
+				final double min, final double max
+		) {
 			mMin = Math.min(min, max);
 			mMax = Math.max(min, max);
 		}
-		
-		public Range(double nominal, double lowPct, double highPct){
-			this(nominal*lowPct, nominal*highPct);
+
+		public Range(
+				final double nominal, final double lowPct, final double highPct
+		) {
+			this(nominal * lowPct, nominal * highPct);
 		}
 
-
 		@Override
-		public double limit(final double val) {
+		public double limit(
+				final double val
+		) {
 			if (val < mMin)
 				return mMin;
 			else if (val > mMax)
@@ -60,13 +68,13 @@ public interface Constraint {
 			else
 				return val;
 		}
-		
+
+		@Override
 		public String toString() {
 			return "Range[" + mMin + "," + mMax + "]";
 		}
 	}
-	
-	
+
 	/**
 	 * Takes the value <code>val</code> and ensures that it is within the bounds of
 	 * the constraint.
@@ -74,5 +82,7 @@ public interface Constraint {
 	 * @param val
 	 * @return double val constrained
 	 */
-	public double limit(double val);
+	public double limit(
+			double val
+	);
 }

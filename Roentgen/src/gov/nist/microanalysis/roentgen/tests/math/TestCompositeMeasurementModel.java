@@ -15,8 +15,8 @@ import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
@@ -25,18 +25,58 @@ import junit.framework.TestCase;
 /**
  * @author Nicholas
  */
-public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
+public class TestCompositeMeasurementModel extends TestCase {
 
-	private final List<String> mInputs = Arrays.asList("X0", "X1", "X2");
-	private final List<String> mOut1 = Arrays.asList("F1_0", "F1_1", "F1_2");
-	private final List<String> mInputs2 = Arrays.asList("X0", "X1", "X2", "F1_0", "F1_1", "F1_2");
-	private final List<String> mOut2 = Arrays.asList("F2_0", "F2_1");
+	private static final class Step2 extends ExplicitMeasurementModel<String, String> {
 
-	private final LabeledMultivariateJacobianFunction<String, String> mStep1 = new LabeledMultivariateJacobianFunction<String, String>(
-			mInputs, mOut1) {
+		private Step2(
+				final List<String> inputLabels, //
+				final List<String> outputLabels
+		) throws ArgumentException {
+			super(inputLabels, outputLabels);
+		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
+			final double x0 = point.getEntry(0);
+			final double x1 = point.getEntry(1);
+			final double x2 = point.getEntry(2);
+			final double f1_0 = point.getEntry(3);
+			final double f1_1 = point.getEntry(4);
+			final double f1_2 = point.getEntry(5);
+			final RealVector fv = new ArrayRealVector(2);
+			final RealMatrix jac = MatrixUtils.createRealMatrix(2, 6);
+			fv.setEntry(0, Math.log(7.0 * f1_1 + f1_2) + 3.0 * x1 + 11.0 * x2);
+			jac.setEntry(0, 1, 3.0);
+			jac.setEntry(0, 2, 11.0);
+			jac.setEntry(0, 4, (1.0 / (7.0 * f1_1 + f1_2)) * 7.0);
+			jac.setEntry(0, 5, (1.0 / (7.0 * f1_1 + f1_2)) * 1.0);
+
+			fv.setEntry(1, Math.log(f1_2 + 3.0 * f1_0) + 7.0 * x0 + 2.0 * x2);
+			jac.setEntry(1, 0, 7.0);
+			jac.setEntry(1, 2, 2.0);
+			jac.setEntry(1, 3, (1.0 / (f1_2 + 3.0 * f1_0)) * 3.0);
+			jac.setEntry(1, 5, (1.0 / (f1_2 + 3.0 * f1_0)) * 1.0);
+
+			return Pair.create(fv, jac);
+		}
+	}
+
+	private static final class Step1 extends ExplicitMeasurementModel<String, String> {
+
+		private Step1(
+				final List<String> inputLabels, //
+				final List<String> outputLabels
+		) throws ArgumentException {
+			super(inputLabels, outputLabels);
+		}
+
+		@Override
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 			final RealVector fv = new ArrayRealVector(getOutputDimension());
 			final RealMatrix jac = MatrixUtils.createRealMatrix(getOutputDimension(), getOutputDimension());
 			final int ix0 = inputIndex("X0");
@@ -64,36 +104,12 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 			jac.setEntry(iF1_2, ix2, Math.pow(point.getEntry(ix2), 7.0));
 			return Pair.create(fv, jac);
 		}
-	};
+	}
 
-	private final LabeledMultivariateJacobianFunction<String, String> mStep2 = new LabeledMultivariateJacobianFunction<String, String>(
-			mInputs2, mOut2) {
-
-		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final double x0 = point.getEntry(0);
-			final double x1 = point.getEntry(1);
-			final double x2 = point.getEntry(2);
-			final double f1_0 = point.getEntry(3);
-			final double f1_1 = point.getEntry(4);
-			final double f1_2 = point.getEntry(5);
-			final RealVector fv = new ArrayRealVector(2);
-			final RealMatrix jac = MatrixUtils.createRealMatrix(2, 6);
-			fv.setEntry(0, Math.log(7.0 * f1_1 + f1_2) + 3.0 * x1 + 11.0 * x2);
-			jac.setEntry(0, 1, 3.0);
-			jac.setEntry(0, 2, 11.0);
-			jac.setEntry(0, 4, (1.0 / (7.0 * f1_1 + f1_2)) * 7.0);
-			jac.setEntry(0, 5, (1.0 / (7.0 * f1_1 + f1_2)) * 1.0);
-
-			fv.setEntry(1, Math.log(f1_2 + 3.0 * f1_0) + 7.0 * x0 + 2.0 * x2);
-			jac.setEntry(1, 0, 7.0);
-			jac.setEntry(1, 2, 2.0);
-			jac.setEntry(1, 3, (1.0 / (f1_2 + 3.0 * f1_0)) * 3.0);
-			jac.setEntry(1, 5, (1.0 / (f1_2 + 3.0 * f1_0)) * 1.0);
-
-			return Pair.create(fv, jac);
-		}
-	};
+	private final List<String> mInputs = Arrays.asList("X0", "X1", "X2");
+	private final List<String> mOut1 = Arrays.asList("F1_0", "F1_1", "F1_2");
+	private final List<String> mInputs2 = Arrays.asList("X0", "X1", "X2", "F1_0", "F1_1", "F1_2");
+	private final List<String> mOut2 = Arrays.asList("F2_0", "F2_1");
 
 	private final RealVector mValues0 = new ArrayRealVector(new double[] { 2.3, 3.5, 1.3 });
 	private final RealMatrix mCov0 = new Array2DRowRealMatrix(
@@ -108,7 +124,9 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 	private final UncertainValues<String> mInput1 = new UncertainValues<>(mInputs, mValues1, mCov1);
 
 	public void test1() throws IOException, ArgumentException {
-		final UncertainValuesBase<String> uv = UncertainValuesBase.propagateAnalytical(mStep1, mInput0);
+		final Step1 step1 = new Step1(mInputs, mOut1);
+
+		final UncertainValuesBase<String> uv = UncertainValuesBase.propagateAnalytical(step1, mInput0);
 		final Report rep = new Report("Step 1");
 		rep.addHeader("Inputs");
 		rep.add(mInput0);
@@ -127,13 +145,17 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 	}
 
 	public void test2() throws IOException, ArgumentException {
-		final List<LabeledMultivariateJacobianFunction<String, String>> steps = Arrays.asList(mStep1, mStep2);
-		final CompositeLabeledMultivariateJacobianFunction<String> msnmjf = //
-				new CompositeLabeledMultivariateJacobianFunction<String>("Test1", steps);
-		final UncertainValues<String> uv = UncertainValues.asUncertainValues(UncertainValuesBase.propagateAnalytical(msnmjf, mInput1));
+		final Step1 step1 = new Step1(mInputs, mOut1);
+		final Step2 step2 = new Step2(mInputs2, mOut2);
+
+		final List<ExplicitMeasurementModel<String, String>> steps = Arrays.asList(step1, step2);
+		final CompositeMeasurementModel<String> msnmjf = //
+				new CompositeMeasurementModel<String>("Test1", steps);
+		final UncertainValues<String> uv = UncertainValues
+				.asUncertainValues(UncertainValuesBase.propagateAnalytical(msnmjf, mInput1));
 		final UncertainValuesBase<String> mc = UncertainValuesBase.propagateMonteCarlo(msnmjf, mInput1, 100000);
-		final UncertainValuesCalculator<String> delta = UncertainValuesBase.propagateFiniteDifference(//
-				msnmjf, mInput1, mInput1.getValues().mapMultiply(0.001));
+		final UncertainValuesCalculator<String> delta = UncertainValuesBase.propagateFiniteDifference(msnmjf, mInput1,
+				0.001);
 		final Report rep = new Report("Step 1 and 2");
 		rep.addHeader("Inputs");
 		rep.add(mInput1);
@@ -152,15 +174,18 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 	}
 
 	public void test3() throws IOException, ArgumentException {
-		final List<LabeledMultivariateJacobianFunction<String, String>> steps = Arrays.asList(mStep1, mStep2);
+		final Step1 step1 = new Step1(mInputs, mOut1);
+		final Step2 step2 = new Step2(mInputs2, mOut2);
+
+		final List<ExplicitMeasurementModel<String, String>> steps = Arrays.asList(step1, step2);
 
 		final List<String> outputs = Arrays.asList("F2_0", "F1_0", "F1_2");
 
-		final CompositeLabeledMultivariateJacobianFunction<String> trimmed = //
-				new CompositeLabeledMultivariateJacobianFunction<String>("Trimmed", steps, outputs);
+		final CompositeMeasurementModel<String> trimmed = //
+				new CompositeMeasurementModel<String>("Trimmed", steps, outputs);
 
-		final CompositeLabeledMultivariateJacobianFunction<String> full = //
-				new CompositeLabeledMultivariateJacobianFunction<String>("Full", steps);
+		final CompositeMeasurementModel<String> full = //
+				new CompositeMeasurementModel<String>("Full", steps);
 
 		final UncertainValuesBase<String> trimRes = UncertainValuesBase.propagateAnalytical(trimmed, mInput1);
 		final UncertainValuesBase<String> fullRes = UncertainValuesBase.propagateAnalytical(full, mInput1);
@@ -181,7 +206,9 @@ public class TestSerialLabeledMultivariateJacobianFunction extends TestCase {
 		}
 	}
 
-	public void testValues(final double v1, final double v2, final double eps) {
+	public void testValues(
+			final double v1, final double v2, final double eps
+			) {
 		if (Double.isFinite((v1 - v2) / v2))
 			assertEquals(0.0, Math.abs((v1 - v2) / v1), eps);
 		else

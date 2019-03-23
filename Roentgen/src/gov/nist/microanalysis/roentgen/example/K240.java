@@ -32,6 +32,7 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.XPPMatrixCorrection2;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
@@ -158,8 +159,9 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
-				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValuesBase<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				mcm.addConstraints(mcm.buildConstraints(input));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -384,8 +386,9 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
-				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValuesBase<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				mcm.addConstraints(mcm.buildConstraints(input));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -641,8 +644,10 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
-				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValuesBase<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				mcm.addConstraints(mcm.buildConstraints(input));
+
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -882,8 +887,10 @@ public class K240 {
 				defOut.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Calculated));
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null, defOut);
-				final MatrixCorrectionModel2 mcm = cfk.getModel();
-				final UncertainValuesBase<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				mcm.addConstraints(mcm.buildConstraints(input));
+
 				// Calculate the optimal k-ratios
 				final RealVector inputs = input.extractValues(mcm.getInputLabels());
 				final RealVector calculated = mcm.optimized(inputs);

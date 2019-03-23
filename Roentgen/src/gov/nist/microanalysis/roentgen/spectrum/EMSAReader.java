@@ -41,7 +41,9 @@ public class EMSAReader implements ISpectrumReader {
 
 	private final NumberFormat mDefaultFormat = NumberFormat.getInstance(Locale.US);
 
-	private double parseDouble(String value) {
+	private double parseDouble(
+			String value
+	) {
 		try {
 			if (value.indexOf('+') != -1)
 				value = value.replaceAll("\\+", "");
@@ -53,7 +55,9 @@ public class EMSAReader implements ISpectrumReader {
 		}
 	}
 
-	private int findMonth(final String month) {
+	private int findMonth(
+			final String month
+	) {
 		final String[] months = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
 		for (int i = 0; i < months.length; ++i)
 			if (month.equalsIgnoreCase(months[i]))
@@ -66,7 +70,9 @@ public class EMSAReader implements ISpectrumReader {
 	 * @param acquired
 	 * @return Date
 	 */
-	private Date parseTime(final String str, final Date acquired) {
+	private Date parseTime(
+			final String str, final Date acquired
+	) {
 		int day, month, year, hour = 9, min = 0, sec = 0;
 		final Calendar c = Calendar.getInstance();
 		if (acquired != null)
@@ -93,7 +99,9 @@ public class EMSAReader implements ISpectrumReader {
 	 * @param acquired
 	 * @return Date
 	 */
-	private Date parseDate(final String value, final Date acquired) {
+	private Date parseDate(
+			final String value, final Date acquired
+	) {
 		final Calendar c = Calendar.getInstance();
 		// Default to today
 		int day = c.get(Calendar.DAY_OF_MONTH);
@@ -135,7 +143,9 @@ public class EMSAReader implements ISpectrumReader {
 		return new Date(c.getTimeInMillis());
 	}
 
-	private String[] split(final String line) {
+	private String[] split(
+			final String line
+	) {
 		final int p1 = line.indexOf(':');
 		final String tag = p1 != -1 ? line.substring(0, p1).toUpperCase().trim() : "";
 		final int p2 = tag.indexOf('-', 2);
@@ -147,7 +157,9 @@ public class EMSAReader implements ISpectrumReader {
 		return res;
 	}
 
-	private Pair<Element, Double> parsePair(final String elStr) {
+	private Pair<Element, Double> parsePair(
+			final String elStr
+	) {
 		if (elStr.startsWith("(") && elStr.endsWith(")")) {
 			final int p = elStr.indexOf(":");
 			if (p > 0) {
@@ -159,7 +171,9 @@ public class EMSAReader implements ISpectrumReader {
 		return null;
 	}
 
-	private Composition parseComposition(final String compStr) throws ArgumentException {
+	private Composition parseComposition(
+			final String compStr
+	) throws ArgumentException {
 		// Name,(el1:qty1),(el2:qty2),...,density
 		try {
 			final String[] items = compStr.split(",");
@@ -182,7 +196,10 @@ public class EMSAReader implements ISpectrumReader {
 	}
 
 	@Override
-	public EDSSpectrum read(final InputStream fis, final int i) throws IOException {
+	public EDSSpectrum read(
+			final InputStream fis, //
+			final int i
+	) throws IOException, ArgumentException {
 		if (i > 1)
 			return null;
 		final Reader rd = new InputStreamReader(fis, Charset.forName("US-ASCII"));
@@ -303,7 +320,9 @@ public class EMSAReader implements ISpectrumReader {
 		}
 	}
 
-	public boolean matches(final InputStream fis) {
+	public boolean matches(
+			final InputStream fis
+			) {
 		try (final InputStreamReader isr = new InputStreamReader(fis, Charset.forName("US-ASCII"))) {
 			try (final BufferedReader br = new BufferedReader(isr)) {
 				String line = br.readLine();
@@ -326,7 +345,9 @@ public class EMSAReader implements ISpectrumReader {
 	}
 
 	@Override
-	public int getSpectrumCount(final InputStream fis) {
+	public int getSpectrumCount(
+			final InputStream fis
+			) {
 		return matches(fis) ? 1 : 0;
 	}
 

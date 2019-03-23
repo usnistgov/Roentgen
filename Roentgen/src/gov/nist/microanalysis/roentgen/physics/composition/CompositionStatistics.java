@@ -10,8 +10,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AnalyticalTotalTag;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
@@ -34,17 +35,21 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MeanZTa
  *
  */
 public class CompositionStatistics //
-		extends LabeledMultivariateJacobianFunction<MaterialLabel, CompositionalStatisticTag> //
+		extends ExplicitMeasurementModel<MaterialLabel, CompositionalStatisticTag> //
 		implements ILabeledMultivariateFunction<MaterialLabel, CompositionalStatisticTag> {
 
-	private static List<MaterialLabel> buildInputs(final Material mat) {
+	private static List<MaterialLabel> buildInputs(
+			final Material mat
+	) {
 		final List<MaterialLabel> res = new ArrayList<>();
 		res.addAll(MaterialLabel.buildMassFractionTags(mat));
 		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
 		return res;
 	}
 
-	private static List<CompositionalStatisticTag> buildOutputTags(final Material mat) {
+	private static List<CompositionalStatisticTag> buildOutputTags(
+			final Material mat
+	) {
 		final List<CompositionalStatisticTag> res = new ArrayList<>();
 		res.add(MaterialLabel.buildAnalyticalTotalTag(mat));
 		res.add(MaterialLabel.buildMeanAtomicNumberTag(mat));
@@ -57,8 +62,11 @@ public class CompositionStatistics //
 	/**
 	 * @param inputLabels
 	 * @param outputLabels
+	 * @throws ArgumentException
 	 */
-	public CompositionStatistics(final Material mat) {
+	public CompositionStatistics(
+			final Material mat
+	) throws ArgumentException {
 		super(buildInputs(mat), buildOutputTags(mat));
 		mMaterial = mat;
 	}
@@ -71,7 +79,9 @@ public class CompositionStatistics //
 	 * #optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector res = buildResult();
 		double meanA = 0.0, total = 0.0, meanZ = 0.0;
 		for (final Element elm : mMaterial.getElementSet()) {
@@ -98,7 +108,9 @@ public class CompositionStatistics //
 	 * value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		assert point.getDimension() == getInputDimension();
 		double meanA = 0.0, total = 0.0, meanZ = 0.0;
 		final RealVector res = buildResult();

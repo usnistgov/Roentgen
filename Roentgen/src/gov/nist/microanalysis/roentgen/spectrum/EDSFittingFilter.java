@@ -11,8 +11,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.IntInterval;
-import gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.spectrum.LineshapeCalibration.InvertMode;
@@ -27,22 +28,28 @@ import gov.nist.microanalysis.roentgen.spectrum.SpectrumLabel.Raw;
  * @author Nicholas
  * @version 1.0
  */
-abstract public class EDSFittingFilter extends MultiLinearJacobianFunction<Raw, Filtered> {
+abstract public class EDSFittingFilter extends MultiLinearMeasurementModel<Raw, Filtered> {
 
 	final static protected double GCONST = 1.0 / Math.sqrt(2.0 * Math.PI);
 
-	static private List<Filtered> buildFilteredLabels(final int n) {
+	static private List<Filtered> buildFilteredLabels(
+			final int n
+	) {
 		final List<Filtered> lbls = new ArrayList<>();
 		for (int i = 0; i < n; ++i)
 			lbls.add(new Filtered(i));
 		return lbls;
 	}
-	static private List<Raw> buildSpectrumLabels(final int n) {
+
+	static private List<Raw> buildSpectrumLabels(
+			final int n
+	) {
 		final List<Raw> lbls = new ArrayList<>();
 		for (int i = 0; i < n; ++i)
 			lbls.add(new Raw(i));
 		return lbls;
 	}
+
 	protected final EnergyCalibration mEnergy;
 
 	protected final LineshapeCalibration mLineshape;
@@ -55,8 +62,13 @@ abstract public class EDSFittingFilter extends MultiLinearJacobianFunction<Raw, 
 	 * @param nInput
 	 * @param inputPrefix
 	 * @param outputPrefix
+	 * @throws ArgumentException
 	 */
-	public EDSFittingFilter(final int nChannels, final EnergyCalibration ec, final LineshapeCalibration ls) {
+	public EDSFittingFilter(
+			final int nChannels, //
+			final EnergyCalibration ec, //
+			final LineshapeCalibration ls
+	) throws ArgumentException {
 		super(buildSpectrumLabels(nChannels), buildFilteredLabels(nChannels));
 		mEnergy = ec;
 		mLineshape = ls;
@@ -70,7 +82,9 @@ abstract public class EDSFittingFilter extends MultiLinearJacobianFunction<Raw, 
 	 *             extent
 	 * @return int[] with [lowCh, highCh)
 	 */
-	public IntInterval extent(final double e, final double frac) {
+	public IntInterval extent(
+			final double e, final double frac
+	) {
 		final RealVector tmp = new ArrayRealVector(getInputDimension());
 		final double low = e - mLineshape.invert(e, InvertMode.LOWER_HALF, 1.0e-2 * frac);
 		final double high = e + mLineshape.invert(e, InvertMode.UPPER_HALF, 1.0e-2 * frac);
@@ -102,7 +116,9 @@ abstract public class EDSFittingFilter extends MultiLinearJacobianFunction<Raw, 
 		return new IntInterval(lowRes, highRes - 1);
 	}
 
-	public Set<IntInterval> extents(final Element elm, final double eMax, final double frac) {
+	public Set<IntInterval> extents(
+			final Element elm, final double eMax, final double frac
+	) {
 		final TreeSet<IntInterval> res = new TreeSet<>();
 		final CharacteristicXRay[] xrays = CharacteristicXRay.forElement(elm, mMinE, eMax);
 		for (final CharacteristicXRay cxr : xrays) {
@@ -130,7 +146,9 @@ abstract public class EDSFittingFilter extends MultiLinearJacobianFunction<Raw, 
 	 * @param filtered The filtered spectrum data
 	 * @return RealVector The filtered data with intervening regions zeroed.
 	 */
-	public RealVector zero(final Set<IntInterval> exts, final double eMax, final RealVector filtered) {
+	public RealVector zero(
+			final Set<IntInterval> exts, final double eMax, final RealVector filtered
+	) {
 		final RealVector res = new ArrayRealVector(filtered);
 		final SortedSet<IntInterval> ext = new TreeSet<>(exts);
 		final int maxCh = Math.min(filtered.getDimension(), mEnergy.channelIndex(eMax));

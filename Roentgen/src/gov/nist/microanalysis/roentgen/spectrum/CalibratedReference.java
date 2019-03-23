@@ -21,7 +21,9 @@ public class CalibratedReference {
 	/**
 	 * Constructs a CalibratedReference
 	 */
-	public CalibratedReference(final RealVector filtered, final IntInterval channels) {
+	public CalibratedReference(
+			final RealVector filtered, final IntInterval channels
+	) {
 		mChannels = channels;
 		mFiltered = filtered;
 	}

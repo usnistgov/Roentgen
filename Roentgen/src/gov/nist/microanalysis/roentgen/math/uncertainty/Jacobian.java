@@ -33,7 +33,9 @@ public class Jacobian<G, H> {
 	/**
 	 *
 	 */
-	public Jacobian(final List<? extends G> inputs, final List<? extends H> outputs, final RealMatrix rm) {
+	public Jacobian(
+			final List<? extends G> inputs, final List<? extends H> outputs, final RealMatrix rm
+	) {
 		assert rm.getColumnDimension() == inputs.size();
 		assert rm.getRowDimension() == outputs.size();
 		mInputs = new FastIndex<>(inputs);
@@ -50,7 +52,9 @@ public class Jacobian<G, H> {
 	 * @param output
 	 * @return double The partial derivative of output with respect to input
 	 */
-	public double getEntry(final G input, final H output) {
+	public double getEntry(
+			final G input, final H output
+	) {
 		return mJacobian.getEntry(mOutputs.indexOf(output), mInputs.indexOf(input));
 	}
 
@@ -62,7 +66,9 @@ public class Jacobian<G, H> {
 		return Collections.unmodifiableList(mOutputs);
 	}
 
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 		final BasicNumberFormat bnf = new BasicNumberFormat("0.00E0");
 		switch (mode) {
 		case TERSE:

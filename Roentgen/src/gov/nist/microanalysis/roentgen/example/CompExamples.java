@@ -198,7 +198,7 @@ public class CompExamples {
 			{
 				final Composition comp = Composition.elementByDifference(mat, Element.Iron, men,
 						Collections.emptyMap());
-				comp.setCalculator(comp.new FiniteDifference(comp.getInputValues().mapMultiply(0.001)));
+				comp.setCalculator(comp.new FiniteDifference(0.001));
 				r.add(comp, Mode.NORMAL);
 				r.add(comp, Mode.VERBOSE);
 			}

@@ -20,14 +20,14 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  */
 public class TrimmedNamedMultivariateJacobianFunction<G,H>
-		extends LabeledMultivariateJacobianFunction<G,H> implements ILabeledMultivariateFunction<G,H> {
+		extends ExplicitMeasurementModel<G,H> implements ILabeledMultivariateFunction<G,H> {
 
-	private final LabeledMultivariateJacobianFunction<? extends G,? extends H> mBase;
+	private final ExplicitMeasurementModel<? extends G,? extends H> mBase;
 	private RealVector mBaseInputs;
 	
 
 	/**
-	 * @param base         The base {@link LabeledMultivariateJacobianFunction}
+	 * @param base         The base {@link ExplicitMeasurementModel}
 	 * @param inputLabels  The input labels for the
 	 *                     {@link TrimmedNamedMultivariateJacobianFunction}
 	 * @param outputLabels The output labels for the
@@ -35,7 +35,7 @@ public class TrimmedNamedMultivariateJacobianFunction<G,H>
 	 * @throws ArgumentException
 	 */
 	public TrimmedNamedMultivariateJacobianFunction(//
-			final LabeledMultivariateJacobianFunction<? extends G,? extends H> base, //
+			final ExplicitMeasurementModel<? extends G,? extends H> base, //
 			final List<? extends G> inputLabels, //
 			final List<? extends H> outputLabels //
 	) throws ArgumentException {
@@ -51,7 +51,7 @@ public class TrimmedNamedMultivariateJacobianFunction<G,H>
 	
 	/**
 	 * The set of inputs from which the full set of inputs required
-	 * by the base {@link LabeledMultivariateJacobianFunction} is
+	 * by the base {@link ExplicitMeasurementModel} is
 	 * constructed.  
 	 * 
 	 * @param point

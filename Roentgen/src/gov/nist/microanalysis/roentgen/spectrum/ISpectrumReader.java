@@ -3,6 +3,8 @@ package gov.nist.microanalysis.roentgen.spectrum;
 import java.io.IOException;
 import java.io.InputStream;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
+
 /**
  * <p>
  * This interface defines a mechanism for reading spectrum files from an
@@ -26,8 +28,11 @@ public interface ISpectrumReader {
 	 * @param i
 	 * @return Spectrum
 	 * @throws IOException
+	 * @throws ArgumentException
 	 */
-	public EDSSpectrum read(final InputStream f, final int i) throws IOException;
+	public EDSSpectrum read(
+			final InputStream f, final int i
+	) throws IOException, ArgumentException;
 
 	/**
 	 * Returns the number of spectra contained within f.
@@ -35,6 +40,8 @@ public interface ISpectrumReader {
 	 * @param f
 	 * @return 0 for none
 	 */
-	public int getSpectrumCount(InputStream is);
+	public int getSpectrumCount(
+			InputStream is
+	);
 
 }

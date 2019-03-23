@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.spectrum;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.Utility;
 
 /**
@@ -26,8 +27,13 @@ public class AdaptiveGaussianFilter extends EDSFittingFilter {
 	 * @param nChannels Number of channels in the spectrum data.
 	 * @param ec        EnergyCalibration
 	 * @param ls        LineshapeCalibration
+	 * @throws ArgumentException
 	 */
-	public AdaptiveGaussianFilter(final int nChannels, final EnergyCalibration ec, final LineshapeCalibration ls) {
+	public AdaptiveGaussianFilter(
+			final int nChannels, //
+			final EnergyCalibration ec, //
+			final LineshapeCalibration ls
+	) throws ArgumentException {
 		super(nChannels, ec, ls);
 	}
 
@@ -35,10 +41,12 @@ public class AdaptiveGaussianFilter extends EDSFittingFilter {
 	 * Construct the Jacobian matrix for the transform from spectrum channels into
 	 * filtered spectrum channels.
 	 *
-	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearJacobianFunction#buildLinearTransform(int)
+	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearMeasurementModel#buildLinearTransform(int)
 	 */
 	@Override
-	public RealMatrix buildLinearTransform(final int nCh, final int ignored) {
+	public RealMatrix buildLinearTransform(
+			final int nCh, final int ignored
+	) {
 		final RealMatrix res = MatrixUtils.createRealMatrix(nCh, nCh);
 		for (int fCh = 0; fCh < nCh; ++fCh) {
 			final double eCh = mEnergy.averageEnergyForChannel(fCh);

@@ -21,7 +21,7 @@ import com.duckandcover.html.Table;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
@@ -521,7 +521,7 @@ public class KRatioCorrectionModelTest {
 
 		final UncertainValuesBase<KRatioLabel> kratios = new UncertainValues<KRatioLabel>(vals);
 
-		final LabeledMultivariateJacobianFunction<MassFraction, MassFraction> elmByDiff = new ElementByDifference(unkMat, Element.Oxygen);
+		final ExplicitMeasurementModel<MassFraction, MassFraction> elmByDiff = new ElementByDifference(unkMat, Element.Oxygen);
 
 		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(vals.keySet(), elmByDiff);
 		final UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(iter.iterate(kratios));

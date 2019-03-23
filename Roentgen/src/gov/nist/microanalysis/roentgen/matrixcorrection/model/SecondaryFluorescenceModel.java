@@ -8,8 +8,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 
@@ -18,12 +19,14 @@ import gov.nist.microanalysis.roentgen.physics.AtomicShell;
  *
  */
 public class SecondaryFluorescenceModel //
-		extends LabeledMultivariateJacobianFunction<EPMALabel, EPMALabel> {
+		extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
 
 	public static class SecondaryFluorescenceLabel //
 			extends EPMALabel.BaseLabel<MatrixCorrectionDatum, AtomicShell, Object> {
 
-		public SecondaryFluorescenceLabel(final MatrixCorrectionDatum mcd, final AtomicShell shell) {
+		public SecondaryFluorescenceLabel(
+				final MatrixCorrectionDatum mcd, final AtomicShell shell
+		) {
 			super("Fs", mcd, shell);
 		}
 
@@ -39,9 +42,12 @@ public class SecondaryFluorescenceModel //
 	/**
 	 * @param inputLabels
 	 * @param outputLabels
+	 * @throws ArgumentException
 	 */
-	public SecondaryFluorescenceModel(final List<EPMALabel> inputLabels,
-			final List<EPMALabel> outputLabels) {
+	public SecondaryFluorescenceModel(
+			final List<EPMALabel> inputLabels, //
+			final List<EPMALabel> outputLabels
+	) throws ArgumentException {
 		super(inputLabels, outputLabels);
 	}
 
@@ -53,7 +59,9 @@ public class SecondaryFluorescenceModel //
 	 * value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector rv = new ArrayRealVector(new double[] { 1.0 });
 		final double dFs = 1.0e-5;
 		final RealMatrix rm = MatrixUtils.createRealMatrix(new double[][] { { dFs * dFs } });

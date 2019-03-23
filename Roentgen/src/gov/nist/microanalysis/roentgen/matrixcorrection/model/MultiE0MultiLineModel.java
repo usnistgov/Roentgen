@@ -17,10 +17,10 @@ import org.apache.commons.math3.util.Pair;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
-import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunctionBuilder;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
@@ -56,13 +56,14 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
  *
  */
 class MultiE0MultiLineModel //
-		extends CompositeLabeledMultivariateJacobianFunction<EPMALabel> {
+		extends CompositeMeasurementModel<EPMALabel> {
 
 	private static class IntensityModel //
-			extends LabeledMultivariateJacobianFunction<EPMALabel,EPMALabel> //
-			implements ILabeledMultivariateFunction<EPMALabel,EPMALabel> {
+			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
+			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
 
-		private static List<EPMALabel> buildInputTags(//
+		private static List<EPMALabel> buildInputTags(
+				//
 				final MatrixCorrectionDatum mcd, //
 				final ElementXRaySet exrs //
 		) {
@@ -77,9 +78,12 @@ class MultiE0MultiLineModel //
 			}
 			return res;
 		}
-		private static List<EPMALabel> buildOutputTags(//
+
+		private static List<EPMALabel> buildOutputTags(
+				//
 				final MatrixCorrectionDatum mcd, //
-				final ElementXRaySet exrs) {
+				final ElementXRaySet exrs
+		) {
 			return Collections.singletonList(intensityLabel(mcd, exrs));
 		}
 
@@ -87,17 +91,19 @@ class MultiE0MultiLineModel //
 
 		private final ElementXRaySet mXRaySet;
 
-		public IntensityModel( //
+		public IntensityModel(
 				final MatrixCorrectionDatum mcd, //
 				final ElementXRaySet exrs //
-		) {
+		) throws ArgumentException {
 			super(buildInputTags(mcd, exrs), buildOutputTags(mcd, exrs));
 			mDatum = mcd;
 			mXRaySet = exrs;
 		}
 
 		@Override
-		public RealVector optimized(final RealVector point) {
+		public RealVector optimized(
+				final RealVector point
+		) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final int intIdx = outputIndex(intensityLabel(mDatum, mXRaySet));
 			final Map<AtomicShell, Set<CharacteristicXRay>> shells = new HashMap<>();
@@ -137,7 +143,9 @@ class MultiE0MultiLineModel //
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
@@ -181,10 +189,11 @@ class MultiE0MultiLineModel //
 	}
 
 	private static class IonizationCrossSection //
-			extends LabeledMultivariateJacobianFunction<EPMALabel,EPMALabel> //
-			implements ILabeledMultivariateFunction<EPMALabel,EPMALabel> {
+			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
+			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
 
-		static private List<EPMALabel> buildInputLabels( //
+		static private List<EPMALabel> buildInputLabels(
+				//
 				final MatrixCorrectionDatum mcd, final AtomicShell sh //
 		) {
 			final List<EPMALabel> res = new ArrayList<>();
@@ -192,7 +201,10 @@ class MultiE0MultiLineModel //
 			res.add(MatrixCorrectionModel2.beamEnergyLabel(mcd));
 			return res;
 		}
-		static private List<EPMALabel> buildOutputLabels(final MatrixCorrectionDatum mcd, final AtomicShell sh) {
+
+		static private List<EPMALabel> buildOutputLabels(
+				final MatrixCorrectionDatum mcd, final AtomicShell sh
+		) {
 			return Collections.singletonList(buildICXLabel(mcd, sh));
 		}
 
@@ -200,14 +212,19 @@ class MultiE0MultiLineModel //
 
 		private final MatrixCorrectionDatum mDatum;
 
-		public IonizationCrossSection(final MatrixCorrectionDatum mcd, final AtomicShell sh) {
+		public IonizationCrossSection(
+				final MatrixCorrectionDatum mcd, //
+				final AtomicShell sh
+		) throws ArgumentException {
 			super(buildInputLabels(mcd, sh), buildOutputLabels(mcd, sh));
 			mShell = sh;
 			mDatum = mcd;
 		}
 
 		@Override
-		public RealVector optimized(final RealVector point) {
+		public RealVector optimized(
+				final RealVector point
+		) {
 			assert point.getDimension() == getInputDimension();
 			final double eL = 1.0e-3 * mShell.getEdgeEnergy();
 			final int e0Idx = inputIndex(MatrixCorrectionModel2.beamEnergyLabel(mDatum));
@@ -228,7 +245,9 @@ class MultiE0MultiLineModel //
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 			assert point.getDimension() == getInputDimension();
 			assert getOutputDimension() == 1;
 			final double eL = 1.0e-3 * mShell.getEdgeEnergy();
@@ -253,10 +272,12 @@ class MultiE0MultiLineModel //
 	}
 
 	private static class KRatioZAFModel //
-			extends LabeledMultivariateJacobianFunction<EPMALabel,EPMALabel> //
-			implements ILabeledMultivariateFunction<EPMALabel,EPMALabel> {
+			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
+			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
 
-		private static List<EPMALabel> buildInputLabels(final KRatioLabel krl) {
+		private static List<EPMALabel> buildInputLabels(
+				final KRatioLabel krl
+		) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(intensityLabel(krl.getUnknown(), krl.getXRaySet()));
 			res.add(intensityLabel(krl.getStandard(), krl.getXRaySet()));
@@ -265,7 +286,9 @@ class MultiE0MultiLineModel //
 			return res;
 		}
 
-		private static List<EPMALabel> buildOutputLabels(final KRatioLabel krl) {
+		private static List<EPMALabel> buildOutputLabels(
+				final KRatioLabel krl
+		) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.zafLabel(krl));
 			res.add(krl.asCalculated());
@@ -274,13 +297,17 @@ class MultiE0MultiLineModel //
 
 		private final KRatioLabel mKRatio;
 
-		public KRatioZAFModel(final KRatioLabel krl) {
+		public KRatioZAFModel(
+				final KRatioLabel krl
+		) throws ArgumentException {
 			super(buildInputLabels(krl), buildOutputLabels(krl));
 			mKRatio = krl;
 		}
 
 		@Override
-		public RealVector optimized(final RealVector point) {
+		public RealVector optimized(
+				final RealVector point
+		) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final UnknownMatrixCorrectionDatum unk = mKRatio.getUnknown();
 			final StandardMatrixCorrectionDatum std = mKRatio.getStandard();
@@ -314,7 +341,9 @@ class MultiE0MultiLineModel //
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 			final UnknownMatrixCorrectionDatum unk = mKRatio.getUnknown();
@@ -353,11 +382,14 @@ class MultiE0MultiLineModel //
 
 	}
 
-	public static EPMALabel buildICXLabel(final MatrixCorrectionDatum mcd, final AtomicShell sh) {
+	public static EPMALabel buildICXLabel(
+			final MatrixCorrectionDatum mcd, final AtomicShell sh
+	) {
 		return new EPMALabel.BaseLabel<MatrixCorrectionDatum, AtomicShell, Object>("ICX", mcd, sh);
 	}
 
-	private static List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> buildSteps( //
+	private static List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> buildSteps(
+			//
 			final Set<KRatioLabel> kratios //
 	) throws ArgumentException {
 		final Map<MatrixCorrectionDatum, Set<AtomicShell>> allMcd = new HashMap<>();
@@ -378,37 +410,40 @@ class MultiE0MultiLineModel //
 			}
 		}
 
-		final List<LabeledMultivariateJacobianFunction<? extends EPMALabel,? extends EPMALabel>> res = new ArrayList<>();
+		final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> res = new ArrayList<>();
 		{
-			final List<LabeledMultivariateJacobianFunction<? extends EPMALabel,? extends EPMALabel>> funcs = new ArrayList<>();
+			final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> funcs = new ArrayList<>();
 			for (final Map.Entry<MatrixCorrectionDatum, Set<AtomicShell>> me : allMcd.entrySet())
 				for (final AtomicShell sh : me.getValue())
 					funcs.add(new IonizationCrossSection(me.getKey(), sh));
-			res.add(LabeledMultivariateJacobianFunctionBuilder.join("ICXs", funcs));
+			res.add(ParallelMeasurementModelBuilder.join("ICXs", funcs));
 		}
 		{
-			final List<LabeledMultivariateJacobianFunction<? extends EPMALabel,? extends EPMALabel>> funcs = new ArrayList<>();
+			final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> funcs = new ArrayList<>();
 			for (final KRatioLabel krl : kratios) {
 				final ElementXRaySet cxrs = krl.getXRaySet();
 				funcs.add(new IntensityModel(krl.getStandard(), cxrs));
 				funcs.add(new IntensityModel(krl.getUnknown(), cxrs));
 			}
-			res.add(LabeledMultivariateJacobianFunctionBuilder.join("Intensities", funcs));
+			res.add(ParallelMeasurementModelBuilder.join("Intensities", funcs));
 		}
 		{
-			final List<LabeledMultivariateJacobianFunction<? extends EPMALabel,? extends EPMALabel>> funcs = new ArrayList<>();
+			final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> funcs = new ArrayList<>();
 			for (final KRatioLabel krl : kratios)
 				funcs.add(new KRatioZAFModel(krl));
-			res.add(LabeledMultivariateJacobianFunctionBuilder.join("K-ratios", funcs));
+			res.add(ParallelMeasurementModelBuilder.join("K-ratios", funcs));
 		}
 		return res;
 	}
 
-	private static EPMALabel intensityLabel(final MatrixCorrectionDatum mcd, final ElementXRaySet exrs) {
+	private static EPMALabel intensityLabel(
+			final MatrixCorrectionDatum mcd, final ElementXRaySet exrs
+	) {
 		return new EPMALabel.BaseLabel<MatrixCorrectionDatum, ElementXRaySet, Object>("Intensity", mcd, exrs);
 	}
 
-	public MultiE0MultiLineModel( //
+	public MultiE0MultiLineModel(
+			//
 			final Set<KRatioLabel> kratios //
 	) throws ArgumentException {
 		super("Multi-E0", buildSteps(kratios));

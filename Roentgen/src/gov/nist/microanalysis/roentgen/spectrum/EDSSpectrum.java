@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 
 /**
@@ -91,9 +92,15 @@ public class EDSSpectrum {
 	 * @param zeroOffset   Zero offset in eV
 	 * @param data         Channel data
 	 * @param unmodifiable Whether the channel data should be modifiable
+	 * @throws ArgumentException
 	 */
-	public EDSSpectrum(final String name, final double eVperCh, final double zeroOffset, final double[] data,
-			final boolean unmodifiable) {
+	public EDSSpectrum(
+			final String name, //
+			final double eVperCh, //
+			final double zeroOffset, //
+			final double[] data, //
+			final boolean unmodifiable
+	) throws ArgumentException {
 		if (unmodifiable)
 			mData = RealVector.unmodifiableRealVector(new ArrayRealVector(data));
 		else
@@ -111,11 +118,15 @@ public class EDSSpectrum {
 	 * @param ch
 	 * @return double in eV
 	 */
-	public double energy(final int ch) {
+	public double energy(
+			final int ch
+	) {
 		return ch * mGain + mOffset;
 	}
 
-	public int channel(final double e) {
+	public int channel(
+			final double e
+	) {
 		return (int) Math.floor((e - mOffset) / mGain);
 	}
 
@@ -144,7 +155,9 @@ public class EDSSpectrum {
 	 *
 	 * @param energy {@link EnergyCalibration}
 	 */
-	public void setEnergyCalibration(final EnergyCalibration energy) {
+	public void setEnergyCalibration(
+			final EnergyCalibration energy
+	) {
 		mEnergy = energy;
 	}
 
@@ -162,7 +175,9 @@ public class EDSSpectrum {
 	 *
 	 * @param lineshape
 	 */
-	public void setLineshapeCalibration(final LineshapeCalibration lineshape) {
+	public void setLineshapeCalibration(
+			final LineshapeCalibration lineshape
+	) {
 		mLineshape = lineshape;
 	}
 
@@ -180,7 +195,9 @@ public class EDSSpectrum {
 	 *
 	 * @param acquired
 	 */
-	public void setAcquired(final Date acquired) {
+	public void setAcquired(
+			final Date acquired
+	) {
 		mAcquired = acquired;
 	}
 
@@ -198,7 +215,9 @@ public class EDSSpectrum {
 	 *
 	 * @param liveTime seconds
 	 */
-	public void setLiveTime(final double liveTime) {
+	public void setLiveTime(
+			final double liveTime
+	) {
 		mLiveTime = liveTime;
 	}
 
@@ -216,7 +235,9 @@ public class EDSSpectrum {
 	 *
 	 * @param realTime seconds
 	 */
-	public void setRealTime(final double realTime) {
+	public void setRealTime(
+			final double realTime
+	) {
 		mRealTime = realTime;
 	}
 
@@ -234,7 +255,9 @@ public class EDSSpectrum {
 	 *
 	 * @param beamEnergy eV
 	 */
-	public void setBeamEnergy(final double beamEnergy) {
+	public void setBeamEnergy(
+			final double beamEnergy
+	) {
 		mBeamEnergy = beamEnergy;
 	}
 
@@ -252,7 +275,9 @@ public class EDSSpectrum {
 	 *
 	 * @param probeCurrent in nA
 	 */
-	public void setProbeCurrent(final double probeCurrent) {
+	public void setProbeCurrent(
+			final double probeCurrent
+	) {
 		mProbeCurrent = probeCurrent;
 	}
 
@@ -267,7 +292,9 @@ public class EDSSpectrum {
 	static final public String X_TILT = "X Tilt";
 	static final public String Y_TILT = "Y Tilt";
 
-	public void setPosition(final Map<String, Double> position) {
+	public void setPosition(
+			final Map<String, Double> position
+	) {
 		mPosition = Collections.unmodifiableMap(position);
 	}
 
@@ -285,7 +312,9 @@ public class EDSSpectrum {
 	 *
 	 * @param composition The value to which to set composition.
 	 */
-	public void setComposition(final Composition composition) {
+	public void setComposition(
+			final Composition composition
+	) {
 		mComposition = composition;
 	}
 }

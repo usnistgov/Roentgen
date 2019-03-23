@@ -8,8 +8,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
@@ -21,10 +22,13 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  *
  */
 public class ElementByDifference //
-		extends LabeledMultivariateJacobianFunction<MassFraction, MassFraction> //
+		extends ExplicitMeasurementModel<MassFraction, MassFraction> //
 		implements ILabeledMultivariateFunction<MassFraction, MassFraction> {
 
-	private static List<MassFraction> buildInputs(final Material mat, final Element elmByDif) {
+	private static List<MassFraction> buildInputs(
+			final Material mat, //
+			final Element elmByDif
+	) {
 		final List<MassFraction> res = new ArrayList<>();
 		for (final Element elm : mat.getElementSet())
 			if (!elm.equals(elmByDif))
@@ -32,13 +36,18 @@ public class ElementByDifference //
 		return res;
 	}
 
-	public ElementByDifference(final Material mat, final Element elmByDiff) {
+	public ElementByDifference(
+			final Material mat, //
+			final Element elmByDiff //
+	) throws ArgumentException {
 		super(buildInputs(mat, elmByDiff),
 				Collections.singletonList(MaterialLabel.buildMassFractionTag(mat, elmByDiff)));
 	}
 
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector rv = buildResult();
 		assert getOutputDimension() == 1;
 		final MassFraction mfo = getOutputLabel(0);
@@ -55,7 +64,9 @@ public class ElementByDifference //
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector rv = buildResult();
 		final RealMatrix rm = buildJacobian();
 		assert getOutputDimension() == 1;

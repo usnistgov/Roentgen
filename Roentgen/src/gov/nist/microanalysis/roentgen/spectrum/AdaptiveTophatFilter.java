@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.spectrum;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.IntInterval;
 import gov.nist.microanalysis.roentgen.math.Utility;
 import gov.nist.microanalysis.roentgen.spectrum.LineshapeCalibration.InvertMode;
@@ -28,12 +29,19 @@ public class AdaptiveTophatFilter extends EDSFittingFilter {
 	 * @param nChannels Number of channels in the spectrum data.
 	 * @param ec        EnergyCalibration
 	 * @param ls        LineshapeCalibration
+	 * @throws ArgumentException
 	 */
-	public AdaptiveTophatFilter(final int nChannels, final EnergyCalibration ec, final LineshapeCalibration ls) {
+	public AdaptiveTophatFilter(
+			final int nChannels, //
+			final EnergyCalibration ec, //
+			final LineshapeCalibration ls
+	) throws ArgumentException {
 		super(nChannels, ec, ls);
 	}
 
-	public static void setUseFastExtent(final boolean fast) {
+	public static void setUseFastExtent(
+			final boolean fast
+	) {
 		FAST_EXTENT = fast;
 	}
 
@@ -41,10 +49,12 @@ public class AdaptiveTophatFilter extends EDSFittingFilter {
 	 * Construct the Jacobian matrix for the transform from spectrum channels into
 	 * filtered spectrum channels.
 	 *
-	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearJacobianFunction#buildLinearTransform(int)
+	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.MultiLinearMeasurementModel#buildLinearTransform(int)
 	 */
 	@Override
-	public RealMatrix buildLinearTransform(final int nCh, final int ignored) {
+	public RealMatrix buildLinearTransform(
+			final int nCh, final int ignored
+	) {
 		final RealMatrix res = MatrixUtils.createRealMatrix(nCh, nCh);
 		for (int fCh = 0; fCh < nCh; ++fCh) {
 			final double eCh = mEnergy.averageEnergyForChannel(fCh);
@@ -69,7 +79,9 @@ public class AdaptiveTophatFilter extends EDSFittingFilter {
 	}
 
 	@Override
-	public IntInterval extent(final double e, final double frac) {
+	public IntInterval extent(
+			final double e, final double frac
+	) {
 		if (FAST_EXTENT) {
 			final double filtW = EXTRA * FILTER_WIDTH * mLineshape.getFWHM(e);
 			final double f = 3.0e1 * frac;

@@ -17,7 +17,7 @@ import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
@@ -33,7 +33,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
  *
  */
 public class MaterialMACFunction //
-		extends LabeledMultivariateJacobianFunction<EPMALabel, MaterialMAC> //
+		extends ExplicitMeasurementModel<EPMALabel, MaterialMAC> //
 		implements ILabeledMultivariateFunction<EPMALabel, MaterialMAC> {
 
 	public static class DefaultDecorrelationFunction implements DecorrelationFunction {
@@ -41,7 +41,9 @@ public class MaterialMACFunction //
 		private final double mAbove;
 		private final double mBelow;
 
-		public DefaultDecorrelationFunction(final double above, final double below) {
+		public DefaultDecorrelationFunction(
+				final double above, final double below
+		) {
 			mAbove = above;
 			mBelow = Math.abs(below);
 		}
@@ -53,7 +55,9 @@ public class MaterialMACFunction //
 		 * DecorrelationFunction#compute(double, double)
 		 */
 		@Override
-		public double compute(final AtomicShell shell, final XRay xray) {
+		public double compute(
+				final AtomicShell shell, final XRay xray
+		) {
 			final double MIN_VAL = 0.1;
 			double res = 1.0;
 			final double delta = xray.getEnergy() - shell.getEdgeEnergy();
@@ -74,7 +78,9 @@ public class MaterialMACFunction //
 		private final double mAbove;
 		private final double mBelow;
 
-		public TotalDecorrelationFunction(final double above, final double below) {
+		public TotalDecorrelationFunction(
+				final double above, final double below
+		) {
 			mAbove = above;
 			mBelow = Math.abs(below);
 		}
@@ -86,7 +92,9 @@ public class MaterialMACFunction //
 		 * DecorrelationFunction#compute(double, double)
 		 */
 		@Override
-		public double compute(final AtomicShell shell, final XRay xray) {
+		public double compute(
+				final AtomicShell shell, final XRay xray
+		) {
 			double res = 1.0;
 			final double delta = xray.getEnergy() - shell.getEdgeEnergy();
 			if ((delta > -2.0 * mBelow) && (delta < mAbove))
@@ -97,7 +105,9 @@ public class MaterialMACFunction //
 
 	interface DecorrelationFunction {
 
-		public double compute(AtomicShell edgeEnergy, XRay xray);
+		public double compute(
+				AtomicShell edgeEnergy, XRay xray
+		);
 
 	}
 
@@ -106,15 +116,21 @@ public class MaterialMACFunction //
 	 *
 	 * @param comps A list of compositions to compute
 	 * @param xrays A list of x-ray energies to compute
+	 * @throws ArgumentException
 	 */
-	public static MaterialMACFunction build(final List<Composition> comps, final XRay xray) {
+	public static MaterialMACFunction build(
+			final List<Composition> comps, //
+			final XRay xray
+	) throws ArgumentException {
 		final List<Material> mats = new ArrayList<>();
 		for (final Composition comp : comps)
 			mats.add(comp.getMaterial());
 		return new MaterialMACFunction(mats, xray);
 	}
 
-	final static public UncertainValuesCalculator<EPMALabel> compute(final List<Composition> materials, final XRay xray) //
+	final static public UncertainValuesCalculator<EPMALabel> compute(
+			final List<Composition> materials, final XRay xray
+	) //
 			throws ArgumentException {
 		final List<Material> mats = new ArrayList<>();
 		for (final Composition comp : materials)
@@ -145,8 +161,10 @@ public class MaterialMACFunction //
 	 * @param decor DecorrelationFunction
 	 * @return A new UncertainValues object
 	 */
-	public static UncertainValues<EPMALabel> decorrelate( //
-			final UncertainValues<EPMALabel> uvs, final DecorrelationFunction decor) {
+	public static UncertainValues<EPMALabel> decorrelate(
+			//
+			final UncertainValues<EPMALabel> uvs, final DecorrelationFunction decor
+	) {
 		final UncertainValues<EPMALabel> res = uvs.copy();
 		final List<EPMALabel> labels = res.getLabels();
 		final int labelCx = labels.size();
@@ -191,9 +209,11 @@ public class MaterialMACFunction //
 	 * @param below Range below edge to decorrelate (nominally 5 eV)
 	 * @return
 	 */
-	static public UncertainValues<EPMALabel> decorrelate( //
+	static public UncertainValues<EPMALabel> decorrelate(
+			//
 			final UncertainValues<EPMALabel> uvs, //
-			final double above, final double below) {
+			final double above, final double below
+	) {
 		return decorrelate(uvs, new DefaultDecorrelationFunction(above, below));
 	}
 
@@ -216,13 +236,17 @@ public class MaterialMACFunction //
 	 * @param below Range below edge to decorrelate (nominally 5 eV)
 	 * @return
 	 */
-	static public UncertainValues<EPMALabel> decorrelate2( //
+	static public UncertainValues<EPMALabel> decorrelate2(
+			//
 			final UncertainValues<EPMALabel> uvs, //
-			final double above, final double below) {
+			final double above, final double below
+	) {
 		return decorrelate(uvs, new TotalDecorrelationFunction(above, below));
 	}
 
-	private static List<EPMALabel> inputTags(final List<Material> mats, final XRay xray) {
+	private static List<EPMALabel> inputTags(
+			final List<Material> mats, final XRay xray
+	) {
 		final List<EPMALabel> res = new ArrayList<>();
 		final Set<Element> elms = new HashSet<>();
 		for (final Material mat : mats) {
@@ -234,7 +258,9 @@ public class MaterialMACFunction //
 		return res;
 	}
 
-	private static List<MaterialMAC> outputTags(final List<Material> mats, final XRay xray) {
+	private static List<MaterialMAC> outputTags(
+			final List<Material> mats, final XRay xray
+	) {
 		final List<MaterialMAC> res = new ArrayList<>();
 		for (final Material mat : mats)
 			res.add(new MaterialMAC(mat, xray));
@@ -246,12 +272,16 @@ public class MaterialMACFunction //
 	 *
 	 * @param materials A list of materials to compute
 	 * @param xrays     A list of x-ray energies to compute
+	 * @throws ArgumentException
 	 */
-	public MaterialMACFunction(final List<Material> materials, final XRay xray) {
+	public MaterialMACFunction(
+			final List<Material> materials, final XRay xray
+	) throws ArgumentException {
 		super(inputTags(materials, xray), outputTags(materials, xray));
 	}
 
-	public UncertainValuesBase<EPMALabel> buildInputs(//
+	public UncertainValuesBase<EPMALabel> buildInputs(
+			//
 			final List<Composition> comps, //
 			final XRay xray //
 	) throws ArgumentException {
@@ -271,10 +301,11 @@ public class MaterialMACFunction //
 		luvb.add(new UncertainValues<EPMALabel>(men));
 		return UncertainValues.<EPMALabel>extract(getInputLabels(), luvb);
 	}
-	
 
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector res = new ArrayRealVector(getOutputDimension());
 		final List<? extends Object> macTags = getOutputLabels();
 		final List<? extends Object> inp = getInputLabels();
@@ -307,7 +338,9 @@ public class MaterialMACFunction //
 	 * @see org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector res = new ArrayRealVector(getOutputDimension());
 		final RealMatrix cov = NullableRealMatrix.build(getOutputDimension(), getInputDimension());
 		final List<? extends Object> macTags = getOutputLabels();

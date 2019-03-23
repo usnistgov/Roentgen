@@ -26,11 +26,11 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 /**
  * <p>
  * Turns a calculation based on a sequential set of
- * {@link LabeledMultivariateJacobianFunction} steps into a single
- * {@link CompositeLabeledMultivariateJacobianFunction}.
+ * {@link ExplicitMeasurementModel} steps into a single
+ * {@link CompositeMeasurementModel}.
  * </p>
  * <p>
- * Starting with mStep.get(0), the {@link LabeledMultivariateJacobianFunction}
+ * Starting with mStep.get(0), the {@link ExplicitMeasurementModel}
  * is evaluated against the input variables. The input variables plus the output
  * of step 0 become the input to step 1 and then the input variables plus the
  * output of step 0 and 1 become the input to step 2. In this way, complex
@@ -46,16 +46,17 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  *
  * @author Nicholas
  */
-public class CompositeLabeledMultivariateJacobianFunction<G> //
-		extends LabeledMultivariateJacobianFunction<G, G> //
+public class CompositeMeasurementModel<G> //
+		extends ExplicitMeasurementModel<G, G> //
 		implements ILabeledMultivariateFunction<G, G>, IToHTML {
 
-	public static <J, K> List<K> allOutputs( //
-			final List<? extends LabeledMultivariateJacobianFunction<? extends J, ? extends K>> steps //
+	public static <J, K> List<K> allOutputs(
+			//
+			final List<? extends ExplicitMeasurementModel<? extends J, ? extends K>> steps //
 	) throws ArgumentException {
 		final List<K> res = new ArrayList<>();
 		for (int i = 0; i < steps.size(); ++i) {
-			final LabeledMultivariateJacobianFunction<? extends J, ? extends K> step = steps.get(i);
+			final ExplicitMeasurementModel<? extends J, ? extends K> step = steps.get(i);
 			for (final K label : step.getOutputLabels()) {
 				if (res.contains(label))
 					throw new ArgumentException(label + " as defined a second time b step " + step.toString());
@@ -76,8 +77,9 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	 * @return List&lt;H&gt; A list of available output labels
 	 * @throws ArgumentException
 	 */
-	public static <H> List<H> buildOutputs( //
-			final List<? extends LabeledMultivariateJacobianFunction<? extends H, ? extends H>> steps, //
+	public static <H> List<H> buildOutputs(
+			//
+			final List<? extends ExplicitMeasurementModel<? extends H, ? extends H>> steps, //
 			final List<? extends H> outputs //
 	) throws ArgumentException {
 		final List<H> res = allOutputs(steps);
@@ -95,27 +97,28 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	 * @param steps The list of steps
 	 * @return Set&lt;Object&gt; The set of labels
 	 */
-	private static <G> List<G> labelsToRetain(//
+	private static <G> List<G> labelsToRetain(
+			//
 			final int step, //
-			final List<? extends LabeledMultivariateJacobianFunction<? extends G, ? extends G>> steps, //
+			final List<? extends ExplicitMeasurementModel<? extends G, ? extends G>> steps, //
 			final List<? extends G> outputs //
 	) {
 		final Set<G> inputs = new HashSet<>();
 		// Build a list of all the inputs required by this and subsequent steps
 		for (int st = step; st < steps.size(); ++st) {
-			final LabeledMultivariateJacobianFunction<? extends G, ? extends G> func = steps.get(st);
+			final ExplicitMeasurementModel<? extends G, ? extends G> func = steps.get(st);
 			inputs.addAll(func.getInputLabels());
 		}
 		// Remove all the outputs from this and subsequent steps
 		for (int st = step; st < steps.size() - 1; ++st) {
-			final LabeledMultivariateJacobianFunction<? extends G, ? extends G> func = steps.get(st);
-			if(!(func instanceof ImplicitMeasurementModel<?>))
+			final ExplicitMeasurementModel<? extends G, ? extends G> func = steps.get(st);
+			if (!(func instanceof ImplicitMeasurementModel<?>))
 				inputs.removeAll(func.getOutputLabels());
 		}
 		// Add all the outputs from previous steps that are in the final output list
 		final Set<G> retain = new HashSet<>();
 		for (int st = step - 1; st >= 0; --st) {
-			final LabeledMultivariateJacobianFunction<? extends G, ? extends G> func = steps.get(st);
+			final ExplicitMeasurementModel<? extends G, ? extends G> func = steps.get(st);
 			retain.addAll(func.getOutputLabels());
 		}
 		retain.retainAll(outputs);
@@ -129,30 +132,33 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	 * Steps in order from inner-most to outer-most. The output of the inner steps
 	 * become the input of the subsequent outer.
 	 */
-	private final List<LabeledMultivariateJacobianFunction<? extends G, ? extends G>> mSteps = new ArrayList<>();
+	private final List<ExplicitMeasurementModel<? extends G, ? extends G>> mSteps = new ArrayList<>();
 
 	/**
 	 * A list of the subset of outputs required to be retained from each step.
 	 */
 	private final List<List<G>> mOutputs;
 
-	public CompositeLabeledMultivariateJacobianFunction(//
-			final CompositeLabeledMultivariateJacobianFunction<G> func, //
+	public CompositeMeasurementModel(
+			//
+			final CompositeMeasurementModel<G> func, //
 			final List<G> outputs //
 	) throws ArgumentException {
 		this(func.mName, func.mSteps, outputs);
 	}
 
-	public CompositeLabeledMultivariateJacobianFunction( //
+	public CompositeMeasurementModel(
+			//
 			final String name, //
-			final List<? extends LabeledMultivariateJacobianFunction<? extends G, ? extends G>> steps //
+			final List<? extends ExplicitMeasurementModel<? extends G, ? extends G>> steps //
 	) throws ArgumentException {
 		this(name, steps, Collections.emptyList());
 	}
 
-	public CompositeLabeledMultivariateJacobianFunction( //
+	public CompositeMeasurementModel(
+			//
 			final String name, //
-			final List<? extends LabeledMultivariateJacobianFunction<? extends G, ? extends G>> steps, //
+			final List<? extends ExplicitMeasurementModel<? extends G, ? extends G>> steps, //
 			final List<? extends G> outputLabels //
 	) throws ArgumentException {
 		super(labelsToRetain(0, steps, buildOutputs(steps, outputLabels)), buildOutputs(steps, outputLabels));
@@ -174,7 +180,9 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	 * @returns int The index of the NamedMultivariateJacobianFunction in which this
 	 *          label is requested as input.
 	 */
-	final public int findAsInput(final Object label) {
+	final public int findAsInput(
+			final Object label
+	) {
 		for (int i = 0; i < mSteps.size(); ++i)
 			if (mSteps.get(i).getInputLabels().contains(label))
 				return i;
@@ -188,7 +196,9 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	 * @param idx On range [0, getStepCount())
 	 * @return NamedMultivariateJacobianFunction
 	 */
-	public LabeledMultivariateJacobianFunction<? extends G, ? extends G> getStep(final int idx) {
+	public ExplicitMeasurementModel<? extends G, ? extends G> getStep(
+			final int idx
+	) {
 		return mSteps.get(idx);
 	}
 
@@ -207,7 +217,9 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction#optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		assert point.getDimension() > 0 : "Zero dimension input in " + this.toString();
 		// The current set of input values. Starts as point and evolves.
 		RealVector currVals = point;
@@ -215,7 +227,7 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 		for (int step = 0; step < mSteps.size(); ++step) {
 			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
-			final LabeledMultivariateJacobianFunction<? extends G, ? extends G> func = mSteps.get(step);
+			final ExplicitMeasurementModel<? extends G, ? extends G> func = mSteps.get(step);
 			// Build the vector argument to func and call evaluate
 			final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 			final List<? extends G> fin = func.getInputLabels();
@@ -275,7 +287,9 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	}
 
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 		switch (mode) {
 		case TERSE:
 			return HTML.escape(mName) + ": A " + Integer.toString(mSteps.size()) + "-Step Calculation";
@@ -300,7 +314,7 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 			// Calculation");
 			for (int i = 0; i < mSteps.size(); ++i) {
 				report.addSubHeader("Step " + Integer.toString(i + 1));
-				final LabeledMultivariateJacobianFunction<? extends G, ? extends G> func = mSteps.get(i);
+				final ExplicitMeasurementModel<? extends G, ? extends G> func = mSteps.get(i);
 				final Table tbl = new Table();
 				tbl.addRow(Table.th("Input Variable"), Table.th("Source"));
 				for (final Object inlabel : func.getInputLabels()) {
@@ -369,7 +383,9 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 	 *      value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+			) {
 		assert point.getDimension() > 0 : "Zero dimension input in " + this.toString();
 		// The current set of output values
 		RealVector currVals = point;
@@ -380,7 +396,7 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 		for (int step = 0; step < mSteps.size(); ++step) {
 			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
-			final LabeledMultivariateJacobianFunction<? extends G, ? extends G> func = mSteps.get(step);
+			final ExplicitMeasurementModel<? extends G, ? extends G> func = mSteps.get(step);
 			// Initialize constants in ImplicitMeasurementModels
 			if (func instanceof ImplicitMeasurementModel<?>) {
 				@SuppressWarnings("unchecked")
@@ -438,7 +454,9 @@ public class CompositeLabeledMultivariateJacobianFunction<G> //
 		return Pair.create(currVals, cumJac);
 	}
 
-	protected void dumpCurrentValues(final int step, final List<? extends G> index, final RealVector vals) {
+	protected void dumpCurrentValues(
+			final int step, final List<? extends G> index, final RealVector vals
+			) {
 		if (sDump != null) {
 			final StringBuffer sb = new StringBuffer();
 			final NumberFormat nf = new HalfUpFormat("0.00E0");

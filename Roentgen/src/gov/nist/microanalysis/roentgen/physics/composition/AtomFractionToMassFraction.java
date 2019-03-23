@@ -7,8 +7,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
@@ -22,10 +23,12 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  *
  */
 public class AtomFractionToMassFraction //
-		extends LabeledMultivariateJacobianFunction<MaterialLabel, MassFraction> //
+		extends ExplicitMeasurementModel<MaterialLabel, MassFraction> //
 		implements ILabeledMultivariateFunction<MaterialLabel, MassFraction> {
 
-	private static List<MaterialLabel> buildInputTags(final Material mat) {
+	private static List<MaterialLabel> buildInputTags(
+			final Material mat
+	) {
 		final List<MaterialLabel> res = new ArrayList<>();
 		res.addAll(MaterialLabel.buildAtomFractionTags(mat));
 		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
@@ -39,14 +42,20 @@ public class AtomFractionToMassFraction //
 	 *
 	 * @param String html
 	 * @param        Collection&lt;Element&gt; The elements present in the material.
+	 * @throws ArgumentException
 	 */
-	public AtomFractionToMassFraction(final Material mat) {
+	public AtomFractionToMassFraction(
+			//
+			final Material mat //
+	) throws ArgumentException {
 		super(buildInputTags(mat), MaterialLabel.buildMassFractionTags(mat));
 		mMaterial = mat;
 	}
 
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector res = buildResult();
 		double den = 0.0;
 		for (final Element elm : mMaterial.getElementSet()) {
@@ -70,7 +79,9 @@ public class AtomFractionToMassFraction //
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector res = buildResult();
 		final RealMatrix jac = buildJacobian();
 		double den = 0.0;

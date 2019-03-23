@@ -13,6 +13,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
@@ -36,23 +37,29 @@ import gov.nist.microanalysis.roentgen.utility.FastIndex;
  *
  */
 public class ImplicitMeasurementModel<G> //
-		extends LabeledMultivariateJacobianFunction<G, G>//
+		extends ExplicitMeasurementModel<G, G>//
 		implements ILabeledMultivariateFunction<G, G> {
 
 	public static abstract class HModel<G> //
-			extends LabeledMultivariateJacobianFunction<G, G> {
-		
+			extends ExplicitMeasurementModel<G, G> {
+
 		private final List<G> mHInputLabels;
 		private final List<G> mHOutputLabels;
-	
-		private static <J> List<J> combine(final List<? extends J> inp, final List<? extends J> outp) {
+
+		private static <J> List<J> combine(
+				final List<? extends J> inp, final List<? extends J> outp
+		) {
 			final List<J> res = new ArrayList<>();
 			res.addAll(inp);
 			res.addAll(outp);
 			return res;
 		}
 
-		public HModel(final List<? extends G> inputLabels, final List<? extends G> outputLabels, final List<? extends G> hLabels) {
+		public HModel(
+				final List<? extends G> inputLabels, //
+				final List<? extends G> outputLabels, //
+				final List<? extends G> hLabels
+		) throws ArgumentException {
 			super(combine(inputLabels, outputLabels), new ArrayList<G>(hLabels));
 			assert hLabels.size() == outputLabels.size();
 			mHInputLabels = Collections.unmodifiableList(new FastIndex<>(inputLabels));
@@ -83,8 +90,9 @@ public class ImplicitMeasurementModel<G> //
 	 */
 	private final Map<G, Double> mConstants = new HashMap<>();
 
-	private static <H> List<H> buildInputs(//
-			final LabeledMultivariateJacobianFunction<? extends H, ? extends H> h, //
+	private static <H> List<H> buildInputs(
+			//
+			final ExplicitMeasurementModel<? extends H, ? extends H> h, //
 			final List<? extends H> outputLabels //
 	) {
 		final List<H> res = new ArrayList<>(h.getInputLabels());
@@ -92,11 +100,11 @@ public class ImplicitMeasurementModel<G> //
 		return res;
 	}
 
-	public ImplicitMeasurementModel(//
+	public ImplicitMeasurementModel(
 			final HModel<G> h, //
 			final List<? extends G> outputLabels, //
 			final ILabeledMultivariateFunction<G, G> altModel //
-	) {
+	) throws ArgumentException {
 		super(buildInputs(h, outputLabels), new ArrayList<>(outputLabels));
 		mHFunction = h;
 		final ArrayList<G> inputLabels = new ArrayList<>(h.getInputLabels());
@@ -108,10 +116,10 @@ public class ImplicitMeasurementModel<G> //
 		mAlternativeModel = altModel;
 	}
 
-	public ImplicitMeasurementModel(//
+	public ImplicitMeasurementModel(
 			final HModel<G> h, //
 			final List<G> outputLabels //
-	) {
+	) throws ArgumentException {
 		this(h, outputLabels, null);
 	}
 
@@ -141,7 +149,9 @@ public class ImplicitMeasurementModel<G> //
 	 * @param list
 	 * @param vals
 	 */
-	public void initializeConstants(final List<G> list, final RealVector vals) {
+	public void initializeConstants(
+			final List<G> list, final RealVector vals
+	) {
 		for (int i = 0; i < list.size(); ++i)
 			if (inputIndex(list.get(i)) == -1)
 				mConstants.put(list.get(i), vals.getEntry(i));
@@ -152,7 +162,9 @@ public class ImplicitMeasurementModel<G> //
 	 *
 	 * @param consts Map&lt;Object,Double&gt; where Object is a label
 	 */
-	public void initializeConstants(final Map<G, ? extends Number> consts) {
+	public void initializeConstants(
+			final Map<G, ? extends Number> consts
+	) {
 		for (final Entry<G, ? extends Number> me : consts.entrySet())
 			if (inputIndex(me.getKey()) == -1)
 				mConstants.put(me.getKey(), me.getValue().doubleValue());
@@ -164,7 +176,9 @@ public class ImplicitMeasurementModel<G> //
 	 * @param label
 	 * @return double
 	 */
-	public double getConstant(final G label) {
+	public double getConstant(
+			final G label
+	) {
 		assert inputIndex(label) == -1 : "Label " + label + " is a variable.";
 		assert mConstants.containsKey(label) : "Label " + label + " is not a constant";
 		return mConstants.get(label).doubleValue();
@@ -177,7 +191,9 @@ public class ImplicitMeasurementModel<G> //
 	 * @return true if <code>label</code> is initialized as a constant, false
 	 *         otherwise.
 	 */
-	public boolean isConstant(final Object label) {
+	public boolean isConstant(
+			final Object label
+	) {
 		return mConstants.containsKey(label);
 	}
 
@@ -185,7 +201,9 @@ public class ImplicitMeasurementModel<G> //
 		return mConstants.size();
 	}
 
-	public void assertHValues(final RealVector h, final double tol) {
+	public void assertHValues(
+			final RealVector h, final double tol
+	) {
 		for (int i = 0; i < h.getDimension(); ++i)
 			assert h.getEntry(i) < tol : //
 			mHFunction.getInputLabel(i) + " = " + h.getEntry(i) + " (> " + tol;
@@ -205,7 +223,9 @@ public class ImplicitMeasurementModel<G> //
 	 *      value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector hPoint = new ArrayRealVector(mHFunction.getInputDimension());
 		for (int r = 0; r < hPoint.getDimension(); ++r) {
 			final G hLbl = mHFunction.getInputLabel(r);
@@ -235,7 +255,9 @@ public class ImplicitMeasurementModel<G> //
 		return Pair.create(rv, jac);
 	}
 
-	private RealMatrix extractCx(final RealMatrix hrm) {
+	private RealMatrix extractCx(
+			final RealMatrix hrm
+	) {
 		final List<? extends G> yLabels = getOutputLabels();
 		final List<Object> xLabels = new ArrayList<>();
 		xLabels.addAll(getInputLabels());
@@ -254,7 +276,9 @@ public class ImplicitMeasurementModel<G> //
 		return mc;
 	}
 
-	private RealMatrix extractCy(final RealMatrix hrm) {
+	private RealMatrix extractCy(
+			final RealMatrix hrm
+	) {
 		final List<? extends G> labels = getOutputLabels();
 		final int m = labels.size();
 		final List<? extends G> hIn = mHFunction.getInputLabels();
@@ -280,7 +304,9 @@ public class ImplicitMeasurementModel<G> //
 	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction#optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		if (mAlternativeModel != null) {
 			final List<? extends G> inLabels = mAlternativeModel.getInputLabels();

@@ -16,7 +16,8 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.ArgumentException;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -31,17 +32,22 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @version $Rev: 232 $
  */
 abstract public class EnergyCalibration //
-		extends LabeledMultivariateJacobianFunction<String, String> //
+		extends ExplicitMeasurementModel<String, String> //
 		implements IToHTML {
 
-	private static List<String> buildParams(final String prefix, final int nParams) {
+	private static List<String> buildParams(
+			final String prefix, final int nParams
+	) {
 		final List<String> res = new ArrayList<>();
 		for (int i = 0; i < nParams; ++i)
 			res.add(prefix + "[" + Integer.toString(i) + "]");
 		return res;
 	}
 
-	protected EnergyCalibration(final List<String> inputParams, final int nCh) {
+	protected EnergyCalibration(
+			final List<String> inputParams, //
+			final int nCh
+	) throws ArgumentException {
 		super(inputParams, buildParams("E", nCh));
 	}
 
@@ -52,29 +58,43 @@ abstract public class EnergyCalibration //
 	 * @param params
 	 * @return double
 	 */
-	abstract public double compute(double channel);
+	abstract public double compute(
+			double channel
+	);
 
-	public double averageEnergyForChannel(final int ch) {
+	public double averageEnergyForChannel(
+			final int ch
+	) {
 		return 0.5 * (compute(ch) + compute(ch + 1));
 	}
 
-	public double minEnergyForChannel(final int ch) {
+	public double minEnergyForChannel(
+			final int ch
+	) {
 		return compute(ch);
 	}
 
-	public double maxEnergyForChannel(final int ch) {
+	public double maxEnergyForChannel(
+			final int ch
+	) {
 		return compute(ch + 1);
 	}
 
-	public double channelWidth(final int ch) {
+	public double channelWidth(
+			final int ch
+	) {
 		return compute(ch + 1) - compute(ch);
 	}
 
-	public int channelIndex(final double energy) {
+	public int channelIndex(
+			final double energy
+	) {
 		return (int) Math.floor(invert(energy));
 	}
 
-	public RealVector range(final int low, final int high) {
+	public RealVector range(
+			final int low, final int high
+	) {
 		final RealVector res = new ArrayRealVector(high - low);
 		for (int ch = low; ch < high; ++ch)
 			res.setEntry(ch, compute(ch));
@@ -89,13 +109,19 @@ abstract public class EnergyCalibration //
 	 * @param params
 	 * @return double
 	 */
-	abstract public double invert(double energy);
+	abstract public double invert(
+			double energy
+	);
 
-	public static Polynomial Linear(final double zeroOffset, final double gain, final int nCh) {
+	public static Polynomial Linear(
+			final double zeroOffset, final double gain, final int nCh
+	) throws ArgumentException {
 		return new Polynomial(new double[] { zeroOffset, gain }, nCh);
 	}
 
-	public static Polynomial Quadratic(final double zeroOffset, final double gain, final double quad, final int nCh) {
+	public static Polynomial Quadratic(
+			final double zeroOffset, final double gain, final double quad, final int nCh
+	) throws ArgumentException {
 		return new Polynomial(new double[] { zeroOffset, gain, quad }, nCh);
 	}
 
@@ -107,7 +133,9 @@ abstract public class EnergyCalibration //
 		private final LaguerreSolver mSolver;
 		private final PolynomialFunction mPolynomial;
 
-		public Polynomial(final double[] params, final int nCh) {
+		public Polynomial(
+				final double[] params, final int nCh
+		) throws ArgumentException {
 			super(Arrays.asList(Arrays.copyOf(ORDER_NAMES, params.length)), nCh);
 			assert params.length >= 2 : "EnergyScaleFunction.Polynomial order must be >1.";
 			assert params.length < 9 : "EnergyScaleFunction.Polynomial order must be 9.";
@@ -116,12 +144,16 @@ abstract public class EnergyCalibration //
 		}
 
 		@Override
-		public double compute(final double ch) {
+		public double compute(
+				final double ch
+		) {
 			return mPolynomial.value(ch);
 		}
 
 		@Override
-		public double invert(final double energy) {
+		public double invert(
+				final double energy
+		) {
 			final double[] params = mPolynomial.getCoefficients();
 			final int dim = params.length;
 			if (dim == 2)
@@ -150,7 +182,9 @@ abstract public class EnergyCalibration //
 		}
 
 		@Override
-		public boolean equals(final Object obj) {
+		public boolean equals(
+				final Object obj
+				) {
 			if (this == obj)
 				return true;
 			if (obj == null)
@@ -171,7 +205,9 @@ abstract public class EnergyCalibration //
 		 * @see org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#value(org.apache.commons.math3.linear.RealVector)
 		 */
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+				) {
 			final RealVector vals = new ArrayRealVector(point.getDimension());
 			final RealMatrix cov = new Array2DRowRealMatrix(point.getDimension(), mPolynomial.degree());
 			for (int i = 0; i < point.getDimension(); ++i) {
@@ -187,7 +223,9 @@ abstract public class EnergyCalibration //
 		}
 
 		@Override
-		public String toHTML(final Mode mode) {
+		public String toHTML(
+				final Mode mode
+				) {
 			final BasicNumberFormat bnf = new BasicNumberFormat();
 			final StringBuffer sb = new StringBuffer();
 			final double[] coeff = mPolynomial.getCoefficients();
@@ -214,16 +252,23 @@ abstract public class EnergyCalibration //
 		private final double[] mParameters;
 
 		private static List<String> inputTags() {
-			return Arrays.asList(  "Offset", "Sqrt", "Linear" );
+			return Arrays.asList("Offset", "Sqrt", "Linear");
 		}
 
-		public QuadraticInSqrt(final double offset, final double sqrt, final double linear, final int nChannels) {
+		public QuadraticInSqrt(
+				final double offset, //
+				final double sqrt, //
+				final double linear, //
+				final int nChannels
+				) throws ArgumentException {
 			super(inputTags(), nChannels);
 			mParameters = new double[] { offset, sqrt, linear };
 		}
 
 		@Override
-		public double compute(final double ch) {
+		public double compute(
+				final double ch
+				) {
 			assert ch >= 0.0;
 			final double a = mParameters[2];
 			final double b = mParameters[1];
@@ -232,7 +277,9 @@ abstract public class EnergyCalibration //
 		}
 
 		@Override
-		public double invert(final double energy) {
+		public double invert(
+				final double energy
+				) {
 			assert energy >= 0;
 			double ch;
 			final double a = mParameters[2];
@@ -255,7 +302,9 @@ abstract public class EnergyCalibration //
 		 * @see org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#value(org.apache.commons.math3.linear.RealVector)
 		 */
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 			final RealVector vals = new ArrayRealVector(point.getDimension());
 			final RealMatrix cov = new Array2DRowRealMatrix(point.getDimension(), 3);
 			for (int i = 0; i < point.getDimension(); ++i) {
@@ -269,7 +318,9 @@ abstract public class EnergyCalibration //
 		}
 
 		@Override
-		public String toHTML(final Mode terse) {
+		public String toHTML(
+				final Mode terse
+		) {
 			final Number a = mParameters[1];
 			final Number b = mParameters[0];
 			final Number c = mParameters[2];
@@ -287,7 +338,9 @@ abstract public class EnergyCalibration //
 		}
 
 		@Override
-		public boolean equals(final Object obj) {
+		public boolean equals(
+				final Object obj
+		) {
 			if (this == obj)
 				return true;
 			if (!super.equals(obj))

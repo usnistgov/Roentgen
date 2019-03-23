@@ -10,8 +10,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class UncertainValue
-		extends Number //
+public class UncertainValue extends Number //
 		implements Comparable<UncertainValue>, IToHTML {
 
 	public static final UncertainValue ONE = new UncertainValue(1.0);
@@ -24,18 +23,24 @@ public class UncertainValue
 	final Double mValue;
 	final double mSigma;
 
-	public UncertainValue(final double value) {
+	public UncertainValue(
+			final double value
+	) {
 		this(value, 0.0);
 	}
 
-	public UncertainValue(final Number n) {
+	public UncertainValue(
+			final Number n
+	) {
 		this(n.doubleValue(), n instanceof UncertainValue ? ((UncertainValue) n).uncertainty() : 0.0);
 	}
 
 	/**
 	 *
 	 */
-	public UncertainValue(final double value, final double sigma) {
+	public UncertainValue(
+			final double value, final double sigma
+	) {
 		mValue = Double.valueOf(value);
 		mSigma = sigma;
 	}
@@ -61,11 +66,15 @@ public class UncertainValue
 	}
 
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 		return toHTML(mode, new BasicNumberFormat());
 	}
 
-	public String toHTML(final Mode mode, final BasicNumberFormat bnf) {
+	public String toHTML(
+			final Mode mode, final BasicNumberFormat bnf
+	) {
 		switch (mode) {
 		case TERSE:
 			return bnf.formatHTML(mValue);
@@ -94,27 +103,39 @@ public class UncertainValue
 		return mSigma * mSigma;
 	}
 
-	public static double mean(final Number n) {
+	public static double mean(
+			final Number n
+	) {
 		return n.doubleValue();
 	}
 
-	public static UncertainValue normal(final double v) {
+	public static UncertainValue normal(
+			final double v
+	) {
 		return new UncertainValue(v, Math.sqrt(v));
 	}
 
-	public static UncertainValue toRadians(final double degrees, final double ddegrees) {
+	public static UncertainValue toRadians(
+			final double degrees, final double ddegrees
+	) {
 		return new UncertainValue(Math.toRadians(degrees), Math.toRadians(ddegrees));
 	}
 
-	public static double uncertainty(final Number n) {
+	public static double uncertainty(
+			final Number n
+	) {
 		return n instanceof UncertainValue ? ((UncertainValue) n).uncertainty() : 0.0;
 	}
 
-	public static double fractionalUncertainty(final Number n) {
+	public static double fractionalUncertainty(
+			final Number n
+	) {
 		return uncertainty(n) / n.doubleValue();
 	}
 
-	public UncertainValue multiply(double k) {
+	public UncertainValue multiply(
+			double k
+	) {
 		return new UncertainValue(k * mValue, k * mSigma);
 	}
 
@@ -128,7 +149,9 @@ public class UncertainValue
 	 * @param cuv
 	 * @return UncertainValue
 	 */
-	static public Number weightedMean(final Collection<? extends UncertainValue> cuv) throws Exception {
+	static public Number weightedMean(
+			final Collection<? extends UncertainValue> cuv
+	) throws Exception {
 		double varSum = 0.0, sum = 0.0;
 		for (final UncertainValue uv : cuv) {
 			final double ivar = (isSpecialNumber(uv) ? 1.0 / uv.variance() : Double.NaN);
@@ -142,11 +165,15 @@ public class UncertainValue
 		return Double.isNaN(iVarSum) ? UncertainValue.NaN : new UncertainValue(sum / varSum, Math.sqrt(1.0 / varSum));
 	}
 
-	static final private boolean isSpecialNumber(final Number n) {
+	static final private boolean isSpecialNumber(
+			final Number n
+	) {
 		return n instanceof UncertainValue;
 	}
 
-	static final public Number unwrap(final Number n) {
+	static final public Number unwrap(
+			final Number n
+	) {
 		if (n instanceof UncertainValue) {
 			final UncertainValue uv = (UncertainValue) n;
 			if (!uv.isUncertain())
@@ -156,27 +183,35 @@ public class UncertainValue
 	}
 
 	@Override
-	public int compareTo(final UncertainValue arg0) {
+	public int compareTo(
+			final UncertainValue arg0
+	) {
 		int res = Double.compare(mValue, arg0.mValue);
 		if (res == 0)
 			res = Double.compare(mSigma, arg0.mSigma);
 		return res;
 	}
 
-	public String formatLong(BasicNumberFormat bnf) {
+	public String formatLong(
+			BasicNumberFormat bnf
+	) {
 		return bnf.format(mValue) + "\u00B1" + bnf.format(mSigma);
 	}
 
-	public String format(BasicNumberFormat bnf) {
+	public String format(
+			BasicNumberFormat bnf
+	) {
 		return bnf.format(mValue) + "\u00B1" + bnf.format(mSigma);
 	}
 
 	public double fractionalUncertainty() {
-		return mValue / mSigma;
+		return mSigma / mValue;
 	}
 
-	public static boolean isUncertain(Number n) {
-		return (n instanceof UncertainValue) && ((UncertainValue)n).isUncertain();
+	public static boolean isUncertain(
+			Number n
+	) {
+		return (n instanceof UncertainValue) && ((UncertainValue) n).isUncertain();
 	}
 
 	public boolean isUncertain() {

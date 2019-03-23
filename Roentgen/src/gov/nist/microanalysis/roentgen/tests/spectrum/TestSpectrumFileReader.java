@@ -32,7 +32,9 @@ import gov.nist.microanalysis.roentgen.spectrum.SpectrumFileReader;
  */
 public class TestSpectrumFileReader {
 
-	private File makeFile(final String resName) throws IOException {
+	private File makeFile(
+			final String resName
+	) throws IOException {
 		try (final InputStream is = getClass().getResourceAsStream(resName)) {
 			final File f = File.createTempFile("spec", ".msa");
 			try (final FileOutputStream fos = new FileOutputStream(f)) {

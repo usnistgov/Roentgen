@@ -11,9 +11,9 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunctionBuilder;
-import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 
@@ -27,15 +27,18 @@ import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
  *
  */
 public class TwoPointContinuumModel //
-		extends CompositeLabeledMultivariateJacobianFunction<ModelLabels<?, ?>> {
+		extends CompositeMeasurementModel<ModelLabels<?, ?>> {
 
 	public static class ComputePeakContinuum
-			extends LabeledMultivariateJacobianFunction<ModelLabels<?, ?>, ModelLabels<?, ?>> {
+			extends ExplicitMeasurementModel<ModelLabels<?, ?>, ModelLabels<?, ?>> {
 
 		private final MatrixCorrectionDatum mMcd;
 		private final CharacteristicXRay mCxr;
 
-		public ComputePeakContinuum(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
+		public ComputePeakContinuum(
+				final MatrixCorrectionDatum mcd, //
+				final CharacteristicXRay cxr
+		) throws ArgumentException {
 			super(buildPCInputs(mcd, cxr),
 					Collections.singletonList(ModelLabels.buildNormCharacteristicIntensity(mcd, cxr)));
 			mMcd = mcd;
@@ -43,7 +46,9 @@ public class TwoPointContinuumModel //
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 			final int[] iNormI = { //
 					inputIndex(ModelLabels.buildNormalizedIntensity(mMcd, mCxr, LOW_BACK)), //
 					inputIndex(ModelLabels.buildNormalizedIntensity(mMcd, mCxr, ON_PEAK)), //
@@ -84,13 +89,17 @@ public class TwoPointContinuumModel //
 	}
 
 	private static class NormalizeIntensity
-			extends LabeledMultivariateJacobianFunction<ModelLabels<?, ?>, ModelLabels<?, ?>> {
+			extends ExplicitMeasurementModel<ModelLabels<?, ?>, ModelLabels<?, ?>> {
 
 		private final MatrixCorrectionDatum mMcd;
 		private final CharacteristicXRay mCxr;
 		private final int mIndex;
 
-		private NormalizeIntensity(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr, final int index) {
+		private NormalizeIntensity(
+				final MatrixCorrectionDatum mcd, //
+				final CharacteristicXRay cxr, //
+				final int index
+		) throws ArgumentException {
 			super(buildNIInputs(mcd, cxr, index),
 					Collections.singletonList(ModelLabels.buildNormalizedIntensity(mcd, cxr, index)));
 			mMcd = mcd;
@@ -99,7 +108,9 @@ public class TwoPointContinuumModel //
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
+		public Pair<RealVector, RealMatrix> value(
+				final RealVector point
+		) {
 			final int iI = inputIndex(ModelLabels.buildRawIntensity(mMcd, mCxr, mIndex));
 			final int ltI = inputIndex(ModelLabels.buildLiveTime(mMcd, mCxr, mIndex));
 			final int pcI = inputIndex(ModelLabels.buildProbeCurrent(mMcd, mCxr, mIndex));
@@ -126,13 +137,14 @@ public class TwoPointContinuumModel //
 
 	public static final int LOW_BACK = -1;
 
-	static public List<? extends LabeledMultivariateJacobianFunction<? extends ModelLabels<?, ?>, ? extends ModelLabels<?, ?>>> buildModel( //
+	static public List<? extends ExplicitMeasurementModel<? extends ModelLabels<?, ?>, ? extends ModelLabels<?, ?>>> buildModel(
+			//
 			final MatrixCorrectionDatum mcd, //
 			final CharacteristicXRay cxr //
 	) throws ArgumentException {
-		final List<LabeledMultivariateJacobianFunction<? extends ModelLabels<?, ?>, ? extends ModelLabels<?, ?>>> res = new ArrayList<>();
-		final LabeledMultivariateJacobianFunctionBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>> builder = //
-				new LabeledMultivariateJacobianFunctionBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>>("Normalizer");
+		final List<ExplicitMeasurementModel<? extends ModelLabels<?, ?>, ? extends ModelLabels<?, ?>>> res = new ArrayList<>();
+		final ParallelMeasurementModelBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>> builder = //
+				new ParallelMeasurementModelBuilder<ModelLabels<?, ?>, ModelLabels<?, ?>>("Normalizer");
 		builder.add(new NormalizeIntensity(mcd, cxr, LOW_BACK));
 		builder.add(new NormalizeIntensity(mcd, cxr, ON_PEAK));
 		builder.add(new NormalizeIntensity(mcd, cxr, HIGH_BACK));
@@ -141,8 +153,9 @@ public class TwoPointContinuumModel //
 		return res;
 	}
 
-	static private List<ModelLabels<?, ?>> buildNIInputs(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr,
-			final int index) {
+	static private List<ModelLabels<?, ?>> buildNIInputs(
+			final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr, final int index
+	) {
 		final List<ModelLabels<?, ?>> res = new ArrayList<>();
 		res.add(ModelLabels.buildRawIntensity(mcd, cxr, index));
 		res.add(ModelLabels.buildLiveTime(mcd, cxr, index));
@@ -150,8 +163,9 @@ public class TwoPointContinuumModel //
 		return res;
 	}
 
-	static private List<ModelLabels<?, ?>> buildPCInputs(final MatrixCorrectionDatum mcd,
-			final CharacteristicXRay cxr) {
+	static private List<ModelLabels<?, ?>> buildPCInputs(
+			final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr
+	) {
 		final List<ModelLabels<?, ?>> res = new ArrayList<>();
 		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, LOW_BACK));
 		res.add(ModelLabels.buildNormalizedIntensity(mcd, cxr, ON_PEAK));
@@ -167,7 +181,8 @@ public class TwoPointContinuumModel //
 	 * @param cxr The characteristic x-ray
 	 * @throws ArgumentException
 	 */
-	public TwoPointContinuumModel(//
+	public TwoPointContinuumModel(
+			//
 			final MatrixCorrectionDatum mcd, //
 			final CharacteristicXRay cxr //
 	) throws ArgumentException {

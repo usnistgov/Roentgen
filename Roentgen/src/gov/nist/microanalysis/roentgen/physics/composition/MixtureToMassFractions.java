@@ -11,8 +11,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
@@ -26,10 +27,11 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.Materia
  *
  */
 final class MixtureToMassFractions //
-		extends LabeledMultivariateJacobianFunction<MaterialLabel, MaterialLabel> //
+		extends ExplicitMeasurementModel<MaterialLabel, MaterialLabel> //
 		implements ILabeledMultivariateFunction<MaterialLabel, MaterialLabel> {
 
-	static private List<MaterialLabel> buildInputs(//
+	static private List<MaterialLabel> buildInputs(
+			//
 			final Set<Material> mats, //
 			final boolean normalize //
 	) {
@@ -37,14 +39,16 @@ final class MixtureToMassFractions //
 		for (final Material mat : mats) {
 			res.addAll(MaterialLabel.massFractionTags(mat));
 			res.addAll(MaterialLabel.atomWeightTags(mat));
-			if(normalize)
+			if (normalize)
 				res.add(MaterialLabel.buildNormalizedMaterialFractionTag(mat));
 			else
 				res.add(MaterialLabel.buildMaterialFractionTag(mat));
 		}
 		return res;
 	}
-	static private List<MaterialLabel> buildOutputs(//
+
+	static private List<MaterialLabel> buildOutputs(
+			//
 			final Material newMat, //
 			final Set<Material> mats //
 	) {
@@ -68,13 +72,18 @@ final class MixtureToMassFractions //
 	 * @param newMat    A Material to define
 	 * @param mats      Set&lt;Material&gt;
 	 * @param normalize
+	 * @throws ArgumentException
 	 */
-	public MixtureToMassFractions(final Material newMat, final Set<Material> mats, final boolean normalize) {
+	public MixtureToMassFractions(
+			final Material newMat, //
+			final Set<Material> mats, //
+			final boolean normalize
+	) throws ArgumentException {
 		super(buildInputs(mats, normalize), buildOutputs(newMat, mats));
 		mInputs = new ArrayList<>();
 		mNewMaterial = newMat;
 		for (final Material mat : mats) {
-			if(normalize)
+			if (normalize)
 				mInputs.add(MaterialLabel.buildNormalizedMaterialFractionTag(mat));
 			else
 				mInputs.add(MaterialLabel.buildMaterialFractionTag(mat));
@@ -82,7 +91,9 @@ final class MixtureToMassFractions //
 	}
 
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		for (final Element elm : mNewMaterial.getElementSet()) {
 			double tmpCz = 0.0, tmpAz = 0.0;
@@ -121,7 +132,9 @@ final class MixtureToMassFractions //
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		for (final Element elm : mNewMaterial.getElementSet()) {

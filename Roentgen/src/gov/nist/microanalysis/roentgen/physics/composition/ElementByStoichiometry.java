@@ -12,8 +12,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
@@ -26,14 +27,17 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  *
  */
 public class ElementByStoichiometry //
-		extends LabeledMultivariateJacobianFunction<MaterialLabel, MassFraction> //
+		extends ExplicitMeasurementModel<MaterialLabel, MassFraction> //
 		implements ILabeledMultivariateFunction<MaterialLabel, MassFraction> {
 
-	static public ElementByStoichiometry buildDefaultOxygen(final Material mat) {
+	static public ElementByStoichiometry buildDefaultOxygen(
+			final Material mat
+	) throws ArgumentException {
 		return new ElementByStoichiometry(mat, Element.Oxygen, StoichiometeryRules.getOxygenDefaults());
 	}
 
-	private static List<MaterialLabel> buildInput(//
+	private static List<MaterialLabel> buildInput(
+			//
 			final Material mat, //
 			final Element outputElm //
 	) {
@@ -60,8 +64,13 @@ public class ElementByStoichiometry //
 	/**
 	 * @param inputLabels
 	 * @param outputLabels
+	 * @throws ArgumentException
 	 */
-	public ElementByStoichiometry(final Material mat, final Element outputElm, final Map<Element, Integer> valences) {
+	public ElementByStoichiometry(
+			final Material mat, //
+			final Element outputElm, //
+			final Map<Element, Integer> valences //
+	) throws ArgumentException {
 		super(buildInput(mat, outputElm),
 				Collections.singletonList(MaterialLabel.buildMassFractionTag(mat, outputElm)));
 		mValences.putAll(valences);
@@ -77,7 +86,9 @@ public class ElementByStoichiometry //
 	 * #optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector optimized(final RealVector point) {
+	public RealVector optimized(
+			final RealVector point
+	) {
 		final RealVector res = buildResult();
 		final double ai = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, mElement), point);
 		double ci = 0.0;
@@ -105,7 +116,9 @@ public class ElementByStoichiometry //
 	 * value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector res = buildResult();
 		final RealMatrix jac = buildJacobian();
 		final AtomicWeight awi = MaterialLabel.buildAtomicWeightTag(mMaterial, mElement);

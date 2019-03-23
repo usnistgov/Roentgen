@@ -1,5 +1,6 @@
 package gov.nist.microanalysis.roentgen.physics.composition;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.NormalizedMassFraction;
@@ -15,8 +16,11 @@ public class MassFractionToNormalizedMassFraction extends Normalize<MassFraction
 	 *
 	 * @param Composition   comp
 	 * @param atomicWeights
+	 * @throws ArgumentException
 	 */
-	public MassFractionToNormalizedMassFraction(final Material mat) {
+	public MassFractionToNormalizedMassFraction(
+			final Material mat
+	) throws ArgumentException {
 		super(MaterialLabel.buildMassFractionTags(mat), MaterialLabel.buildNormalizedMassFractionTags(mat));
 	}
 

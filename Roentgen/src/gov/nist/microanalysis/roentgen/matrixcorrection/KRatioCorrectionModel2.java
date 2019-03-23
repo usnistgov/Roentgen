@@ -27,8 +27,8 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.LabeledMultivariateJacobianFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeLabeledMultivariateJacobianFunction;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.TrimmedNamedMultivariateJacobianFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
@@ -67,7 +67,7 @@ import gov.nist.microanalysis.roentgen.utility.FastIndex;
  *
  */
 public class KRatioCorrectionModel2 //
-		extends CompositeLabeledMultivariateJacobianFunction<EPMALabel> {
+		extends CompositeMeasurementModel<EPMALabel> {
 
 	static private final int MAX_ITERATIONS = 100;
 	static private final double THRESH = 1.0e-4;
@@ -76,7 +76,7 @@ public class KRatioCorrectionModel2 //
 
 	private final List<KRatioLabel> mKRatioSet;
 
-	private final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> mExtraElementRules;
+	private final ExplicitMeasurementModel<? extends MaterialLabel, ? extends MaterialLabel> mExtraElementRules;
 
 	private static class KR2HModel //
 			extends ImplicitMeasurementModel.HModel<EPMALabel> //
@@ -135,7 +135,7 @@ public class KRatioCorrectionModel2 //
 		 * unknown's mass fractions are input as constants.
 		 * </p>
 		 * <p>
-		 * The outputs of the {@link LabeledMultivariateJacobianFunction} can only be
+		 * The outputs of the {@link ExplicitMeasurementModel} can only be
 		 * MassFraction values. (Might be able to relax this but why???)
 		 * </p>
 		 *
@@ -303,17 +303,17 @@ public class KRatioCorrectionModel2 //
 
 	}
 
-	private static List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> buildSteps(//
+	private static List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> buildSteps(//
 			final Set<KRatioLabel> krs, //
 			final MatrixCorrectionModel2 mcm, //
-			final LabeledMultivariateJacobianFunction<MaterialLabel, MaterialLabel> extraElms //
+			final ExplicitMeasurementModel<MaterialLabel, MaterialLabel> extraElms //
 	) throws ArgumentException {
 		final UnknownMatrixCorrectionDatum unk = krs.iterator().next().getUnknown();
 		final Material unkMat = unk.getMaterial();
 		final List<MassFraction> outputs = new ArrayList<>();
 		for (final KRatioLabel krl : krs)
 			outputs.add(MaterialLabel.buildMassFractionTag(unkMat, krl.getElement()));
-		final List<LabeledMultivariateJacobianFunction<? extends EPMALabel, ? extends EPMALabel>> res = new ArrayList<>();
+		final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> res = new ArrayList<>();
 		// Perform the matrix correction model to calculate Ci from ki
 		res.add(mcm);
 		// Perform the implicit model to propagate uncertainty in the Ci
@@ -327,7 +327,7 @@ public class KRatioCorrectionModel2 //
 	public KRatioCorrectionModel2(//
 			final Set<KRatioLabel> krs, //
 			final MatrixCorrectionModel2 model, //
-			final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> extraElms, //
+			final ExplicitMeasurementModel<? extends MaterialLabel, ? extends MaterialLabel> extraElms, //
 			final List<EPMALabel> outputLabels //
 	) throws ArgumentException {
 		super("K-Ratio Model[" + model.toString() + "]", buildSteps(krs, model, null), outputLabels);
@@ -338,7 +338,7 @@ public class KRatioCorrectionModel2 //
 
 	public KRatioCorrectionModel2(//
 			final Set<KRatioLabel> krs, //
-			final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> extraElms, //
+			final ExplicitMeasurementModel<? extends MaterialLabel, ? extends MaterialLabel> extraElms, //
 			final List<EPMALabel> outputLabels //
 	) throws ArgumentException {
 		this(krs, new XPPMatrixCorrection2(krs, outputLabels), extraElms, outputLabels);
@@ -370,13 +370,14 @@ public class KRatioCorrectionModel2 //
 			final UncertainValues<MassFraction> estUnknown, //
 			final UncertainValuesBase<KRatioLabel> measKratios //
 	) throws ArgumentException {
+		final UncertainValuesBase<EPMALabel> inputs = mModel.buildInput(estUnknown);
 		List<UncertainValuesBase<? extends EPMALabel>> list = //
-				Arrays.asList(mModel.buildInput(estUnknown), measKratios);
+				Arrays.asList(inputs, measKratios);
 		return UncertainValuesBase.<EPMALabel>combine(list, false);
 	}
 
 	/**
-	 * Builds a {@link LabeledMultivariateJacobianFunction} which sequentially
+	 * Builds a {@link ExplicitMeasurementModel} which sequentially
 	 * combines the explicit {@link XPPMatrixCorrection2} model with the implicit
 	 * model {@link KRatioCorrectionModel2}. It returns a KRatioCorrectionModel2.
 	 *
@@ -388,7 +389,7 @@ public class KRatioCorrectionModel2 //
 	 */
 	static public KRatioCorrectionModel2 buildXPPModel( //
 			final Set<KRatioLabel> keySet, //
-			final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> extraElms, //
+			final ExplicitMeasurementModel<? extends MaterialLabel, ? extends MaterialLabel> extraElms, //
 			final List<EPMALabel> outputLabels //
 	) throws ArgumentException {
 		List<EPMALabel> outputs = new ArrayList<>(outputLabels);
@@ -401,7 +402,7 @@ public class KRatioCorrectionModel2 //
 	}
 
 	/**
-	 * Builds a {@link LabeledMultivariateJacobianFunction} which sequentially
+	 * Builds a {@link ExplicitMeasurementModel} which sequentially
 	 * combines the explicit {@link XPPMatrixCorrection2} model with the implicit
 	 * model {@link KRatioCorrectionModel2}. It returns a KRatioCorrectionModel2.
 	 *
@@ -414,7 +415,7 @@ public class KRatioCorrectionModel2 //
 	 */
 	static public KRatioCorrectionModel2 buildXPPModel( //
 			final Set<KRatioLabel> keySet, //
-			final LabeledMultivariateJacobianFunction<? extends MaterialLabel, ? extends MaterialLabel> extraElms //
+			final ExplicitMeasurementModel<? extends MaterialLabel, ? extends MaterialLabel> extraElms //
 	) throws ArgumentException {
 		return buildXPPModel(keySet, extraElms, buildDefaultOutputs(keySet));
 	}
