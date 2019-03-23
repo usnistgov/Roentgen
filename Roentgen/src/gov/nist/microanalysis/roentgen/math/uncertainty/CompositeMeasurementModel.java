@@ -30,11 +30,11 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  * {@link CompositeMeasurementModel}.
  * </p>
  * <p>
- * Starting with mStep.get(0), the {@link ExplicitMeasurementModel}
- * is evaluated against the input variables. The input variables plus the output
- * of step 0 become the input to step 1 and then the input variables plus the
- * output of step 0 and 1 become the input to step 2. In this way, complex
- * multistage calculations can be build from a series of simple steps.
+ * Starting with mStep.get(0), the {@link ExplicitMeasurementModel} is evaluated
+ * against the input variables. The input variables plus the output of step 0
+ * become the input to step 1 and then the input variables plus the output of
+ * step 0 and 1 become the input to step 2. In this way, complex multistage
+ * calculations can be build from a series of simple steps.
  * </p>
  * <p>
  * The utility of this depends upon the chain rule which allows us to calculate
@@ -112,8 +112,7 @@ public class CompositeMeasurementModel<G> //
 		// Remove all the outputs from this and subsequent steps
 		for (int st = step; st < steps.size() - 1; ++st) {
 			final ExplicitMeasurementModel<? extends G, ? extends G> func = steps.get(st);
-			if (!(func instanceof ImplicitMeasurementModel<?>))
-				inputs.removeAll(func.getOutputLabels());
+			inputs.removeAll(func.getOutputLabels());
 		}
 		// Add all the outputs from previous steps that are in the final output list
 		final Set<G> retain = new HashSet<>();
@@ -242,19 +241,6 @@ public class CompositeMeasurementModel<G> //
 					(ILabeledMultivariateFunction<? extends G, ? extends G>) func
 					: null;
 			// Initialize constants in ImplicitMeasurementModels
-			if (func instanceof ImplicitMeasurementModel<?>) {
-				@SuppressWarnings("unchecked")
-				final ImplicitMeasurementModel<G> imm = (ImplicitMeasurementModel<G>) func;
-				if (imm.hasAlternativeModel()) {
-					altFunc = imm.getAlternativeModel();
-				} else {
-					// Add in output values as constants...
-					final Map<G, Double> consts = new HashMap<>();
-					for (final G label : func.getOutputLabels())
-						consts.put(label, currVals.getEntry(currInputs.indexOf(label)));
-					imm.initializeConstants(consts);
-				}
-			}
 			func.dumpArguments(funcPoint, this);
 			final RealVector vres = altFunc != null ? //
 					altFunc.optimized(funcPoint) : func.evaluate(funcPoint).getFirst();
@@ -397,16 +383,6 @@ public class CompositeMeasurementModel<G> //
 			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
 			final ExplicitMeasurementModel<? extends G, ? extends G> func = mSteps.get(step);
-			// Initialize constants in ImplicitMeasurementModels
-			if (func instanceof ImplicitMeasurementModel<?>) {
-				@SuppressWarnings("unchecked")
-				final ImplicitMeasurementModel<G> imm = (ImplicitMeasurementModel<G>) func;
-				// Add in output values as constants...
-				final Map<G, Double> consts = new HashMap<>();
-				for (final G label : func.getOutputLabels())
-					consts.put(label, currVals.getEntry(currInputs.indexOf(label)));
-				imm.initializeConstants(consts);
-			}
 			// Build the vector argument to func and call evaluate
 			final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 			final List<? extends G> fin = func.getInputLabels();

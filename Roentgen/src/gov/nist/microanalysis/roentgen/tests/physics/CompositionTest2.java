@@ -269,7 +269,7 @@ public class CompositionTest2 {
 		if (mHTML) {
 			final Report rep = new Report("Atomic Fraction");
 			try {
-				rep.addVerbatim("THis\nis a test \tcase and\n<<<<<>>>>>\n We like it.");
+				//rep.addVerbatim("THis\nis a test \tcase and\n<<<<<>>>>>\n We like it.");
 				rep.addHeader("Atom Fraction");
 				rep.addSubHeader("TERSE");
 				rep.addHTML(af.toHTML(Representation.MassFraction, Mode.TERSE));

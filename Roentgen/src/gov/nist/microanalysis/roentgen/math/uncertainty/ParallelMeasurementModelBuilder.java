@@ -254,14 +254,6 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 					final J fLbl = func.getInputLabel(i);
 					funcPoint.setEntry(i, point.getEntry(inputIndex(fLbl)));
 				}
-				if (func instanceof ImplicitMeasurementModel) {
-					@SuppressWarnings("unchecked")
-					final ImplicitMeasurementModel<L> imm = (ImplicitMeasurementModel<L>) func;
-					final Map<L, Double> consts = new HashMap<>();
-					for (final L tag : func.getOutputLabels())
-						consts.put(tag, point.getEntry(inputIndex(tag)));
-					imm.initializeConstants(consts);
-				}
 				func.dumpArguments(funcPoint, this);
 				final Pair<RealVector, RealMatrix> v = func.value(funcPoint);
 				final RealVector fVals = v.getFirst();
@@ -302,19 +294,6 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 				@SuppressWarnings("unchecked")
 				ILabeledMultivariateFunction<L, L> altFunc = func instanceof ILabeledMultivariateFunction ? //
 						(ILabeledMultivariateFunction<L, L>) func : null;
-				if (func instanceof ImplicitMeasurementModel) {
-					@SuppressWarnings("unchecked")
-					final ImplicitMeasurementModel<L> imm = (ImplicitMeasurementModel<L>) func;
-					if (imm.hasAlternativeModel()) {
-						altFunc = imm.getAlternativeModel();
-					} else {
-						// Add in output values as constants...
-						final Map<L, Double> consts = new HashMap<>();
-						for (final L label : func.getOutputLabels())
-							consts.put(label, point.getEntry(inputIndex(label)));
-						imm.initializeConstants(consts);
-					}
-				}
 				func.dumpArguments(funcPoint, this);
 				final RealVector fVals = altFunc != null ? //
 						altFunc.optimized(funcPoint) : func.evaluate(funcPoint).getFirst();

@@ -4,10 +4,11 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -19,7 +20,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class ImplicitMeasurementModel2<X, Y extends X> //
+abstract public class ImplicitMeasurementModel2<X, Y extends X> //
 		extends ExplicitMeasurementModel<X, Y> {
 
 	public static class HLabel {
@@ -30,16 +31,6 @@ public class ImplicitMeasurementModel2<X, Y extends X> //
 				final int index
 		) {
 			mIndex = index;
-		}
-
-		@Override
-		public String toString() {
-			return "H[" + mIndex + "]";
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(mIndex);
 		}
 
 		@Override
@@ -55,19 +46,28 @@ public class ImplicitMeasurementModel2<X, Y extends X> //
 			final HLabel other = (HLabel) obj;
 			return mIndex == other.mIndex;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(mIndex);
+		}
+
+		@Override
+		public String toString() {
+			return "H[" + mIndex + "]";
+		}
 	}
 
-	private final ExplicitMeasurementModel<Y, HLabel> mCy;
-	private final ExplicitMeasurementModel<X, HLabel> mCx;
-
-	private static <X, Y> List<X> combine(
-			final List<? extends X> inLabels, final List<? extends X> outLabels
+	static public List<HLabel> buildHLabels(
+			final int size
 	) {
-		final List<X> res = new ArrayList<>();
-		res.addAll(inLabels);
-		res.addAll(outLabels);
+		final ArrayList<HLabel> res = new ArrayList<>();
+		for (int i = 0; i < size; ++i)
+			res.add(new HLabel(i));
 		return res;
 	}
+
+	private final Map<Y, Double> mOutputValues;
 
 	/**
 	 * @param inputLabels
@@ -75,16 +75,21 @@ public class ImplicitMeasurementModel2<X, Y extends X> //
 	 * @throws ArgumentException
 	 */
 	public ImplicitMeasurementModel2(
-			final ExplicitMeasurementModel<Y, HLabel> cy, //
-			final ExplicitMeasurementModel<X, HLabel> cx //
+			final List<X> inputLabels, //
+			final List<Y> outputLabels
 	) throws ArgumentException {
-		super(combine(cx.getInputLabels(), cy.getInputLabels()), cy.getInputLabels());
-		assert cy.getInputDimension() == cy.getOutputDimension();
-		assert cx.getOutputDimension() == cy.getOutputDimension();
-		mCx = cx;
-		mCy = cy;
+		super(inputLabels, outputLabels);
+		mOutputValues = new HashMap<>();
 	}
+	
+	abstract public RealMatrix computeCx(final RealVector point);
 
+	abstract public RealMatrix computeCy(final RealVector point);
+
+	public void setOutputValues(Map<Y, Double> outputValues) {
+		mOutputValues.putAll(outputValues);
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 *
@@ -96,24 +101,36 @@ public class ImplicitMeasurementModel2<X, Y extends X> //
 	public Pair<RealVector, RealMatrix> value(
 			final RealVector point
 	) {
+		final RealMatrix cy = computeCy(point);
+		final RealMatrix cx = computeCx(point);
 
-		final RealVector cyPoint = new ArrayRealVector(mCy.getInputDimension());
-		for (int i = 0; i < mCy.getInputDimension(); ++i) {
-			final Y inLabel = mCy.getInputLabel(i);
-			cyPoint.setEntry(i, getArg(inLabel, point));
-		}
-		final Pair<RealVector, RealMatrix> cyPr = mCy.evaluate(cyPoint);
-		final RealMatrix cyJ = cyPr.getSecond();
+		final RealVector vals = buildResult();
+		for (int i = 0; i < vals.getDimension(); ++i)
+			vals.setEntry(i, getOutputValue(getOutputLabel(i)));
 
-		final RealVector cxPoint = new ArrayRealVector(mCy.getInputDimension());
-		for (int i = 0; i < mCx.getInputDimension(); ++i) {
-			final X inLabel = mCx.getInputLabel(i);
-			cxPoint.setEntry(i, getArg(inLabel, point));
-		}
-		final Pair<RealVector, RealMatrix> cxPr = mCy.evaluate(cxPoint);
-		final RealMatrix cxJ = cxPr.getSecond();
+		return Pair.create(vals, MatrixUtils.inverse(cy).multiply(cx));
+	}
+	
+	protected RealMatrix buildEmptyCx() {
+		return MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+	}
+	
+	protected RealMatrix buildEmptyCy() {
+		return MatrixUtils.createRealMatrix(getOutputDimension(), getOutputDimension());
+	}
+	
+	protected double getOutputValue(
+			final Y label
+	) {
+		return mOutputValues.get(label);
+	}
 
-		return Pair.create(cyPoint, MatrixUtils.inverse(cyJ).multiply(cxJ));
+	protected void setCx(int hIndex, X xLabel, RealMatrix cx, double value) {
+		cx.setEntry(hIndex, outputIndex(xLabel), value);
+	}
+
+	protected void setCy(int hIndex, Y yLabel, RealMatrix cy, double value) {
+		cy.setEntry(hIndex, inputIndex(yLabel), value);
 	}
 
 }
