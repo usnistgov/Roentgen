@@ -61,6 +61,46 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  */
 public class Composition //
 		extends UncertainValuesCalculator<MaterialLabel> {
+	
+	static public BasicNumberFormat MASS_FRACTION_FORMAT = new BasicNumberFormat("0.0000");
+	static public BasicNumberFormat MASS_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00000");
+	static public BasicNumberFormat MEAN_Z_FORMAT = new BasicNumberFormat("0.00");
+	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT = new BasicNumberFormat("0.0###");
+	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00E0");
+	
+	public enum Representation {
+		/**
+		 * Al2O3 etc
+		 */
+		Stoichiometry,
+		/**
+		 * 0.5 atom fraction Qu and 0.5 atom fraction Wz (normalized)
+		 */
+		AtomFraction,
+		/**
+		 * 0.29 Qu by mass, 0.68 Wz by mass (not normalized)
+		 */
+		MassFraction,
+		/**
+		 * 0.30 Qu by mass, 0.70 Wz by mass (normalized)
+		 */
+		NormalizedMassFraction,
+		/**
+		 * 0.58 Al2O3, 0.41 K411 by weight(not normalized)
+		 */
+		Mixture
+	}
+
+	
+	private final Material mMaterial;
+
+	private final Representation mPrimary;
+
+	private Optional<Number> mDensity;
+
+	private final int mHashCode;
+
+
 
 	/**
 	 * Performs the necessary calculations to convert compositional data in atom
@@ -185,28 +225,6 @@ public class Composition //
 		}
 	}
 
-	public enum Representation {
-		/**
-		 * Al2O3 etc
-		 */
-		Stoichiometry,
-		/**
-		 * 0.5 atom fraction Qu and 0.5 atom fraction Wz (normalized)
-		 */
-		AtomFraction,
-		/**
-		 * 0.29 Qu by mass, 0.68 Wz by mass (not normalized)
-		 */
-		MassFraction,
-		/**
-		 * 0.30 Qu by mass, 0.70 Wz by mass (normalized)
-		 */
-		NormalizedMassFraction,
-		/**
-		 * 0.58 Al2O3, 0.41 K411 by weight(not normalized)
-		 */
-		Mixture
-	}
 
 	public static class StoichiometryToComposition //
 			extends CompositeMeasurementModel<MaterialLabel> {
@@ -229,13 +247,6 @@ public class Composition //
 		}
 
 	}
-
-	static public BasicNumberFormat MASS_FRACTION_FORMAT = new BasicNumberFormat("0.0000");
-
-	static public BasicNumberFormat MASS_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00000");
-	static public BasicNumberFormat MEAN_Z_FORMAT = new BasicNumberFormat("0.00");
-	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT = new BasicNumberFormat("0.0###");
-	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00E0");
 
 	public static Composition atomFraction(
 			final String html, //
@@ -360,7 +371,7 @@ public class Composition //
 			final Map<Composition, Number> comps, //
 			final boolean normalize
 	) throws ArgumentException {
-		final List<UncertainValuesBase<MaterialLabel>> input = new ArrayList<>();
+		final List<UncertainValuesBase<? extends MaterialLabel>> input = new ArrayList<>();
 		final Set<Material> mats = new HashSet<>();
 		final Map<MaterialLabel, Number> fracs = new HashMap<>();
 		final Set<Element> elms = new HashSet<>();
@@ -513,13 +524,9 @@ public class Composition //
 			final Material mat, //
 			final UncertainValuesBase<EPMALabel> uvs //
 	) throws ArgumentException {
-		final List<Element> elms = new ArrayList<>(mat.getElementSet());
-		final List<EPMALabel> inputs = new ArrayList<>();
-		inputs.addAll(MaterialLabel.buildMassFractionTags(mat));
-		inputs.addAll(MaterialLabel.buildAtomicWeightTags(mat));
-		final RealVector vals = uvs.extractValues(inputs);
-		final RealMatrix covs = uvs.extractCovariances(inputs);
-		return massFraction(mat, elms, vals, covs, null);
+		MassFractionToComposition mtc = new MassFractionToComposition(mat);
+		final UncertainValuesBase<MaterialLabel> data = uvs.extract(mtc.getInputLabels());
+		return new Composition(Representation.MassFraction, mat, mtc, data);
 	}
 
 	public static Composition massFraction(
@@ -803,14 +810,6 @@ public class Composition //
 		return res;
 	}
 
-	private final Material mMaterial;
-
-	private final Representation mPrimary;
-
-	private Optional<Number> mDensity;
-
-	private final int mHashCode;
-
 	private Composition(
 			final Representation rep, final Material mat, //
 			final ExplicitMeasurementModel<? extends MaterialLabel, ? extends MaterialLabel> func, //
@@ -831,7 +830,7 @@ public class Composition //
 		mPrimary = rep;
 		mDensity = Optional.ofNullable(density);
 		// Don't include density in hash
-		mHashCode = super.hashCode() ^ Objects.hash(mMaterial, mPrimary);
+		mHashCode = Objects.hash(mMaterial, mPrimary);
 	}
 
 	public UncertainValues<Stoichiometry> asStoichiometry() {
@@ -1070,7 +1069,7 @@ public class Composition //
 
 	@Override
 	public String toString() {
-		return "C[" + mMaterial.toString() + "]";
+		return "Composition[" + mMaterial.toString() + "]";
 	}
 
 	private <H> List<H> extractLabels(

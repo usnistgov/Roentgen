@@ -144,7 +144,7 @@ public class UncertainValuesCalculator<H> //
 				assert mParallel;
 				if (mNEvals <= MAX_ITERATIONS) {
 					for (int i = 0; i < mNEvals; ++i)
-						evaluate();
+						performOneEvaluation();
 				} else
 					invokeAll(new MultiEvaluate<J>(mNEvals / 2), new MultiEvaluate<J>(mNEvals - (mNEvals / 2)));
 			}
@@ -208,7 +208,7 @@ public class UncertainValuesCalculator<H> //
 				fjp.invoke(new MultiEvaluate<H>(mNEvals));
 			} else {
 				for (int i = 0; i < mNEvals; ++i)
-					evaluate();
+					performOneEvaluation();
 			}
 			return mOutputs;
 		}
@@ -216,12 +216,13 @@ public class UncertainValuesCalculator<H> //
 		/**
 		 * Perform one evaluation of the {@link ExplicitMeasurementModel}
 		 */
-		private void evaluate() {
+		private void performOneEvaluation() {
 			// pt is in the correct order for mFunction
 			final RealVector pt = MatrixUtils.createRealVector(mDistribution.sample());
 			assert !pt.isNaN();
 			final int base = mFunction.getOutputDimension();
 			final RealVector val2 = new ArrayRealVector(getOutputDimension());
+			// Constraints are applied to pt in compute(...)
 			val2.setSubVector(0, mFunction.compute(pt));
 			val2.setSubVector(base, pt);
 			mOutputs.add(val2);
@@ -271,14 +272,17 @@ public class UncertainValuesCalculator<H> //
 			assert jac.getColumnDimension() == extra;
 			final int base = vals.getDimension();
 			assert base == func.getOutputDimension();
+			assert getOutputDimension() == extra + base;
 			final RealVector val2 = new ArrayRealVector(getOutputDimension());
 			final RealMatrix jac2 = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+			final UncertainValues<? extends H> inputs = mInputs.get();
+			assert inputs.getDimension() == extra;
 			val2.setSubVector(0, vals);
+			val2.setSubVector(vals.getDimension(), inputs.getValues());
 			jac2.setSubMatrix(jac.getData(), 0, 0);
 			// Tack an identity matrix on the end...
 			for (int i = 0; i < extra; ++i)
 				jac2.setEntry(i + base, i, 1.0);
-			final UncertainValues<H> inputs = mInputs.get();
 			final RealMatrix cov2 = jac2.multiply(inputs.getCovariances().multiply(jac2.transpose()));
 			return new UncertainValues<J>(//
 					outputLabels, //
@@ -287,6 +291,14 @@ public class UncertainValuesCalculator<H> //
 		}
 	}
 
+	/***
+	 * Builds the outputs in the order of func.getOutputLabels() + func.getInputLabels().
+	 * Makes sure there are no duplicates.
+	 * 
+	 * @param func
+	 * @return List&lt;H&gt;
+	 */
+	
 	private final static <H> List<H> buildOutputs1(
 			final ExplicitMeasurementModel<? extends H, ? extends H> func
 	) {
@@ -298,14 +310,16 @@ public class UncertainValuesCalculator<H> //
 
 	private final ExplicitMeasurementModel<? extends H, ? extends H> mFunction;
 
-	private final SimplyLazy<UncertainValues<H>> mInputs = new SimplyLazy<UncertainValues<H>>() {
+	private final SimplyLazy<UncertainValues<? extends H>> mInputs = new SimplyLazy<UncertainValues<? extends H>>() {
 
 		@Override
-		protected UncertainValues<H> initialize() {
+		protected UncertainValues<? extends H> initialize() {
 			final List<? extends H> inputLabels = mFunction.getInputLabels();
-			final UncertainValuesBase<H> reorder = mRawInputs.reorder(inputLabels);
-			final UncertainValues<H> res = UncertainValues.asUncertainValues(reorder).copy();
-			return res;
+			final UncertainValuesBase<? extends H> reorder = mRawInputs.reorder(inputLabels);
+			if(reorder instanceof UncertainValues<?>)
+				return ((UncertainValues<? extends H>)reorder).copy();
+			else 
+				return UncertainValues.asUncertainValues(reorder);
 		}
 
 	};
@@ -336,21 +350,15 @@ public class UncertainValuesCalculator<H> //
 		protected RealVector initialize() {
 			RealVector val;
 			if (mFullOutputs.initialized())
-				val = mFullOutputs.get().getValues();
+				return mFullOutputs.get().getValues();
 			else {
-				final UncertainValues<H> inputs = mInputs.get();
-				val = mFunction.compute(inputs.getValues());
+				final RealVector inputs = mInputs.get().getValues();
+				val = mFunction.compute(inputs);
 				final RealVector val2 = new ArrayRealVector(getOutputDimension());
 				val2.setSubVector(0, val);
-				final int extra = getInputDimension();
-				// The inputs are in the order of mRawInput not mInputs
-				for (int i = 0; i < extra; ++i) {
-					final int outIdx = indexOf(inputs.getLabel(i));
-					val2.setEntry(outIdx, inputs.getEntry(i));
-				}
+				val2.setSubVector(val.getDimension(), inputs);
 				return val2;
 			}
-			return val;
 		}
 	};
 
@@ -410,7 +418,7 @@ public class UncertainValuesCalculator<H> //
 	 *
 	 * @return {@link UncertainValues}
 	 */
-	public UncertainValues<H> getInputs() {
+	public UncertainValues<? extends H> getInputs() {
 		return mInputs.get();
 	}
 

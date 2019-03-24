@@ -37,66 +37,72 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
  */
 public abstract class SimplyLazy<H> {
 
-   @XStreamOmitField // Make certain this is not saved as it can be computed
-   private transient volatile H mValue;
+	@XStreamOmitField // Make certain this is not saved as it can be computed
+	private transient volatile H mValue;
 
-   /**
-    * Constructs a LazyEvaluate which will evaluate compute when an instance of
-    * mValue is required.
-    */
-   public SimplyLazy() {
-      mValue = null;
-   }
+	/**
+	 * Constructs a LazyEvaluate which will evaluate compute when an instance of
+	 * mValue is required.
+	 */
+	public SimplyLazy() {
+		mValue = null;
+	}
 
-   /**
-    * Constructs a SimplyLazy in which the value of mValue is already assigned.
-    *
-    * @param value
-    */
-   public SimplyLazy(final H value) {
-      mValue = value;
-   }
+	/**
+	 * Constructs a SimplyLazy in which the value of mValue is already assigned.
+	 *
+	 * @param value
+	 */
+	public SimplyLazy(
+			final H value
+	) {
+		mValue = value;
+	}
 
-   /**
-    * Clears the cached value. If get() is called again, the cached value will
-    * be recomputed via a call to compute().
-    */
-   public void reset() {
-      synchronized(this) {
-         mValue = null;
-      }
-   }
+	/**
+	 * Clears the cached value. If get() is called again, the cached value will be
+	 * recomputed via a call to compute().
+	 */
+	public void reset() {
+		synchronized (this) {
+			mValue = null;
+		}
+	}
 
-   /**
-    * get() will return the cached value when one exists or call compute to
-    * assign the cached value and then return it.
-    *
-    * @return H An instance of the object
-    */
-   public H get() {
-      H res = mValue;
-      if(res == null)
-         synchronized(this) {
-            res = mValue;
-            if(res == null) {
-               res = initialize();
-               mValue = res;
-            }
-         }
-      return res;
-   }
+	/**
+	 * get() will return the cached value when one exists or call compute to assign
+	 * the cached value and then return it.
+	 *
+	 * @return H An instance of the object
+	 */
+	public H get() {
+		H res = mValue;
+		if (res == null)
+			synchronized (this) {
+				res = mValue;
+				if (res == null) {
+					res = initialize();
+					mValue = res;
+				}
+			}
+		return res;
+	}
 
-   public boolean initialized() {
-      synchronized(this) {
-         return mValue != null;
-      }
-   }
+	public boolean initialized() {
+		synchronized (this) {
+			return mValue != null;
+		}
+	}
 
-   /**
-    * Implement this function to compute the value that will be returned by
-    * get()
-    *
-    * @return H
-    */
-   abstract protected H initialize();
+	/**
+	 * Implement this function to compute the value that will be returned by get()
+	 *
+	 * @return H
+	 */
+	abstract protected H initialize();
+
+	public String toString() {
+		return "Lazy[" + get().toString() + "]";
+	}
+
 }

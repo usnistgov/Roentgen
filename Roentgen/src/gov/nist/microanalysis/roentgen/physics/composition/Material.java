@@ -16,7 +16,9 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
+import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 
 /**
  * The Material class represents the most basic information about a material -
@@ -43,7 +45,9 @@ public class Material //
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(
+			final Object obj
+	) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -59,19 +63,21 @@ public class Material //
 				&& mAtomicWeights.equals(other.mAtomicWeights);
 	}
 
-	public static Set<Material> convert(final Collection<Composition> comps) {
+	public static Set<Material> convert(
+			final Collection<Composition> comps
+	) {
 		final Set<Material> res = new HashSet<>();
 		for (final Composition comp : comps)
 			res.add(comp.getMaterial());
 		return res;
 	}
 
-
-	public Material(//
+	public Material(
+			//
 			final String htmlName, //
 			final Collection<Element> elms, //
-			Conductivity conduct, //
-			Map<Element, ? extends Number> atomicWeights //
+			final Conductivity conduct, //
+			final Map<Element, ? extends Number> atomicWeights //
 	) {
 		mHTMLName = htmlName;
 		mElements = Collections.unmodifiableSortedSet(new TreeSet<>(elms));
@@ -80,12 +86,16 @@ public class Material //
 		mUniquizer = UUID.randomUUID();
 		mHashCode = Objects.hash(mHTMLName, mElements, mConductivity, mAtomicWeights, mUniquizer);
 	}
-	
-	public Material(final String htmlName, final Collection<Element> elms, Conductivity conduct) {
+
+	public Material(
+			final String htmlName, final Collection<Element> elms, final Conductivity conduct
+	) {
 		this(htmlName, elms, conduct, Collections.emptyMap());
 	}
 
-	public Material(final String htmlName, final Collection<Element> elms) {
+	public Material(
+			final String htmlName, final Collection<Element> elms
+	) {
 		this(htmlName, elms, null);
 	}
 
@@ -97,11 +107,22 @@ public class Material //
 		return mHTMLName.toString();
 	}
 
-	public Number getAtomicWeight(Element elm) {
+	public Number getAtomicWeight(
+			final Element elm
+	) {
 		return mAtomicWeights.getOrDefault(elm, elm.getAtomicWeight());
 	}
 
-	public void setAtomicWeight(Element elm, Number value) {
+	public UncertainValues<AtomicWeight> getAtomicWeights() {
+		final Map<AtomicWeight, Number> unkMap = new HashMap<>();
+		for (final Element elm : getElementSet())
+			unkMap.put(MaterialLabel.buildAtomicWeightTag(this, elm), getAtomicWeight(elm));
+		return new UncertainValues<AtomicWeight>(unkMap);
+	}
+
+	public void setAtomicWeight(
+			final Element elm, final Number value
+	) {
 		mAtomicWeights.put(elm, value);
 	}
 
@@ -110,12 +131,16 @@ public class Material //
 		return HTML.stripTags(mHTMLName.toString());
 	}
 
-	public boolean contains(final Element elm) {
+	public boolean contains(
+			final Element elm
+	) {
 		return mElements.contains(elm);
 	}
 
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 		switch (mode) {
 		default:
 		case TERSE:
@@ -130,7 +155,7 @@ public class Material //
 			return mHTMLName + "[" + sb.toString() + "]";
 		}
 		case VERBOSE: {
-			Table t = new Table();
+			final Table t = new Table();
 			t.addRow(Table.th("Item"), Table.th("Value"));
 			final StringBuffer sb = new StringBuffer();
 			for (final Element elm : getElementSet()) {

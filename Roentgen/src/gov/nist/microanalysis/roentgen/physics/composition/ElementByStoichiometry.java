@@ -91,12 +91,14 @@ public class ElementByStoichiometry //
 	) {
 		final RealVector res = buildResult();
 		final double ai = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, mElement), point);
+		final double vi = mValences.get(mElement).doubleValue();
 		double ci = 0.0;
 		for (final Element elm : mMaterial.getElementSet()) {
 			if (!elm.equals(mElement)) {
 				final double cj = getArg(MaterialLabel.buildMassFractionTag(mMaterial, elm), point);
 				final double aj = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
-				ci -= (ai / aj) * (mValences.get(elm).doubleValue() / mValences.get(mElement).doubleValue()) * cj;
+				final double vj = mValences.get(elm).doubleValue();
+				ci -= (ai / aj) * (vj / vi) * cj;
 			}
 		}
 		setResult(MaterialLabel.buildMassFractionTag(mMaterial, mElement), res, ci);

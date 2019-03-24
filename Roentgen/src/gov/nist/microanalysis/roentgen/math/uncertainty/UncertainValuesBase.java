@@ -107,30 +107,38 @@ abstract public class UncertainValuesBase<H> //
 
 		};
 
+		private static <J> List<J> buildInputs(
+				List<J> labels, //
+				boolean first
+		) {
+			if (first) {
+				// Ensures labels are not duplicated.
+				FastIndex<J> res = new FastIndex<>();
+				res.addMissing(labels);
+				return res;
+			} else
+				return labels;
+		}
+
 		protected CombinedUncertainValues(
-				//
 				final List<J> labels, //
 				final List<? extends UncertainValuesBase<? extends J>> bases, //
 				final boolean first //
 		) throws ArgumentException {
-			super(labels);
+			super(buildInputs(labels, first));
 			mIndices = new ArrayList<>();
-			for (final J lbl : labels) {
+			for (final J lbl : getLabels()) {
 				int cx = 0;
 				for (final UncertainValuesBase<? extends J> uvb : bases) {
 					final int idx = uvb.indexOf(lbl);
 					if (idx >= 0) {
 						mIndices.add(Pair.create(uvb, idx));
 						cx++;
-						if (first)
-							break;
+						break;
 					}
 				}
 				if (cx == 0)
 					throw new ArgumentException("The argument " + lbl + " has not been defined.");
-				if (cx > 1)
-					throw new ArgumentException("The argument " + lbl + " has been multiply defined.");
-
 			}
 		}
 
@@ -146,10 +154,10 @@ abstract public class UncertainValuesBase<H> //
 
 	};
 
-	private static class ReorderedUncertainValues<L> //
+	private static class ReorderedUncertainValues<K, L extends K> //
 			extends UncertainValuesBase<L> {
 
-		private final UncertainValuesBase<? super L> mBase;
+		private final UncertainValuesBase<K> mBase;
 		private final int[] mIndexes;
 
 		private final SimplyLazy<RealVector> mValues = new SimplyLazy<RealVector>() {
@@ -178,9 +186,9 @@ abstract public class UncertainValuesBase<H> //
 		};
 
 		protected ReorderedUncertainValues(
-				final List<? extends L> labels, final UncertainValuesBase<L> base
+				final List<L> labels, final UncertainValuesBase<K> base
 		) {
-			super(new ArrayList<L>(labels));
+			super(labels);
 			mIndexes = new int[labels.size()];
 			mBase = base;
 			final List<L> missing = new ArrayList<>();
@@ -734,8 +742,8 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValues} A new object
 	 * @throws ArgumentException
 	 */
-	final public UncertainValuesBase<H> extract(
-			final List<? extends H> labels
+	final public <K extends H> UncertainValuesBase<K> extract(
+			final List<K> labels
 	) //
 			throws ArgumentException {
 		return reorder(labels);
@@ -1239,8 +1247,9 @@ abstract public class UncertainValuesBase<H> //
 	 * @return {@link UncertainValuesBase}
 	 * @throws ArgumentException
 	 */
-	public UncertainValuesBase<H> reorder(
-			final List<? extends H> list
+	@SuppressWarnings("unchecked")
+	public <K extends H> UncertainValuesBase<K> reorder(
+			final List<K> list
 	) {
 		if (mLabels.size() == list.size()) {
 			// Check if already in correct order...
@@ -1251,9 +1260,9 @@ abstract public class UncertainValuesBase<H> //
 					break;
 				}
 			if (eq)
-				return this;
+				return (UncertainValuesBase<K>) this;
 		}
-		return new ReorderedUncertainValues<H>(list, this);
+		return new ReorderedUncertainValues<H, K>(list, this);
 	}
 
 	/**

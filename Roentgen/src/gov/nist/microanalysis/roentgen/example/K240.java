@@ -37,6 +37,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRayTransition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -159,8 +160,9 @@ public class K240 {
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
-				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
+				mcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -199,7 +201,7 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(unk.toMassFraction(), krs);
+				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(krs);
 
 				final Set<EPMALabel> finalOutputs = new HashSet<>();
 				for (final EPMALabel output : cfk.getOutputLabels())
@@ -386,8 +388,9 @@ public class K240 {
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
-				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
+				mcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 				// Calculate the optimal k-ratios
 				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
@@ -426,7 +429,7 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(unk.toMassFraction(), krs);
+				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(krs);
 
 				final Set<EPMALabel> finalOutputs = new HashSet<>();
 				for (final EPMALabel output : cfk.getOutputLabels())
@@ -644,7 +647,7 @@ public class K240 {
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
-				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
 
 				// Calculate the optimal k-ratios
@@ -685,7 +688,7 @@ public class K240 {
 					krs.set(krl, new UncertainValue(v, dk));
 				}
 
-				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(unk.toMassFraction(), krs);
+				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(krs);
 
 				final Set<EPMALabel> finalOutputs = new HashSet<>();
 				for (final EPMALabel output : cfk.getOutputLabels())
@@ -887,8 +890,9 @@ public class K240 {
 
 				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null, defOut);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
-				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.toMassFraction());
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
+				mcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
 				// Calculate the optimal k-ratios
 				final RealVector inputs = input.extractValues(mcm.getInputLabels());
@@ -931,7 +935,7 @@ public class K240 {
 				}
 
 				final UncertainValues<KRatioLabel> uncKrs = new UncertainValues<KRatioLabel>(measKrs);
-				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(unk.toMassFraction(), uncKrs);
+				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(uncKrs);
 
 				final Set<EPMALabel> finalOutputs = new HashSet<>();
 				for (final EPMALabel output : cfk.getOutputLabels())

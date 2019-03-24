@@ -18,18 +18,20 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
+import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.ZAFMultiLineLabel;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
  * Takes the matrix corrections for the individual lines and sums them as
@@ -63,7 +65,6 @@ class MultiE0MultiLineModel //
 			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
 
 		private static List<EPMALabel> buildInputTags(
-				//
 				final MatrixCorrectionDatum mcd, //
 				final ElementXRaySet exrs //
 		) {
@@ -80,7 +81,6 @@ class MultiE0MultiLineModel //
 		}
 
 		private static List<EPMALabel> buildOutputTags(
-				//
 				final MatrixCorrectionDatum mcd, //
 				final ElementXRaySet exrs
 		) {
@@ -193,7 +193,6 @@ class MultiE0MultiLineModel //
 			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
 
 		static private List<EPMALabel> buildInputLabels(
-				//
 				final MatrixCorrectionDatum mcd, final AtomicShell sh //
 		) {
 			final List<EPMALabel> res = new ArrayList<>();
@@ -281,7 +280,6 @@ class MultiE0MultiLineModel //
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(intensityLabel(krl.getUnknown(), krl.getXRaySet()));
 			res.add(intensityLabel(krl.getStandard(), krl.getXRaySet()));
-			res.add(MaterialLabel.buildMassFractionTag(krl.getUnknown().getMaterial(), krl.getElement()));
 			res.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(), krl.getElement()));
 			return res;
 		}
@@ -319,14 +317,13 @@ class MultiE0MultiLineModel //
 
 			final int intUnkIdx = inputIndex(intensityLabel(unk, exrs));
 			final int intStdIdx = inputIndex(intensityLabel(std, exrs));
-			final int cUnkIdx = inputIndex( //
-					MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement()));
+			final MassFraction lUnk = MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement());
 			final int cStdIdx = inputIndex( //
 					MaterialLabel.buildMassFractionTag(std.getMaterial(), exrs.getElement()));
 
 			final double intUnk = point.getEntry(intUnkIdx);
 			final double intStd = point.getEntry(intStdIdx);
-			final double cUnk = point.getEntry(cUnkIdx);
+			final double cUnk = getArg(lUnk, point);
 			final double cStd = point.getEntry(cStdIdx);
 
 			rv.setEntry(kRow, (cUnk * intUnk) / (cStd * intStd));
@@ -344,40 +341,39 @@ class MultiE0MultiLineModel //
 		public Pair<RealVector, RealMatrix> value(
 				final RealVector point
 		) {
-			final RealVector rv = new ArrayRealVector(getOutputDimension());
-			final RealMatrix rm = MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
+			final RealVector vals = buildResult();
+			final RealMatrix jac = buildJacobian();
 			final UnknownMatrixCorrectionDatum unk = mKRatio.getUnknown();
 			final StandardMatrixCorrectionDatum std = mKRatio.getStandard();
 			final ElementXRaySet exrs = mKRatio.getXRaySet();
-			final Object zafLabel = MatrixCorrectionModel2.zafLabel(mKRatio);
-			final Object kRatioLabel = new KRatioLabel(unk, std, exrs, Method.Calculated);
+			final ZAFMultiLineLabel zafLabel = MatrixCorrectionModel2.zafLabel(mKRatio);
+			final KRatioLabel kRatioLabel = new KRatioLabel(unk, std, exrs, Method.Calculated);
 			final int kRow = outputIndex(kRatioLabel);
 			final int zafRow = outputIndex(zafLabel);
 
 			final int intUnkIdx = inputIndex(intensityLabel(unk, exrs));
 			final int intStdIdx = inputIndex(intensityLabel(std, exrs));
-			final int cUnkIdx = inputIndex( //
-					MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement()));
+			final MassFraction lUnk = MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement());
 			final int cStdIdx = inputIndex( //
 					MaterialLabel.buildMassFractionTag(std.getMaterial(), exrs.getElement()));
 
 			final double intUnk = point.getEntry(intUnkIdx);
 			final double intStd = point.getEntry(intStdIdx);
-			final double cUnk = point.getEntry(cUnkIdx);
+			final double cUnk = getArg(lUnk, point);
 			final double cStd = point.getEntry(cStdIdx);
 
 			final double k = (cUnk * intUnk) / (cStd * intStd);
-			rv.setEntry(kRow, k);
-			rm.setEntry(kRow, intUnkIdx, k / intUnk);
-			rm.setEntry(kRow, intStdIdx, -k / intStd);
-			rm.setEntry(kRow, cUnkIdx, k / cUnk);
-			rm.setEntry(kRow, cStdIdx, -k / cStd);
+			vals.setEntry(kRow, k);
+			jac.setEntry(kRow, intUnkIdx, k / intUnk);
+			jac.setEntry(kRow, intStdIdx, -k / intStd);
+			setJacobian(lUnk, kRatioLabel, jac, k / cUnk);
+			jac.setEntry(kRow, cStdIdx, -k / cStd);
 
-			rv.setEntry(zafRow, intUnk / intStd);
-			rm.setEntry(zafRow, intUnkIdx, 1.0 / intStd);
-			rm.setEntry(zafRow, intStdIdx, -1.0 * intUnk / (intStd * intStd));
+			vals.setEntry(zafRow, intUnk / intStd);
+			jac.setEntry(zafRow, intUnkIdx, 1.0 / intStd);
+			jac.setEntry(zafRow, intStdIdx, -1.0 * intUnk / (intStd * intStd));
 
-			return Pair.create(rv, rm);
+			return Pair.create(vals, jac);
 		}
 
 	}

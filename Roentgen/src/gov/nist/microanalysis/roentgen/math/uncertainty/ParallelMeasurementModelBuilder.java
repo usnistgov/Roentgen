@@ -103,7 +103,6 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	 * @throws ArgumentException
 	 */
 	public ParallelMeasurementModelBuilder(
-			//
 			final String name //
 	) throws ArgumentException {
 		mName = name;
@@ -118,7 +117,6 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	 * @throws ArgumentException
 	 */
 	public ParallelMeasurementModelBuilder(
-			//
 			final String name, //
 			final List<ExplicitMeasurementModel<? extends H, ? extends K>> funcs //
 	) throws ArgumentException {
@@ -135,7 +133,6 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	 * @throws ArgumentException
 	 */
 	public ParallelMeasurementModelBuilder<? extends H, ? extends K> add(
-			//
 			final ExplicitMeasurementModel<? extends H, ? extends K> func //
 	) throws ArgumentException {
 		mFuncs.add(func);
@@ -158,7 +155,6 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	 * @throws ArgumentException
 	 */
 	public static <H, K> ExplicitMeasurementModel<H, K> join(
-			//
 			final String name, //
 			final List<ExplicitMeasurementModel<? extends H, ? extends K>> funcs //
 	) throws ArgumentException {
@@ -255,6 +251,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 					funcPoint.setEntry(i, point.getEntry(inputIndex(fLbl)));
 				}
 				func.dumpArguments(funcPoint, this);
+				func.applyAdditionalInputs(getAdditionalInputs());
 				final Pair<RealVector, RealMatrix> v = func.value(funcPoint);
 				final RealVector fVals = v.getFirst();
 				final RealMatrix fJac = v.getSecond();
@@ -291,12 +288,13 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 					final J fLbl = func.getInputLabel(i);
 					funcPoint.setEntry(i, point.getEntry(inputIndex(fLbl)));
 				}
-				@SuppressWarnings("unchecked")
-				ILabeledMultivariateFunction<L, L> altFunc = func instanceof ILabeledMultivariateFunction ? //
-						(ILabeledMultivariateFunction<L, L>) func : null;
 				func.dumpArguments(funcPoint, this);
-				final RealVector fVals = altFunc != null ? //
-						altFunc.optimized(funcPoint) : func.evaluate(funcPoint).getFirst();
+				func.applyAdditionalInputs(getAdditionalInputs());
+				RealVector fVals = null;
+				if(func instanceof ILabeledMultivariateFunction) 
+					fVals = ((ILabeledMultivariateFunction<?, ?>)func).optimized(funcPoint);
+				else 
+					fVals = func.evaluate(funcPoint).getFirst();
 				final List<? extends L> fout = func.getOutputLabels();
 				for (int r = 0; r < fout.size(); ++r)
 					vals.setEntry(outputIndex(fout.get(r)), fVals.getEntry(r));
@@ -448,6 +446,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 			for (final ExplicitMeasurementModel<? extends J, ? extends L> func : mFuncs) {
 				final RealVector fPoint = extractArgument(func, point);
 				func.dumpArguments(fPoint, this);
+				func.applyAdditionalInputs(getAdditionalInputs());
 				tasks.add(new NMJFValue<J, L>(func, fPoint));
 			}
 			final List<Future<Result<J, L>>> res = mPool.invokeAll(tasks);
@@ -482,6 +481,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 			for (final ExplicitMeasurementModel<? extends J, ? extends L> func : mFuncs) {
 				final RealVector fPoint = extractArgument(func, point);
 				func.dumpArguments(fPoint, this);
+				func.applyAdditionalInputs(getAdditionalInputs());
 				tasks.add(new NMJFOptimized<J, L>(func, fPoint));
 			}
 			final List<Future<Result<J, L>>> res = mPool.invokeAll(tasks);

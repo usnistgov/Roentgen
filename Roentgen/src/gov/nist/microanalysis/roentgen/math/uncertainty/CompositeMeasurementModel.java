@@ -51,7 +51,6 @@ public class CompositeMeasurementModel<G> //
 		implements ILabeledMultivariateFunction<G, G>, IToHTML {
 
 	public static <J, K> List<K> allOutputs(
-			//
 			final List<? extends ExplicitMeasurementModel<? extends J, ? extends K>> steps //
 	) throws ArgumentException {
 		final List<K> res = new ArrayList<>();
@@ -59,7 +58,12 @@ public class CompositeMeasurementModel<G> //
 			final ExplicitMeasurementModel<? extends J, ? extends K> step = steps.get(i);
 			for (final K label : step.getOutputLabels()) {
 				if (res.contains(label))
-					throw new ArgumentException(label + " as defined a second time b step " + step.toString());
+					for (int j = 0; j < i; ++j) {
+						final ExplicitMeasurementModel<? extends J, ? extends K> stepj = steps.get(j);
+						if (stepj.outputIndex(label) != 1)
+							throw new ArgumentException(
+									label + "defined in " + stepj + " is also defined in step " + step.toString());
+					}
 				res.add(label);
 			}
 		}
@@ -78,13 +82,13 @@ public class CompositeMeasurementModel<G> //
 	 * @throws ArgumentException
 	 */
 	public static <H> List<H> buildOutputs(
-			//
 			final List<? extends ExplicitMeasurementModel<? extends H, ? extends H>> steps, //
 			final List<? extends H> outputs //
 	) throws ArgumentException {
 		final List<H> res = allOutputs(steps);
 		if (outputs.size() > 0)
 			res.retainAll(outputs);
+		res.sort((final H o1, final H o2) -> o1.toString().compareTo(o2.toString()));
 		return res;
 	}
 
@@ -122,7 +126,9 @@ public class CompositeMeasurementModel<G> //
 		}
 		retain.retainAll(outputs);
 		inputs.addAll(retain);
-		return Collections.unmodifiableList(new ArrayList<G>(inputs));
+		final ArrayList<G> result = new ArrayList<G>(inputs);
+		result.sort((final G o1, final G o2) -> o1.toString().compareTo(o2.toString()));
+		return Collections.unmodifiableList(result);
 	}
 
 	private final String mName;
@@ -155,7 +161,6 @@ public class CompositeMeasurementModel<G> //
 	}
 
 	public CompositeMeasurementModel(
-			//
 			final String name, //
 			final List<? extends ExplicitMeasurementModel<? extends G, ? extends G>> steps, //
 			final List<? extends G> outputLabels //
@@ -235,15 +240,14 @@ public class CompositeMeasurementModel<G> //
 				assert cidx != -1 : fin.get(i) + " not assigned for " + func + " (step " + step + ")";
 				funcPoint.setEntry(i, currVals.getEntry(cidx));
 			}
-			@SuppressWarnings("unchecked")
-			ILabeledMultivariateFunction<? extends G, ? extends G> altFunc = func instanceof ILabeledMultivariateFunction
-					? //
-					(ILabeledMultivariateFunction<? extends G, ? extends G>) func
-					: null;
 			// Initialize constants in ImplicitMeasurementModels
 			func.dumpArguments(funcPoint, this);
-			final RealVector vres = altFunc != null ? //
-					altFunc.optimized(funcPoint) : func.evaluate(funcPoint).getFirst();
+			func.applyAdditionalInputs(getAdditionalInputs());
+			RealVector vres = null;
+			if (func instanceof ILabeledMultivariateFunction)
+				vres = ((ILabeledMultivariateFunction<?, ?>) func).optimized(funcPoint);
+			else
+				vres = func.evaluate(funcPoint).getFirst();
 
 			final List<G> nextInputs = mOutputs.get(step);
 			if ((nextInputs.size() == 0) || (currInputs.size() == 0)) {
@@ -394,6 +398,7 @@ public class CompositeMeasurementModel<G> //
 				funcPoint.setEntry(cI, currVals.getEntry(cidx[cI]));
 			}
 			func.dumpArguments(funcPoint, this);
+			func.applyAdditionalInputs(getAdditionalInputs());
 			final Pair<RealVector, RealMatrix> fres = func.evaluate(funcPoint);
 			final RealVector vres = fres.getFirst();
 			final RealMatrix mres = fres.getSecond();

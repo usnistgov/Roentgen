@@ -11,7 +11,6 @@ import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
 import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
 import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
 import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.Layer;
@@ -24,7 +23,6 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
-import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 
 /**
  * A matrix correction model is a model that computes the values associated with
@@ -354,7 +352,7 @@ abstract public class MatrixCorrectionModel2 //
 	}
 
 	abstract public UncertainValuesBase<EPMALabel> buildInput(
-			UncertainValues<MassFraction> estUnknown //
+			Material unknownMat //
 	) throws ArgumentException;
 
 	public Set<Element> getElementSet() {

@@ -104,12 +104,13 @@ public class KRatioCorrectionModelTest {
 		}
 
 		final KRatioCorrectionModel2 krcm = KRatioCorrectionModel2.buildXPPModel(mouv.keySet(), null);
-		final UncertainValuesBase<EPMALabel> uvs = krcm.buildInput(unk.toMassFraction(), kuv);
+		final UncertainValuesBase<EPMALabel> uvs = krcm.buildInput(kuv);
+		krcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
 		final Report r = new Report("KRatioCorrectionModel - test 1");
 		try {
 			r.addHeader("KRatioCorrectionModel - Test 1");
-			
+
 			r.add(krcm, Mode.VERBOSE);
 
 			final UncertainValuesCalculator<EPMALabel> nmvj = new UncertainValuesCalculator<>(krcm, uvs);
@@ -122,8 +123,7 @@ public class KRatioCorrectionModelTest {
 
 			r.addHeader("Result");
 			r.add(nmvj);
-		} 
-		catch(Throwable e) {
+		} catch (Throwable e) {
 			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
 			throw e;
@@ -196,7 +196,8 @@ public class KRatioCorrectionModelTest {
 		final UncertainValues<KRatioLabel> kratios = new UncertainValues<KRatioLabel>(lkr);
 
 		final KRatioCorrectionModel2 krcm = KRatioCorrectionModel2.buildXPPModel(lkr.keySet(), null);
-		final UncertainValuesBase<EPMALabel> uvs = krcm.buildInput(unk.toMassFraction(), kratios);
+		final UncertainValuesBase<EPMALabel> uvs = krcm.buildInput(kratios);
+		krcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
 		final Report report = new Report("K-Ratio (2)");
 		try {
@@ -223,7 +224,7 @@ public class KRatioCorrectionModelTest {
 			report.addThrowable(e);
 			report.inBrowser(Mode.NORMAL);
 			throw e;
-		} 
+		}
 		report.inBrowser(Mode.NORMAL);
 	}
 
@@ -310,8 +311,8 @@ public class KRatioCorrectionModelTest {
 			tags.add(MaterialLabel.buildMassFractionTag(krl.getStandard().getMaterial(), krl.getElement()));
 		}
 		final KRatioCorrectionModel2 krcm = new KRatioCorrectionModel2(lkr.keySet(), null, tags);
-
-		final UncertainValuesBase<EPMALabel> uvs = krcm.buildInput(unk.toMassFraction(), kuv);
+		final UncertainValuesBase<EPMALabel> uvs = krcm.buildInput(kuv);
+		krcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
 		final Report report = new Report("K-Ratio (3)");
 		try {
@@ -424,8 +425,8 @@ public class KRatioCorrectionModelTest {
 		final Set<Element> elms = new HashSet<>(Arrays.asList(Element.Oxygen, Element.Magnesium, Element.Silicon,
 				Element.Titanium, Element.Zinc, Element.Zirconium, Element.Barium));
 
-		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(new Material("Unknown", elms),
-				beamEnergy, takeOffAngle);
+		final Material unkMat = new Material("Unknown", elms);
+		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(unkMat, beamEnergy, takeOffAngle);
 
 		final Map<KRatioLabel, Number> vals = new HashMap<>();
 		vals.put(new KRatioLabel(unkMcd, mcd_sio2, ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1),
@@ -449,10 +450,10 @@ public class KRatioCorrectionModelTest {
 
 		final UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(iter.iterate(kratios));
 
-		final Composition comp = Composition.massFraction(iter.getUnknownMaterial(), uvs);
+		final Composition comp = Composition.massFraction(unkMat, uvs);
 
 		final Report rep = new Report("K240 Iteration");
-		
+
 		rep.addHeader("Iteration - O-by-K-ratio");
 		rep.addSubHeader("Unknown");
 		rep.add(unkMcd);
@@ -521,7 +522,8 @@ public class KRatioCorrectionModelTest {
 
 		final UncertainValuesBase<KRatioLabel> kratios = new UncertainValues<KRatioLabel>(vals);
 
-		final ExplicitMeasurementModel<MassFraction, MassFraction> elmByDiff = new ElementByDifference(unkMat, Element.Oxygen);
+		final ExplicitMeasurementModel<MassFraction, MassFraction> elmByDiff = new ElementByDifference(unkMat,
+				Element.Oxygen);
 
 		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(vals.keySet(), elmByDiff);
 		final UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(iter.iterate(kratios));

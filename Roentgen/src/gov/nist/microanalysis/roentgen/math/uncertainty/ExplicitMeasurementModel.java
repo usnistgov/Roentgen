@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 
@@ -47,6 +48,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 {
 
 	public static PrintStream sDump = null;
+
 	/**
 	 * Check labels are only used once.
 	 *
@@ -87,7 +89,12 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	/***
 	 * A mechanism to ensure that input values remain with constrained ranges.
 	 */
-	private final Map<G, Constraint> mConstraint = new HashMap<>();
+	private final Map<G, Constraint> mConstraints;
+
+	/***
+	 * An alternative way to input quantities into the model
+	 */
+	private final Map<Object, Double> mAdditionalInputs;
 
 	/**
 	 * Constructs an instance of the LabeledMultivariateJacobianFunction class for a
@@ -105,17 +112,42 @@ abstract public class ExplicitMeasurementModel<G, H> //
 		// assert inputLabels != outputLabels;
 		mInputLabels = new FastIndex<>(inputLabels);
 		mOutputLabels = new FastIndex<>(outputLabels);
+		mConstraints = new HashMap<>();
+		mAdditionalInputs = new HashMap<>();
 		validateLabels(inputLabels, outputLabels);
+	}
+
+	public void addAdditionalInputs(
+			final Map<? extends G, Double> inputs
+	) {
+		for (Map.Entry<? extends G, Double> me : inputs.entrySet())
+			setAdditionalInput(me.getKey(), me.getValue());
 	}
 
 	public void addConstraints(
 			final Map<? extends G, Constraint> constraints
 	) {
-		mConstraint.putAll(constraints);
+		mConstraints.putAll(constraints);
+	}
+
+	private void applyConstraints(
+			final RealVector point
+	) {
+		if (!mConstraints.isEmpty()) {
+			for (Entry<G, Constraint> con : mConstraints.entrySet()) {
+				int idx = inputIndex(con.getKey());
+				if (idx >= 0)
+					point.setEntry(idx, con.getValue().limit(point.getEntry(idx)));
+			}
+		}
+	}
+
+	public void clearAdditionalInputs() {
+		mAdditionalInputs.clear();
 	}
 
 	public void clearConstraints() {
-		mConstraint.clear();
+		mConstraints.clear();
 	}
 
 	/**
@@ -134,11 +166,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 			final RealVector inp
 	) {
 		if (this instanceof ILabeledMultivariateFunction) {
-			for (final Map.Entry<G, Constraint> con : mConstraint.entrySet()) {
-				final int idx = inputIndex(con.getKey());
-				if (idx >= 0)
-					inp.setEntry(idx, con.getValue().limit(inp.getEntry(idx)));
-			}
+			applyConstraints(inp);
 			return ((ILabeledMultivariateFunction<?, ?>) this).optimized(inp);
 		} else
 			return value(inp).getFirst();
@@ -180,7 +208,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	) {
 		if (x.getDimension() != getInputDimension())
 			throw new DimensionMismatchException(x.getDimension(), getInputDimension());
-		for (final Map.Entry<G, Constraint> con : mConstraint.entrySet()) {
+		for (final Map.Entry<G, Constraint> con : mConstraints.entrySet()) {
 			final int idx = inputIndex(con.getKey());
 			if (idx >= 0)
 				x.setEntry(idx, con.getValue().limit(x.getEntry(idx)));
@@ -195,8 +223,12 @@ abstract public class ExplicitMeasurementModel<G, H> //
 		return res;
 	}
 
+	public Map<Object, Double> getAdditionalInputs() {
+		return Collections.unmodifiableMap(mAdditionalInputs);
+	}
+
 	public Map<G, Constraint> getConstraints() {
-		return Collections.unmodifiableMap(mConstraint);
+		return Collections.unmodifiableMap(mConstraints);
 	}
 
 	/**
@@ -292,11 +324,36 @@ abstract public class ExplicitMeasurementModel<G, H> //
 		return mOutputLabels.indexOf(label);
 	}
 
+	/**
+	 * Specifies a value to associate with an input label. Works with the
+	 * getArg(...) function. If there is not a value associated with the specified
+	 * (inputIndex(lbl)==-1) then the additional inputs will be checked for a value.
+	 * Constraints are applied to the input value.
+	 *
+	 * @param lbl
+	 * @param value
+	 */
+	public void setAdditionalInput(
+			final G lbl, //
+			final double value
+	) {
+		if (mConstraints.containsKey(lbl))
+			mAdditionalInputs.put(lbl, mConstraints.get(lbl).limit(value));
+		else
+			mAdditionalInputs.put(lbl, value);
+	}
+
+	/**
+	 * Places the specified {@link Constraint} on the specified input label.
+	 *
+	 * @param lbl
+	 * @param con
+	 */
 	public void setConstraint(
 			final G lbl, //
 			final Constraint con
 	) {
-		mConstraint.put(lbl, con);
+		mConstraints.put(lbl, con);
 	}
 
 	@Override
@@ -380,18 +437,30 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Gets the value associated with the specified input variable label from the
-	 * {@link RealVector} point which is the argument to the value(...) function.
-	 * Typically used to implement the value(...) function.
+	 * Checks two places to see if there is a value associated with the specified
+	 * label. First it checks the input {@link RealVector} (using inputIndex(label))
+	 * and if a value is available here it returns this value. Second it checks the
+	 * getAlternativeInputs() to see if a value is available here. The function
+	 * throws a NullPointerException if neither place holds a value. Typically used
+	 * to implement the value(...) function.
 	 *
 	 * @param inLabel A G class label
 	 * @param point   The argument to the value(...) function
 	 * @return double The value at point.getEntry(inputIndex(inLabel))
 	 */
 	final protected double getArg(
-			final G inLabel, final RealVector point
+			final G inLabel, //
+			final RealVector point
 	) {
-		return point.getEntry(inputIndex(inLabel));
+		final int idx = inputIndex(inLabel);
+		if (idx >= 0)
+			return point.getEntry(idx);
+		else {
+			assert mAdditionalInputs.containsKey(inLabel) : //
+			"Missing " + inLabel;
+			return mAdditionalInputs.get(inLabel).doubleValue();
+
+		}
 	}
 
 	/**
@@ -406,9 +475,14 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	 *                 jacobian[outputIndex(outLabel),inputIndex(inLabel)]
 	 */
 	final protected void setJacobian(
-			final G inlabel, final H outLabel, final RealMatrix jacobian, final double value
+			final G inlabel, //
+			final H outLabel, //
+			final RealMatrix jacobian, //
+			final double value
 	) {
-		jacobian.setEntry(outputIndex(outLabel), inputIndex(inlabel), value);
+		final int idx = inputIndex(inlabel);
+		if (idx >= 0)
+			jacobian.setEntry(outputIndex(outLabel), idx, value);
 	}
 
 	/**
@@ -425,6 +499,17 @@ abstract public class ExplicitMeasurementModel<G, H> //
 			final H outLabel, final RealVector result, final double value
 	) {
 		result.setEntry(outputIndex(outLabel), value);
+	}
+
+	/**
+	 * For internal use.
+	 * 
+	 * @param inputs
+	 */
+	void applyAdditionalInputs(
+			final Map<Object, Double> inputs
+	) {
+		mAdditionalInputs.putAll(inputs);
 	}
 
 }

@@ -106,7 +106,7 @@ abstract public class ImplicitMeasurementModel2<X, Y extends X> //
 
 		final RealVector vals = buildResult();
 		for (int i = 0; i < vals.getDimension(); ++i)
-			vals.setEntry(i, getOutputValue(getOutputLabel(i)));
+			vals.setEntry(i, getArg(getOutputLabel(i), point));
 
 		return Pair.create(vals, MatrixUtils.inverse(cy).multiply(cx));
 	}
@@ -126,11 +126,11 @@ abstract public class ImplicitMeasurementModel2<X, Y extends X> //
 	}
 
 	protected void setCx(int hIndex, X xLabel, RealMatrix cx, double value) {
-		cx.setEntry(hIndex, outputIndex(xLabel), value);
+		cx.setEntry(hIndex, inputIndex(xLabel), value);
 	}
 
 	protected void setCy(int hIndex, Y yLabel, RealMatrix cy, double value) {
-		cy.setEntry(hIndex, inputIndex(yLabel), value);
+		cy.setEntry(hIndex, outputIndex(yLabel), value);
 	}
 
 }

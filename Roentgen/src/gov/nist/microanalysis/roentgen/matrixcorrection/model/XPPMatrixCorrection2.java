@@ -48,6 +48,7 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import joinery.DataFrame;
@@ -136,13 +137,13 @@ public class XPPMatrixCorrection2 //
 		private final Material mMaterial;
 
 		public static List<EPMALabel> buildInputs(
-				//
 				final Material comp, //
 				final boolean isStandard //
 		) {
 			final List<EPMALabel> res = new ArrayList<>();
 			for (final Element elm : comp.getElementSet()) {
-				res.add(MaterialLabel.buildMassFractionTag(comp, elm));
+				if (isStandard)
+					res.add(MaterialLabel.buildMassFractionTag(comp, elm));
 				res.add(MaterialLabel.buildAtomicWeightTag(comp, elm));
 				res.add(MatrixCorrectionModel2.meanIonizationLabel(elm));
 			}
@@ -172,7 +173,7 @@ public class XPPMatrixCorrection2 //
 				final RealVector point
 		) {
 			final ArrayList<Element> elms = new ArrayList<>(mMaterial.getElementSet());
-			final int[] iCi = new int[elms.size()];
+			final MassFraction[] lCi = new MassFraction[elms.size()];
 			final int[] iJi = new int[elms.size()];
 			final int[] iAi = new int[elms.size()];
 			final double[] Ci = new double[elms.size()];
@@ -181,10 +182,10 @@ public class XPPMatrixCorrection2 //
 			final double[] Ji = new double[elms.size()];
 			for (int i = 0; i < Ci.length; ++i) {
 				final Element elm = elms.get(i);
-				iCi[i] = inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm));
+				lCi[i] = MaterialLabel.buildMassFractionTag(mMaterial, elm);
 				iJi[i] = inputIndex(MatrixCorrectionModel2.meanIonizationLabel(elm));
 				iAi[i] = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
-				Ci[i] = point.getEntry(iCi[i]);
+				Ci[i] = getArg(lCi[i], point);
 				Ji[i] = point.getEntry(iJi[i]);
 				Ai[i] = point.getEntry(iAi[i]);
 				Z[i] = elm.getAtomicNumber();
@@ -194,9 +195,15 @@ public class XPPMatrixCorrection2 //
 			final RealMatrix jac = buildJacobian();
 
 			final Material mat = mMaterial;
-			final int oM = outputIndex(new MatrixCorrectionModel2.MaterialBasedLabel("M", mat));
-			final int oJ = outputIndex(new MatrixCorrectionModel2.MaterialBasedLabel("J", mat));
-			final int oZbarb = outputIndex(new MatrixCorrectionModel2.MaterialBasedLabel(ZBARB, mat));
+			final MatrixCorrectionModel2.MaterialBasedLabel lM = new MatrixCorrectionModel2.MaterialBasedLabel("M",
+					mat);
+			final int oM = outputIndex(lM);
+			final MatrixCorrectionModel2.MaterialBasedLabel lJ = new MatrixCorrectionModel2.MaterialBasedLabel("J",
+					mat);
+			final int oJ = outputIndex(lJ);
+			final MatrixCorrectionModel2.MaterialBasedLabel lZbarb = new MatrixCorrectionModel2.MaterialBasedLabel(
+					ZBARB, mat);
+			final int oZbarb = outputIndex(lZbarb);
 			checkIndices(oM, oJ, oZbarb);
 
 			// Calculate M & partials
@@ -204,8 +211,8 @@ public class XPPMatrixCorrection2 //
 			for (int i = 0; i < Ci.length; ++i)
 				M += Ci[i] * Z[i] / Ai[i];
 			vals.setEntry(oM, M); // c1
-			for (int i = 0; i < iCi.length; ++i) {
-				jac.setEntry(oM, iCi[i], (Z[i] / Ai[i])); // c1
+			for (int i = 0; i < lCi.length; ++i) {
+				setJacobian(lCi[i], lM, jac, (Z[i] / Ai[i])); // c1
 				jac.setEntry(oM, iAi[i], -Ci[i] * (Z[i] / (Ai[i] * Ai[i]))); //
 			}
 
@@ -216,11 +223,11 @@ public class XPPMatrixCorrection2 //
 			lnJ /= M;
 			final double J = Math.exp(lnJ); // keV
 			vals.setEntry(oJ, J); // C2
-			for (int i = 0; i < iCi.length; ++i) {
+			for (int i = 0; i < lCi.length; ++i) {
 				final double tmp = (J / M) * (Z[i] / Ai[i]);
 				final double logJi = Math.log(Ji[i]);
 				jac.setEntry(oJ, iJi[i], tmp * (Ci[i] / Ji[i])); // Ok!
-				jac.setEntry(oJ, iCi[i], tmp * (logJi - lnJ)); // Ok!
+				setJacobian(lCi[i], lJ, jac, tmp * (logJi - lnJ)); // Ok!
 				jac.setEntry(oJ, iAi[i], tmp * (Ci[i] / Ai[i]) * (lnJ - logJi)); // Ok!
 			}
 			// Calculate Zbarb and partials
@@ -229,7 +236,7 @@ public class XPPMatrixCorrection2 //
 				Zbt += Ci[i] * Math.sqrt(Z[i]); // Ok
 			vals.setEntry(oZbarb, Zbt * Zbt);
 			for (int i = 0; i < elms.size(); ++i)
-				jac.setEntry(oZbarb, iCi[i], 2.0 * Math.sqrt(Z[i]) * Zbt); // Ci
+				setJacobian(lCi[i], lZbarb, jac, 2.0 * Math.sqrt(Z[i]) * Zbt); // Ci
 			return Pair.create(vals, jac);
 		}
 
@@ -244,7 +251,7 @@ public class XPPMatrixCorrection2 //
 			final double[] Ji = new double[elms.size()];
 			for (int i = 0; i < Ci.length; ++i) {
 				final Element elm = elms.get(i);
-				Ci[i] = point.getEntry(inputIndex(MaterialLabel.buildMassFractionTag(mMaterial, elm)));
+				Ci[i] = getArg(MaterialLabel.buildMassFractionTag(mMaterial, elm), point);
 				Z[i] = elm.getAtomicNumber();
 				Ji[i] = point.getEntry(inputIndex(MatrixCorrectionModel2.meanIonizationLabel(elm)));
 				final double a = point.getEntry(inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm)));
@@ -1641,7 +1648,6 @@ public class XPPMatrixCorrection2 //
 		private final CharacteristicXRay mXRay;
 
 		public static List<EPMALabel> buildInputs(
-				//
 				final UnknownMatrixCorrectionDatum unk, //
 				final MatrixCorrectionDatum std, //
 				final CharacteristicXRay cxr //
@@ -1841,7 +1847,6 @@ public class XPPMatrixCorrection2 //
 	 * @throws ArgumentException
 	 */
 	private static List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> buildSteps(
-			//
 			final Set<KRatioLabel> kratios, //
 			final List<EPMALabel> outputLabels //
 			) throws ArgumentException {
@@ -1924,8 +1929,10 @@ public class XPPMatrixCorrection2 //
 			final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
 			final StandardMatrixCorrectionDatum std = krl.getStandard();
 			res.add(MatrixCorrectionModel2.zafLabel(krl));
-			res.add(MaterialLabel.buildMassFractionTag(std.getMaterial(), krl.getElement()));
-			res.add(MaterialLabel.buildMassFractionTag(unk.getMaterial(), krl.getElement()));
+			// res.add(MaterialLabel.buildMassFractionTag(std.getMaterial(),
+			// krl.getElement()));
+			// res.add(MaterialLabel.buildMassFractionTag(unk.getMaterial(),
+			// krl.getElement()));
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				res.add(MatrixCorrectionModel2.zLabel(unk, std, cxr));
 				res.add(MatrixCorrectionModel2.aLabel(unk, std, cxr));
@@ -1940,23 +1947,10 @@ public class XPPMatrixCorrection2 //
 	 * @throws ArgumentException
 	 */
 	public XPPMatrixCorrection2(
-			//
 			final Set<KRatioLabel> kratios, //
 			final List<EPMALabel> outputLabels //
 			) throws ArgumentException {
 		super("XPP Matrix Correction", kratios, buildSteps(kratios, outputLabels), outputLabels);
-	}
-
-	public static UncertainValuesCalculator<EPMALabel> buildCalculator(
-			//
-			final Set<KRatioLabel> kratios, //
-			final UncertainValues<MassFraction> estUnknown, //
-			final List<EPMALabel> outputLabels //
-			) throws ArgumentException {
-		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, outputLabels);
-		final UncertainValues<EPMALabel> inputs = xpp.buildInput(estUnknown);
-		xpp.addConstraints(xpp.buildConstraints(inputs));
-		return new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
 	}
 
 	/**
@@ -1971,15 +1965,23 @@ public class XPPMatrixCorrection2 //
 	 */
 	public static UncertainValuesCalculator<EPMALabel> buildAnalytical(
 			final Set<KRatioLabel> kratios, //
-			final UncertainValues<MassFraction> estUnknown, //
+			final Map<MassFraction, Double> estUnknown, //
 			final boolean allOutputs
 			) throws ArgumentException {
+		Material unkMat = null;
+		for (final MassFraction mf : estUnknown.keySet()) {
+			if (unkMat == null)
+				unkMat = mf.getMaterial();
+			if (!unkMat.equals(mf.getMaterial()))
+				throw new ArgumentException("Two different materials [" + mf.getMaterial() + " and " + unkMat
+						+ " are present in the estimated unknown.");
+		}
 		final List<EPMALabel> outputs = allOutputs ? Collections.emptyList() : buildDefaultOutputs(kratios);
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, outputs);
-		final UncertainValues<EPMALabel> inputs = xpp.buildInput(estUnknown);
+		final UncertainValues<EPMALabel> inputs = xpp.buildInput(unkMat);
 		xpp.addConstraints(xpp.buildConstraints(inputs));
-		final UncertainValuesCalculator<EPMALabel> res = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
-		return res;
+		xpp.addAdditionalInputs(estUnknown);
+		return new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
 	}
 
 	/**
@@ -1994,14 +1996,23 @@ public class XPPMatrixCorrection2 //
 	 */
 	public static UncertainValuesCalculator<EPMALabel> buildFiniteDifference(
 			final Set<KRatioLabel> kratios, //
-			final UncertainValues<MassFraction> estUnknown, //
+			final Map<MassFraction, Double> estUnknown, //
 			final double frac, //
 			final boolean allOutputs
 			) throws ArgumentException {
+		Material unkMat = null;
+		for (final MassFraction mf : estUnknown.keySet()) {
+			if (unkMat == null)
+				unkMat = mf.getMaterial();
+			if (!unkMat.equals(mf.getMaterial()))
+				throw new ArgumentException("Two different materials [" + mf.getMaterial() + " and " + unkMat
+						+ " are present in the estimated unknown.");
+		}
 		final List<EPMALabel> outputs = allOutputs ? Collections.emptyList() : buildDefaultOutputs(kratios);
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(kratios, outputs);
-		final UncertainValues<EPMALabel> inputs = xpp.buildInput(estUnknown);
+		final UncertainValues<EPMALabel> inputs = xpp.buildInput(unkMat);
 		xpp.addConstraints(xpp.buildConstraints(inputs));
+		xpp.addAdditionalInputs(estUnknown);
 		final UncertainValuesCalculator<EPMALabel> res = new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
 		res.setCalculator(res.new FiniteDifference(xpp.delta(res.getInputLabels(), inputs, frac)));
 		return res;
@@ -2018,9 +2029,8 @@ public class XPPMatrixCorrection2 //
 	 * @throws ArgumentException
 	 */
 	public static UncertainValuesCalculator<EPMALabel> buildMonteCarlo(
-			//
 			final Set<KRatioLabel> kratios, //
-			final UncertainValues<MassFraction> estUnknown, //
+			final Map<MassFraction, Double> estUnknown, //
 			final int nEvals, //
 			final boolean allOutputs
 			) throws ArgumentException {
@@ -2037,7 +2047,7 @@ public class XPPMatrixCorrection2 //
 	 */
 	public UncertainValue computeJi(
 			final Element elm
-	) {
+		) {
 		final double z = elm.getAtomicNumber();
 		final double j = 1.0e-3 * z * (10.04 + 8.25 * Math.exp(-z / 11.22));
 		return new UncertainValue(j, 0.03 * j);
@@ -2053,7 +2063,7 @@ public class XPPMatrixCorrection2 //
 	 */
 	public static UncertainValue computeIonizationExponent(
 			final AtomicShell sh, final double frac
-			) {
+	) {
 		double m, dm;
 		switch (sh.getFamily()) {
 		case K:
@@ -2087,22 +2097,11 @@ public class XPPMatrixCorrection2 //
 	 */
 	@Override
 	public UncertainValues<EPMALabel> buildInput(
-			final UncertainValues<MassFraction> estUnknown
-			) //
-			throws ArgumentException {
+			final Material unkMat
+		) throws ArgumentException {
 		final List<UncertainValuesBase<? extends EPMALabel>> results = new ArrayList<>();
 		// Make sure that there are no replicated Compositions
-		{
-			assert estUnknown != null;
-			final Map<EPMALabel, Number> unkMap = new HashMap<>();
-			for (final MassFraction mf : estUnknown.getLabels()) {
-				final Material unkMat = mf.getMaterial();
-				for (final Element elm : unkMat.getElementSet())
-					unkMap.put(MaterialLabel.buildAtomicWeightTag(unkMat, elm), unkMat.getAtomicWeight(elm));
-			}
-			results.add(new UncertainValues<>(unkMap));
-			results.add(estUnknown);
-		}
+		results.add(unkMat.getAtomicWeights());
 		{
 			final Set<Composition> allComps = new HashSet<>();
 			for (final KRatioLabel krl : mKRatios) {
@@ -2117,7 +2116,7 @@ public class XPPMatrixCorrection2 //
 				results.add(comp.getInputs());
 		}
 		results.add(buildMeanIonizationPotentials());
-		results.add(buildElementalMACs(estUnknown));
+		results.add(buildElementalMACs());
 		{
 			final Map<EPMALabel, Number> vals = new HashMap<>();
 			for (final KRatioLabel krl : mKRatios) {
@@ -2203,20 +2202,28 @@ public class XPPMatrixCorrection2 //
 
 	public Map<EPMALabel, Constraint> buildConstraints(
 			final UncertainValuesBase<EPMALabel> inputs
-			) {
+	) {
 		final Map<EPMALabel, Constraint> res = new HashMap<EPMALabel, Constraint>();
-		final List<MassFraction> lmf = inputs.getLabels(MassFraction.class);
-		for (final MassFraction mf : lmf)
+		// Add constraints for the standards
+		for (final MassFraction mf : inputs.getLabels(MassFraction.class))
 			res.put(mf, new Constraint.Range(0.0, 1.0e6));
-		final List<ElementalMAC.ElementMAC> lem = inputs.getLabels(ElementalMAC.ElementMAC.class);
-		for (final ElementalMAC.ElementMAC em : lem)
+		for (final AtomFraction mf : inputs.getLabels(AtomFraction.class))
+			res.put(mf, new Constraint.Range(0.0, 1.0e6));
+		// Add constraints for the unknown(s)
+		final Set<Material> unkMats = new HashSet<>();
+		for (final KRatioLabel krl : inputs.getLabels(KRatioLabel.class))
+			unkMats.add(krl.getUnknown().getMaterial());
+		for (final Material unkMat : unkMats)
+			for (final Element elm : unkMat.getElementSet())
+				res.put(MaterialLabel.buildMassFractionTag(unkMat, elm), new Constraint.Range(0.0, 1.0e6));
+		// Add elemental MAC constraints for the MC model
+		for (final ElementalMAC.ElementMAC em : inputs.getLabels(ElementalMAC.ElementMAC.class))
 			res.put(em, new Constraint.Range(0.1 * inputs.getEntry(em), 10.0 * inputs.getEntry(em)));
-		final List<CoatingThickness> lth = inputs.getLabels(CoatingThickness.class);
-		for (final CoatingThickness th : lth) {
+		// Add elemental MAC constraints for the MC model
+		for (final CoatingThickness th : inputs.getLabels(CoatingThickness.class)) {
 			final double thickness = Math.abs(inputs.getEntry(th));
 			res.put(th, new Constraint.Range(0.1 * thickness, 10.0 * thickness));
 		}
-
 		return res;
 	}
 
@@ -2227,7 +2234,6 @@ public class XPPMatrixCorrection2 //
 		return elms;
 	}
 
-
 	private static ExplicitMeasurementModel<EPMALabel, MaterialMAC> buildMaterialMACFunctions(
 			final Material estUnknown, //
 			final Set<KRatioLabel> kratios
@@ -2235,15 +2241,20 @@ public class XPPMatrixCorrection2 //
 			throws ArgumentException {
 		final Map<Material, CharacteristicXRaySet> comps = new HashMap<>();
 		final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends MaterialMAC>> funcs = new ArrayList<>();
+		final FastIndex<Material> other = new FastIndex<>();
+		final FastIndex<Material> unks = new FastIndex<>();
 		{
 			final Set<CharacteristicXRay> allCxr = new HashSet<>();
 			comps.put(estUnknown, new CharacteristicXRaySet());
 			for (final KRatioLabel krl : kratios) {
 				// assert (estUnknown == null) ||
 				// estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
+				other.addIfMissing(krl.getStandard().getMaterial());
+				unks.addIfMissing(krl.getUnknown().getMaterial());
 				comps.get(estUnknown).addAll(krl.getXRaySet());
 				if (krl.getUnknown().hasCoating()) {
 					final Material mat = krl.getUnknown().getCoating().getMaterial();
+					other.addIfMissing(mat);
 					if (!comps.containsKey(mat))
 						comps.put(mat, new CharacteristicXRaySet());
 					comps.get(mat).addAll(krl.getXRaySet());
@@ -2256,6 +2267,7 @@ public class XPPMatrixCorrection2 //
 				}
 				if (krl.getStandard().hasCoating()) {
 					final Material mat = krl.getStandard().getCoating().getMaterial();
+					other.addIfMissing(mat);
 					if (!comps.containsKey(mat))
 						comps.put(mat, new CharacteristicXRaySet());
 					comps.get(mat).addAll(krl.getXRaySet());
@@ -2268,17 +2280,13 @@ public class XPPMatrixCorrection2 //
 					if (me.getValue().contains(cxr))
 						mats.add(me.getKey());
 				// assert mats.size() > 1;
-				funcs.add(new MaterialMACFunction(new ArrayList<>(mats), cxr));
+				funcs.add(new MaterialMACFunction(other, unks, cxr));
 			}
 		}
 		return ParallelMeasurementModelBuilder.join("MaterialMACs", funcs);
 	}
 
-	private UncertainValues<EPMALabel> buildElementalMACs(
-			//
-			final UncertainValues<MassFraction> estUnknown
-			) //
-			throws ArgumentException {
+	private UncertainValues<EPMALabel> buildElementalMACs() throws ArgumentException {
 		final Set<Element> elms = new HashSet<>();
 		final Set<CharacteristicXRay> scxr = new HashSet<>();
 		{
