@@ -10,10 +10,10 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.juncertainty.CompositeMeasurementModel;
+import gov.nist.juncertainty.ExplicitMeasurementModel;
+import gov.nist.juncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 

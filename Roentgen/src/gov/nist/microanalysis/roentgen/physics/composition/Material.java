@@ -16,7 +16,7 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.juncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 

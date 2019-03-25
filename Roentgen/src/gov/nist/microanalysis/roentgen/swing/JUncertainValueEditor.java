@@ -12,7 +12,7 @@ import javax.swing.JTextField;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**

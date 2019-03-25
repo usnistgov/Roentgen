@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import com.duckandcover.html.Table;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition.Representation;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;

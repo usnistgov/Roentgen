@@ -9,8 +9,8 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.Transforms;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
+import gov.nist.juncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValueEx;
 
 /**
  * <p>

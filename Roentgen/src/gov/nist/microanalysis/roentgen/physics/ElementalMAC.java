@@ -13,9 +13,9 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 import com.google.common.base.Preconditions;
 
+import gov.nist.juncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.Globals;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 

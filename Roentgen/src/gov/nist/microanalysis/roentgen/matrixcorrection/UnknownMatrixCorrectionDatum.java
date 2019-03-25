@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 import com.duckandcover.html.Table;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;

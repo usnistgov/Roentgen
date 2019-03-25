@@ -16,8 +16,8 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 
+import gov.nist.juncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**

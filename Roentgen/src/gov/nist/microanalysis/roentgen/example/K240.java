@@ -18,13 +18,13 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
+import gov.nist.juncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValueEx;
+import gov.nist.juncertainty.UncertainValues;
+import gov.nist.juncertainty.UncertainValuesBase;
+import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;

@@ -1,7 +1,7 @@
 package gov.nist.microanalysis.roentgen.physics.composition;
 
+import gov.nist.juncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.models.Normalize;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.NormalizedMassFraction;
 

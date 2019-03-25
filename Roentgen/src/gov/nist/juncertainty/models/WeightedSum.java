@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.math.uncertainty.models;
+package gov.nist.juncertainty.models;
 
 import java.util.Collections;
 import java.util.List;
@@ -9,9 +9,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.juncertainty.ExplicitMeasurementModel;
+import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 
 /**
  * COmputes the weighted sum of the input label values times a set of

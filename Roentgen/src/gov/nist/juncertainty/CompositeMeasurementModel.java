@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.math.uncertainty;
+package gov.nist.juncertainty;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -218,7 +218,7 @@ public class CompositeMeasurementModel<G> //
 	/**
 	 * Implements the optimized version of the evaluate function. (non-Javadoc)
 	 *
-	 * @see gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction#optimized(org.apache.commons.math3.linear.RealVector)
+	 * @see gov.nist.juncertainty.ILabeledMultivariateFunction#optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
 	public RealVector optimized(

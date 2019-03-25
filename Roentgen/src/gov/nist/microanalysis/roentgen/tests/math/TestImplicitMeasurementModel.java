@@ -12,10 +12,10 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
 
+import gov.nist.juncertainty.ImplicitMeasurementModel2;
+import gov.nist.juncertainty.UncertainValues;
+import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ImplicitMeasurementModel2;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 
 /**
  * Not ready!!! Need test inputs....

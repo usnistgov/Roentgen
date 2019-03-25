@@ -11,8 +11,8 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.juncertainty.UncertainValues;
+import gov.nist.juncertainty.UncertainValuesBase;
 
 /**
  * @author Nicholas W. M. Ritchie

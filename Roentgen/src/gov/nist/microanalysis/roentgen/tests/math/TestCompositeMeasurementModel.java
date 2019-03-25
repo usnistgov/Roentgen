@@ -14,12 +14,12 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
+import gov.nist.juncertainty.CompositeMeasurementModel;
+import gov.nist.juncertainty.ExplicitMeasurementModel;
+import gov.nist.juncertainty.UncertainValues;
+import gov.nist.juncertainty.UncertainValuesBase;
+import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import junit.framework.TestCase;
 
 /**

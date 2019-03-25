@@ -4,9 +4,9 @@ import java.util.Objects;
 
 import com.duckandcover.html.IToHTML;
 
+import gov.nist.juncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;

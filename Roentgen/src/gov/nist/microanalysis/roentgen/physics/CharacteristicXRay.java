@@ -12,9 +12,9 @@ import org.apache.commons.lang3.concurrent.LazyInitializer;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
+import gov.nist.juncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.Globals;
 import gov.nist.microanalysis.roentgen.math.Utility;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.physics.Shell.Principle;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 

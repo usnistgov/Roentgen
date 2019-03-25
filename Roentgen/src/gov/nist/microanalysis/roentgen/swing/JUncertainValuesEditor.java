@@ -9,7 +9,7 @@ import javax.swing.table.DefaultTableModel;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
+import gov.nist.juncertainty.UncertainValues;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**

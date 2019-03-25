@@ -5,13 +5,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import gov.nist.juncertainty.CompositeMeasurementModel;
+import gov.nist.juncertainty.ExplicitMeasurementModel;
+import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
 import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
-import gov.nist.microanalysis.roentgen.math.uncertainty.CompositeMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.Layer;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;

@@ -1,7 +1,7 @@
 /**
  *
  */
-package gov.nist.microanalysis.roentgen.math.uncertainty;
+package gov.nist.juncertainty;
 
 import java.util.ArrayList;
 import java.util.Collections;

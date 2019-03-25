@@ -11,9 +11,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import gov.nist.juncertainty.ExplicitMeasurementModel;
+import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ILabeledMultivariateFunction;
-import gov.nist.microanalysis.roentgen.math.uncertainty.ExplicitMeasurementModel;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;

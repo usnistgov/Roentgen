@@ -14,12 +14,12 @@ import org.junit.Test;
 import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
 
+import gov.nist.juncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValues;
+import gov.nist.juncertainty.UncertainValuesBase;
+import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValues;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.ElementalMAC;

@@ -2,7 +2,7 @@ package gov.nist.microanalysis.roentgen.tests.math;
 
 import org.junit.Assert;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValue;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 import junit.framework.TestCase;
 

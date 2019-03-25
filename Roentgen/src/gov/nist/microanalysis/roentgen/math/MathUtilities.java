@@ -19,8 +19,8 @@ import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValue;
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValueEx;
+import gov.nist.juncertainty.UncertainValue;
+import gov.nist.juncertainty.UncertainValueEx;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**

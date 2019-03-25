@@ -16,7 +16,7 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularMatrixException;
 import org.apache.commons.math3.random.RandomGeneratorFactory;
 
-import gov.nist.microanalysis.roentgen.math.uncertainty.UncertainValuesBase;
+import gov.nist.juncertainty.UncertainValuesBase;
 
 /**
  * This class is designed to avoid some of the problems associated with

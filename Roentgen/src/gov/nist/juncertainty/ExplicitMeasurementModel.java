@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.math.uncertainty;
+package gov.nist.juncertainty;
 
 import java.io.PrintStream;
 import java.text.NumberFormat;
