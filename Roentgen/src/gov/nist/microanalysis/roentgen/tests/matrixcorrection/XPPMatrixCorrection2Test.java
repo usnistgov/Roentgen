@@ -67,7 +67,7 @@ public class XPPMatrixCorrection2Test {
 	private static final ValueToLog3 V2L3 = new ValueToLog3(1.0);
 	private static final LinearToColor L2C = new LinearToColor(1.0, Color.blue, Color.red);
 	public static boolean DUMP = false;
-	public static int MC_ITERATIONS = 16 * 8000;
+	public static int MC_ITERATIONS = 0; // 16 * 8000;
 
 	/**
 	 * Computes Si and O in Al2SiO5 using SiO2
@@ -112,7 +112,7 @@ public class XPPMatrixCorrection2Test {
 
 		final UncertainValuesCalculator<EPMALabel> xppI = XPPMatrixCorrection2.buildAnalytical(skrl,
 				unk.getValueMap(MassFraction.class), true);
-		
+
 		final Report r = new Report("XPP Report - test1");
 		UncertainValuesBase<EPMALabel> fdResults = null;
 		try {
@@ -130,7 +130,6 @@ public class XPPMatrixCorrection2Test {
 				r.add(inputs);
 				final UncertainValuesBase<EPMALabel> aResults = xppI.force().sort();
 
-				
 				final CharacteristicXRay cxr = CharacteristicXRay.create(Element.Silicon, XRayTransition.KA1);
 				final EPMALabel tagAu = MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner());
 				final EPMALabel tagau = MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner());
@@ -148,8 +147,8 @@ public class XPPMatrixCorrection2Test {
 				final EPMALabel tagChis = MatrixCorrectionModel2.chiLabel(stdMcd, cxr);
 				final EPMALabel tagFChiFu = MatrixCorrectionModel2.FxFLabel(unkMcd, cxr);
 				final EPMALabel tagFChiFs = MatrixCorrectionModel2.FxFLabel(stdMcd, cxr);
-				final EPMALabel tagZA = MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr);				
-				
+				final EPMALabel tagZA = MatrixCorrectionModel2.zafLabel(unkMcd, stdMcd, cxr);
+
 				assertEquals(aResults.getEntry(tagAu), 401.654, 0.001);
 				assertEquals(aResults.getEntry(tagau), 11189.1680, 0.001);
 				assertEquals(aResults.getEntry(tagBu), -526613.8448, 0.001);
@@ -225,8 +224,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -267,8 +265,8 @@ public class XPPMatrixCorrection2Test {
 				r.add(xppMc.getInputs());
 				final UncertainValuesBase<EPMALabel> aResults = xppI.sort();
 
-				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner())), 2366.373,
-						0.001);
+				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("A", unkMcd, cxr.getInner())),
+						2366.373, 0.001);
 				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("a", unkMcd, cxr.getInner())),
 						11052.873, 0.001);
 				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("B", unkMcd, cxr.getInner())),
@@ -277,8 +275,8 @@ public class XPPMatrixCorrection2Test {
 						11681.220, 0.001);
 				assertEquals(aResults.getEntry(MatrixCorrectionModel2.phi0Label(unkMcd, cxr.getInner())), 1.258, 0.001);
 
-				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("A", stdMcd, cxr.getInner())), 2307.215,
-						0.001);
+				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("A", stdMcd, cxr.getInner())),
+						2307.215, 0.001);
 				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("a", stdMcd, cxr.getInner())),
 						11178.191, 0.001);
 				assertEquals(aResults.getEntry(MatrixCorrectionModel2.shellLabel("B", stdMcd, cxr.getInner())),
@@ -468,7 +466,7 @@ public class XPPMatrixCorrection2Test {
 
 				final long start = System.currentTimeMillis();
 				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
-				final UncertainValuesBase<EPMALabel> aResults = xppI.sort();
+				final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(xppI).sort();
 				System.out.println("Full Timing(2) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
@@ -516,8 +514,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -683,7 +680,7 @@ public class XPPMatrixCorrection2Test {
 				r.add(inputs);
 				final long start = System.currentTimeMillis();
 				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
-				final UncertainValuesBase<EPMALabel> aResults = xppI.sort();
+				final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(xppI).sort();
 				System.out.println("Timing(3) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 				r.addHeader("Results");
@@ -732,8 +729,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -750,7 +746,8 @@ public class XPPMatrixCorrection2Test {
 				}
 				resultsD = fdCalc.sort();
 				r.addImage(resultsD.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-				r.addImage(UncertainValuesBase.compareAsBitmap(aResults, resultsD.extract(aResults.getLabels()), L2C, 8),
+				r.addImage(
+						UncertainValuesBase.compareAsBitmap(aResults, resultsD.extract(aResults.getLabels()), L2C, 8),
 						"Comparing uncertainty matrix");
 
 			}
@@ -908,20 +905,21 @@ public class XPPMatrixCorrection2Test {
 
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
-				unk.getValueMap(MassFraction.class), true);
-		final UncertainValuesBase<EPMALabel> aResults = aCalc.sort();
+		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
 
 		System.out.println("Trimmed Timing (4) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
-		final UncertainValuesCalculator<EPMALabel> fullResults = UncertainValuesBase.propagateAnalytical(xpp2, inputs2);
-		
+
+		final long start2 = System.currentTimeMillis();
+		final UncertainValues<EPMALabel> fullResults = UncertainValues
+				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
+
 		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
@@ -942,7 +940,7 @@ public class XPPMatrixCorrection2Test {
 					assertEquals(cov1, cov2, 0.01 * Math.max(Math.abs(cov1), Math.abs(cov2)));
 				}
 		}
-		
+
 		final Report r = new Report("XPP Report - test4()");
 		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
@@ -1000,8 +998,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -1187,18 +1184,18 @@ public class XPPMatrixCorrection2Test {
 
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
-				unk.getValueMap(MassFraction.class), true);
-		final UncertainValuesBase<EPMALabel> aResults = aCalc.sort();
+		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
 		System.out.println("Trimmed Timing (5) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-		final long start2 = System.currentTimeMillis();
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
-		final UncertainValuesCalculator<EPMALabel> fullResults = UncertainValuesBase.propagateAnalytical(xpp2, inputs2);
+		final long start2 = System.currentTimeMillis();
+		final UncertainValues<EPMALabel> fullResults = UncertainValues
+				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
 
 		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
@@ -1274,8 +1271,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -1463,19 +1459,20 @@ public class XPPMatrixCorrection2Test {
 		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
-				unk.getValueMap(MassFraction.class), true);
-		final UncertainValuesBase<EPMALabel> aResults = aCalc.sort();
+		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
 		System.out.println("Trimmed Timing (6) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-		final long start2 = System.currentTimeMillis();
+		
 
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
-		final UncertainValuesCalculator<EPMALabel> fullResults = UncertainValuesBase.propagateAnalytical(xpp2, inputs2);
+		
+		final long start2 = System.currentTimeMillis();
+		final UncertainValues<EPMALabel> fullResults = UncertainValues
+				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
 
 		System.out.println("Full Timing (6) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
@@ -1497,7 +1494,7 @@ public class XPPMatrixCorrection2Test {
 					assertEquals(cov1, cov2, 0.01 * Math.max(Math.abs(cov1), Math.abs(cov2)));
 				}
 		}
-		
+
 		final Report r = new Report("XPP Report - Test6()");
 		UncertainValuesBase<EPMALabel> resultsD = null;
 		try {
@@ -1551,8 +1548,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -1742,19 +1738,19 @@ public class XPPMatrixCorrection2Test {
 		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
 		final long start = System.currentTimeMillis();
-		final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
-				unk.getValueMap(MassFraction.class), true);
-		final UncertainValuesBase<EPMALabel> aResults = aCalc.sort();
+		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
 		System.out.println("Trimmed Timing (7) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-		final long start2 = System.currentTimeMillis();
 
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
-		final UncertainValuesCalculator<EPMALabel> fullResults = UncertainValuesBase.propagateAnalytical(xpp2, inputs2);
+		final long start2 = System.currentTimeMillis();
+		final UncertainValues<EPMALabel> fullResults = UncertainValues
+				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
 
 		System.out.println("Full Timing (7) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
@@ -1830,8 +1826,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -2026,20 +2021,20 @@ public class XPPMatrixCorrection2Test {
 
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
-				unk.getValueMap(MassFraction.class), true);
-
-		final UncertainValuesBase<EPMALabel> aResults = aCalc.sort();
+		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValues.propagateAnalytical(xpp, inputs);
+		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
+		
 		System.out.println("Trimmed Timing (8) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-		final long start2 = System.currentTimeMillis();
 
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
-		final UncertainValuesBase<EPMALabel> fullResults = UncertainValuesBase.propagateAnalytical(xpp2, inputs2).sort();
+		final long start2 = System.currentTimeMillis();
+		final UncertainValuesBase<EPMALabel> fullResults = UncertainValues.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2))
+				.sort();
 		System.out.println("Full Timing (8) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
@@ -2114,8 +2109,7 @@ public class XPPMatrixCorrection2Test {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
 							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 									Math.abs(fdJac.getEntry(input, output)))) {
-								checkEquals(input, output, aJac.getEntry(input, output),
-										fdJac.getEntry(input, output),
+								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
 							}
@@ -2278,11 +2272,10 @@ public class XPPMatrixCorrection2Test {
 		xpp.addConstraints(xpp.buildConstraints(inputs));
 		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
-		final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp,
-				inputs);
+		final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp, inputs);
 
 		final DataFrame<Double> df = xpp.computePhiRhoZCurve(aResults.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
-		df.writeCsv("C:\\Users\\nicho\\OneDrive\\Desktop\\prz412.csv");
+		df.writeCsv("C:\\Users\\nicho\\Desktop\\prz412.csv");
 	}
 
 	public void checkEquals(
@@ -2558,7 +2551,8 @@ public class XPPMatrixCorrection2Test {
 					// 0.00001);
 					resultsD = fdCalc;
 					r.addImage(fdCalc.asCovarianceBitmap(8, V2L3, L2C), "Delta uncertainty matrix");
-					r.addImage(UncertainValuesBase.compareAsBitmap(aCalc, fdCalc, L2C, 8), "Comparing uncertainty matrix");
+					r.addImage(UncertainValuesBase.compareAsBitmap(aCalc, fdCalc, L2C, 8),
+							"Comparing uncertainty matrix");
 
 				}
 				if (MC_ITERATIONS > 0) {

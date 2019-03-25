@@ -1,12 +1,16 @@
 package gov.nist.microanalysis.roentgen.math.uncertainty;
 
 import java.util.Collection;
+import java.util.Objects;
 
 import com.duckandcover.html.IToHTML;
 
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
+ * UncertainValue represents a number and an associated uncertainty (which may
+ * be zero.) UncertainValue is derived from {@link Number}.
+ *
  * @author Nicholas W. M. Ritchie
  *
  */
@@ -39,7 +43,8 @@ public class UncertainValue extends Number //
 	 *
 	 */
 	public UncertainValue(
-			final double value, final double sigma
+			final double value, //
+			final double sigma
 	) {
 		mValue = Double.valueOf(value);
 		mSigma = sigma;
@@ -134,7 +139,7 @@ public class UncertainValue extends Number //
 	}
 
 	public UncertainValue multiply(
-			double k
+			final double k
 	) {
 		return new UncertainValue(k * mValue, k * mSigma);
 	}
@@ -165,7 +170,7 @@ public class UncertainValue extends Number //
 		return Double.isNaN(iVarSum) ? UncertainValue.NaN : new UncertainValue(sum / varSum, Math.sqrt(1.0 / varSum));
 	}
 
-	static final private boolean isSpecialNumber(
+	static final public boolean isSpecialNumber(
 			final Number n
 	) {
 		return n instanceof UncertainValue;
@@ -182,26 +187,42 @@ public class UncertainValue extends Number //
 		return n;
 	}
 
+	/**
+	 * First compares the values and then compares the uncertainties using
+	 * Double.compare(...).
+	 *
+	 * @param arg0
+	 * @return int
+	 */
 	@Override
 	public int compareTo(
 			final UncertainValue arg0
 	) {
-		int res = Double.compare(mValue, arg0.mValue);
+		int res = mValue.compareTo(arg0.mValue);
 		if (res == 0)
 			res = Double.compare(mSigma, arg0.mSigma);
 		return res;
 	}
 
+	public int compare(
+			final UncertainValue uv1, final UncertainValue uv2
+	) {
+		return uv1.compareTo(uv2);
+	}
+
 	public String formatLong(
-			BasicNumberFormat bnf
+			final BasicNumberFormat bnf
 	) {
 		return bnf.format(mValue) + "\u00B1" + bnf.format(mSigma);
 	}
 
 	public String format(
-			BasicNumberFormat bnf
+			final BasicNumberFormat bnf
 	) {
-		return bnf.format(mValue) + "\u00B1" + bnf.format(mSigma);
+		if (mSigma == 0.0)
+			return bnf.format(mValue);
+		else
+			return bnf.format(mValue) + "\u00B1" + bnf.format(mSigma);
 	}
 
 	public double fractionalUncertainty() {
@@ -209,13 +230,33 @@ public class UncertainValue extends Number //
 	}
 
 	public static boolean isUncertain(
-			Number n
+			final Number n
 	) {
 		return (n instanceof UncertainValue) && ((UncertainValue) n).isUncertain();
 	}
 
 	public boolean isUncertain() {
 		return mSigma > 0.0;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(mSigma, mValue);
+	}
+
+	@Override
+	public boolean equals(
+			final Object obj
+	) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final UncertainValue other = (UncertainValue) obj;
+		return Double.doubleToLongBits(mSigma) == Double.doubleToLongBits(other.mSigma)
+				&& Objects.equals(mValue, other.mValue);
 	}
 
 }
