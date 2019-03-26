@@ -62,6 +62,17 @@ public class TestUncertainValue extends TestCase {
 		Assert.assertEquals(mA2.formatLong(new BasicNumberFormat("0.000")), "1.240\u00B10.300");
 		Assert.assertEquals(mB2.formatLong(new BasicNumberFormat("0.000")), "8.820\u00B10.000");
 		Assert.assertEquals(mC.format(new BasicNumberFormat("0.00")), "1.24\u00B12.10");
+		
+		Assert.assertEquals(UncertainValue.parse("8.0 ± 0.1"), UncertainValue.valueOf(8.0, 0.1));
+		Assert.assertEquals(UncertainValue.parse("8.0 +- 0.1"), UncertainValue.valueOf(8.0, 0.1));
+		Assert.assertEquals(UncertainValue.parse("8.0 -+ 0.1"), UncertainValue.valueOf(8.0, 0.1));
+		Assert.assertEquals(UncertainValue.parse("-8.0±-0.1"), UncertainValue.valueOf(-8.0, -0.1));
+		Assert.assertEquals(UncertainValue.parse("   8.0 ±    0.1"), UncertainValue.valueOf(8.0, 0.1));
+		Assert.assertEquals(UncertainValue.parse("8.0±1.1"), UncertainValue.valueOf(8.0, 1.1));
+		Assert.assertEquals(UncertainValue.parse("8.0 +--0.1"), UncertainValue.valueOf(8.0, -0.1));
+		
+		Assert.assertEquals(UncertainValue.parse("8.0e3±0.1e3"), UncertainValue.valueOf(8.0e3, 0.1e3));
+
 	}
 
 };

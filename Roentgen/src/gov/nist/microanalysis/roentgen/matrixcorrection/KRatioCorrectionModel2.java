@@ -21,7 +21,7 @@ import org.apache.commons.math3.optim.ConvergenceChecker;
 
 import gov.nist.juncertainty.CompositeMeasurementModel;
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ImplicitMeasurementModel2;
+import gov.nist.juncertainty.ImplicitMeasurementModel;
 import gov.nist.juncertainty.TrimmedNamedMultivariateJacobianFunction;
 import gov.nist.juncertainty.UncertainValues;
 import gov.nist.juncertainty.UncertainValuesBase;
@@ -73,7 +73,7 @@ public class KRatioCorrectionModel2 //
 
 	private final List<KRatioLabel> mKRatioSet;
 
-	private static class KRatioModel2 extends ImplicitMeasurementModel2<EPMALabel, MassFraction> {
+	private static class KRatioModel2 extends ImplicitMeasurementModel<EPMALabel, MassFraction> {
 
 		static List<EPMALabel> buildInputs(
 				final Set<KRatioLabel> kratios //

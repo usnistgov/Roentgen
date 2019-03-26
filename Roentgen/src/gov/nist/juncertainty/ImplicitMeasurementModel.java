@@ -20,7 +20,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * @author Nicholas W. M. Ritchie
  *
  */
-abstract public class ImplicitMeasurementModel2<X, Y extends X> //
+abstract public class ImplicitMeasurementModel<X, Y extends X> //
 		extends ExplicitMeasurementModel<X, Y> {
 
 	public static class HLabel {
@@ -74,7 +74,7 @@ abstract public class ImplicitMeasurementModel2<X, Y extends X> //
 	 * @param outputLabels
 	 * @throws ArgumentException
 	 */
-	public ImplicitMeasurementModel2(
+	public ImplicitMeasurementModel(
 			final List<X> inputLabels, //
 			final List<Y> outputLabels
 	) throws ArgumentException {

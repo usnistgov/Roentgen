@@ -12,7 +12,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
 
-import gov.nist.juncertainty.ImplicitMeasurementModel2;
+import gov.nist.juncertainty.ImplicitMeasurementModel;
 import gov.nist.juncertainty.UncertainValues;
 import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
@@ -26,7 +26,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 public class TestImplicitMeasurementModel {
 
 	public static class Pressure102Example //
-			extends ImplicitMeasurementModel2<String, String> {
+			extends ImplicitMeasurementModel<String, String> {
 
 		private static final String PRESSURE = "p";
 		private static final String GL = "gl";
