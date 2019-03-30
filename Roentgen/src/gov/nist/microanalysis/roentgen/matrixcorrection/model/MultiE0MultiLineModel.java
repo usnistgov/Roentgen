@@ -289,7 +289,7 @@ class MultiE0MultiLineModel //
 		) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.zafLabel(krl));
-			res.add(krl.asCalculated());
+			res.add(krl.as(Method.Calculated));
 			return res;
 		}
 

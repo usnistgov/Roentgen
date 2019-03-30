@@ -27,6 +27,8 @@ import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
+import gov.nist.microanalysis.roentgen.DataStore.CompositionFactory;
+import gov.nist.microanalysis.roentgen.math.Utility;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
@@ -54,13 +56,13 @@ public class KRatioCorrectionModelTest {
 	private static final LinearToColor L2C = new LinearToColor(1.0, Color.blue, Color.red);
 
 	@Test
-	public void test1() throws ParseException, ArgumentException, IOException {
+	public void test1() throws Exception {
 
-		final Composition std0 = XPPMatrixCorrection2Test.buildK411(false);
+		final Composition std0 = CompositionFactory.instance().findComposition("K411").getObject();
 
 		final Composition std1 = Composition.parse("Al");
 
-		final Composition unk = XPPMatrixCorrection2Test.buildK412(false);
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum stdK411Mcd = new StandardMatrixCorrectionDatum( //
 				std0, new UncertainValue(15.0, 0.1), //
@@ -123,7 +125,7 @@ public class KRatioCorrectionModelTest {
 
 			r.addHeader("Result");
 			r.add(nmvj);
-		} catch (Throwable e) {
+		} catch (final Throwable e) {
 			r.addThrowable(e);
 			r.inBrowser(Mode.VERBOSE);
 			throw e;
@@ -131,30 +133,19 @@ public class KRatioCorrectionModelTest {
 		r.inBrowser(Mode.VERBOSE);
 	}
 
-	public static Map<Element, Number> buildK240() {
-		final Map<Element, Number> res = new HashMap<Element, Number>();
-		res.put(Element.Magnesium, new UncertainValue(0.030154, 0.00030154));
-		res.put(Element.Silicon, new UncertainValue(0.186986, 0.00186986));
-		res.put(Element.Titanium, new UncertainValue(0.059950, 0.00059950));
-		res.put(Element.Zinc, new UncertainValue(0.040168, 0.00040168));
-		res.put(Element.Zirconium, new UncertainValue(0.074030, 0.00074030));
-		res.put(Element.Barium, new UncertainValue(0.268689, 0.000268689));
-		res.put(Element.Oxygen, new UncertainValue(0.340023, 0.00340023));
-		return res;
-	}
 
 	@Test
-	public void test2() throws ParseException, ArgumentException, IOException {
+	public void test2() throws Exception {
 		// K240 glass using Mg2SiO4, BaTiSi3O9
 		final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
-				Composition.parse("Mg2SiO4"), //
+				CompositionFactory.instance().findComposition("Forsterite").getObject(), //
 				new UncertainValue(15.0, 0.1), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.7)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.2));
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		// Ba, Ti, Si, O
 		final StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
-				Composition.parse("BaTiSi3O9"), //
+				CompositionFactory.instance().findComposition("Benitoite").getObject(), //
 				new UncertainValue(15.0, 0.12), //
 				new UncertainValue(Math.toRadians(40.0), Math.toRadians(0.9)), //
 				MatrixCorrectionDatum.roughness(10.0, 3.6));
@@ -177,8 +168,8 @@ public class KRatioCorrectionModelTest {
 				MatrixCorrectionDatum.roughness(10.0, 5.62));
 		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
 		// Unknown
-
-		final Composition unk = Composition.massFraction("K240", buildK240());
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
+		
 		final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
 				unk.getMaterial(), //
 				new UncertainValue(15.0, 0.12), //
@@ -229,9 +220,10 @@ public class KRatioCorrectionModelTest {
 	}
 
 	@Test
-	public void test3() throws ParseException, ArgumentException, IOException {
+	public void test3() throws Exception {
 		// K240 using MgO, BaSi2O5, Zn, Zr, SiO2 and Ti as standards
-		final Composition unk = Composition.massFraction("K240", buildK240());
+		
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
 
 		// Mg
 		final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
@@ -448,6 +440,7 @@ public class KRatioCorrectionModelTest {
 
 		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(vals.keySet(), null);
 
+		// Takes 71 steps using basic iteration
 		final UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(iter.iterate(kratios));
 
 		final Composition comp = Composition.massFraction(unkMat, uvs);
@@ -597,10 +590,12 @@ public class KRatioCorrectionModelTest {
 		vals.put(new KRatioLabel(unkMcd, mcd_baf2, ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1),
 				KRatioLabel.Method.Measured), 0.283990);
 
+		// Takes 4 steps using basic iteration
 		final UncertainValuesBase<KRatioLabel> kratios = new UncertainValues<KRatioLabel>(vals);
 
 		final KRatioCorrectionModel2 iter = KRatioCorrectionModel2.buildXPPModel(//
 				vals.keySet(), ElementByStoichiometry.buildDefaultOxygen(unkMat));
+		// Takes 77 steps using basic iteration
 		final UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(iter.iterate(kratios));
 		final Composition comp = Composition.massFraction(iter.getUnknownMaterial(), uvs);
 
@@ -614,6 +609,36 @@ public class KRatioCorrectionModelTest {
 		rep.addSubHeader("Results");
 		rep.add(comp);
 		rep.inBrowser(Mode.NORMAL);
+	}
+
+	/**
+	 * Computes the calculated k-ratio for the unknown relative to the standards in
+	 * kratios. Then converts the calculated k-ratios to 'measured' k-ratios and
+	 * hands them as input to the iteration algorithm. The resulting 'measured'
+	 * composition is compared to the input composition.
+	 *
+	 * @param estUnk
+	 * @param kratios
+	 * @param r
+	 * @return
+	 * @throws ArgumentException
+	 */
+	public boolean testComposition(
+			final Composition estUnk, //
+			final Set<KRatioLabel> kratios, //
+			final Report r
+		) throws ArgumentException {
+		final Composition result = KRatioCorrectionModel2.roundTripXPP(estUnk, kratios);
+		final Table t = new Table();
+		t.addRow(Table.th("Input"), Table.th("Output"));
+		t.addRow(Table.td(estUnk), Table.td(result));
+		final Map<MassFraction, Double> diff = estUnk.differences(MassFraction.class, result);
+		final MassFraction maxMF = Utility.largest(diff);
+		t.addRow(Table.td("Max:<br/>&nbsp;&nbsp" + maxMF.toHTML(Mode.TERSE) + //
+				"<br/>Value:<br/>&nbsp;&nbsp" + diff.get(maxMF)), //
+				Table.td("RMS:<br/>&nbsp;&nbsp;" + Utility.rms(diff.values())));
+		r.add(t, Mode.NORMAL);
+		return (diff.get(maxMF) < 0.001) && (Utility.rms(diff.values()) < 0.002);
 	}
 
 }

@@ -114,7 +114,7 @@ public class TestImplicitMeasurementModel {
 			final RealMatrix jac = buildEmptyCx();
 			for (int i = 0; i < mLength; ++i) {
 				final int hIdx = i;
-				
+
 				for (final int j = 0; j < mLength; ++i) {
 					setCy(hIdx, idx(PRESSURE, j), jac, //
 							a0 * (1.0 + 2.0 * lambda * p[i]) * (1.0 + alpha * dtheta[i]));
@@ -132,8 +132,34 @@ public class TestImplicitMeasurementModel {
 			}
 			return jac;
 		}
-		
-		// val.setEntry(hIdx, a0 * p[i] * (1.0 + lambda * p[i]) * (1.0 + alpha * dtheta[i]) - mw[i] * (1.0 - rhoa / rhow) * gl);
+
+		public RealVector computeH(
+				final RealVector point
+		) {
+			final RealVector res = buildEmptyH();
+			// Initialize input variables
+			final double rhoa = getArg(RHOA, point);
+			final double rhow = getArg(RHOW, point);
+			final double gl = getArg(GL, point);
+			final double a0 = getArg(A0, point);
+			final double lambda = getArg(LAMBDA, point);
+			;
+			final double alpha = getArg(ALPHA, point);
+			final double[] mw = new double[mLength];
+			final double[] p = new double[mLength];
+			final double[] dtheta = new double[mLength];
+			for (int j = 0; j < mLength; ++j) {
+				mw[j] = getArg(idx(MW, j), point);
+				p[j] = getOutputValue(idx(PRESSURE, j));
+				dtheta[j] = getArg(idx(DTHETA, j), point);
+			}
+			// Calculate output values
+			for (int hIdx = 0; hIdx < mLength; ++hIdx) {
+				setH(hIdx, res, a0 * p[hIdx] * (1.0 + lambda * p[hIdx]) * (1.0 + alpha * dtheta[hIdx])
+						- mw[hIdx] * (1.0 - rhoa / rhow) * gl);
+			}
+			return res;
+		}
 
 		@Override
 		public RealMatrix computeCy(

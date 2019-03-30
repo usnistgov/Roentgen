@@ -1,5 +1,6 @@
 package gov.nist.microanalysis.roentgen.matrixcorrection;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,69 +46,9 @@ public class KRatioLabel//
 		Measured, Calculated
 	};
 
-	private final Method mMethod;
-
-	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-			final ElementXRaySet trans, final Method meth) {
-		super("k", unk, std, trans);
-		assert trans.size() >= 1;
-		mMethod = meth;
-	}
-
-	public KRatioLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-			final CharacteristicXRay trans, final Method meth) {
-		super("k", unk, std, new ElementXRaySet(trans));
-		mMethod = meth;
-	}
-
-	public UnknownMatrixCorrectionDatum getUnknown() {
-		return getObject1();
-	}
-
-	public StandardMatrixCorrectionDatum getStandard() {
-		return getObject2();
-	}
-
-	public ElementXRaySet getXRaySet() {
-		return getObject3();
-	}
-	
-	public Element getElement() {
-		return getObject3().getElement();
-	}
-
-	public Method getMethod() {
-		return mMethod;
-	}
-
-	public KRatioLabel asMeasured() {
-		if (isMeasured())
-			return this;
-		else
-			return new KRatioLabel(getUnknown(), getStandard(), getXRaySet(), Method.Measured);
-	}
-
-	public KRatioLabel asCalculated() {
-		if (isCalculated())
-			return this;
-		else
-			return new KRatioLabel(getUnknown(), getStandard(), getXRaySet(), Method.Calculated);
-	}
-
-	public boolean isMeasured() {
-		return mMethod == Method.Measured;
-	}
-
-	public boolean isCalculated() {
-		return mMethod == Method.Calculated;
-	}
-
-	@Override
-	public int hashCode() {
-		return super.hashCode() + 31 * mMethod.hashCode();
-	}
-
-	static public boolean areAllSameUnknownElements(final Set<KRatioLabel> krs) {
+	static public boolean areAllSameUnknownElements(
+			final Set<KRatioLabel> krs
+	) {
 		Set<Element> elms = null;
 		for (final KRatioLabel krl : krs) {
 			final UnknownMatrixCorrectionDatum tmp = krl.getUnknown();
@@ -119,8 +60,109 @@ public class KRatioLabel//
 		return true;
 	}
 
+	/**
+	 * Ensures that all the {@link KRatioLabel}s in the list are in the correct form
+	 * - <code>Method.Measured</code> or <code>Method.Calculated</code>. If
+	 * <code>this</code> is already in the correct form, <code>this</code> is
+	 * returned.
+	 * 
+	 * @param lkrl   {@link List}&lt;KRatioLabel&gt;
+	 * @param method {@link Method}
+	 * @return A {@link KRatioLabel} in the form specified
+	 */
+	public static List<KRatioLabel> as(
+			final List<KRatioLabel> lkrl, final Method method
+	) {
+		final List<KRatioLabel> res = new ArrayList<>();
+		for (final KRatioLabel krl : lkrl)
+			res.add(krl.as(method));
+		return res;
+	}
+
+	public static UncertainValues<KRatioLabel> extractKRatios(
+			final RealVector res, final List<? extends Object> labels, final Method meth
+	) {
+		final Map<KRatioLabel, Number> vals = new HashMap<>();
+		for (int i = 0; i < labels.size(); ++i) {
+			final Object label = labels.get(i);
+			if (label instanceof KRatioLabel) {
+				final KRatioLabel calc = (KRatioLabel) label;
+				assert calc.isCalculated();
+				final KRatioLabel meas = new KRatioLabel(calc.getUnknown(), calc.getStandard(), calc.getXRaySet(),
+						meth);
+				vals.put(meas, res.getEntry(i));
+			}
+		}
+		return new UncertainValues<KRatioLabel>(vals);
+	}
+
+	private final Method mMethod;
+
+	public KRatioLabel(
+			final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+			final CharacteristicXRay trans, final Method meth
+	) {
+		super("k", unk, std, new ElementXRaySet(trans));
+		mMethod = meth;
+	}
+
+	public KRatioLabel(
+			final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final ElementXRaySet trans,
+			final Method meth
+	) {
+		super("k", unk, std, trans);
+		assert trans.size() >= 1;
+		mMethod = meth;
+	}
+
+	/**
+	 * Ensures that the <code>this</code> {@link KRatioLabel} is in the correct form
+	 * - Method.Measured or Method.Calculated. If <code>this</code> is already in
+	 * the correct form, <code>this</code> is returned.
+	 * 
+	 * @param method
+	 * @return A KRatioLabel in the form specified
+	 */
+	public KRatioLabel as(
+			final Method method
+	) {
+		if (getMethod().equals(method))
+			return this;
+		else
+			return new KRatioLabel(getUnknown(), getStandard(), getXRaySet(), method);
+	}
+
 	@Override
-	public boolean equals(final Object obj) {
+	public int compareTo(
+			final KRatioLabel o
+	) {
+		int c = getObject3().getElement().compareTo(o.getObject3().getElement());
+		if (c == 0) {
+			final Principle tp = getObject3().getBrightest().getFamily(),
+					op = o.getObject3().getBrightest().getFamily();
+			c = tp.compareTo(op);
+		}
+		if (c == 0) {
+			final CharacteristicXRay tb = getObject3().getBrightest(), ob = o.getObject3().getBrightest();
+			c = tb.compareTo(ob);
+		}
+		if (!equals(o)) {
+			if (c == 0)
+				c = getObject3().compareTo(o.getObject3());
+			if (c == 0)
+				c = getObject1().toHTML(Mode.VERBOSE).compareTo(o.getObject1().toHTML(Mode.VERBOSE).toString());
+			if (c == 0)
+				c = getObject2().toHTML(Mode.VERBOSE).compareTo(o.getObject2().toHTML(Mode.VERBOSE).toString());
+			if (c == 0)
+				c = hashCode() < o.hashCode() ? -1 : 1;
+		}
+		return c;
+	}
+
+	@Override
+	public boolean equals(
+			final Object obj
+	) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -131,8 +173,43 @@ public class KRatioLabel//
 		return mMethod == other.mMethod;
 	}
 
+	public Element getElement() {
+		return getObject3().getElement();
+	}
+
+	public Method getMethod() {
+		return mMethod;
+	}
+
+	public StandardMatrixCorrectionDatum getStandard() {
+		return getObject2();
+	}
+
+	public UnknownMatrixCorrectionDatum getUnknown() {
+		return getObject1();
+	}
+
+	public ElementXRaySet getXRaySet() {
+		return getObject3();
+	}
+
 	@Override
-	public String toHTML(final Mode mode) {
+	public int hashCode() {
+		return super.hashCode() + 31 * mMethod.hashCode();
+	}
+
+	public boolean isCalculated() {
+		return mMethod == Method.Calculated;
+	}
+
+	public boolean isMeasured() {
+		return mMethod == Method.Measured;
+	}
+
+	@Override
+	public String toHTML(
+			final Mode mode
+	) {
 		final String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
 		final String xrs = getXRaySet().toHTML(Mode.TERSE);
 		if (mode == Mode.TERSE)
@@ -157,47 +234,6 @@ public class KRatioLabel//
 		final String meth = mMethod == Method.Calculated ? "Calc" : "Meas";
 		final String xrts = HTML.stripTags(getXRaySet().toHTML(Mode.TERSE));
 		return "k[" + xrts.substring(1, xrts.length() - 1) + "," + meth + "]";
-	}
-
-	@Override
-	public int compareTo(final KRatioLabel o) {
-		int c = getObject3().getElement().compareTo(o.getObject3().getElement());
-		if (c == 0) {
-			final Principle tp = getObject3().getBrightest().getFamily(),
-					op = o.getObject3().getBrightest().getFamily();
-			c = tp.compareTo(op);
-		}
-		if (c == 0) {
-			final CharacteristicXRay tb = getObject3().getBrightest(), ob = o.getObject3().getBrightest();
-			c = tb.compareTo(ob);
-		}
-		if (!equals(o)) {
-			if (c == 0)
-				c = getObject3().compareTo(o.getObject3());
-			if (c == 0)
-				c = getObject1().toHTML(Mode.VERBOSE).compareTo(o.getObject1().toHTML(Mode.VERBOSE).toString());
-			if (c == 0)
-				c = getObject2().toHTML(Mode.VERBOSE).compareTo(o.getObject2().toHTML(Mode.VERBOSE).toString());
-			if (c == 0)
-				c = hashCode() < o.hashCode() ? -1 : 1;
-		}
-		return c;
-	}
-
-	public static UncertainValues<KRatioLabel> extractKRatios(final RealVector res, final List<? extends Object> labels,
-			final Method meth) {
-		final Map<KRatioLabel, Number> vals = new HashMap<>();
-		for (int i = 0; i < labels.size(); ++i) {
-			final Object label = labels.get(i);
-			if (label instanceof KRatioLabel) {
-				final KRatioLabel calc = (KRatioLabel) label;
-				assert calc.isCalculated();
-				final KRatioLabel meas = new KRatioLabel(calc.getUnknown(), calc.getStandard(), calc.getXRaySet(),
-						meth);
-				vals.put(meas, res.getEntry(i));
-			}
-		}
-		return new UncertainValues<KRatioLabel>(vals);
 	}
 
 }

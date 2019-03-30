@@ -744,8 +744,7 @@ abstract public class UncertainValuesBase<H> //
 	 */
 	final public <K extends H> UncertainValuesBase<K> extract(
 			final List<K> labels
-	) //
-			throws ArgumentException {
+	) throws ArgumentException {
 		return reorder(labels);
 	}
 
@@ -1511,6 +1510,31 @@ abstract public class UncertainValuesBase<H> //
 			res.add(getLabel(i));
 		return Collections.unmodifiableList(res);
 	}
+	
+	/**
+	 * <p>
+	 * Computes the differences between the values associated with the specified
+	 * class between <code>this</code> and <code>other</code>.
+	 * </p>
+	 * <p>
+	 * Example:<br/>&nbsp;&nbsp;&nbsp;<code>differences(MassFraction.class,k412,k411)</code>
+	 * </p>
+	 * 
+	 * @param cls Class&ltT&gt;
+	 * @param other UncertainValuesBase<H>
+	 * @return Map&lt;T, Double&gt;
+	 */
+	public <T extends H> Map<T, Double> differences(
+			Class<T> cls, //
+			UncertainValuesBase<H> other
+	) {
+		final Map<T, Double> res = new HashMap<>();
+		for (Map.Entry<T, Double> me : getValueMap(cls).entrySet())
+			res.put(me.getKey(), me.getValue());
+		for (Map.Entry<T, Double> me : other.getValueMap(cls).entrySet())
+			res.put(me.getKey(), res.getOrDefault(me.getKey(), 0.0).doubleValue() - me.getValue().doubleValue());
+		return res;
+	}	
 
 	/**
 	 * Returns a {@link RealVector} containing the L-values.

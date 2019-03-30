@@ -1,6 +1,6 @@
 package gov.nist.microanalysis.roentgen.spectrum;
 
-import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.OpenMapRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import gov.nist.microanalysis.roentgen.ArgumentException;
@@ -55,7 +55,7 @@ public class AdaptiveTophatFilter extends EDSFittingFilter {
 	public RealMatrix buildLinearTransform(
 			final int nCh, final int ignored
 	) {
-		final RealMatrix res = MatrixUtils.createRealMatrix(nCh, nCh);
+		final RealMatrix res = new OpenMapRealMatrix(nCh, nCh);
 		for (int fCh = 0; fCh < nCh; ++fCh) {
 			final double eCh = mEnergy.averageEnergyForChannel(fCh);
 			final double width = FILTER_WIDTH * mLineshape.getFWHM(eCh);

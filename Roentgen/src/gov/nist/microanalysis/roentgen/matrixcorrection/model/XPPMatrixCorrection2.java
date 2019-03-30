@@ -1850,14 +1850,11 @@ public class XPPMatrixCorrection2 //
 			final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
 			final StandardMatrixCorrectionDatum std = krl.getStandard();
 			res.add(MatrixCorrectionModel2.zafLabel(krl));
-			// res.add(MaterialLabel.buildMassFractionTag(std.getMaterial(),
-			// krl.getElement()));
-			// res.add(MaterialLabel.buildMassFractionTag(unk.getMaterial(),
-			// krl.getElement()));
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				res.add(MatrixCorrectionModel2.zLabel(unk, std, cxr));
 				res.add(MatrixCorrectionModel2.aLabel(unk, std, cxr));
 			}
+			res.add(krl.as(Method.Calculated));
 		}
 		return res;
 	};

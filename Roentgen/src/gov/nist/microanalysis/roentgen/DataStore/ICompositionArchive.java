@@ -3,7 +3,7 @@ package gov.nist.microanalysis.roentgen.DataStore;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.math3.geometry.euclidean.oned.Interval;
 
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -35,7 +35,7 @@ public interface ICompositionArchive {
 	 * @param criteria A map of Element to mass faction Interval
 	 * @return All Compositions matching the criteria
 	 */
-	public Set<Curated<Composition>> findMatchingComposition(Map<Element, Pair<Double, Double>> criteria)
+	public Set<Curated<Composition>> findMatchingComposition(Map<Element, Interval> criteria)
 			throws Exception;
 
 	/**

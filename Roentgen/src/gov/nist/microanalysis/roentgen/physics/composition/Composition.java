@@ -61,13 +61,13 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
  */
 public class Composition //
 		extends UncertainValuesCalculator<MaterialLabel> {
-	
+
 	static public BasicNumberFormat MASS_FRACTION_FORMAT = new BasicNumberFormat("0.0000");
 	static public BasicNumberFormat MASS_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00000");
 	static public BasicNumberFormat MEAN_Z_FORMAT = new BasicNumberFormat("0.00");
 	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT = new BasicNumberFormat("0.0###");
 	static public BasicNumberFormat ATOMIC_FRACTION_FORMAT_LONG = new BasicNumberFormat("0.00E0");
-	
+
 	public enum Representation {
 		/**
 		 * Al2O3 etc
@@ -91,7 +91,6 @@ public class Composition //
 		Mixture
 	}
 
-	
 	private final Material mMaterial;
 
 	private final Representation mPrimary;
@@ -99,8 +98,6 @@ public class Composition //
 	private Optional<Number> mDensity;
 
 	private final int mHashCode;
-
-
 
 	/**
 	 * Performs the necessary calculations to convert compositional data in atom
@@ -186,9 +183,9 @@ public class Composition //
 	}
 
 	/**
-	 * A sequence of {@link ExplicitMeasurementModel}s for converting a
-	 * mixture of {@link Composition} objects to mass fractions, atom fractions and
-	 * normalized mass fractions.
+	 * A sequence of {@link ExplicitMeasurementModel}s for converting a mixture of
+	 * {@link Composition} objects to mass fractions, atom fractions and normalized
+	 * mass fractions.
 	 *
 	 * @author nicholas
 	 *
@@ -224,7 +221,6 @@ public class Composition //
 			super("MtoC", buildSteps(newMat, mats, normalize));
 		}
 	}
-
 
 	public static class StoichiometryToComposition //
 			extends CompositeMeasurementModel<MaterialLabel> {
@@ -407,8 +403,8 @@ public class Composition //
 		for (final Element elm : mat.getElementSet())
 			tmp.put(MaterialLabel.buildAtomicWeightTag(mat, elm), mat.getAtomicWeight(elm));
 		final UncertainValues<MaterialLabel> inp = new UncertainValues<MaterialLabel>(tmp);
-		final ExplicitMeasurementModel<MaterialLabel, MaterialLabel> func = new ElementByDifferenceToComposition(
-				mat, diffElm);
+		final ExplicitMeasurementModel<MaterialLabel, MaterialLabel> func = new ElementByDifferenceToComposition(mat,
+				diffElm);
 		return new Composition(Representation.MassFraction, mat, func, inp);
 	}
 
@@ -595,6 +591,25 @@ public class Composition //
 	) throws ParseException, ArgumentException {
 		return Composition.stoichiometry(htmlHelper(str), parseHelper(str), Collections.emptyMap(), null);
 	}
+	
+	/**
+	 * Parses basic strings in common chemical formula notation. It handles simple
+	 * formula like H2SO4 and more complex ones like Ca5(PO4)3F. Capitalization is
+	 * critical to differentiate PO4 from Po4 and other niceties.
+	 *
+	 * @param name
+	 * @param definition
+	 * @return
+	 * @throws ParseException
+	 * @throws ArgumentException
+	 */
+	public static Composition parse(
+			final String name,
+			final String definition //
+	) throws ParseException, ArgumentException {
+		return Composition.stoichiometry(htmlHelper(name), parseHelper(definition), Collections.emptyMap(), null);
+	}
+	
 
 	/**
 	 * Parses basic strings in common chemical formula notation. It handles simple

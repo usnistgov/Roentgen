@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.math;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
@@ -548,6 +549,45 @@ public class Utility {
 	 */
 	public static double[] convolve(final double[] inp, final double[] kernel, final CONVOLVE_END_MODE cm) {
 		return convolve(inp, kernel, cm, 1);
+	}
+	
+	/**
+	 * Computes the root-mean square of the values in the specified
+	 * <code>Collection&lt;? extends Number&gt;</code>.
+	 * 
+	 * @param vals
+	 * @return The RMS value as a double
+	 */
+	public static <T> double rms(
+			final Collection<? extends Number> vals
+			) {
+		double rms = 0.0;
+		for (final Number val : vals)
+			rms += Math.pow(val.doubleValue(), 2.0);
+		return Math.sqrt(rms);
+
+	}
+
+	/**
+	 * Returns the key associated with the largest value in
+	 * the specified Map of number values.
+	 * 
+	 * @param valMap
+	 * @return
+	 */
+	public static <T> T largest(
+			final Map<T, ? extends Number> valMap
+			) {
+		double max = -Double.MAX_VALUE;
+		T res = null;
+		for (final Map.Entry<T, ? extends Number> me : valMap.entrySet())
+			if (res == null)
+				res = me.getKey();
+			else if (me.getValue().doubleValue() > max) {
+				res = me.getKey();
+				max = me.getValue().doubleValue();
+			}
+		return res;
 	}
 
 	/**

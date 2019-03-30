@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -81,15 +82,32 @@ abstract public class ImplicitMeasurementModel<X, Y extends X> //
 		super(inputLabels, outputLabels);
 		mOutputValues = new HashMap<>();
 	}
-	
-	abstract public RealMatrix computeCx(final RealVector point);
 
-	abstract public RealMatrix computeCy(final RealVector point);
+	abstract public RealMatrix computeCx(
+			final RealVector point
+	);
 
-	public void setOutputValues(Map<Y, Double> outputValues) {
+	abstract public RealMatrix computeCy(
+			final RealVector point
+	);
+
+	/**
+	 * Computes the h(X,Y) for x provided in point and y provided via the
+	 * alternative input mechanism.
+	 * 
+	 * @param point
+	 * @return RealVector
+	 */
+	abstract public RealVector computeH(
+			final RealVector point
+	);
+
+	public void setOutputValues(
+			Map<Y, Double> outputValues
+	) {
 		mOutputValues.putAll(outputValues);
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -107,30 +125,45 @@ abstract public class ImplicitMeasurementModel<X, Y extends X> //
 		final RealVector vals = buildResult();
 		for (int i = 0; i < vals.getDimension(); ++i)
 			vals.setEntry(i, getArg(getOutputLabel(i), point));
-
+		// Uses a niave algorithm. See appendix B of JGGM 102 for a better way.
 		return Pair.create(vals, MatrixUtils.inverse(cy).multiply(cx));
+
 	}
-	
+
 	protected RealMatrix buildEmptyCx() {
 		return MatrixUtils.createRealMatrix(getOutputDimension(), getInputDimension());
 	}
-	
+
 	protected RealMatrix buildEmptyCy() {
 		return MatrixUtils.createRealMatrix(getOutputDimension(), getOutputDimension());
 	}
-	
+
+	protected RealVector buildEmptyH() {
+		return new ArrayRealVector(getOutputDimension());
+	}
+
 	protected double getOutputValue(
 			final Y label
 	) {
 		return mOutputValues.get(label);
 	}
 
-	protected void setCx(int hIndex, X xLabel, RealMatrix cx, double value) {
+	protected void setCx(
+			int hIndex, X xLabel, RealMatrix cx, double value
+	) {
 		cx.setEntry(hIndex, inputIndex(xLabel), value);
 	}
 
-	protected void setCy(int hIndex, Y yLabel, RealMatrix cy, double value) {
+	protected void setCy(
+			int hIndex, Y yLabel, RealMatrix cy, double value
+	) {
 		cy.setEntry(hIndex, outputIndex(yLabel), value);
+	}
+
+	protected void setH(
+			int hIndex, RealVector res, double value
+	) {
+		res.setEntry(hIndex, value);
 	}
 
 }

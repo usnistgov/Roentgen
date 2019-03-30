@@ -3,6 +3,7 @@ package gov.nist.microanalysis.roentgen.example;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
+import gov.nist.microanalysis.roentgen.DataStore.CompositionFactory;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
@@ -64,13 +66,16 @@ public class K240 {
 		return res;
 	}
 
-	public static void main(final String[] args) {
+	public static void main(
+			final String[] args
+	) throws Exception {
 		final K240 k240 = new K240();
 		try {
-			k240.simple();
-			k240.benitoite();
-			k240.elements();
-			k240.k240();
+			//k240.simple();
+			//k240.benitoite();
+			//k240.elements();
+			//k240.k240();
+			k240.surfaceRoughness();
 		} catch (IOException | ArgumentException | ParseException e) {
 			e.printStackTrace();
 		}
@@ -85,7 +90,7 @@ public class K240 {
 		mRoughness = MatrixCorrectionDatum.roughness(10.0, 3.6);
 	}
 
-	public void benitoite() throws IOException, ArgumentException, ParseException {
+	public void benitoite() throws Exception {
 		// K240 using Benitoite, Mg, Zn and Zr as standards
 
 		final double[] dkO = { 0.002175978085581, 0.002197549502352, 0.002222917439207, 0.002259155722945,
@@ -117,7 +122,7 @@ public class K240 {
 				0.004308293402505, 0.004128654614498, 0.0039938302209, 0.003861512410919, 0.003728404071926,
 				0.003611433547977, 0.003519063068446, 0.003433831396981, 0.003344645059098, 0.003344645059098 };
 
-		final Composition unk = Composition.massFraction("K240", buildK240());
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
 
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
@@ -130,7 +135,7 @@ public class K240 {
 		final Composition mg = Composition.parse("Mg");
 		final Composition zn = Composition.parse("Zn");
 		final Composition zr = Composition.parse("Zr");
-		final Composition benitoite = Composition.parse("BaTiSi3O9");
+		final Composition benitoite = CompositionFactory.instance().findComposition("Benitoite").getObject();
 
 		final Map<Integer, Map<EPMALabel, UncertainValueEx<String>>> outVals = new TreeMap<>();
 		final Map<Integer, UncertainValuesBase<EPMALabel>> resVals = new TreeMap<>();
@@ -307,7 +312,60 @@ public class K240 {
 		}
 	}
 
-	public void elements() throws IOException, ArgumentException, ParseException {
+	public void surfaceRoughness() throws Exception {
+		// K240 using Benitoite, Zircon, Mg, Zn as standards
+
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
+
+		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
+		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
+		final ElementXRaySet tiTrs = ElementXRaySet.singleton(Element.Titanium, XRayTransition.KA1);
+		final ElementXRaySet siTrs = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
+		final ElementXRaySet oTrs = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
+		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
+		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
+
+		final Composition mg = Composition.parse("Mg");
+		final Composition zn = Composition.parse("Zn");
+		final Composition benitoite = CompositionFactory.instance().findComposition("Benitoite").getObject();
+		final Composition zircon = CompositionFactory.instance().findComposition("Zircon").getObject();
+
+		final UncertainValue e0 = new UncertainValue(15.0, 0.1);
+
+		MatrixCorrectionDatum.roughness(10.0, 3.6);
+
+		Report report = new Report("K240 roughness");
+		report.addHeader("K240 roughness");
+		try {
+			for (double roughNm : Arrays.asList(1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0, 1024.0)) {
+				final double roughness = MatrixCorrectionDatum.roughness(roughNm, 3.6);
+				final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, mTOA, 0.0);
+				final StandardMatrixCorrectionDatum znMcd = new StandardMatrixCorrectionDatum(zn, e0, mTOA, 0.0);
+				final StandardMatrixCorrectionDatum zrMcd = new StandardMatrixCorrectionDatum(zircon, e0, mTOA, 0.0);
+				final StandardMatrixCorrectionDatum benitoiteMcd = new StandardMatrixCorrectionDatum(//
+						benitoite, e0, mTOA, 0.0);
+				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(//
+						unk.getMaterial(), e0, mTOA, roughness);
+				final Set<KRatioLabel> skr = new HashSet<>();
+				skr.add(new KRatioLabel(unkMcd, mgMcd, mgTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, siTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, oTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
+
+				Composition res = KRatioCorrectionModel2.roundTripXPP(unk, skr);
+
+				report.addSubHeader("Roughness = " + roughNm + " nm");
+				report.add(res, Mode.NORMAL);
+			}
+		} finally {
+			report.inBrowser(Mode.NORMAL);
+		}
+	}
+
+	public void elements() throws Exception {
 
 		final double[] dkO = { 0.000676038081616, 0.000681498814916, 0.000687566080938, 0.000702437667351,
 				0.000712176738527, 0.000725866898102, 0.000737679495025, 0.000753980573912, 0.000766820966007,
@@ -339,7 +397,7 @@ public class K240 {
 				0.001192882769673, 0.00115847588017, 0.001128023980621, 0.00110585296185, 0.00110585296185 };
 
 		// K240 using elements
-		final Composition unk = Composition.massFraction("K240", buildK240());
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
@@ -540,7 +598,9 @@ public class K240 {
 
 	}
 
-	public List<? extends EPMALabel> filter(final List<? extends EPMALabel> labels, final String name) {
+	public List<? extends EPMALabel> filter(
+			final List<? extends EPMALabel> labels, final String name
+	) {
 		final List<EPMALabel> res = new ArrayList<>();
 		for (final EPMALabel label : labels)
 			if (label.toString().startsWith(name))
@@ -548,8 +608,9 @@ public class K240 {
 		return res;
 	}
 
-	public <H> UncertainValueEx<String> getByMFT(final Map<H, UncertainValueEx<String>> oVals,
-			final MaterialLabel.MassFraction mft) {
+	public <H> UncertainValueEx<String> getByMFT(
+			final Map<H, UncertainValueEx<String>> oVals, final MaterialLabel.MassFraction mft
+	) {
 		for (final Map.Entry<H, UncertainValueEx<String>> me : oVals.entrySet()) {
 			if (me.getKey() instanceof MaterialLabel.MassFraction) {
 				final MaterialLabel.MassFraction mft2 = (MaterialLabel.MassFraction) me.getKey();
@@ -560,14 +621,16 @@ public class K240 {
 		return null;
 	}
 
-	public double getComponentByName(final UncertainValueEx<String> uv, final String name) {
+	public double getComponentByName(
+			final UncertainValueEx<String> uv, final String name
+	) {
 		for (final Map.Entry<String, Double> me : uv.getComponents().entrySet())
 			if (me.getKey().toString().equals(name))
 				return me.getValue().doubleValue();
 		return 0.0;
 	}
 
-	public void k240() throws IOException, ArgumentException {
+	public void k240() throws Exception {
 
 		final double[] dkO = { 0.00213730595774, 0.002153401156992, 0.002183789128298, 0.002214099174781,
 				0.002250268857424, 0.002293120836805, 0.002328292172395, 0.002377052394699, 0.002428879224355,
@@ -598,7 +661,7 @@ public class K240 {
 				0.00447519440929, 0.004315111303428, 0.004159453334672, 0.003995562248976, 0.003883656254936,
 				0.003759892408307, 0.003665472596181, 0.003574832224132, 0.003492056863254, 0.003407377435567 };
 		// K240 using simple elements
-		final Composition unk = Composition.massFraction("K240", buildK240());
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
 
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
@@ -608,6 +671,7 @@ public class K240 {
 		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
 		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
 
+		// Must be a different instance of K240
 		final Composition std = Composition.massFraction("K240s", buildK240());
 
 		final Map<Integer, Map<EPMALabel, UncertainValueEx<String>>> outVals = new TreeMap<>();
@@ -799,7 +863,7 @@ public class K240 {
 
 	}
 
-	public void simple() throws IOException, ArgumentException, ParseException {
+	public void simple() throws Exception {
 
 		final double[] dkO = { 0.000675032606014, 0.000681693829774, 0.000690067208914, 0.000700899426437,
 				0.00071072153042, 0.000726035676794, 0.00073750326059, 0.000754022397678, 0.000765121084199,
@@ -831,7 +895,7 @@ public class K240 {
 				0.001191258386089, 0.001156587094513, 0.001129237081176, 0.001103578440835, 0.001103578440835 };
 
 		// K240 using MgO, BaSi2O5, Zn, Zr, SiO2 and Ti as standards
-		final Composition unk = Composition.massFraction("K240", buildK240());
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
 
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
@@ -931,7 +995,7 @@ public class K240 {
 						break;
 
 					}
-					measKrs.put(krl.asMeasured(), new UncertainValue(v, dk));
+					measKrs.put(krl.as(Method.Measured), new UncertainValue(v, dk));
 				}
 
 				final UncertainValues<KRatioLabel> uncKrs = new UncertainValues<KRatioLabel>(measKrs);
@@ -1042,7 +1106,9 @@ public class K240 {
 		}
 	}
 
-	private Map<String, Collection<? extends EPMALabel>> extractLabelBlocks(final UncertainValuesBase<EPMALabel> res) {
+	private Map<String, Collection<? extends EPMALabel>> extractLabelBlocks(
+			final UncertainValuesBase<EPMALabel> res
+	) {
 		final Map<String, Collection<? extends EPMALabel>> labels = new TreeMap<>();
 		labels.put("[µ/ρ]", filter(res.getLabels(), "[μ/ρ]"));
 		labels.put("dz", filter(res.getLabels(), "dz"));

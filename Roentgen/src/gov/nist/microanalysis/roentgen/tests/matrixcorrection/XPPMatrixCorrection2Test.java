@@ -18,7 +18,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.util.Pair;
 import org.junit.Test;
 
 import com.duckandcover.html.HTML;
@@ -37,6 +36,7 @@ import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
+import gov.nist.microanalysis.roentgen.DataStore.CompositionFactory;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
@@ -365,50 +365,6 @@ public class XPPMatrixCorrection2Test {
 		r.inBrowser(Mode.VERBOSE);
 	}
 
-	public static Composition buildK412(
-			final boolean combine
-			) //
-			throws ArgumentException, ParseException {
-		if (combine)
-			return Composition.combine("K412", false, //
-					Pair.create(Composition.parse("SiO2"), new UncertainValue(0.4541, 0.0077)), //
-					Pair.create(Composition.parse("FeO"), new UncertainValue(0.0994, 0.0018)), //
-					Pair.create(Composition.parse("MgO"), new UncertainValue(0.1966, 0.0025)), //
-					Pair.create(Composition.parse("CaO"), new UncertainValue(0.1544, 0.0015)), //
-					Pair.create(Composition.parse("Al2O3"), new UncertainValue(0.0934, 0.0029)));
-		else {
-			final Map<Element, Number> res = new HashMap<Element, Number>();
-			res.put(Element.Silicon, new UncertainValue(0.21226219744446, 0.00359924888862));
-			res.put(Element.Iron, new UncertainValue(0.07726410130474, 0.00139914871578));
-			res.put(Element.Magnesium, new UncertainValue(0.11855685731088, 0.001507589742));
-			res.put(Element.Calcium, new UncertainValue(0.11034825437848, 0.00107203615005));
-			res.put(Element.Aluminum, new UncertainValue(0.0494320434, 0.0015348279));
-			res.put(Element.Oxygen, new UncertainValue(0.43003654616144, 0.00728714860355));
-			return Composition.massFraction("K412", res);
-		}
-	}
-
-	public static Composition buildK411(
-			final boolean combine
-			) //
-			throws ArgumentException, ParseException {
-		if (combine)
-			return Composition.combine("K411", false, //
-					Pair.create(Composition.parse("SiO2"), new UncertainValue(0.5389, 0.0096)), //
-					Pair.create(Composition.parse("FeO"), new UncertainValue(0.1448, 0.0027)), //
-					Pair.create(Composition.parse("MgO"), new UncertainValue(0.1512, 0.0020)), //
-					Pair.create(Composition.parse("CaO"), new UncertainValue(0.1549, 0.0015)));
-		else {
-			final Map<Element, Number> res = new HashMap<Element, Number>();
-			res.put(Element.Silicon, new UncertainValue(0.25190067871134, 0.00448737523776));
-			res.put(Element.Iron, new UncertainValue(0.11255374113608, 0.00209872307367));
-			res.put(Element.Magnesium, new UncertainValue(0.09117902759616, 0.0012060717936));
-			res.put(Element.Calcium, new UncertainValue(0.11070559976183, 0.00107203615005));
-			res.put(Element.Oxygen, new UncertainValue(0.42346095279459, 0.00693579374492));
-			return Composition.massFraction("K411", res);
-		}
-	}
-
 	/**
 	 * Computes K412 vs K411 as in SP 260-74
 	 *
@@ -417,10 +373,10 @@ public class XPPMatrixCorrection2Test {
 	 * @throws IOException
 	 */
 	@Test
-	public void testXPP2() throws ArgumentException, ParseException, IOException {
+	public void testXPP2() throws Exception {
 		// K411 and K412 as in SP 260-74
-		final boolean combined = false;
-		final Composition std = buildK411(combined), unk = buildK412(combined);
+		final Composition std = CompositionFactory.instance().findComposition("K411").getObject(); 
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum stdMcd = new StandardMatrixCorrectionDatum( //
 				std, //
@@ -626,13 +582,12 @@ public class XPPMatrixCorrection2Test {
 	 * @throws IOException
 	 */
 	@Test
-	public void testXPP3() throws ArgumentException, ParseException, IOException {
+	public void testXPP3() throws Exception {
 		// K411 and K412 as in SP 260-74
 
 		final Composition std = Composition.parse("Mg");
 
-		final boolean combined = false;
-		final Composition unk = buildK412(combined);
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum stdMcd = new StandardMatrixCorrectionDatum( //
 				std, //
@@ -843,8 +798,8 @@ public class XPPMatrixCorrection2Test {
 	 */
 	@Test
 	public void testXPP4() throws Exception {
-		final boolean combined = true;
-		final Composition std0 = buildK411(combined), unk = buildK412(false);
+		final Composition std0 = CompositionFactory.instance().findComposition("K411").getObject();
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 		final Composition std1 = Composition.parse("Al");
 		Report.dump(std0, Mode.VERBOSE);
 
@@ -915,7 +870,6 @@ public class XPPMatrixCorrection2Test {
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
-
 		final long start2 = System.currentTimeMillis();
 		final UncertainValues<EPMALabel> fullResults = UncertainValues
 				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
@@ -923,7 +877,7 @@ public class XPPMatrixCorrection2Test {
 		System.out.println("Full Timing (4) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
+		final Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
 		both.retainAll(fullResults.getLabels());
 		for (final EPMALabel outTag : both) {
 			for (final EPMALabel outTag2 : both)
@@ -1093,7 +1047,7 @@ public class XPPMatrixCorrection2Test {
 	 * @throws IOException
 	 */
 	@Test
-	public void testXPP5() throws ArgumentException, ParseException, IOException {
+	public void testXPP5() throws Exception {
 		// K412 as in SP 260-74 using elements and simple compounds
 
 		final Composition std0 = Composition.parse("SiO2");
@@ -1102,8 +1056,7 @@ public class XPPMatrixCorrection2Test {
 		final Composition std3 = Composition.parse("CaF2");
 		final Composition std4 = Composition.parse("Fe");
 
-		final boolean combined = false;
-		final Composition unk = buildK412(combined);
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
 				std0, //
@@ -1200,7 +1153,7 @@ public class XPPMatrixCorrection2Test {
 		System.out.println("Full Timing (5) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
+		final Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
 		both.retainAll(fullResults.getLabels());
 		for (final EPMALabel outTag : both) {
 			for (final EPMALabel outTag2 : both)
@@ -1369,7 +1322,7 @@ public class XPPMatrixCorrection2Test {
 	 * @throws IOException
 	 */
 	@Test
-	public void testXPP6() throws ArgumentException, ParseException, IOException {
+	public void testXPP6() throws Exception {
 		// K412 as in SP 260-74 using elements and simple compounds
 
 		final Composition std0 = Composition.parse("SiO2");
@@ -1378,7 +1331,7 @@ public class XPPMatrixCorrection2Test {
 		final Composition std3 = Composition.parse("CaF2");
 		final Composition std4 = Composition.parse("Fe");
 
-		final Composition unk = buildK412(false);
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
 				std0, //
@@ -1463,13 +1416,11 @@ public class XPPMatrixCorrection2Test {
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
 		System.out.println("Trimmed Timing (6) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-		
-
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-		
+
 		final long start2 = System.currentTimeMillis();
 		final UncertainValues<EPMALabel> fullResults = UncertainValues
 				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
@@ -1477,7 +1428,7 @@ public class XPPMatrixCorrection2Test {
 		System.out.println("Full Timing (6) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
+		final Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
 		both.retainAll(fullResults.getLabels());
 		for (final EPMALabel outTag : both) {
 			for (final EPMALabel outTag2 : both)
@@ -1742,7 +1693,6 @@ public class XPPMatrixCorrection2Test {
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
 		System.out.println("Trimmed Timing (7) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
-
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
@@ -1755,7 +1705,7 @@ public class XPPMatrixCorrection2Test {
 		System.out.println("Full Timing (7) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
+		final Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
 		both.retainAll(fullResults.getLabels());
 		for (final EPMALabel outTag : both) {
 			for (final EPMALabel outTag2 : both)
@@ -1946,7 +1896,7 @@ public class XPPMatrixCorrection2Test {
 	 * @throws IOException
 	 */
 	@Test
-	public void testXPP8() throws ArgumentException, ParseException, IOException {
+	public void testXPP8() throws Exception {
 		// K412 as in SP 260-74 using elements and simple compounds
 
 		final Composition std0 = Composition.parse("SiO2");
@@ -1955,7 +1905,7 @@ public class XPPMatrixCorrection2Test {
 		final Composition std3 = Composition.parse("CaF2");
 		final Composition std4 = Composition.parse("Fe");
 
-		final Composition unk = buildK412(false);
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
 				std0, //
@@ -2021,11 +1971,10 @@ public class XPPMatrixCorrection2Test {
 
 		final long start = System.currentTimeMillis();
 
-		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValues.propagateAnalytical(xpp, inputs);
+		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
-		
-		System.out.println("Trimmed Timing (8) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
+		System.out.println("Trimmed Timing (8) = " + Long.toString(System.currentTimeMillis() - start) + " ms");
 
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
@@ -2033,12 +1982,12 @@ public class XPPMatrixCorrection2Test {
 		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 
 		final long start2 = System.currentTimeMillis();
-		final UncertainValuesBase<EPMALabel> fullResults = UncertainValues.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2))
-				.sort();
+		final UncertainValuesBase<EPMALabel> fullResults = UncertainValues
+				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2)).sort();
 		System.out.println("Full Timing (8) = " + Long.toString(System.currentTimeMillis() - start2) + " ms");
 
 		// Test untrimmed vs trimmed
-		Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
+		final Set<EPMALabel> both = new HashSet<>(aResults.getLabels());
 		both.retainAll(fullResults.getLabels());
 		for (final EPMALabel outTag : both) {
 			for (final EPMALabel outTag2 : both)
@@ -2200,16 +2149,14 @@ public class XPPMatrixCorrection2Test {
 	}
 
 	@Test
-	public void testXPP9() throws ArgumentException, ParseException, IOException {
+	public void testXPP9() throws Exception {
 		final Composition std0 = Composition.parse("SiO2");
 		final Composition std1 = Composition.parse("Al");
 		final Composition std2 = Composition.parse("Mg");
 		final Composition std3 = Composition.parse("CaF2");
 		final Composition std4 = Composition.parse("Fe");
 
-		final boolean combined = false;
-
-		final Composition unk = buildK412(combined);
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum std0Mcd = new StandardMatrixCorrectionDatum( //
 				std0, //
@@ -2672,7 +2619,7 @@ public class XPPMatrixCorrection2Test {
 	 * @throws IOException
 	 */
 	@Test
-	public void testXPP11() throws ArgumentException, ParseException, IOException {
+	public void testXPP11() throws Exception {
 		// K412 as in SP 260-74 using elements and simple compounds
 
 		final Composition std0 = Composition.parse("SiO2");
@@ -2681,7 +2628,7 @@ public class XPPMatrixCorrection2Test {
 		final Composition std3 = Composition.parse("CaF2");
 		final Composition std4 = Composition.parse("Fe");
 
-		final Composition unk = buildK412(false);
+		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.5);
 		final Layer coating = Layer.carbonCoating(new UncertainValue(10.0, 2.0));
 		final double roughness = MatrixCorrectionDatum.roughness(1.0e-8, 3.0);
