@@ -1,6 +1,3 @@
-/**
- *
- */
 package gov.nist.juncertainty;
 
 import java.util.ArrayList;
@@ -10,7 +7,7 @@ import java.util.List;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import com.duckandcover.html.HTML;
-import com.duckandcover.html.IToHTML.Mode;
+import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
@@ -24,7 +21,7 @@ import gov.nist.microanalysis.roentgen.utility.FastIndex;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class Jacobian<G, H> {
+public class Jacobian<G, H> implements IToHTML {
 
 	private final FastIndex<G> mInputs;
 	private final FastIndex<H> mOutputs;
@@ -86,6 +83,7 @@ public class Jacobian<G, H> {
 							: bnf.formatHTML(getEntry(inLabel, outLabel));
 					items.add(Table.td(num));
 				}
+				t.addRow(items);
 			}
 			return t.toHTML(Mode.NORMAL);
 		}

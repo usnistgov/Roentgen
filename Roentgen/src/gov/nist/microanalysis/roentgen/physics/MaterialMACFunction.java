@@ -14,15 +14,19 @@ import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
 import gov.nist.juncertainty.ILabeledMultivariateFunction;
+import gov.nist.juncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.juncertainty.UncertainValues;
 import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
+import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
+import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * Compute the material mass absorption coefficient given the elemental mass
@@ -128,13 +132,14 @@ public class MaterialMACFunction //
 	}
 
 	final static public UncertainValuesCalculator<EPMALabel> compute(
-			final List<Composition> materials, final XRay xray
+			final List<Composition> comps, //
+			final XRay xray
 	) throws ArgumentException {
 		final List<Material> mats = new ArrayList<>();
-		for (final Composition comp : materials)
+		for (final Composition comp : comps)
 			mats.add(comp.getMaterial());
 		final MaterialMACFunction mmf = new MaterialMACFunction(mats, Collections.emptyList(), xray);
-		final UncertainValuesBase<EPMALabel> inputs = mmf.buildInputs(materials, xray);
+		final UncertainValuesBase<EPMALabel> inputs = mmf.buildInputs(comps, xray);
 		return UncertainValuesBase.propagateAnalytical(mmf, inputs);
 	}
 
@@ -277,12 +282,13 @@ public class MaterialMACFunction //
 	 *
 	 * @param other Materials other than the unknowns
 	 * @param unks  Material associated with unknowns
-	 * @param xrays     A list of x-ray energies to compute
+	 * @param xrays A list of x-ray energies to compute
 	 * @throws ArgumentException
 	 */
 	public MaterialMACFunction(
 			final List<Material> other, //
-			final List<Material> unks, final XRay xray
+			final List<Material> unks, //
+			final XRay xray
 	) throws ArgumentException {
 		super(inputTags(other, unks, xray), outputTags(other, unks, xray));
 	}
@@ -313,17 +319,15 @@ public class MaterialMACFunction //
 			final RealVector point
 	) {
 		final RealVector vals = buildResult();
-		final List<? extends Object> macTags = getOutputLabels();
-		for (int i = 0; i < macTags.size(); ++i) {
-			final MaterialMAC macTag = (MaterialMAC) macTags.get(i);
-			final Material mat = macTag.getMaterial();
-			final XRay xr = macTag.getXRay();
-			double tmp = 0.0;
+		for(MaterialMAC matMacTag : getOutputLabels()) {
+			final Material mat = matMacTag.getMaterial();
+			double matMac = 0.0;
 			for (final Element elm : mat.getElementSet()) {
-				tmp += getArg(new ElementalMAC.ElementMAC(elm, xr), point) * //
-						getArg(MaterialLabel.buildMassFractionTag(mat, elm), point);
+				final ElementalMAC.ElementMAC elmMacTag = new ElementalMAC.ElementMAC(elm, matMacTag.getXRay());
+				final MaterialLabel.MassFraction mfTag = MaterialLabel.buildMassFractionTag(mat, elm);
+				matMac += getArg(elmMacTag, point) * getArg(mfTag, point);
 			}
-			vals.setEntry(i, tmp);
+			setResult(matMacTag, vals, matMac);
 		}
 		return vals;
 	}
@@ -346,27 +350,69 @@ public class MaterialMACFunction //
 	) {
 		final RealVector vals = buildResult();
 		final RealMatrix jac = buildJacobian();
-		final List<? extends Object> macTags = getOutputLabels();
-		final List<? extends Object> inp = getInputLabels();
-		for (int matMacIdx = 0; matMacIdx < macTags.size(); ++matMacIdx) {
-			final MaterialMAC matMacTag = (MaterialMAC) macTags.get(matMacIdx);
-			final Material comp = matMacTag.getMaterial();
-			final XRay xr = matMacTag.getXRay();
+		for(MaterialMAC matMacTag : getOutputLabels()) {
+			final Material mat = matMacTag.getMaterial();
 			double matMac = 0.0;
-			for (final Element elm : comp.getElementSet()) {
-				final ElementalMAC.ElementMAC elmMacTag = new ElementalMAC.ElementMAC(elm, xr);
-				final MaterialLabel.MassFraction mfTag = MaterialLabel.buildMassFractionTag(comp, elm);
-				final int macIdx = inp.indexOf(elmMacTag);
-				assert macIdx >= 0 : elmMacTag;
-				final double macVal = point.getEntry(macIdx);
+			for (final Element elm : mat.getElementSet()) {
+				final ElementalMAC.ElementMAC elmMacTag = new ElementalMAC.ElementMAC(elm, matMacTag.getXRay());
+				final MaterialLabel.MassFraction mfTag = MaterialLabel.buildMassFractionTag(mat, elm);
+				final double elmMacVal = getArg(elmMacTag, point);
 				final double mfVal = getArg(mfTag, point);
-				matMac += macVal * mfVal;
-				jac.setEntry(matMacIdx, macIdx, mfVal);
-				setJacobian(mfTag, matMacTag, jac, macVal);
+				matMac += elmMacVal * mfVal;
+				setJacobian(elmMacTag, matMacTag, jac, mfVal);
+				setJacobian(mfTag, matMacTag, jac, elmMacVal);
 			}
-			vals.setEntry(matMacIdx, matMac);
+			setResult(matMacTag, vals, matMac);
 		}
 		return Pair.create(vals, jac);
+	}
+
+	public static ExplicitMeasurementModel<EPMALabel, MaterialMAC> buildMaterialMACFunctions(
+			final Material estUnknown, //
+			final Set<KRatioLabel> kratios
+	) throws ArgumentException {
+		final Map<Material, CharacteristicXRaySet> comps = new HashMap<>();
+		final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends MaterialMAC>> funcs = new ArrayList<>();
+		final FastIndex<Material> other = new FastIndex<>();
+		final FastIndex<Material> unks = new FastIndex<>();
+		{
+			final Set<CharacteristicXRay> allCxr = new HashSet<>();
+			comps.put(estUnknown, new CharacteristicXRaySet());
+			for (final KRatioLabel krl : kratios) {
+				other.addIfMissing(krl.getStandard().getMaterial());
+				unks.addIfMissing(krl.getUnknown().getMaterial());
+				comps.get(estUnknown).addAll(krl.getXRaySet());
+				if (krl.getUnknown().hasCoating()) {
+					final Material mat = krl.getUnknown().getCoating().getMaterial();
+					other.addIfMissing(mat);
+					if (!comps.containsKey(mat))
+						comps.put(mat, new CharacteristicXRaySet());
+					comps.get(mat).addAll(krl.getXRaySet());
+				}
+				{
+					final Material mat = krl.getStandard().getMaterial();
+					if (!comps.containsKey(mat))
+						comps.put(mat, new CharacteristicXRaySet());
+					comps.get(mat).addAll(krl.getXRaySet());
+				}
+				if (krl.getStandard().hasCoating()) {
+					final Material mat = krl.getStandard().getCoating().getMaterial();
+					other.addIfMissing(mat);
+					if (!comps.containsKey(mat))
+						comps.put(mat, new CharacteristicXRaySet());
+					comps.get(mat).addAll(krl.getXRaySet());
+				}
+				allCxr.addAll(krl.getXRaySet().getSetOfCharacteristicXRay());
+			}
+			for (final CharacteristicXRay cxr : allCxr) {
+				final Set<Material> mats = new HashSet<>();
+				for (final Map.Entry<Material, CharacteristicXRaySet> me : comps.entrySet())
+					if (me.getValue().contains(cxr))
+						mats.add(me.getKey());
+				funcs.add(new MaterialMACFunction(other, unks, cxr));
+			}
+		}
+		return ParallelMeasurementModelBuilder.join("MaterialMACs", funcs);
 	}
 
 }

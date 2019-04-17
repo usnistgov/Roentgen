@@ -193,5 +193,9 @@ public class UncertainValueEx<H> extends UncertainValue {
 				return s.mOneSigma;
 		return 0.0;
 	}
+	
+	public String toString() {
+		return mValue + "\u00B1" + mSigma;
+	}
 
 }

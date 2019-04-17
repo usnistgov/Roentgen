@@ -43,6 +43,7 @@ import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.ElementalMAC;
 import gov.nist.microanalysis.roentgen.physics.MaterialMACFunction;
 import gov.nist.microanalysis.roentgen.physics.XRay;
+import gov.nist.microanalysis.roentgen.physics.XRayEmissionProbability;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.XRaySet.ElementXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
@@ -101,7 +102,7 @@ public class XPPMatrixCorrection2 //
 
 		public static List<EPMALabel> buildInputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-				) {
+		) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.phi0Label(datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel("P", datum, shell));
@@ -110,9 +111,10 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.shellLabel("b", datum, shell));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-				) {
+		) {
 			return Collections.singletonList(MatrixCorrectionModel2.shellLabel("a", datum, shell));
 		}
 
@@ -123,7 +125,7 @@ public class XPPMatrixCorrection2 //
 		public Stepa(
 				final MatrixCorrectionDatum datum, //
 				final AtomicShell shell
-				) throws ArgumentException {
+		) throws ArgumentException {
 			super(buildInputs(datum, shell), buildOutputs(datum, shell));
 			mDatum = datum;
 			mShell = shell;
@@ -132,7 +134,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public RealVector optimized(
 				final RealVector point
-				) {
+		) {
 			final int iphi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mShell));
 			final int iF = inputIndex(MatrixCorrectionModel2.shellLabel("F", mDatum, mShell));
 			final int iP = inputIndex(MatrixCorrectionModel2.shellLabel("P", mDatum, mShell));
@@ -165,7 +167,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public Pair<RealVector, RealMatrix> value(
 				final RealVector point
-				) {
+		) {
 			final int iphi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mShell));
 			final int iF = inputIndex(MatrixCorrectionModel2.shellLabel("F", mDatum, mShell));
 			final int iP = inputIndex(MatrixCorrectionModel2.shellLabel("P", mDatum, mShell));
@@ -205,13 +207,14 @@ public class XPPMatrixCorrection2 //
 			return Pair.create(vals, jac);
 		}
 	}
+
 	private static class StepAaBb //
 			extends CompositeMeasurementModel<EPMALabel> //
 	{
 
 		private static List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> buildSteps(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-				) throws ArgumentException {
+		) throws ArgumentException {
 			final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> res = new ArrayList<>();
 			res.add(new StepRphi0(datum, shell));
 			res.add(new StepFRbar(datum, shell));
@@ -224,7 +227,7 @@ public class XPPMatrixCorrection2 //
 
 		public StepAaBb(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-				) throws ArgumentException {
+		) throws ArgumentException {
 			super("StepAaBb", buildSteps(datum, shell));
 		}
 
@@ -234,13 +237,14 @@ public class XPPMatrixCorrection2 //
 		}
 
 	}
+
 	private static class StepAB // Checked 17-Jan-2019
 			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
 			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
 
 		public static List<EPMALabel> buildInputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-				) {
+		) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.phi0Label(datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel("F", datum, shell));
@@ -249,9 +253,10 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.shellLabel(EPS, datum, shell));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-				) {
+		) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.shellLabel("A", datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel("B", datum, shell));
@@ -264,7 +269,7 @@ public class XPPMatrixCorrection2 //
 
 		public StepAB(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-				) throws ArgumentException {
+		) throws ArgumentException {
 			super(buildInputs(datum, shell), buildOutputs(datum, shell));
 			mDatum = datum;
 			mShell = shell;
@@ -273,7 +278,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public RealVector optimized(
 				final RealVector point
-				) {
+		) {
 			final int iphi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mShell));
 			final int iF = inputIndex(MatrixCorrectionModel2.shellLabel("F", mDatum, mShell));
 			final int iP = inputIndex(MatrixCorrectionModel2.shellLabel("P", mDatum, mShell));
@@ -363,6 +368,7 @@ public class XPPMatrixCorrection2 //
 			return Pair.create(vals, jac);
 		}
 	}
+
 	private static class StepChi // Checked 16-Jan-2019
 			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
 			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> { // C1
@@ -375,6 +381,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.takeOffAngleLabel(datum));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final CharacteristicXRay cxr
 				) {
@@ -447,6 +454,7 @@ public class XPPMatrixCorrection2 //
 		}
 
 	}
+
 	private static class StepConductiveCoating //
 			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
 			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
@@ -465,6 +473,7 @@ public class XPPMatrixCorrection2 //
 			return res;
 
 		}
+
 		private static final List<EPMALabel> buildOutputLabels(
 				//
 				final MatrixCorrectionDatum datum, final CharacteristicXRay cxr //
@@ -571,6 +580,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.shellLabel("b", datum, shell));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
 				) {
@@ -669,6 +679,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.shellLabel("R", datum, shell));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
 				) {
@@ -794,8 +805,7 @@ public class XPPMatrixCorrection2 //
 			jac.setEntry(oF, iQlaE0, dFdQlaE0);
 
 			// Rbar and partials
-			double Rbar = Double.NaN;
-			double dRbardF = Double.NaN;
+			double Rbar, dRbardF;
 			if (FoRbar >= phi0) {
 				Rbar = F / FoRbar; // C1
 				dRbardF = 1.0 / FoRbar;
@@ -958,7 +968,7 @@ public class XPPMatrixCorrection2 //
 		public static List<EPMALabel> buildInputs(
 				final Material comp, //
 				final boolean isStandard //
-		) {
+				) {
 			final List<EPMALabel> res = new ArrayList<>();
 			for (final Element elm : comp.getElementSet()) {
 				if (isStandard)
@@ -971,7 +981,7 @@ public class XPPMatrixCorrection2 //
 
 		public static List<EPMALabel> buildOutputs(
 				final Material mat
-		) {
+				) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(new MatrixCorrectionModel2.MaterialBasedLabel("M", mat));
 			res.add(new MatrixCorrectionModel2.MaterialBasedLabel("J", mat));
@@ -984,7 +994,7 @@ public class XPPMatrixCorrection2 //
 		public StepMJZBarb(
 				final Material mat, //
 				final boolean isStandard //
-		) throws ArgumentException {
+				) throws ArgumentException {
 			super(buildInputs(mat, isStandard), buildOutputs(mat));
 			mMaterial = mat;
 		}
@@ -992,7 +1002,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public RealVector optimized(
 				final RealVector point
-		) {
+				) {
 			final List<Element> elms = new ArrayList<>(mMaterial.getElementSet());
 			final double[] Ci = new double[elms.size()];
 			final double[] ZoA = new double[elms.size()];
@@ -1029,6 +1039,8 @@ public class XPPMatrixCorrection2 //
 			double Zbt = 0.0;
 			for (int i = 0; i < Ci.length; ++i)
 				Zbt += Ci[i] * Math.sqrt(Z[i]); // Ok
+			assert Zbt > 0.0 : //
+			Zbt;
 			vals.setEntry(oZbarb, Zbt * Zbt);
 			return vals;
 		}
@@ -1041,7 +1053,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public Pair<RealVector, RealMatrix> value(
 				final RealVector point
-		) {
+				) {
 			final ArrayList<Element> elms = new ArrayList<>(mMaterial.getElementSet());
 			final MassFraction[] lCi = new MassFraction[elms.size()];
 			final int[] iJi = new int[elms.size()];
@@ -1056,6 +1068,7 @@ public class XPPMatrixCorrection2 //
 				iJi[i] = inputIndex(MatrixCorrectionModel2.meanIonizationLabel(elm));
 				iAi[i] = inputIndex(MaterialLabel.buildAtomicWeightTag(mMaterial, elm));
 				Ci[i] = getArg(lCi[i], point);
+				assert Ci[i] >= 0.0 : elm.getAbbrev() + "=" + Ci[i];
 				Ji[i] = point.getEntry(iJi[i]);
 				Ai[i] = point.getEntry(iAi[i]);
 				Z[i] = elm.getAtomicNumber();
@@ -1127,6 +1140,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.phi0Label(datum, shell));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
 				) {
@@ -1295,7 +1309,7 @@ public class XPPMatrixCorrection2 //
 		public static List<EPMALabel> buildInputs(
 				//
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-		) {
+				) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(new MatrixCorrectionModel2.MaterialBasedLabel("M", datum.getMaterial()));
 			res.add(new MatrixCorrectionModel2.MaterialBasedLabel("J", datum.getMaterial()));
@@ -1303,9 +1317,10 @@ public class XPPMatrixCorrection2 //
 			res.add(new MatrixCorrectionModel2.IonizationExponentLabel(shell));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-		) {
+				) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.shellLabel(ONE_OVER_S, datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel(QLA, datum, shell));
@@ -1319,7 +1334,7 @@ public class XPPMatrixCorrection2 //
 		public StepQlaE0OneOverS(
 				final MatrixCorrectionDatum datum, //
 				final AtomicShell shell
-		) throws ArgumentException {
+				) throws ArgumentException {
 			super(buildInputs(datum, shell), buildOutputs(datum, shell));
 			mDatum = datum;
 			mShell = shell;
@@ -1328,7 +1343,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public RealVector optimized(
 				final RealVector point
-		) {
+				) {
 			final int tagE0 = inputIndex(MatrixCorrectionModel2.beamEnergyLabel(mDatum));
 			final int tagm = inputIndex(new MatrixCorrectionModel2.IonizationExponentLabel(mShell));
 			final int iJ = inputIndex(new MatrixCorrectionModel2.MaterialBasedLabel("J", mDatum.getMaterial()));
@@ -1382,7 +1397,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public Pair<RealVector, RealMatrix> value(
 				final RealVector point
-		) {
+				) {
 			final int tagE0 = inputIndex(MatrixCorrectionModel2.beamEnergyLabel(mDatum));
 			final int tagm = inputIndex(new MatrixCorrectionModel2.IonizationExponentLabel(mShell));
 			final int iJ = inputIndex(new MatrixCorrectionModel2.MaterialBasedLabel("J", mDatum.getMaterial()));
@@ -1457,15 +1472,16 @@ public class XPPMatrixCorrection2 //
 
 		public static List<EPMALabel> buildInputs(
 				final MatrixCorrectionDatum datum
-		) {
+				) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(new MatrixCorrectionModel2.MaterialBasedLabel(ZBARB, datum.getMaterial()));
 			res.add(MatrixCorrectionModel2.beamEnergyLabel(datum));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final MatrixCorrectionDatum datum, final AtomicShell shell
-		) {
+				) {
 			final List<EPMALabel> res = new ArrayList<>();
 			res.add(MatrixCorrectionModel2.shellLabel("R", datum, shell));
 			res.add(MatrixCorrectionModel2.phi0Label(datum, shell));
@@ -1479,7 +1495,7 @@ public class XPPMatrixCorrection2 //
 		public StepRphi0(
 				final MatrixCorrectionDatum datum, //
 				final AtomicShell shell
-		) throws ArgumentException {
+				) throws ArgumentException {
 			super(buildInputs(datum), buildOutputs(datum, shell));
 			mDatum = datum;
 			mShell = shell;
@@ -1527,7 +1543,7 @@ public class XPPMatrixCorrection2 //
 		@Override
 		public Pair<RealVector, RealMatrix> value(
 				final RealVector point
-		) {
+				) {
 			final int iZbarb = inputIndex(new MatrixCorrectionModel2.MaterialBasedLabel(ZBARB, mDatum.getMaterial()));
 			final int tagE0 = inputIndex(MatrixCorrectionModel2.beamEnergyLabel(mDatum));
 			checkIndices(iZbarb);
@@ -1679,6 +1695,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.shellLabel("F", std, cxr.getInner()));
 			return res;
 		}
+
 		public static List<EPMALabel> buildOutputs(
 				final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
 				final CharacteristicXRay cxr
@@ -1690,6 +1707,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.aLabel(unk, std, cxr));
 			return res;
 		}
+
 		private final UnknownMatrixCorrectionDatum mUnknown;
 
 		private final StandardMatrixCorrectionDatum mStandard;
@@ -1834,6 +1852,7 @@ public class XPPMatrixCorrection2 //
 		return new UncertainValuesCalculator<EPMALabel>(xpp, inputs);
 	}
 
+
 	/**
 	 * Returns a very basic set of output that includes the ZAF, Z, A terms and the
 	 * C<sub>Z</sub> in the standard for each k-ratio in the set.
@@ -1924,7 +1943,7 @@ public class XPPMatrixCorrection2 //
 	 */
 	public static UncertainValue computeIonizationExponent(
 			final AtomicShell sh, final double frac
-	) {
+			) {
 		double m, dm;
 		switch (sh.getFamily()) {
 		case K:
@@ -1945,57 +1964,7 @@ public class XPPMatrixCorrection2 //
 		return new UncertainValue(m, frac * dm);
 	}
 
-	private static ExplicitMeasurementModel<EPMALabel, MaterialMAC> buildMaterialMACFunctions(
-			final Material estUnknown, //
-			final Set<KRatioLabel> kratios
-			) //
-			throws ArgumentException {
-		final Map<Material, CharacteristicXRaySet> comps = new HashMap<>();
-		final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends MaterialMAC>> funcs = new ArrayList<>();
-		final FastIndex<Material> other = new FastIndex<>();
-		final FastIndex<Material> unks = new FastIndex<>();
-		{
-			final Set<CharacteristicXRay> allCxr = new HashSet<>();
-			comps.put(estUnknown, new CharacteristicXRaySet());
-			for (final KRatioLabel krl : kratios) {
-				// assert (estUnknown == null) ||
-				// estUnknown.getElementSet().equals(krl.getUnknown().getElementSet());
-				other.addIfMissing(krl.getStandard().getMaterial());
-				unks.addIfMissing(krl.getUnknown().getMaterial());
-				comps.get(estUnknown).addAll(krl.getXRaySet());
-				if (krl.getUnknown().hasCoating()) {
-					final Material mat = krl.getUnknown().getCoating().getMaterial();
-					other.addIfMissing(mat);
-					if (!comps.containsKey(mat))
-						comps.put(mat, new CharacteristicXRaySet());
-					comps.get(mat).addAll(krl.getXRaySet());
-				}
-				{
-					final Material mat = krl.getStandard().getMaterial();
-					if (!comps.containsKey(mat))
-						comps.put(mat, new CharacteristicXRaySet());
-					comps.get(mat).addAll(krl.getXRaySet());
-				}
-				if (krl.getStandard().hasCoating()) {
-					final Material mat = krl.getStandard().getCoating().getMaterial();
-					other.addIfMissing(mat);
-					if (!comps.containsKey(mat))
-						comps.put(mat, new CharacteristicXRaySet());
-					comps.get(mat).addAll(krl.getXRaySet());
-				}
-				allCxr.addAll(krl.getXRaySet().getSetOfCharacteristicXRay());
-			}
-			for (final CharacteristicXRay cxr : allCxr) {
-				final Set<Material> mats = new HashSet<>();
-				for (final Map.Entry<Material, CharacteristicXRaySet> me : comps.entrySet())
-					if (me.getValue().contains(cxr))
-						mats.add(me.getKey());
-				// assert mats.size() > 1;
-				funcs.add(new MaterialMACFunction(other, unks, cxr));
-			}
-		}
-		return ParallelMeasurementModelBuilder.join("MaterialMACs", funcs);
-	}
+
 
 	/**
 	 * This method joins together the individual Composition computations into a
@@ -2063,7 +2032,7 @@ public class XPPMatrixCorrection2 //
 			res.add(ParallelMeasurementModelBuilder.join("XPP", step));
 		}
 		for (final UnknownMatrixCorrectionDatum unk : unks.keySet())
-			res.add(buildMaterialMACFunctions(unk.getMaterial(), kratios));
+			res.add(MaterialMACFunction.buildMaterialMACFunctions(unk.getMaterial(), kratios));
 		final ParallelMeasurementModelBuilder<MaterialLabel, MaterialLabel> builder = //
 				new ParallelMeasurementModelBuilder<>("Compositions");
 		for (final Composition comp : allComps)
@@ -2098,7 +2067,7 @@ public class XPPMatrixCorrection2 //
 
 	private static final double eVtokeV(
 			final double eV
-	) {
+		) {
 		return 0.001 * eV;
 	}
 
@@ -2116,7 +2085,7 @@ public class XPPMatrixCorrection2 //
 
 	public Map<EPMALabel, Constraint> buildConstraints(
 			final UncertainValuesBase<EPMALabel> inputs
-	) {
+			) {
 		final Map<EPMALabel, Constraint> res = new HashMap<EPMALabel, Constraint>();
 		// Add constraints for the standards
 		for (final MassFraction mf : inputs.getLabels(MassFraction.class))
@@ -2155,7 +2124,7 @@ public class XPPMatrixCorrection2 //
 	@Override
 	public UncertainValues<EPMALabel> buildInput(
 			final Material unkMat
-		) throws ArgumentException {
+	) throws ArgumentException {
 		final List<UncertainValuesBase<? extends EPMALabel>> results = new ArrayList<>();
 		// Make sure that there are no replicated Compositions
 		results.add(unkMat.getAtomicWeights());
@@ -2239,8 +2208,10 @@ public class XPPMatrixCorrection2 //
 		final int sz = allCxr.size();
 		if (sz > 0) {
 			final Map<EPMALabel, Number> weightT = new HashMap<>();
-			for (final CharacteristicXRay cxr : allCxr.getSetOfCharacteristicXRay())
-				weightT.put(new MatrixCorrectionModel2.XRayWeightLabel(cxr), cxr.getWeightUV());
+			for (final CharacteristicXRay cxr : allCxr.getSetOfCharacteristicXRay()) {
+				XRayEmissionProbability xrep = new XRayEmissionProbability(cxr.getInner());
+				weightT.put(new MatrixCorrectionModel2.XRayWeightLabel(cxr), xrep.getWeightU(cxr));
+			}
 			results.add(new UncertainValues<>(weightT));
 		}
 		final Map<EPMALabel, Number> mon = new HashMap<>();

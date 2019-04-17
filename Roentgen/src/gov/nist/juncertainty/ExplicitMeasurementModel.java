@@ -414,23 +414,23 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	protected void dumpArguments(
-			final RealVector point, final ExplicitMeasurementModel<?, ?> parent
+			final RealVector point, //
+			final ExplicitMeasurementModel<?, ?> parent
 	) {
 		if (sDump != null) {
 			final StringBuffer sb = new StringBuffer();
 			final NumberFormat nf = new HalfUpFormat("0.00E0");
-			sb.append(toString());
-			sb.append("[");
+			sb.append("\"Args["+toString()+"]\"");
 			for (int i = 0; i < getInputDimension(); ++i) {
-				if (i != 0)
-					sb.append(",");
-				final Object lbl = getInputLabel(i);
-				sb.append(lbl);
-				sb.append("=");
+				sb.append(",");
+				sb.append(getInputLabel(i));
+			}
+			sb.append("\n");
+			sb.append("\"Args["+toString()+"]\"");
+			for (int i = 0; i < getInputDimension(); ++i) {
+				sb.append(",");
 				sb.append(nf.format(point.getEntry(i)));
 			}
-			sb.append("] in ");
-			sb.append(parent);
 			sb.append("\n");
 			sDump.append(sb);
 		}

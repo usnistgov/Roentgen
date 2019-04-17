@@ -229,10 +229,10 @@ public class CompositeMeasurementModel<G> //
 		RealVector currVals = point;
 		List<? extends G> currInputs = getInputLabels();
 		for (int step = 0; step < mSteps.size(); ++step) {
-			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
 			final ExplicitMeasurementModel<? extends G, ? extends G> func = mSteps.get(step);
 			// Build the vector argument to func and call evaluate
+			dumpCurrentValues(func, currInputs, currVals);
 			final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 			final List<? extends G> fin = func.getInputLabels();
 			for (int i = 0; i < fin.size(); ++i) {
@@ -384,9 +384,9 @@ public class CompositeMeasurementModel<G> //
 		List<G> currInputs = getInputLabels();
 		// The rows and cols associated with the cumJac
 		for (int step = 0; step < mSteps.size(); ++step) {
-			dumpCurrentValues(step, currInputs, currVals);
 			// Initialize and call the 'func' associated with this step
 			final ExplicitMeasurementModel<? extends G, ? extends G> func = mSteps.get(step);
+			dumpCurrentValues(func, currInputs, currVals);
 			// Build the vector argument to func and call evaluate
 			final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 			final List<? extends G> fin = func.getInputLabels();
@@ -436,18 +436,23 @@ public class CompositeMeasurementModel<G> //
 	}
 
 	protected void dumpCurrentValues(
-			final int step, final List<? extends G> index, final RealVector vals
+			final ExplicitMeasurementModel<? extends G, ? extends G> emm, //
+			final List<? extends G> index, //
+			final RealVector vals
 			) {
 		if (sDump != null) {
 			final StringBuffer sb = new StringBuffer();
 			final NumberFormat nf = new HalfUpFormat("0.00E0");
-			sb.append("Step[" + step + "] -> ");
-			sb.append(toString() + " : ");
+			sb.append("\"Step[" + emm.toString() + "]\"\n");
 			for (int i = 0; i < index.size(); ++i) {
 				if (i != 0)
 					sb.append(",");
-				sb.append(index.get(i));
-				sb.append("=");
+				sb.append("\"" + index.get(i) + "\"");
+			}
+			sb.append("\n");
+			for (int i = 0; i < index.size(); ++i) {
+				if (i != 0)
+					sb.append(",");
 				sb.append(nf.format(vals.getEntry(i)));
 			}
 			sb.append("\n");

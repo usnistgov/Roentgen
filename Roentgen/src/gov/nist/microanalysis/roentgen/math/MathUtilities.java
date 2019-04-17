@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -393,4 +395,35 @@ public class MathUtilities {
 		return Table.td(bnf.formatHTML(n));
 	}
 
+	/**
+	 * A numerically stable method for solving the quadratic equation a*x^2 + b*x +
+	 * c = 0.
+	 * 
+	 * @param a
+	 * @param b
+	 * @param c
+	 * @return double[2] containing the solutions or null if there is no real
+	 *         solution.
+	 */
+	static final public double[] quadraticSolver(
+			double a, double b, double c
+	) {
+		final double r = (b * b) - (4.0 * a * c);
+		if (r < 0.0)
+			return null;
+		final double q = -0.5 * (b + (Math.signum(b) * Math.sqrt(r)));
+		return new double[] { q / a, c / q };
+	}
+
+	static public final <T> Map<T, Double> normalize(Map<T, Double> mtd){
+		HashMap<T, Double> res = new HashMap<>();
+		double sum=0.0;
+		for(Map.Entry<T,Double> me : mtd.entrySet())
+			sum+=Math.max(0.0, me.getValue());
+		for(Map.Entry<T,Double> me : mtd.entrySet())
+			res.put(me.getKey(), Math.max(0.0, me.getValue()/sum));
+		return res;
+	}
+	
+	
 }

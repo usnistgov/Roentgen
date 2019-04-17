@@ -55,7 +55,7 @@ public class XRayEmissionProbability //
 		protected Map<AtomicShell, Map<CharacteristicXRay, Double>> initialize() {
 			final Map<AtomicShell, Map<CharacteristicXRay, Double>> res = new HashMap<>();
 			try {
-				final InputStream is = getClass().getResourceAsStream("relax_endf6.csv");
+				final InputStream is = getClass().getResourceAsStream("relax_endf6x.csv");
 				final InputStreamReader isr = new InputStreamReader(is, Charset.forName("US-ASCII"));
 				try (final BufferedReader br = new BufferedReader(isr)) {
 					AtomicShell prev = null;

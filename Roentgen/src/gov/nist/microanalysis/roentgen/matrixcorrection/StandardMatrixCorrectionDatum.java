@@ -87,6 +87,22 @@ public class StandardMatrixCorrectionDatum //
 		super(beamEnergy, takeOffAngle, roughness, coating);
 		mComposition = comp;
 	}
+	
+	/**
+	 *
+	 * @param comp
+	 * @param beamEnergy
+	 * @param takeOffAngle
+	 * @param roughness
+	 */
+	public StandardMatrixCorrectionDatum( //
+			MatrixCorrectionDatum mcd,
+			final Composition comp //
+	) {
+		super(mcd.getBeamEnergy(), mcd.getTakeOffAngle(), mcd.getRoughness(), mcd.getCoating());
+		mComposition = comp;
+	}
+
 
 	@Override
 	public String toHTML(final Mode mode) {

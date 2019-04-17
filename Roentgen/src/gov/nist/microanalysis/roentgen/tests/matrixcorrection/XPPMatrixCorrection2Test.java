@@ -375,7 +375,7 @@ public class XPPMatrixCorrection2Test {
 	@Test
 	public void testXPP2() throws Exception {
 		// K411 and K412 as in SP 260-74
-		final Composition std = CompositionFactory.instance().findComposition("K411").getObject(); 
+		final Composition std = CompositionFactory.instance().findComposition("K411").getObject();
 		final Composition unk = CompositionFactory.instance().findComposition("K412").getObject();
 
 		final StandardMatrixCorrectionDatum stdMcd = new StandardMatrixCorrectionDatum( //
@@ -416,8 +416,7 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Inputs");
 				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 				xpp.addConstraints(xpp.buildConstraints(inputs));
-				xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+				xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
 				r.add(inputs);
 
 				final long start = System.currentTimeMillis();
@@ -456,9 +455,9 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(aResults.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
 				final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
-						unk.getValueMap(MassFraction.class), true);
+						unk.toMassFraction().getValueMap(), true);
 				final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-						.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.001, true).force();
+						.buildFiniteDifference(skrl, unk.toMassFraction().getValueMap(), 0.001, true).force();
 
 				assertTrue(aCalc.getJacobian().isPresent());
 				final Jacobian<EPMALabel, EPMALabel> aJac = aCalc.getJacobian().get();
@@ -500,8 +499,8 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Inputs");
 				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 				xpp.addConstraints(xpp.buildConstraints(inputs));
-				xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+				xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+				
 				r.add(inputs);
 				final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp, inputs)
 						.sort();
@@ -630,8 +629,8 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Inputs");
 				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 				xpp.addConstraints(xpp.buildConstraints(inputs));
-				xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+				xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+				
 				r.add(inputs);
 				final long start = System.currentTimeMillis();
 				final UncertainValuesCalculator<EPMALabel> xppI = new UncertainValuesCalculator<>(xpp, inputs);
@@ -670,9 +669,9 @@ public class XPPMatrixCorrection2Test {
 				r.addImage(aResults.asCovarianceBitmap(8, V2L3, L2C), "Correlation matrix");
 
 				final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
-						unk.getValueMap(MassFraction.class), true);
+						unk.toMassFraction().getValueMap(), true);
 				final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-						.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.001, true).force();
+						.buildFiniteDifference(skrl, unk.toMassFraction().getValueMap(), 0.001, true).force();
 
 				assertTrue(aCalc.getJacobian().isPresent());
 				final Jacobian<EPMALabel, EPMALabel> aJac = aCalc.getJacobian().get();
@@ -712,8 +711,8 @@ public class XPPMatrixCorrection2Test {
 				r.addHeader("Inputs");
 				final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 				xpp.addConstraints(xpp.buildConstraints(inputs));
-				xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+				xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+				
 				r.add(inputs);
 				final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp, inputs)
 						.sort();
@@ -856,8 +855,8 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 		xpp.addConstraints(xpp.buildConstraints(inputs));
-		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start = System.currentTimeMillis();
 
 		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
@@ -868,7 +867,7 @@ public class XPPMatrixCorrection2Test {
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
-		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
+		xpp2.addAdditionalInputs(unk.toMassFraction().getValueMap());
 
 		final long start2 = System.currentTimeMillis();
 		final UncertainValues<EPMALabel> fullResults = UncertainValues
@@ -938,7 +937,7 @@ public class XPPMatrixCorrection2Test {
 				final long start3 = System.currentTimeMillis();
 
 				final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-						.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.001, true).force();
+						.buildFiniteDifference(skrl, unk.toMassFraction().getValueMap(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (4) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 
@@ -1133,8 +1132,8 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 		xpp.addConstraints(xpp.buildConstraints(inputs));
-		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start = System.currentTimeMillis();
 
 		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
@@ -1144,8 +1143,8 @@ public class XPPMatrixCorrection2Test {
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
-		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp2.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start2 = System.currentTimeMillis();
 		final UncertainValues<EPMALabel> fullResults = UncertainValues
 				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
@@ -1210,7 +1209,7 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 				final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-						.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.001, true).force();
+						.buildFiniteDifference(skrl, unk.toMassFraction().getValueMap(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (5) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 
@@ -1409,8 +1408,8 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 		xpp.addConstraints(xpp.buildConstraints(inputs));
-		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start = System.currentTimeMillis();
 		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
@@ -1419,8 +1418,8 @@ public class XPPMatrixCorrection2Test {
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
-		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp2.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start2 = System.currentTimeMillis();
 		final UncertainValues<EPMALabel> fullResults = UncertainValues
 				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
@@ -1485,7 +1484,7 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 				final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-						.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.001, true).force();
+						.buildFiniteDifference(skrl, unk.toMassFraction().getValueMap(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (6) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 
@@ -1686,8 +1685,8 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 		xpp.addConstraints(xpp.buildConstraints(inputs));
-		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start = System.currentTimeMillis();
 		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValues.asUncertainValues(aCalc).sort();
@@ -1696,8 +1695,8 @@ public class XPPMatrixCorrection2Test {
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
-		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp2.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start2 = System.currentTimeMillis();
 		final UncertainValues<EPMALabel> fullResults = UncertainValues
 				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2));
@@ -1967,8 +1966,8 @@ public class XPPMatrixCorrection2Test {
 		assertEquals(xpp.getOutputDimension(), outputs.size());
 		final UncertainValuesBase<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 		xpp.addConstraints(xpp.buildConstraints(inputs));
-		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start = System.currentTimeMillis();
 
 		final UncertainValuesCalculator<EPMALabel> aCalc = UncertainValuesBase.propagateAnalytical(xpp, inputs);
@@ -1979,8 +1978,8 @@ public class XPPMatrixCorrection2Test {
 		final XPPMatrixCorrection2 xpp2 = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValuesBase<EPMALabel> inputs2 = xpp2.buildInput(unk.getMaterial());
 		xpp2.addConstraints(xpp2.buildConstraints(inputs));
-		xpp2.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp2.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final long start2 = System.currentTimeMillis();
 		final UncertainValuesBase<EPMALabel> fullResults = UncertainValues
 				.asUncertainValues(UncertainValuesBase.propagateAnalytical(xpp2, inputs2)).sort();
@@ -2044,7 +2043,7 @@ public class XPPMatrixCorrection2Test {
 
 				final long start3 = System.currentTimeMillis();
 				final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-						.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.001, true).force();
+						.buildFiniteDifference(skrl, unk.toMassFraction().getValueMap(), 0.001, true).force();
 				System.out.println(
 						"Trimmed Delta Timing (8) = " + Long.toString(System.currentTimeMillis() - start3) + " ms");
 
@@ -2217,8 +2216,8 @@ public class XPPMatrixCorrection2Test {
 		final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, Collections.emptyList());
 		final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 		xpp.addConstraints(xpp.buildConstraints(inputs));
-		xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+		xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+		
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp, inputs);
 
 		final DataFrame<Double> df = xpp.computePhiRhoZCurve(aResults.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
@@ -2375,8 +2374,8 @@ public class XPPMatrixCorrection2Test {
 
 					final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 					xpp.addConstraints(xpp.buildConstraints(inputs));
-					xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+					xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+					
 					assertTrue(UncertainValuesBase.testEquality(inputs, inputs.blockDiagnonalize()));
 					r.add(inputs.blockDiagnonalize());
 
@@ -2508,8 +2507,8 @@ public class XPPMatrixCorrection2Test {
 					r.addHeader("Inputs");
 					final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 					xpp.addConstraints(xpp.buildConstraints(inputs));
-					xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+					xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+					
 					r.add(inputs);
 					final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp, inputs)
 							.sort();
@@ -2690,8 +2689,8 @@ public class XPPMatrixCorrection2Test {
 				final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
 				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
 				xpp.addConstraints(xpp.buildConstraints(inputs));
-				xpp.addAdditionalInputs(unk.getValueMap(MassFraction.class));
-
+				xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+				
 				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
 
 				outVals.put(i, uvc.getOutputValues(0.0));
@@ -2767,6 +2766,275 @@ public class XPPMatrixCorrection2Test {
 		r.inBrowser(Mode.VERBOSE);
 
 	}
+
+	/**
+	 * Compute ZAF for K412 as in SP 260-74 using elements and simple compounds
+	 *
+	 * @throws ArgumentException
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@Test
+	public void testXPP12() throws Exception {
+		// K412 as in SP 260-74 using elements and simple compounds
+
+		final Composition std0 = Composition.pureElement(Element.Boron);
+		final Composition std1 = Composition.pureElement(Element.Lanthanum);
+
+		final Composition unk = Composition.parse("LaB6");
+		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.5);
+		final Layer coating = Layer.carbonCoating(new UncertainValue(10.0, 2.0));
+		final double roughness = MatrixCorrectionDatum.roughness(1.0e-9, 3.0);
+
+		final Report r = new Report("XPP Report - Test12()");
+		final int MIN_E = 10;
+		final int MAX_E = 25;
+		final Map<Integer, Map<EPMALabel, UncertainValueEx<EPMALabel>>> outVals = new TreeMap<>();
+		List<? extends EPMALabel> outLabels = null, inLabels = null;
+
+		try {
+			final Table valTable = new Table();
+			for (int i = MIN_E; i < MAX_E; i += 5) {
+				final double e0 = i;
+				final UncertainValue e0u = new UncertainValue(e0, 0.1);
+				final StandardMatrixCorrectionDatum std0Mcd = //
+						new StandardMatrixCorrectionDatum(std0, e0u, toa, roughness, coating);
+				final StandardMatrixCorrectionDatum std1Mcd = //
+						new StandardMatrixCorrectionDatum(std1, e0u, toa, roughness, coating);
+				final UnknownMatrixCorrectionDatum unkMcd = //
+						new UnknownMatrixCorrectionDatum(unk.getMaterial(), e0u, toa, roughness, coating);
+
+				final Set<KRatioLabel> skrl = new HashSet<>();
+				skrl.add(new KRatioLabel(unkMcd, std0Mcd, ElementXRaySet.singleton(Element.Boron, XRayTransition.KL2),
+						Method.Measured));
+				skrl.add(new KRatioLabel(unkMcd, std1Mcd,
+						ElementXRaySet.singleton(Element.Lanthanum, XRayTransition.LA1), Method.Measured));
+
+				final Set<EPMALabel> outputs = new HashSet<>();
+				for (final KRatioLabel krl : skrl) {
+					outputs.add(MatrixCorrectionModel2.zafLabel(krl));
+					final StandardMatrixCorrectionDatum meStd = krl.getStandard();
+					for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
+						outputs.add(MatrixCorrectionModel2.zafLabel(unkMcd, meStd, cxr));
+						outputs.add(MatrixCorrectionModel2.FxFLabel(unkMcd, cxr));
+						outputs.add(MatrixCorrectionModel2.FxFLabel(meStd, cxr));
+					}
+				}
+				final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new ArrayList<>(outputs));
+				// final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, new
+				// ArrayList<>());
+				final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
+				xpp.addConstraints(xpp.buildConstraints(inputs));
+				xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+				
+				final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
+
+				UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(uvc);
+
+				Report.dump(uvs, Mode.VERBOSE);
+
+				outVals.put(i, uvc.getOutputValues(0.0));
+				if (i == MIN_E) {
+					outLabels = uvc.getOutputLabels();
+					inLabels = uvc.getInputLabels();
+				}
+			}
+			{
+				final List<Item> row = new ArrayList<>();
+				row.add(Table.td("Output"));
+				row.add(Table.td("Abbrev."));
+				row.add(Table.td("Input"));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				for (int i = MIN_E; i < MAX_E; ++i)
+					row.add(Table.td(i));
+				valTable.addRow(row);
+			}
+			final BasicNumberFormat bnf = new BasicNumberFormat("0.000E0");
+			for (int oi = 0; oi < outLabels.size(); ++oi) {
+				final EPMALabel outTag = outLabels.get(oi);
+				if (outTag instanceof ZAFMultiLineLabel) {
+					final ZAFMultiLineLabel mcl = (ZAFMultiLineLabel) outTag;
+					for (int ii = 0; ii < inLabels.size(); ++ii) {
+						final EPMALabel inTag = inLabels.get(ii);
+						final List<Item> row = new ArrayList<>();
+						row.add(Table.td(mcl));
+						row.add(Table.td(mcl.getElementXRaySet()));
+						row.add(Table.td(inTag));
+						boolean addRow = false;
+						for (int i = MIN_E; i < MAX_E; i += 5) {
+							final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals = outVals.get(i);
+							final UncertainValueEx<EPMALabel> tmp = getByXRT(oVals, mcl);
+							if (tmp != null)
+								row.add(Table.td(bnf.format(tmp.doubleValue())));
+							else
+								row.add(Table.td("---"));
+						}
+						for (int i = MIN_E; i < MAX_E; i+=5) {
+							final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals = outVals.get(i);
+							final UncertainValueEx<EPMALabel> tmp = getByXRT(oVals, mcl);
+							if (tmp != null) {
+								final double cbn = getComponentByName(tmp, inTag);
+								if (cbn != 0.0)
+									addRow = true;
+								row.add(Table.td(bnf.format(cbn)));
+							} else
+								row.add(Table.td("---"));
+						}
+						for (int i = MIN_E; i < MAX_E; i+=5) {
+							final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals = outVals.get(i);
+							final UncertainValueEx<EPMALabel> tmp = getByXRT(oVals, mcl);
+							if (tmp != null)
+								row.add(Table
+										.td(bnf.format(100.0 * getComponentByName(tmp, inTag) / tmp.doubleValue()))); //
+							else
+								row.add(Table.td("---"));
+						}
+						if (addRow)
+							valTable.addRow(row);
+					}
+				}
+			}
+			r.addHTML(valTable.toHTML(Mode.NORMAL));
+		} catch (final Throwable e) {
+			r.addThrowable(e);
+			r.inBrowser(Mode.VERBOSE);
+			throw e;
+		}
+		r.inBrowser(Mode.VERBOSE);
+
+	}
+	
+	@Test
+	public void multivoltage() throws Throwable {
+		final Composition unk = CompositionFactory.instance().findComposition("K411").getObject();
+		final Composition feStd = Composition.parse("Fe");
+		final Composition caStd = Composition.parse("Ca");
+		final Composition siStd = Composition.parse("Si");
+		final Composition mgStd = Composition.parse("Mg");
+		
+		final StandardMatrixCorrectionDatum stdFeMcd = new StandardMatrixCorrectionDatum( //
+				feStd, new UncertainValue(25.0, 0.01), //
+				UncertainValue.toRadians(40.0, 0.1) //
+		);
+
+		final StandardMatrixCorrectionDatum stdCaMcd = new StandardMatrixCorrectionDatum( //
+				caStd, new UncertainValue(25.0, 0.01), //
+				UncertainValue.toRadians(40.0, 0.1) //
+		);
+
+		final StandardMatrixCorrectionDatum stdSiMcd = new StandardMatrixCorrectionDatum( //
+				siStd, new UncertainValue(25.0, 0.01), //
+				UncertainValue.toRadians(40.0, 0.1) //
+		);
+
+		final StandardMatrixCorrectionDatum stdMgMcd = new StandardMatrixCorrectionDatum( //
+				mgStd, new UncertainValue(25.0, 0.01), //
+				UncertainValue.toRadians(40.0, 0.1) //
+		);
+		
+
+		final ElementXRaySet feTr = ElementXRaySet.singleton(Element.Iron, XRayTransition.KA1);
+		final ElementXRaySet mgTr = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
+		final ElementXRaySet caTr = ElementXRaySet.singleton(Element.Calcium, XRayTransition.KA1);
+		final ElementXRaySet siTr = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
+
+		{ 
+			double e0=15.0;
+			final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+					unk.getMaterial(), new UncertainValue(e0, 0.01), //
+					UncertainValue.toRadians(40.0, 0.1) //
+			);
+			final KRatioLabel feKrl = new KRatioLabel(unkMcd, stdFeMcd, feTr, Method.Measured);
+			final KRatioLabel mgKrl = new KRatioLabel(unkMcd, stdMgMcd, mgTr, Method.Measured);
+			final KRatioLabel caKrl = new KRatioLabel(unkMcd, stdCaMcd, caTr, Method.Measured);
+			final KRatioLabel siKrl = new KRatioLabel(unkMcd, stdSiMcd, siTr, Method.Measured);
+
+			final Set<KRatioLabel> skrl = new HashSet<>();
+			skrl.add(feKrl);
+			skrl.add(mgKrl);
+			skrl.add(caKrl);
+			skrl.add(siKrl);
+			
+			XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, XPPMatrixCorrection2.buildDefaultOutputs(skrl));
+			final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
+			xpp.addConstraints(xpp.buildConstraints(inputs));
+			xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+			final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
+			UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(uvc);
+			// Values from DTSA-II simulations
+			assertEquals(0.02535, uvs.getEntry(feKrl.as(Method.Calculated)), 0.001);
+			assertEquals(0.04176, uvs.getEntry(caKrl.as(Method.Calculated)), 0.001);
+			assertEquals(0.11383, uvs.getEntry(siKrl.as(Method.Calculated)), 0.006);
+			assertEquals(0.03572, uvs.getEntry(mgKrl.as(Method.Calculated)), 0.002);
+			// Report.dump(uvs, Mode.NORMAL);
+		}
+		{ 
+			double e0=20.0;
+			final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+					unk.getMaterial(), new UncertainValue(e0, 0.01), //
+					UncertainValue.toRadians(40.0, 0.1) //
+			);
+			final KRatioLabel feKrl = new KRatioLabel(unkMcd, stdFeMcd, feTr, Method.Measured);
+			final KRatioLabel mgKrl = new KRatioLabel(unkMcd, stdMgMcd, mgTr, Method.Measured);
+			final KRatioLabel caKrl = new KRatioLabel(unkMcd, stdCaMcd, caTr, Method.Measured);
+			final KRatioLabel siKrl = new KRatioLabel(unkMcd, stdSiMcd, siTr, Method.Measured);
+
+			final Set<KRatioLabel> skrl = new HashSet<>();
+			skrl.add(feKrl);
+			skrl.add(mgKrl);
+			skrl.add(caKrl);
+			skrl.add(siKrl);
+			
+			XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, XPPMatrixCorrection2.buildDefaultOutputs(skrl));
+			final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
+			xpp.addConstraints(xpp.buildConstraints(inputs));
+			xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+			final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
+			UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(uvc);
+			// Values from DTSA-II simulations
+			assertEquals(0.0572, uvs.getEntry(feKrl.as(Method.Calculated)), 0.001);
+			assertEquals(0.0695, uvs.getEntry(caKrl.as(Method.Calculated)), 0.001);
+			assertEquals(0.1405, uvs.getEntry(siKrl.as(Method.Calculated)), 0.001);
+			assertEquals(0.0378, uvs.getEntry(mgKrl.as(Method.Calculated)), 0.001);
+			// Report.dump(uvs, Mode.NORMAL);
+		}
+		{ 
+			double e0=25.0;
+			final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
+					unk.getMaterial(), new UncertainValue(e0, 0.01), //
+					UncertainValue.toRadians(40.0, 0.1) //
+			);
+			final KRatioLabel feKrl = new KRatioLabel(unkMcd, stdFeMcd, feTr, Method.Measured);
+			final KRatioLabel mgKrl = new KRatioLabel(unkMcd, stdMgMcd, mgTr, Method.Measured);
+			final KRatioLabel caKrl = new KRatioLabel(unkMcd, stdCaMcd, caTr, Method.Measured);
+			final KRatioLabel siKrl = new KRatioLabel(unkMcd, stdSiMcd, siTr, Method.Measured);
+
+			final Set<KRatioLabel> skrl = new HashSet<>();
+			skrl.add(feKrl);
+			skrl.add(mgKrl);
+			skrl.add(caKrl);
+			skrl.add(siKrl);
+			
+			XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, XPPMatrixCorrection2.buildDefaultOutputs(skrl));
+			final UncertainValues<EPMALabel> inputs = xpp.buildInput(unk.getMaterial());
+			xpp.addConstraints(xpp.buildConstraints(inputs));
+			xpp.addAdditionalInputs(unk.toMassFraction().getValueMap());
+			final UncertainValuesCalculator<EPMALabel> uvc = new UncertainValuesCalculator<>(xpp, inputs);
+			UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(uvc);
+			// Values from DTSA-II simulations
+			assertEquals(0.0951, uvs.getEntry(feKrl.as(Method.Calculated)), 0.001);
+			assertEquals(0.0962, uvs.getEntry(caKrl.as(Method.Calculated)), 0.001);
+			assertEquals(0.1532, uvs.getEntry(siKrl.as(Method.Calculated)), 0.005);
+			assertEquals(0.0362, uvs.getEntry(mgKrl.as(Method.Calculated)), 0.002);
+			// Report.dump(uvs, Mode.NORMAL);
+		}
+		
+		
+	}
+
 
 	public double getComponentByName(
 			final UncertainValueEx<EPMALabel> tmp, final EPMALabel tag

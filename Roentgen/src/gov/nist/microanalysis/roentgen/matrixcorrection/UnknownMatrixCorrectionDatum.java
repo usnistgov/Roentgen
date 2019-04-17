@@ -60,17 +60,22 @@ public class UnknownMatrixCorrectionDatum //
 		assert mat != null;
 		mMaterial = mat;
 	}
+	
+	public UnknownMatrixCorrectionDatum(MatrixCorrectionDatum mcd, Material mat) {
+		this(mat, mcd.getBeamEnergy(), mcd.getTakeOffAngle(), mcd.getRoughness(), mcd.getCoating());
+	}
+	
 
 	/**
 	 * @param beamEnergy
 	 * @param takeOffAngle
 	 */
 	public UnknownMatrixCorrectionDatum(//
-			final Material estimate, //
+			final Material material, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle//
 	) {
-		this(estimate, beamEnergy, takeOffAngle, Double.NaN, null);
+		this(material, beamEnergy, takeOffAngle, Double.NaN, null);
 	}
 	
 	
@@ -81,11 +86,11 @@ public class UnknownMatrixCorrectionDatum //
 	 * @param roughness
 	 */
 	public UnknownMatrixCorrectionDatum(//
-			final Material comp, //
+			final Material material, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle, //
 			final double roughness) {
-		this(comp, beamEnergy, takeOffAngle, roughness, null);
+		this(material, beamEnergy, takeOffAngle, roughness, null);
 	}
 
 	public Set<Element> getElementSet() {

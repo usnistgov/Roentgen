@@ -27,9 +27,10 @@ import gov.nist.juncertainty.UncertainValuesCalculator;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.DataStore.CompositionFactory;
-import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel2;
+import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioCorrectionModel3;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
+import gov.nist.microanalysis.roentgen.matrixcorrection.Layer;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
@@ -44,7 +45,7 @@ import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
  * The K240 class serves as an example of how to use
- * {@link KRatioCorrectionModel2} to calculate the matrix correction with
+ * {@link KRatioCorrectionModel3} to calculate the matrix correction with
  * associated uncertainties for K240 glass (O, Mg, Si, Ti, Zn, Zr, Ba). The
  * results are output as HTML pages.
  *
@@ -71,11 +72,12 @@ public class K240 {
 	) throws Exception {
 		final K240 k240 = new K240();
 		try {
-			//k240.simple();
-			//k240.benitoite();
-			//k240.elements();
-			//k240.k240();
+			// k240.simple();
+			// k240.benitoite();
+			// k240.elements();
+			// k240.k240();
 			k240.surfaceRoughness();
+			k240.surfaceCoating();
 		} catch (IOException | ArgumentException | ParseException e) {
 			e.printStackTrace();
 		}
@@ -163,7 +165,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
-				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
+				final KRatioCorrectionModel3 cfk = KRatioCorrectionModel3.buildXPPModel(lkr, null);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
 				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
@@ -355,10 +357,70 @@ public class K240 {
 				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
-				Composition res = KRatioCorrectionModel2.roundTripXPP(unk, skr);
+				Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
 
 				report.addSubHeader("Roughness = " + roughNm + " nm");
 				report.add(res, Mode.NORMAL);
+			}
+		} finally {
+			report.inBrowser(Mode.NORMAL);
+		}
+	}
+
+	public void surfaceCoating() throws Exception {
+		// K240 using Benitoite, Zircon, Mg, Zn as standards
+
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
+
+		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
+		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
+		final ElementXRaySet tiTrs = ElementXRaySet.singleton(Element.Titanium, XRayTransition.KA1);
+		final ElementXRaySet siTrs = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
+		final ElementXRaySet oTrs = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
+		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
+		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
+
+		final Composition mg = Composition.parse("Mg");
+		final Composition zn = Composition.parse("Zn");
+		final Composition benitoite = CompositionFactory.instance().findComposition("Benitoite").getObject();
+		final Composition zircon = CompositionFactory.instance().findComposition("Zircon").getObject();
+
+		final UncertainValue e0 = new UncertainValue(15.0, 0.1);
+
+		MatrixCorrectionDatum.roughness(10.0, 3.6);
+
+		Report report = new Report("K240 coating");
+		report.addHeader("K240 coating");
+		try {
+			for (boolean same : Arrays.asList(true, false)) {
+				for (double coatingDelta : Arrays.asList(0.0, 1.0, 2.0, 4.0, 8.0)) {
+
+					final Layer coating = Layer.carbonCoating(UncertainValue.valueOf(10.0, coatingDelta));
+					final Layer unkCoating = same ? coating : Layer.carbonCoating(UncertainValue.valueOf(10.0, coatingDelta));
+					final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, mTOA, 0.0,
+							coating);
+					final StandardMatrixCorrectionDatum znMcd = //
+							new StandardMatrixCorrectionDatum(zn, e0, mTOA, 0.0, coating);
+					final StandardMatrixCorrectionDatum zrMcd = //
+							new StandardMatrixCorrectionDatum(zircon, e0, mTOA, 0.0, coating);
+					final StandardMatrixCorrectionDatum benitoiteMcd = //
+							new StandardMatrixCorrectionDatum(benitoite, e0, mTOA, 0.0, coating);
+					final UnknownMatrixCorrectionDatum unkMcd = //
+							new UnknownMatrixCorrectionDatum(unk.getMaterial(), e0, mTOA, 0.0, unkCoating);
+					final Set<KRatioLabel> skr = new HashSet<>();
+					skr.add(new KRatioLabel(unkMcd, mgMcd, mgTrs, Method.Measured));
+					skr.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured));
+					skr.add(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured));
+					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, siTrs, Method.Measured));
+					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, oTrs, Method.Measured));
+					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
+					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
+
+					Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
+					
+					report.addSubHeader("Coating: same="+Boolean.valueOf(same)+"  delta= "+coatingDelta+" nm");
+					report.add(res, Mode.NORMAL);
+				}
 			}
 		} finally {
 			report.inBrowser(Mode.NORMAL);
@@ -444,7 +506,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, oMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
+				final KRatioCorrectionModel3 cfk = KRatioCorrectionModel3.buildXPPModel(lkr, null);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
 				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
@@ -600,7 +662,7 @@ public class K240 {
 
 	public List<? extends EPMALabel> filter(
 			final List<? extends EPMALabel> labels, final String name
-	) {
+			) {
 		final List<EPMALabel> res = new ArrayList<>();
 		for (final EPMALabel label : labels)
 			if (label.toString().startsWith(name))
@@ -610,7 +672,7 @@ public class K240 {
 
 	public <H> UncertainValueEx<String> getByMFT(
 			final Map<H, UncertainValueEx<String>> oVals, final MaterialLabel.MassFraction mft
-	) {
+			) {
 		for (final Map.Entry<H, UncertainValueEx<String>> me : oVals.entrySet()) {
 			if (me.getKey() instanceof MaterialLabel.MassFraction) {
 				final MaterialLabel.MassFraction mft2 = (MaterialLabel.MassFraction) me.getKey();
@@ -623,7 +685,7 @@ public class K240 {
 
 	public double getComponentByName(
 			final UncertainValueEx<String> uv, final String name
-	) {
+			) {
 		for (final Map.Entry<String, Double> me : uv.getComponents().entrySet())
 			if (me.getKey().toString().equals(name))
 				return me.getValue().doubleValue();
@@ -709,7 +771,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, oMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null);
+				final KRatioCorrectionModel3 cfk = KRatioCorrectionModel3.buildXPPModel(lkr, null);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
 				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
@@ -943,7 +1005,7 @@ public class K240 {
 				lkr.add(new KRatioLabel(unkMcd, mgoMcd, oTrs, Method.Measured));
 				lkr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
 
-				final List<EPMALabel> defOut = KRatioCorrectionModel2.buildDefaultOutputs(lkr);
+				final List<EPMALabel> defOut = KRatioCorrectionModel3.buildDefaultOutputs(lkr);
 				defOut.add(new KRatioLabel(unkMcd, mgoMcd, mgTrs, Method.Calculated));
 				defOut.add(new KRatioLabel(unkMcd, basi2o5Mcd, baTrs, Method.Calculated));
 				defOut.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Calculated));
@@ -952,7 +1014,7 @@ public class K240 {
 				defOut.add(new KRatioLabel(unkMcd, mgoMcd, oTrs, Method.Calculated));
 				defOut.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Calculated));
 
-				final KRatioCorrectionModel2 cfk = KRatioCorrectionModel2.buildXPPModel(lkr, null, defOut);
+				final KRatioCorrectionModel3 cfk = KRatioCorrectionModel3.buildXPPModel(lkr, null, defOut);
 				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
 				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
 				mcm.addConstraints(mcm.buildConstraints(input));
@@ -1108,7 +1170,7 @@ public class K240 {
 
 	private Map<String, Collection<? extends EPMALabel>> extractLabelBlocks(
 			final UncertainValuesBase<EPMALabel> res
-	) {
+			) {
 		final Map<String, Collection<? extends EPMALabel>> labels = new TreeMap<>();
 		labels.put("[µ/ρ]", filter(res.getLabels(), "[μ/ρ]"));
 		labels.put("dz", filter(res.getLabels(), "dz"));

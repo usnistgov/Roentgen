@@ -107,7 +107,7 @@ public class UncertainValue extends Number //
 	) {
 		return new UncertainValue(val, unc);
 	}
-	
+
 	public static UncertainValue valueOf(
 			final double val
 	) {
@@ -271,9 +271,9 @@ public class UncertainValue extends Number //
 	) {
 		switch (mode) {
 		case TERSE:
-			if(uncertainty()!=0)
+			if (uncertainty() != 0)
 				return bnf.formatHTML(mValue) + "&#177;" + bnf.formatHTML(uncertainty());
-			else 
+			else
 				return bnf.formatHTML(mValue);
 		case NORMAL:
 		case VERBOSE:
@@ -298,6 +298,10 @@ public class UncertainValue extends Number //
 	 */
 	public double variance() {
 		return mSigma * mSigma;
+	}
+
+	public String toString() {
+		return mValue + "\u00B1" + mSigma;
 	}
 
 }

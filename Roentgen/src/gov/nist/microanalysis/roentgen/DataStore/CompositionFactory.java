@@ -128,7 +128,7 @@ public class CompositionFactory implements ICompositionArchive {
 	/**
 	 * K411 certified values (SRM 470)
 	 */
-	private static final LazyComposition K411 = new LazyComposition("K411e") {
+	private static final LazyComposition K411 = new LazyComposition("K411") {
 
 		@Override
 		protected Composition initialize() {
@@ -193,6 +193,7 @@ public class CompositionFactory implements ICompositionArchive {
 	private static final LazyComposition SANBORNITE = new LazyCompound("Sanbornite", "BaSi2O5");
 	private static final LazyComposition FORSTERITE = new LazyCompound("Forsterite", "Mg2SiO4");
 	private static final LazyComposition ZIRCON = new LazyCompound("Zircon", "ZrSiO4");
+	private static final LazyComposition ALBITE = new LazyCompound("Albite", "NaAlSi3O8");
 
 	// Must be after all the other static initializers!!!
 	private static final CompositionFactory INSTANCE = new CompositionFactory();
@@ -216,6 +217,7 @@ public class CompositionFactory implements ICompositionArchive {
 		mCompositions.put(K412e.mName, K412e);
 		mCompositions.put(K411e.mName, K411e);
 		mCompositions.put(ZIRCON.mName, ZIRCON);
+		mCompositions.put(ALBITE.mName, ALBITE);
 	}
 
 	/**

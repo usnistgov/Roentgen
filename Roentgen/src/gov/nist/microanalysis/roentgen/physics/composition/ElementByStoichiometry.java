@@ -37,7 +37,6 @@ public class ElementByStoichiometry //
 	}
 
 	private static List<MaterialLabel> buildInput(
-			//
 			final Material mat, //
 			final Element outputElm //
 	) {
@@ -96,6 +95,7 @@ public class ElementByStoichiometry //
 		for (final Element elm : mMaterial.getElementSet()) {
 			if (!elm.equals(mElement)) {
 				final double cj = getArg(MaterialLabel.buildMassFractionTag(mMaterial, elm), point);
+				assert cj >= 0.0 : elm.getAbbrev() + " = " + cj;
 				final double aj = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
 				final double vj = mValences.get(elm).doubleValue();
 				ci -= (ai / aj) * (vj / vi) * cj;
@@ -125,22 +125,22 @@ public class ElementByStoichiometry //
 		final RealMatrix jac = buildJacobian();
 		final AtomicWeight awi = MaterialLabel.buildAtomicWeightTag(mMaterial, mElement);
 		final double ai = getArg(awi, point);
-		double ci = 0.0, dcidawi = 0.0;
+		final double vi = mValences.get(mElement).doubleValue();
+		double ci = 0.0;
 		final MassFraction mfo = MaterialLabel.buildMassFractionTag(mMaterial, mElement);
 		for (final Element elm : mMaterial.getElementSet()) {
 			if (!elm.equals(mElement)) {
 				final MassFraction mft = MaterialLabel.buildMassFractionTag(mMaterial, elm);
 				final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
 				final double aj = getArg(awt, point), cj = getArg(mft, point);
-				final double kkj = -(ai / aj)
-						* (mValences.get(elm).doubleValue() / mValences.get(mElement).doubleValue());
+				final double vj = mValences.get(elm).doubleValue();
+				final double kkj = -(ai / aj) * (vj / vi);
 				ci += kkj * cj;
-				dcidawi += (kkj / ai) * cj;
 				setJacobian(mft, mfo, jac, kkj);
-				setJacobian(awt, mfo, jac, -(kkj / aj) * cj);
+				setJacobian(awt, mfo, jac, -(kkj * cj) / aj);
 			}
 		}
-		setJacobian(awi, mfo, jac, dcidawi);
+		setJacobian(awi, mfo, jac, ci / ai);
 		setResult(mfo, res, ci);
 		return Pair.create(res, jac);
 	}

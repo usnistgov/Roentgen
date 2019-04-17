@@ -11,7 +11,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
-import gov.nist.juncertainty.MultiLinearMeasurementModel;
+import gov.nist.juncertainty.models.MultiLinearMeasurementModel;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.IntInterval;
 import gov.nist.microanalysis.roentgen.physics.CharacteristicXRay;

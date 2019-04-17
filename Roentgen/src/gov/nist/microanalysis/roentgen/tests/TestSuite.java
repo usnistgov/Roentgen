@@ -10,8 +10,6 @@ import gov.nist.microanalysis.roentgen.tests.math.TestSafeMultivariateNormalDist
 import gov.nist.microanalysis.roentgen.tests.math.TestUncertainValue;
 import gov.nist.microanalysis.roentgen.tests.math.TestUncertainValues;
 import gov.nist.microanalysis.roentgen.tests.math.TestUtility;
-import gov.nist.microanalysis.roentgen.tests.matrixcorrection.KRatioCorrectionModelTest;
-import gov.nist.microanalysis.roentgen.tests.matrixcorrection.TwoPointContinuumModelTest;
 import gov.nist.microanalysis.roentgen.tests.matrixcorrection.XPPMatrixCorrection2Test;
 import gov.nist.microanalysis.roentgen.tests.physics.CompositionTest2;
 import gov.nist.microanalysis.roentgen.tests.physics.TestMassAbsorptionCoefficient;
@@ -20,6 +18,7 @@ import gov.nist.microanalysis.roentgen.tests.spectrum.TestLinearSpectrumFit;
 import gov.nist.microanalysis.roentgen.tests.spectrum.TestLineshapeCalibration;
 import gov.nist.microanalysis.roentgen.tests.spectrum.TestReadSpectrum;
 import gov.nist.microanalysis.roentgen.tests.spectrum.TestSpectrumFileReader;
+import gov.nist.microanalysis.roentgen.tests.wds.TwoPointContinuumModelTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ //
@@ -38,8 +37,7 @@ import gov.nist.microanalysis.roentgen.tests.spectrum.TestSpectrumFileReader;
 		TestLinearSpectrumFit.class, //
 		TestLineshapeCalibration.class, //
 		TestSpectrumFileReader.class, //
-		XPPMatrixCorrection2Test.class, //
-		KRatioCorrectionModelTest.class //
+		XPPMatrixCorrection2Test.class //
 })
 
 public class TestSuite {

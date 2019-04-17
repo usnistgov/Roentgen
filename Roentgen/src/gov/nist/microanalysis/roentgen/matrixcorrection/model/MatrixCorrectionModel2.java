@@ -10,6 +10,7 @@ import gov.nist.juncertainty.ExplicitMeasurementModel;
 import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
+import gov.nist.microanalysis.roentgen.EPMALabel.BaseLabel;
 import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
 import gov.nist.microanalysis.roentgen.DataStore.UniqueString;
 import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel;
@@ -93,6 +94,23 @@ abstract public class MatrixCorrectionModel2 //
 		) {
 			super(name, mcd);
 		}
+	}
+
+	public static class EmittedIntensityLabel //
+			extends BaseLabel<MatrixCorrectionDatum, ElementXRaySet, Object> {
+
+		private EmittedIntensityLabel(
+				MatrixCorrectionDatum mcd, //
+				ElementXRaySet exrs
+		) {
+			super("I<sub>emitted</sub>", mcd, exrs);
+		}
+	}
+
+	public static EmittedIntensityLabel buildEmittedIntensityLabel(
+			final MatrixCorrectionDatum mcd, final ElementXRaySet exrs
+	) {
+		return new EmittedIntensityLabel(mcd, exrs);
 	}
 
 	public static class MatrixCorrectionDatumLabel extends EPMALabel.BaseLabel<MatrixCorrectionDatum, Object, Object> {

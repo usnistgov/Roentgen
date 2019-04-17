@@ -476,6 +476,33 @@ abstract public class UncertainValuesBase<H> //
 		return true;
 	}
 
+	public static <J> boolean testSimiliarity(
+			final UncertainValuesBase<J> uvs1, //
+			final UncertainValuesBase<J> uvs2, //
+			final double eps
+	) {
+		if (uvs1.getDimension() != uvs2.getDimension())
+			return false;
+		for (final J label1 : uvs1.getLabels()) {
+			double d = Math.abs(uvs1.getEntry(label1) - uvs2.getEntry(label1));
+			double m = Math.max(uvs1.getEntry(label1), uvs2.getEntry(label1));
+			if ((d / m > eps) && (d > eps)) {
+				System.err.println(label1 + "  " + d + "/" + m);
+				return false;
+			}
+			for (final J label2 : uvs1.getLabels())
+				if (!label1.equals(label2)) {
+					double dc = Math.abs(uvs1.getCovariance(label1, label2) - uvs2.getCovariance(label1, label2));
+					double mc = Math.max(uvs1.getCovariance(label1, label2), uvs2.getCovariance(label1, label2));
+					if ((dc / mc > eps) && (dc > eps)) {
+						System.err.println(label1 + "  " + label2 + " " + dc + "/" + mc);
+						return false;
+					}
+				}
+		}
+		return true;
+	}
+
 	/**
 	 * Return an {@link UncertainValues} object with the same dimension and values
 	 * as input except all the covariances except those associated with label are
@@ -1115,7 +1142,7 @@ abstract public class UncertainValuesBase<H> //
 	}
 
 	final public Map<H, Double> getValueMap(
-			final List<H> labels
+			final List<? extends H> labels
 	) {
 		final Map<H, Double> res = new HashMap<>();
 		for (final H label : labels)
@@ -1348,15 +1375,13 @@ abstract public class UncertainValuesBase<H> //
 		switch (mode) {
 		case TERSE: {
 			final Table table = new Table();
-			final List<Item> header = new ArrayList<>();
-			final List<Item> vals = new ArrayList<>();
 			for (final H rowLabel : getLabels()) {
-				header.add(Table.th(HTML.toHTML(rowLabel, Mode.TERSE)));
-				vals.add(Table.tdc(
+				final List<Item> row = new ArrayList<>();
+				row.add(Table.th(HTML.toHTML(rowLabel, Mode.TERSE)));
+				row.add(Table.tdc(
 						nf.formatHTML(getEntry(rowLabel)) + "&pm;" + nf.formatHTML(Math.sqrt(getVariance(rowLabel)))));
+				table.addRow(row);
 			}
-			table.addRow(header);
-			table.addRow(vals);
 			return table.toHTML(Mode.NORMAL);
 		}
 		case NORMAL: {
@@ -1510,17 +1535,18 @@ abstract public class UncertainValuesBase<H> //
 			res.add(getLabel(i));
 		return Collections.unmodifiableList(res);
 	}
-	
+
 	/**
 	 * <p>
 	 * Computes the differences between the values associated with the specified
 	 * class between <code>this</code> and <code>other</code>.
 	 * </p>
 	 * <p>
-	 * Example:<br/>&nbsp;&nbsp;&nbsp;<code>differences(MassFraction.class,k412,k411)</code>
+	 * Example:<br/>
+	 * &nbsp;&nbsp;&nbsp;<code>differences(MassFraction.class,k412,k411)</code>
 	 * </p>
 	 * 
-	 * @param cls Class&ltT&gt;
+	 * @param cls   Class&ltT&gt;
 	 * @param other UncertainValuesBase<H>
 	 * @return Map&lt;T, Double&gt;
 	 */
@@ -1534,7 +1560,7 @@ abstract public class UncertainValuesBase<H> //
 		for (Map.Entry<T, Double> me : other.getValueMap(cls).entrySet())
 			res.put(me.getKey(), res.getOrDefault(me.getKey(), 0.0).doubleValue() - me.getValue().doubleValue());
 		return res;
-	}	
+	}
 
 	/**
 	 * Returns a {@link RealVector} containing the L-values.

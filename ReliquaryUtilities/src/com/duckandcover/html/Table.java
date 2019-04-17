@@ -27,7 +27,9 @@ public class Table implements IToHTML, IToHTMLExt {
 		private final int mRow;
 		private final int mCol;
 
-		private Index(final int row, final int col) {
+		private Index(
+				final int row, final int col
+		) {
 			assert row >= 0;
 			assert col >= 0;
 			mRow = row;
@@ -35,7 +37,9 @@ public class Table implements IToHTML, IToHTMLExt {
 		}
 
 		@Override
-		public int compareTo(final Index o) {
+		public int compareTo(
+				final Index o
+		) {
 			final int res = Integer.compare(mRow, o.mRow);
 			return res == 0 ? Integer.compare(mCol, o.mCol) : res;
 		}
@@ -51,12 +55,22 @@ public class Table implements IToHTML, IToHTMLExt {
 		protected final int mRowSpan;
 		protected final int mColSpan;
 		protected final boolean mCenter;
+		protected final String mStyle;
 
-		protected Item(final IToHTML html, final int rowSpan, final int colSpan, final boolean center) {
+		protected Item(
+				final IToHTML html, final int rowSpan, final int colSpan, final boolean center, final String style
+		) {
 			mHTML = html;
 			mRowSpan = rowSpan;
 			mColSpan = colSpan;
 			mCenter = center;
+			mStyle = style;
+		}
+
+		protected Item(
+				final IToHTML html, final int rowSpan, final int colSpan, final boolean center
+		) {
+			this(html, rowSpan, colSpan, center, null);
 		}
 
 		protected String span() {
@@ -71,50 +85,90 @@ public class Table implements IToHTML, IToHTMLExt {
 		protected String center() {
 			return mCenter ? " align = \"center\"" : "";
 		}
+
+		protected String style() {
+			return mStyle != null ? " style=\"" + mStyle + "\"" : "";
+		}
 	}
 
 	public static class TD extends Item {
-		public TD(final IToHTML html, final int rowSpan, final int colSpan, final boolean center) {
-			super(html, rowSpan, colSpan, center);
+		public TD(
+				final IToHTML html, final int rowSpan, final int colSpan, final boolean center, final String style
+		) {
+			super(html, rowSpan, colSpan, center, style);
 		}
 
-		public TD(final String html, final int rowSpan, final int colSpan, final boolean center) {
-			super(Transforms.createHTML(html), rowSpan, colSpan, center);
+		public TD(
+				final IToHTML html, final int rowSpan, final int colSpan, final boolean center
+		) {
+			this(html, rowSpan, colSpan, center, null);
+		}
+
+		public TD(
+				final String html, final int rowSpan, final int colSpan, final boolean center
+		) {
+			this(Transforms.createHTML(html), rowSpan, colSpan, center);
+		}
+
+		public TD(
+				final String html, final int rowSpan, final int colSpan, final boolean center, final String style
+		) {
+			this(Transforms.createHTML(html), rowSpan, colSpan, center, style);
 		}
 
 		@Override
-		public String toHTML(final Mode mode, final File base, final String dir) throws IOException {
+		public String toHTML(
+				final Mode mode, final File base, final String dir
+		) throws IOException {
 			if (mHTML instanceof IToHTMLExt)
-				return "<td" + span() + center() + ">" + ((IToHTMLExt) mHTML).toHTML(mode, base, dir) + "</td>";
+				return "<td" + span() + center() + style() + ">" + ((IToHTMLExt) mHTML).toHTML(mode, base, dir)
+						+ "</td>";
 			else
-				return "<td" + span() + center() + ">" + mHTML.toHTML(mode) + "</td>";
+				return "<td" + span() + center() + style() + ">" + mHTML.toHTML(mode) + "</td>";
 		}
 
 		@Override
-		public String toHTML(final Mode mode) {
+		public String toHTML(
+				final Mode mode
+		) {
 			return "<td" + span() + center() + ">" + mHTML.toHTML(mode) + "</td>";
 		}
 	}
 
 	public static class TH extends Item {
-		public TH(final IToHTML html, final int rowSpan, final int colSpan, final boolean center) {
-			super(html, rowSpan, colSpan, center);
+		public TH(
+				final IToHTML html, final int rowSpan, final int colSpan, final boolean center, final String style
+		) {
+			super(html, rowSpan, colSpan, center, style);
 		}
 
-		public TH(final String html, final int rowSpan, final int colSpan, final boolean center) {
-			super(Transforms.createHTML(html), rowSpan, colSpan, center);
+		public TH(
+				final IToHTML html, final int rowSpan, final int colSpan, final boolean center
+		) {
+			this(html, rowSpan, colSpan, center, null);
+		}
+
+		public TH(
+				final String html, final int rowSpan, final int colSpan, final boolean center
+		) {
+			this(Transforms.createHTML(html), rowSpan, colSpan, center);
 		}
 
 		@Override
-		public String toHTML(final Mode mode, final File base, final String dir) throws IOException {
+		public String toHTML(
+				final Mode mode, final File base, final String dir
+		) throws IOException {
 			if (mHTML instanceof IToHTMLExt)
-				return "<th" + span() + center() + ">" + ((IToHTMLExt) mHTML).toHTML(mode, base, dir) + "</th>";
+				return "<th" + span() + center() + style() + ">" + ((IToHTMLExt) mHTML).toHTML(mode, base, dir)
+						+ "</th>";
 			else
-				return "<th" + span() + center() + ">" + mHTML.toHTML(mode) + "</th>";
+				return "<th" + span() + center() + style() + ">" + mHTML.toHTML(mode) + "</th>";
 		}
 
 		@Override
-		public String toHTML(final Mode mode) {
+		public String toHTML(
+				final Mode mode
+		) {
 			return "<th" + span() + center() + ">" + mHTML.toHTML(mode) + "</th>";
 		}
 	}
@@ -125,12 +179,16 @@ public class Table implements IToHTML, IToHTMLExt {
 		}
 
 		@Override
-		public String toHTML(final Mode mode, final File base, final String dir) {
+		public String toHTML(
+				final Mode mode, final File base, final String dir
+		) {
 			return "";
 		}
 
 		@Override
-		public String toHTML(final Mode mode) {
+		public String toHTML(
+				final Mode mode
+		) {
 			return "";
 		}
 	}
@@ -149,13 +207,17 @@ public class Table implements IToHTML, IToHTMLExt {
 		return this;
 	}
 
-	public void add(final int row, final int col, final Item item) {
+	public void add(
+			final int row, final int col, final Item item
+	) {
 		final Index index = new Index(row, col);
 		mItems.put(index, item);
 		mMode.remove(index);
 	}
 
-	public void add(final int row, final int col, final Item item, final Mode mode) {
+	public void add(
+			final int row, final int col, final Item item, final Mode mode
+	) {
 		final Index index = new Index(row, col);
 		mItems.put(index, item);
 		mMode.put(index, mode);
@@ -175,7 +237,9 @@ public class Table implements IToHTML, IToHTMLExt {
 		return maxCol;
 	}
 
-	public void addRow(final List<Item> row) {
+	public void addRow(
+			final List<Item> row
+	) {
 		final int lastRow = rowCount();
 		int col = 0;
 		for (final Item item : row) {
@@ -184,20 +248,26 @@ public class Table implements IToHTML, IToHTMLExt {
 		}
 	}
 
-	public void addRow(final Item... items) {
+	public void addRow(
+			final Item... items
+	) {
 		addRow(Arrays.asList(items));
 	}
 
-	public void addHeaderRow(Object first, final List<? extends Object> items) {
+	public void addHeaderRow(
+			Object first, final List<? extends Object> items
+	) {
 		List<Item> row = new ArrayList<>();
-		if(first!=null)
+		if (first != null)
 			row.add(Table.th(HTML.toHTML(first, Mode.TERSE)));
 		for (Object item : items)
 			row.add(Table.th(HTML.toHTML(item, Mode.TERSE)));
 		addRow(row);
 	}
 
-	public void addCol(final List<Item> col) {
+	public void addCol(
+			final List<Item> col
+	) {
 		final int lastCol = rowCount();
 		int row = 0;
 		for (final Item item : col) {
@@ -206,95 +276,156 @@ public class Table implements IToHTML, IToHTMLExt {
 		}
 	}
 
-	public void addCol(final Item... items) {
+	public void addCol(
+			final Item... items
+	) {
 		addCol(Arrays.asList(items));
 	}
 
-	public static Item th(final String html, final int rowSpan, final int colSpan) {
+	public static Item th(
+			final String html, final int rowSpan, final int colSpan
+	) {
 		return new TH(html, rowSpan, colSpan, false);
 	}
 
-	public static Item thc(final String html, final int rowSpan, final int colSpan) {
+	public static Item thc(
+			final String html, final int rowSpan, final int colSpan
+	) {
 		return new TH(html, rowSpan, colSpan, true);
 	}
 
-	public static Item th(final String html, final int colSpan) {
+	public static Item th(
+			final String html, final int colSpan
+	) {
 		return new TH(html, 1, colSpan, false);
 	}
 
-	public static Item thc(final String html, final int colSpan) {
+	public static Item thc(
+			final String html, final int colSpan
+	) {
 		return new TH(html, 1, colSpan, true);
 	}
 
-	public static Item th(final String html) {
+	public static Item th(
+			final String html
+	) {
 		return new TH(html, 1, 1, false);
 	}
 
-	public static Item thc(final String html) {
+	public static Item thc(
+			final String html
+	) {
 		return new TH(html, 1, 1, true);
 	}
 
-	public static Item th(final IToHTML html, final int rowSpan, final int colSpan) {
+	public static Item th(
+			final IToHTML html, final int rowSpan, final int colSpan
+	) {
 		return new TH(html, rowSpan, colSpan, false);
 	}
 
-	public static Item thc(final IToHTML html, final int rowSpan, final int colSpan) {
+	public static Item thc(
+			final IToHTML html, final int rowSpan, final int colSpan
+	) {
 		return new TH(html, rowSpan, colSpan, true);
 	}
 
-	public static Item th(final IToHTML html, final int colSpan) {
+	public static Item th(
+			final IToHTML html, final int colSpan
+	) {
 		return new TH(html, 1, colSpan, false);
 	}
 
-	public static Item thc(final IToHTML html, final int colSpan) {
+	public static Item thc(
+			final IToHTML html, final int colSpan
+	) {
 		return new TH(html, 1, colSpan, true);
 	}
 
-	public static Item th(final IToHTML html) {
+	public static Item th(
+			final IToHTML html
+	) {
 		return new TH(html, 1, 1, false);
 	}
 
-	public static Item thc(final IToHTML html) {
+	public static Item th(
+			final IToHTML html, //
+			final String style
+	) {
+		return new TH(html, 1, 1, false, style);
+	}
+
+	public static Item thc(
+			final IToHTML html
+	) {
 		return new TH(html, 1, 1, true);
 	}
 
-	public static Item td(final String html, final int rowSpan, final int colSpan) {
+	public static Item td(
+			final String html, final int rowSpan, final int colSpan
+	) {
 		return new TD(html, rowSpan, colSpan, false);
 	}
 
-	public static Item tdc(final String html, final int rowSpan, final int colSpan) {
+	public static Item tdc(
+			final String html, final int rowSpan, final int colSpan
+	) {
 		return new TD(html, rowSpan, colSpan, true);
 	}
 
-	public static Item td(final String html, final int colSpan) {
+	public static Item td(
+			final String html, final int colSpan
+	) {
 		return new TD(html, 1, colSpan, false);
 	}
 
-	public static Item tdc(final String html, final int colSpan) {
+	public static Item tdc(
+			final String html, final int colSpan
+	) {
 		return new TD(html, 1, colSpan, true);
 	}
 
-	public static Item td(final String html) {
+	public static Item td(
+			final String html
+	) {
 		return new TD(html, 1, 1, false);
 	}
 
-	public static Item tdc(final String html) {
+	public static Item td(
+			final String html, //
+			final String style
+
+	) {
+		return new TD(html, 1, 1, false, style);
+	}
+
+	public static Item tdc(
+			final String html
+	) {
 		return new TD(html, 1, 1, true);
 	}
 
-	public static Item td(final Number number) {
+	public static Item td(
+			final Number number
+	) {
 		return new TD(number.toString(), 1, 1, false);
 	}
 
-	public static Item tdc(final Number number) {
+	public static Item tdc(
+			final Number number
+	) {
 		return new TD(number.toString(), 1, 1, true);
 	}
 
-	public static Item td(final double number) {
+	public static Item td(
+			final double number
+	) {
 		return new TD(Double.toString(number), 1, 1, false);
 	}
 
-	public static Item tdc(final double number) {
+	public static Item tdc(
+			final double number
+	) {
 		return new TD(Double.toString(number), 1, 1, true);
 	}
 
@@ -302,31 +433,45 @@ public class Table implements IToHTML, IToHTMLExt {
 		return new TD("&nbsp;", 1, 1, false);
 	}
 
-	public static Item td(final IToHTML html, final int rowSpan, final int colSpan) {
+	public static Item td(
+			final IToHTML html, final int rowSpan, final int colSpan
+	) {
 		return new TD(html, rowSpan, colSpan, false);
 	}
 
-	public static Item tdc(final IToHTML html, final int rowSpan, final int colSpan) {
+	public static Item tdc(
+			final IToHTML html, final int rowSpan, final int colSpan
+	) {
 		return new TD(html, rowSpan, colSpan, true);
 	}
 
-	public static Item td(final IToHTML html, final int colSpan) {
+	public static Item td(
+			final IToHTML html, final int colSpan
+	) {
 		return new TD(html, 1, colSpan, false);
 	}
 
-	public static Item tdc(final IToHTML html, final int colSpan) {
+	public static Item tdc(
+			final IToHTML html, final int colSpan
+	) {
 		return new TD(html, 1, colSpan, true);
 	}
 
-	public static Item td(final IToHTML html) {
+	public static Item td(
+			final IToHTML html
+	) {
 		return new TD(html, 1, 1, false);
 	}
 
-	public static Item tdc(final IToHTML html) {
+	public static Item tdc(
+			final IToHTML html
+	) {
 		return new TD(html, 1, 1, true);
 	}
 
-	public static Item td(Object key) {
+	public static Item td(
+			Object key
+	) {
 		return td(HTML.toHTML(key, Mode.NORMAL));
 	}
 
@@ -361,7 +506,9 @@ public class Table implements IToHTML, IToHTMLExt {
 	 *      java.io.File, java.lang.String)
 	 */
 	@Override
-	public String toHTML(final Mode mode, final File base, final String dir) throws IOException {
+	public String toHTML(
+			final Mode mode, final File base, final String dir
+	) throws IOException {
 		final Item[][] items = buildItems();
 		final StringBuffer sb = new StringBuffer();
 		if (mMatrix)
@@ -390,7 +537,9 @@ public class Table implements IToHTML, IToHTMLExt {
 	 * @see com.duckandcover.roentgen.html.IToHTML#toHTML(com.duckandcover.roentgen.html.IToHTML.Mode)
 	 */
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 		final Item[][] items = buildItems();
 		final StringBuffer sb = new StringBuffer();
 		if (mMatrix)

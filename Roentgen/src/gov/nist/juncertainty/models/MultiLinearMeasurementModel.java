@@ -1,4 +1,4 @@
-package gov.nist.juncertainty;
+package gov.nist.juncertainty.models;
 
 import java.util.List;
 
@@ -8,6 +8,8 @@ import org.apache.commons.math3.util.Pair;
 
 import com.duckandcover.lazy.SimplyLazy;
 
+import gov.nist.juncertainty.ExplicitMeasurementModel;
+import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 
 /**

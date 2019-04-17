@@ -49,7 +49,7 @@ public class AdaptiveTophatFilter extends EDSFittingFilter {
 	 * Construct the Jacobian matrix for the transform from spectrum channels into
 	 * filtered spectrum channels.
 	 *
-	 * @see gov.nist.juncertainty.MultiLinearMeasurementModel#buildLinearTransform(int)
+	 * @see gov.nist.juncertainty.models.MultiLinearMeasurementModel#buildLinearTransform(int)
 	 */
 	@Override
 	public RealMatrix buildLinearTransform(
