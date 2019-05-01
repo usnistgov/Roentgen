@@ -14,7 +14,6 @@ import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.CompositeMeasurementModel;
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.juncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
@@ -23,8 +22,8 @@ import gov.nist.microanalysis.roentgen.matrixcorrection.KRatioLabel.Method;
 import gov.nist.microanalysis.roentgen.matrixcorrection.MatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.StandardMatrixCorrectionDatum;
 import gov.nist.microanalysis.roentgen.matrixcorrection.UnknownMatrixCorrectionDatum;
-import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.FofChiReducedLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.EmittedIntensityLabel;
+import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.FofChiReducedLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.MatrixCorrectionDatumLabel;
 import gov.nist.microanalysis.roentgen.matrixcorrection.model.MatrixCorrectionModel2.ZAFMultiLineLabel;
 import gov.nist.microanalysis.roentgen.physics.AtomicShell;
@@ -63,13 +62,12 @@ class MultiE0MultiLineModel //
 	/**
 	 * Computes the emitted intensity for the specified material and set of
 	 * characteristic X-rays.
-	 * 
+	 *
 	 * @author Nicholas W. M. Ritchie
 	 *
 	 */
 	private static class EmittedIntensityModel //
-			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
-			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
+			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
 
 		private static List<EPMALabel> buildInputTags(
 				final MatrixCorrectionDatum mcd, //
@@ -110,8 +108,8 @@ class MultiE0MultiLineModel //
 		}
 
 		@Override
-		public RealVector optimized(
-				final RealVector point
+		public RealVector computeValue(
+				final double[] point
 		) {
 			final RealVector rv = buildResult();
 			final EmittedIntensityLabel intIdx = MatrixCorrectionModel2.buildEmittedIntensityLabel(mDatum, mXRaySet);
@@ -196,15 +194,14 @@ class MultiE0MultiLineModel //
 	}
 
 	private static class IonizationCrossSection //
-			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
-			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
+			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
 
 		static private List<EPMALabel> buildInputLabels(
 				final MatrixCorrectionDatum mcd, //
 				final Set<AtomicShell> shs //
 		) {
 			final List<EPMALabel> res = new ArrayList<>();
-			for (AtomicShell sh : shs)
+			for (final AtomicShell sh : shs)
 				res.add(new MatrixCorrectionModel2.IonizationExponentLabel(sh));
 			res.add(MatrixCorrectionModel2.beamEnergyLabel(mcd));
 			return res;
@@ -214,8 +211,8 @@ class MultiE0MultiLineModel //
 				final MatrixCorrectionDatum mcd, //
 				final Set<AtomicShell> shs
 		) {
-			List<EPMALabel> res = new ArrayList<>();
-			for (AtomicShell sh : shs)
+			final List<EPMALabel> res = new ArrayList<>();
+			for (final AtomicShell sh : shs)
 				res.add(buildICXLabel(mcd, sh));
 			return res;
 		}
@@ -233,13 +230,13 @@ class MultiE0MultiLineModel //
 		}
 
 		@Override
-		public RealVector optimized(
-				final RealVector point
+		public RealVector computeValue(
+				final double[] point
 		) {
 			final RealVector rv = buildResult();
 			final MatrixCorrectionDatumLabel e0Idx = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
-			for (AtomicShell sh : mShells) {
-				assert point.getDimension() == getInputDimension();
+			for (final AtomicShell sh : mShells) {
+				assert point.length == getInputDimension();
 				final double eL = 1.0e-3 * sh.getEdgeEnergy();
 				final double e0 = getArg(e0Idx, point);
 				final MatrixCorrectionModel2.IonizationExponentLabel mIdx = new MatrixCorrectionModel2.IonizationExponentLabel(
@@ -264,7 +261,7 @@ class MultiE0MultiLineModel //
 			final RealVector rv = buildResult();
 			final RealMatrix rm = buildJacobian();
 			final MatrixCorrectionDatumLabel e0Idx = MatrixCorrectionModel2.beamEnergyLabel(mDatum);
-			for (AtomicShell sh : mShells) {
+			for (final AtomicShell sh : mShells) {
 				final double eL = 1.0e-3 * sh.getEdgeEnergy();
 				final double e0 = getArg(e0Idx, point);
 				final MatrixCorrectionModel2.IonizationExponentLabel mIdx = new MatrixCorrectionModel2.IonizationExponentLabel(
@@ -285,8 +282,7 @@ class MultiE0MultiLineModel //
 	}
 
 	private static class KRatioZAFModel //
-			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> //
-			implements ILabeledMultivariateFunction<EPMALabel, EPMALabel> {
+			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
 
 		private static List<EPMALabel> buildInputLabels(
 				final KRatioLabel krl
@@ -319,8 +315,8 @@ class MultiE0MultiLineModel //
 		}
 
 		@Override
-		public RealVector optimized(
-				final RealVector point
+		public RealVector computeValue(
+				final double[] point
 				) {
 			final RealVector rv = buildResult();
 			final UnknownMatrixCorrectionDatum unk = mKRatio.getUnknown();

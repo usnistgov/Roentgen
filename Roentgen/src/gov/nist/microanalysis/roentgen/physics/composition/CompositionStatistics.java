@@ -11,7 +11,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AnalyticalTotalTag;
@@ -35,8 +34,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MeanZTa
  *
  */
 public class CompositionStatistics //
-		extends ExplicitMeasurementModel<MaterialLabel, CompositionalStatisticTag> //
-		implements ILabeledMultivariateFunction<MaterialLabel, CompositionalStatisticTag> {
+		extends ExplicitMeasurementModel<MaterialLabel, CompositionalStatisticTag> {
 
 	private static List<MaterialLabel> buildInputs(
 			final Material mat
@@ -79,8 +77,8 @@ public class CompositionStatistics //
 	 * #optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
 		final RealVector res = buildResult();
 		double meanA = 0.0, total = 0.0, meanZ = 0.0;

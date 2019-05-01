@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import com.duckandcover.html.IToHTML;
 
+import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 
 /**
@@ -60,7 +61,7 @@ public class UncertainValue extends Number //
 	 * result as an UncertainValue. The "±" character can be replaced with "+-" or
 	 * "-+".
 	 *
-	 * @param str
+	 * @param str A string containing a text representation of an {@link UncertainValue}
 	 * @return UncertainValue
 	 */
 	public static UncertainValue parse(
@@ -90,6 +91,13 @@ public class UncertainValue extends Number //
 	) {
 		return n instanceof UncertainValue ? ((UncertainValue) n).uncertainty() : 0.0;
 	}
+	
+	public static double variance(
+			final Number n
+	) {
+		return n instanceof UncertainValue ? ((UncertainValue) n).variance() : 0.0;
+	}
+
 
 	static final public Number unwrap(
 			final Number n
@@ -121,17 +129,19 @@ public class UncertainValue extends Number //
 	 * distributed.
 	 * </p>
 	 *
-	 * @param cuv
+	 * @param cuv A {@link Collection} of UncertainValue objects
 	 * @return UncertainValue
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	static public Number weightedMean(
 			final Collection<? extends UncertainValue> cuv
-	) throws Exception {
+	) throws ArgumentException {
 		double varSum = 0.0, sum = 0.0;
 		for (final UncertainValue uv : cuv) {
 			final double ivar = (isSpecialNumber(uv) ? 1.0 / uv.variance() : Double.NaN);
 			if (Double.isNaN(ivar))
-				throw new Exception(
+				throw new ArgumentException(
 						"Unable to compute the weighted mean when one or more datapoints have zero uncertainty.");
 			varSum += ivar;
 			sum += ivar * uv.doubleValue();
@@ -144,6 +154,11 @@ public class UncertainValue extends Number //
 
 	final double mSigma;
 
+	/**
+	 * Constructs an UncertainValue with uncertainty equal to 0.0.
+	 * 
+	 * @param value The value
+	 */
 	public UncertainValue(
 			final double value
 	) {
@@ -151,42 +166,48 @@ public class UncertainValue extends Number //
 	}
 
 	/**
-	 *
+	 * <p>
+	 * Constructs an UncertainValue equal to "value ±  sigma".
+	 * </p>
+	 * 
+	 * @param value The value
+	 * @param sigma The uncertainty (should be &gt;= 0.0)
+	 * 
 	 */
 	public UncertainValue(
 			final double value, //
 			final double sigma
 	) {
 		mValue = Double.valueOf(value);
-		mSigma = sigma;
+		mSigma = Math.abs(sigma);
 	}
 
+	/**
+	 * Constructs an UncertainValue from an instance of any Number derived class.
+	 * If the Number is an {@link UncertainValue} then the result is a copy.
+	 * 
+	 * @param n Number
+	 */
 	public UncertainValue(
 			final Number n
 	) {
-		this(n.doubleValue(), n instanceof UncertainValue ? ((UncertainValue) n).uncertainty() : 0.0);
-	}
-
-	public int compare(
-			final UncertainValue uv1, final UncertainValue uv2
-	) {
-		return uv1.compareTo(uv2);
+		this(n.doubleValue(), uncertainty(n));
 	}
 
 	/**
 	 * First compares the values and then compares the uncertainties using
 	 * Double.compare(...).
 	 *
-	 * @param arg0
+	 * @param uv1 The {@link UncertainValue} against which to compare
 	 * @return int
 	 */
 	@Override
 	public int compareTo(
-			final UncertainValue arg0
+			final UncertainValue uv1
 	) {
-		int res = mValue.compareTo(arg0.mValue);
+		int res = mValue.compareTo(uv1.mValue);
 		if (res == 0)
-			res = Double.compare(mSigma, arg0.mSigma);
+			res = Double.compare(mSigma, uv1.mSigma);
 		return res;
 	}
 
@@ -230,6 +251,11 @@ public class UncertainValue extends Number //
 		return bnf.format(mValue) + "\u00B1" + bnf.format(mSigma);
 	}
 
+	/**
+	 * Returns the fractional uncertainty.
+	 * 
+	 * @return sigma/value
+	 */
 	public double fractionalUncertainty() {
 		return mSigma / mValue;
 	}
@@ -244,6 +270,9 @@ public class UncertainValue extends Number //
 		return mValue.intValue();
 	}
 
+	/**
+	 * @return true if the uncertainty component is non-zero
+	 */
 	public boolean isUncertain() {
 		return mSigma > 0.0;
 	}
@@ -303,5 +332,4 @@ public class UncertainValue extends Number //
 	public String toString() {
 		return mValue + "\u00B1" + mSigma;
 	}
-
 }

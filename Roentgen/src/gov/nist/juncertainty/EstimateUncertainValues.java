@@ -14,17 +14,31 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import com.duckandcover.lazy.SimplyLazy;
 
 /**
- * Computes an estimated UncertainValues object give a set of samples
- * representing measurements of the values specified in 'tags'
+ * <p>
+ * An implementation of the {@link UncertainValuesBase} class that computes an
+ * estimate of the values and associated uncertainty matrix for a set of samples
+ * representing 'measurements.'
+ * </p>
+ * <p>
+ * Computes the expectation values E[y<sub>i</sub>] and
+ * E[(y<sub>i</sub>-E[y<sub>i</sub>])(y<sub>j</sub>-E[y<sub>j</sub>])]. The
+ * value E[y<sub>i</sub>] represents the best estimate of the value of
+ * Y<sub>i</sub> and the value
+ * E[(y<sub>i</sub>-E[y<sub>i</sub>])(y<sub>j</sub>-E[y<sub>j</sub>])]
+ * represents the best estimate of the covariance matrix element
+ * C<sub>i,j</sub>.
+ * </p>
  *
- *
- * @author Nicholas
+ * @author Nicholas W. M. Ritchie
  *
  */
-public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
+public class EstimateUncertainValues<H> //
+		extends UncertainValuesBase<H> {
 
-	private final int mDimension;
-
+	/**
+	 * A list of the sampled values. The dimension and ordering of the values in
+	 * each RealVector is defined by the labels in getLabels().
+	 */
 	private final ArrayList<RealVector> mSamples = new ArrayList<RealVector>();
 
 	private final SimplyLazy<UncertainValues<H>> mResults = new SimplyLazy<UncertainValues<H>>() {
@@ -32,7 +46,7 @@ public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 		@Override
 		protected UncertainValues<H> initialize() {
 			synchronized (mSamples) {
-				final int len = mDimension;
+				final int len = getDimension();
 				final RealVector sum = new ArrayRealVector(len);
 				for (final RealVector samp : mSamples)
 					sum.combineToSelf(1.0, 1.0, samp);
@@ -55,24 +69,29 @@ public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 	};
 
 	/**
-	 * Create an object to accumulate samples to estimate an {@link UncertainValues}
+	 * Create an object to accumulate samples to estimate the values and covariance
+	 * matrix associated with the specified set of values identified by the labels.
 	 * object.
 	 *
-	 * @param tags The names of the parameters
+	 * @param labels A list of parameter labels
 	 */
-	public EstimateUncertainValues(final List<? extends H> tags) {
-		super(new ArrayList<H>(tags));
-		mDimension = tags.size();
+	public EstimateUncertainValues(
+			final List<? extends H> labels
+	) {
+		super(new ArrayList<H>(labels));
 	}
 
 	/**
 	 * Compute <code>nSamples</code> draws from the specified
 	 * {@link MultivariateRealDistribution} and add them to the list of samples.
 	 *
-	 * @param mvd      {@link MultivariateRealDistribution
-	 * @param nSamples int
+	 * @param mvd      {@link MultivariateRealDistribution}
+	 * @param nSamples The number of samples to compute
 	 */
-	public void add(final MultivariateRealDistribution mvd, final int nSamples) {
+	public void add(
+			final MultivariateRealDistribution mvd, //
+			final int nSamples
+	) {
 		for (int i = 0; i < nSamples; ++i)
 			add(mvd.sample());
 	}
@@ -86,7 +105,9 @@ public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 	 * @param sample double[]
 	 * @return {@link RealVector} The input vector
 	 */
-	public double[] add(final double[] sample) {
+	public double[] add(
+			final double[] sample
+	) {
 		add(new ArrayRealVector(sample));
 		return sample;
 	}
@@ -100,12 +121,15 @@ public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 	 * @param rv {@link RealVector}
 	 * @return {@link RealVector} The input vector
 	 */
-	public RealVector add(final RealVector rv) {
-		assert rv.getDimension() == mDimension;
-		synchronized (mSamples) {
-			mSamples.add(rv);
-			mResults.reset();
-		}
+	public RealVector add(
+			final RealVector rv
+	) {
+		assert rv.getDimension() == getDimension();
+		if (rv.getDimension() == getDimension())
+			synchronized (mSamples) {
+				mSamples.add(rv);
+				mResults.reset();
+			}
 		return rv;
 	}
 
@@ -133,10 +157,12 @@ public class EstimateUncertainValues<H> extends UncertainValuesBase<H> {
 	 * Returns a {@link DescriptiveStatistics} object that provides insight into the
 	 * variable associated with the specified tag.
 	 *
-	 * @param label
+	 * @param label A label
 	 * @return {@link DescriptiveStatistics}
 	 */
-	public DescriptiveStatistics getDescriptiveStatistics(final H label) {
+	public DescriptiveStatistics getDescriptiveStatistics(
+			final H label
+	) {
 		final DescriptiveStatistics ds = new DescriptiveStatistics(getSampleCount());
 		final int idx = indexOf(label);
 		for (final RealVector eval : mSamples)

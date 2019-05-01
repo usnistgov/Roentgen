@@ -9,7 +9,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 
 /**
@@ -21,8 +20,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  *
  */
 public class Normalize<H, K> //
-		extends ExplicitMeasurementModel<H, K> //
-		implements ILabeledMultivariateFunction<H, K> {
+		extends ExplicitMeasurementModel<H, K> {
 
 	/**
 	 * @param inputLabels
@@ -43,16 +41,17 @@ public class Normalize<H, K> //
 	 * #optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
 		assert getInputDimension() == getOutputDimension();
-		final int dim = point.getDimension();
+		final int dim = point.length;
 		assert getInputDimension() == dim;
 		double norm = 0.0;
-		for (int i = 0; i < point.getDimension(); ++i)
-			norm += Math.max(0.0, point.getEntry(i));
-		return point.mapDivide(norm);
+		for (int i = 0; i < dim; ++i)
+			norm += Math.max(0.0, point[i]);
+		final RealVector res = new ArrayRealVector(point);
+		return res.mapDivideToSelf(norm);
 	}
 
 	@Override

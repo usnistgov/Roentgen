@@ -10,7 +10,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 
 /**
@@ -20,8 +19,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * @author Nicholas W. M. Ritchie
  *
  */
-public class WeightedSum<G, H> extends ExplicitMeasurementModel<G, H> //
-		implements ILabeledMultivariateFunction<G, H> {
+public class WeightedSum<G, H> extends ExplicitMeasurementModel<G, H> {
 
 	private final RealVector mCoeffs;
 
@@ -56,11 +54,14 @@ public class WeightedSum<G, H> extends ExplicitMeasurementModel<G, H> //
 	}
 
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
-		final RealVector rv = new ArrayRealVector(1);
-		rv.setEntry(0, point.dotProduct(mCoeffs));
+		final RealVector rv = buildResult();
+		double sum = 0.0;
+		for (int i = 0; i < point.length; ++i)
+			sum += point[i] * mCoeffs.getEntry(i);
+		rv.setEntry(0, sum);
 		return rv;
 
 	}

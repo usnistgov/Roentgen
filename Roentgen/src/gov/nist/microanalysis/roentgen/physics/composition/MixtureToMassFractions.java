@@ -12,7 +12,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomicWeight;
@@ -27,8 +26,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.Materia
  *
  */
 final class MixtureToMassFractions //
-		extends ExplicitMeasurementModel<MaterialLabel, MaterialLabel> //
-		implements ILabeledMultivariateFunction<MaterialLabel, MaterialLabel> {
+		extends ExplicitMeasurementModel<MaterialLabel, MaterialLabel> {
 
 	static private List<MaterialLabel> buildInputs(
 			//
@@ -91,8 +89,8 @@ final class MixtureToMassFractions //
 	}
 
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		for (final Element elm : mNewMaterial.getElementSet()) {
@@ -104,15 +102,13 @@ final class MixtureToMassFractions //
 			for (int i = 0; i < mInputs.size(); ++i) {
 				final MaterialMassFraction mmft = mInputs.get(i);
 				final Material mat = mmft.getMaterial();
-				final int mfti = inputIndex(MaterialLabel.buildMassFractionTag(mat, elm));
+				final MassFraction mfti = MaterialLabel.buildMassFractionTag(mat, elm);
 				// The material may or may not have the element...
-				final int mmfi = inputIndex(mmft);
-				final double mmf = point.getEntry(mmfi);
-				if (mfti != -1) {
-					final int awti = inputIndex(MaterialLabel.buildAtomicWeightTag(mat, elm));
-					assert awti != -1;
-					final double mf = point.getEntry(mfti);
-					final double aw = point.getEntry(awti);
+				final double mmf = getArg(mmft, point);
+				if (inputIndex(mfti) != -1) {
+					final AtomicWeight awti = MaterialLabel.buildAtomicWeightTag(mat, elm);
+					final double mf = getArg(mfti, point);
+					final double aw = getArg(awti, point);
 					tmpCz += mf * mmf;
 					tmpAz += mf * mmf / aw;
 				}

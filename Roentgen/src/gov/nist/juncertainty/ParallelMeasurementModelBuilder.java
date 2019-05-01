@@ -29,22 +29,19 @@ import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * <p>
- * Takes multiple independent {@link ExplicitMeasurementModel}
- * objects and combines them into a single
- * {@link ExplicitMeasurementModel}. The input
- * {@link ExplicitMeasurementModel} objects usually take a similar
- * list of arguments. None of the input
- * {@link ExplicitMeasurementModel}s may return the same output
- * label.
+ * Takes multiple independent {@link ExplicitMeasurementModel} objects and
+ * combines them into a single {@link ExplicitMeasurementModel}. The input
+ * {@link ExplicitMeasurementModel} objects usually take a similar list of
+ * arguments. None of the input {@link ExplicitMeasurementModel}s may return the
+ * same output label.
  * </p>
  *
  * <p>
- * This class wraps a set of {@link ExplicitMeasurementModel} that
- * could be calculated in parallel. The output from one is not used as input to
- * another. This class is different from
- * {@link CompositeMeasurementModel} which implements a
- * sequential set of steps in which the output from earlier steps can become
- * input to subsequent steps.
+ * This class wraps a set of {@link ExplicitMeasurementModel} that could be
+ * calculated in parallel. The output from one is not used as input to another.
+ * This class is different from {@link CompositeMeasurementModel} which
+ * implements a sequential set of steps in which the output from earlier steps
+ * can become input to subsequent steps.
  * </p>
  *
  *
@@ -100,7 +97,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	 * Constructs the builder.
 	 *
 	 * @param name The name of the resulting function.
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function arguments
 	 */
 	public ParallelMeasurementModelBuilder(
 			final String name //
@@ -112,9 +109,9 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	 * Constructs the builder.
 	 *
 	 * @param name  The name of the resulting function.
-	 * @param funcs A list of {@link ExplicitMeasurementModel} instances
-	 *              that are combined.
-	 * @throws ArgumentException
+	 * @param funcs A list of {@link ExplicitMeasurementModel} instances that are
+	 *              combined.
+	 * @throws ArgumentException When there is an inconsistency in the function arguments
 	 */
 	public ParallelMeasurementModelBuilder(
 			final String name, //
@@ -128,14 +125,15 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	/**
 	 * Add an additional {@link ExplicitMeasurementModel} to the builder.
 	 *
-	 * @param func
+	 * @param emm An {@link ExplicitMeasurementModel}
 	 * @return {@link ParallelMeasurementModelBuilder}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public ParallelMeasurementModelBuilder<? extends H, ? extends K> add(
-			final ExplicitMeasurementModel<? extends H, ? extends K> func //
+			final ExplicitMeasurementModel<? extends H, ? extends K> emm //
 	) throws ArgumentException {
-		mFuncs.add(func);
+		mFuncs.add(emm);
 		validate();
 		mInputLabels.reset();
 		mOutputLabels.reset();
@@ -143,23 +141,23 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	}
 
 	/**
-	 * Static means to build the combination
-	 * {@link ExplicitMeasurementModel} from a list of constituent
-	 * {@link ExplicitMeasurementModel} instances.
+	 * Static means to build the combination {@link ExplicitMeasurementModel} from a
+	 * list of constituent {@link ExplicitMeasurementModel} instances.
 	 *
-	 * @param name  A name for the resulting
-	 *              {@link ExplicitMeasurementModel}
-	 * @param funcs A list of constituent
-	 *              {@link ExplicitMeasurementModel} instances.
+	 * @param <H> A label class
+	 * @param <K> A label class
+	 * @param name  A name for the resulting {@link ExplicitMeasurementModel}
+	 * @param funcs A list of constituent {@link ExplicitMeasurementModel}
+	 *              instances.
 	 * @return {@link ExplicitMeasurementModel}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <H, K> ExplicitMeasurementModel<H, K> join(
 			final String name, //
 			final List<ExplicitMeasurementModel<? extends H, ? extends K>> funcs //
 	) throws ArgumentException {
-		final ParallelMeasurementModelBuilder<H, K> j = new ParallelMeasurementModelBuilder<H, K>(
-				name, funcs);
+		final ParallelMeasurementModelBuilder<H, K> j = new ParallelMeasurementModelBuilder<H, K>(name, funcs);
 		return j.build();
 	}
 
@@ -211,7 +209,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 
 	private static class Implementation<J, L> //
 			extends ExplicitMeasurementModel<J, L> //
-			implements ILabeledMultivariateFunction<J, L>, IToHTML {
+			implements IToHTML {
 
 		private final List<ExplicitMeasurementModel<? extends J, ? extends L>> mFuncs;
 		private final String mName;
@@ -277,8 +275,8 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 		 * Jacobian elements.
 		 */
 		@Override
-		public RealVector optimized(
-				final RealVector point
+		public RealVector computeValue(
+				final double[] point
 		) {
 			final int oDim = getOutputDimension();
 			final RealVector vals = new ArrayRealVector(oDim);
@@ -286,15 +284,11 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 				final RealVector funcPoint = new ArrayRealVector(func.getInputDimension());
 				for (int i = 0; i < func.getInputDimension(); ++i) {
 					final J fLbl = func.getInputLabel(i);
-					funcPoint.setEntry(i, point.getEntry(inputIndex(fLbl)));
+					funcPoint.setEntry(i, point[inputIndex(fLbl)]);
 				}
 				func.dumpArguments(funcPoint, this);
 				func.applyAdditionalInputs(getAdditionalInputs());
-				RealVector fVals = null;
-				if(func instanceof ILabeledMultivariateFunction) 
-					fVals = ((ILabeledMultivariateFunction<?, ?>)func).optimized(funcPoint);
-				else 
-					fVals = func.evaluate(funcPoint).getFirst();
+				final RealVector fVals = computeValue(funcPoint.toArray());
 				final List<? extends L> fout = func.getOutputLabels();
 				for (int r = 0; r < fout.size(); ++r)
 					vals.setEntry(outputIndex(fout.get(r)), fVals.getEntry(r));
@@ -306,8 +300,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 		public String toHTML(
 				final Mode mode
 		) {
-			return ParallelMeasurementModelBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(),
-					mode);
+			return ParallelMeasurementModelBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(), mode);
 		}
 
 		@Override
@@ -318,8 +311,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 	}
 
 	private static class ParallelImplementation<J, L> //
-			extends ExplicitMeasurementModel<J, L> //
-			implements ILabeledMultivariateFunction<J, L> {
+			extends ExplicitMeasurementModel<J, L> {
 
 		private final ForkJoinPool mPool;
 		private final List<ExplicitMeasurementModel<? extends J, ? extends L>> mFuncs;
@@ -416,15 +408,15 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 		 * @return RealVector
 		 */
 		private RealVector extractArgument(
-				final ExplicitMeasurementModel<? extends J, ? extends L> func, final RealVector point
+				final ExplicitMeasurementModel<? extends J, ? extends L> func, final double[] point
 		) {
-			assert point.getDimension() == func.getInputDimension();
+			assert point.length == func.getInputDimension();
 			final int dim = func.getInputDimension();
 			final RealVector res = new ArrayRealVector(dim);
 			for (int i = 0; i < dim; ++i) {
 				final int idx = inputIndex(func.getInputLabel(i));
 				assert idx != -1 : "Can't find " + func.getInputLabel(i) + " in the arguments to " + toString();
-				res.setEntry(i, point.getEntry(idx));
+				res.setEntry(i, point[idx]);
 			}
 			return res;
 		}
@@ -444,7 +436,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 			final RealMatrix rm = new Array2DRowRealMatrix(getOutputDimension(), getInputDimension());
 			final List<Callable<Result<J, L>>> tasks = new ArrayList<>();
 			for (final ExplicitMeasurementModel<? extends J, ? extends L> func : mFuncs) {
-				final RealVector fPoint = extractArgument(func, point);
+				final RealVector fPoint = extractArgument(func, point.toArray());
 				func.dumpArguments(fPoint, this);
 				func.applyAdditionalInputs(getAdditionalInputs());
 				tasks.add(new NMJFValue<J, L>(func, fPoint));
@@ -473,8 +465,8 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 		}
 
 		@Override
-		public RealVector optimized(
-				final RealVector point
+		public RealVector computeValue(
+				final double[] point
 		) {
 			final RealVector rv = new ArrayRealVector(getOutputDimension());
 			final List<Callable<Result<J, L>>> tasks = new ArrayList<>();
@@ -507,8 +499,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 		public String toHTML(
 				final Mode mode
 		) {
-			return ParallelMeasurementModelBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(),
-					mode);
+			return ParallelMeasurementModelBuilder.toHTML(mName, mFuncs, getInputLabels(), getOutputLabels(), mode);
 		}
 	}
 
@@ -565,7 +556,8 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 
 	/**
 	 * @return NamedMultivariateJacobianFunction
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public ExplicitMeasurementModel<H, K> build() throws ArgumentException {
 		final ExplicitMeasurementModel<H, K> res = new Implementation<H, K>( //

@@ -63,7 +63,7 @@ public class JUncertainValuesEditor<H> //
 			for (int r = 0; r < mInitial.getDimension(); ++r) {
 				final H label = mInitial.getLabel(r);
 				mValuesModel.setValueAt(label, r, 0);
-				mValuesModel.setValueAt(mValFormat.format(mInitial.getValue(label)), r, 0);
+				mValuesModel.setValueAt(mValFormat.format(mInitial.getUncertainValue(label)), r, 0);
 				for (int c = 0; c < mInitial.getDimension(); ++c)
 					mCovarModel.setValueAt(mValFormat.format(mInitial.getCovariance(r, c)), r, c);
 			}

@@ -9,7 +9,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
@@ -22,8 +21,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  *
  */
 public class ElementByDifference //
-		extends ExplicitMeasurementModel<MassFraction, MassFraction> //
-		implements ILabeledMultivariateFunction<MassFraction, MassFraction> {
+		extends ExplicitMeasurementModel<MassFraction, MassFraction> {
 
 	private static List<MassFraction> buildInputs(
 			final Material mat, //
@@ -45,8 +43,8 @@ public class ElementByDifference //
 	}
 
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
 		final RealVector rv = buildResult();
 		assert getOutputDimension() == 1;

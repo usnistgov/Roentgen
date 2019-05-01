@@ -16,22 +16,31 @@ import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * A very light wrapper around the Jacobian to make it safer and easier to
- * access entries.
+ * access entries using labels.
  *
  * @author Nicholas W. M. Ritchie
  *
  */
-public class Jacobian<G, H> implements IToHTML {
+public class Jacobian<G, H> //
+		implements IToHTML {
 
 	private final FastIndex<G> mInputs;
 	private final FastIndex<H> mOutputs;
 	private final RealMatrix mJacobian;
 
 	/**
-	 *
+	 * Constructs a Jacobian object associated with a {@link RealMatrix} where the
+	 * rows are labeled by <code>outputs</code> and the columns are labeled by
+	 * <code>inputs</code>.
+	 * 
+	 * @param inputs A {@link List} of input variable labels
+	 * @param outputs A {@link List} of output variable labels
+	 * @param rm A matrix of dimensions outputs.size() rows x inputs.size() columns
 	 */
 	public Jacobian(
-			final List<? extends G> inputs, final List<? extends H> outputs, final RealMatrix rm
+			final List<? extends G> inputs, //
+			final List<? extends H> outputs, //
+			final RealMatrix rm
 	) {
 		assert rm.getColumnDimension() == inputs.size();
 		assert rm.getRowDimension() == outputs.size();
@@ -45,8 +54,8 @@ public class Jacobian<G, H> implements IToHTML {
 	 * variable. Note the argument order which is different from the natural
 	 * ordering of elements in the Jacobian matrix.
 	 *
-	 * @param input
-	 * @param output
+	 * @param input An input variable label
+	 * @param output An output variable label
 	 * @return double The partial derivative of output with respect to input
 	 */
 	public double getEntry(
@@ -55,18 +64,24 @@ public class Jacobian<G, H> implements IToHTML {
 		return mJacobian.getEntry(mOutputs.indexOf(output), mInputs.indexOf(input));
 	}
 
+	/**
+	 * @return A list of the input labels
+	 */
 	public List<G> getInputLabels() {
 		return Collections.unmodifiableList(mInputs);
 	}
 
+	/**
+	 * @return A list of output labels
+	 */
 	public List<H> getOutputLabels() {
 		return Collections.unmodifiableList(mOutputs);
 	}
 
 	public String toHTML(
-			final Mode mode
+			final Mode mode, //
+			final BasicNumberFormat bnf
 	) {
-		final BasicNumberFormat bnf = new BasicNumberFormat("0.00E0");
 		switch (mode) {
 		case TERSE:
 			return "Jacobian[N[Outputs]=" + mOutputs.size() + ",N[Inputs]=" + mInputs.size() + "]";
@@ -88,5 +103,11 @@ public class Jacobian<G, H> implements IToHTML {
 			return t.toHTML(Mode.NORMAL);
 		}
 		}
+	}
+
+	public String toHTML(
+			final Mode mode
+	) {
+		return toHTML(mode, new BasicNumberFormat("0.00E0"));
 	}
 }

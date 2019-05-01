@@ -886,21 +886,21 @@ public class Composition //
 	}
 
 	public UncertainValue getAnalyticalTotal() {
-		return getValue(MaterialLabel.buildAnalyticalTotalTag(getMaterial()));
+		return getUncertainValue(MaterialLabel.buildAnalyticalTotalTag(getMaterial()));
 	}
 
 	public UncertainValue getAtomFraction(
 			final Element elm
 	) {
 		final MaterialLabel tag = MaterialLabel.buildAtomFractionTag(mMaterial, elm);
-		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
+		return indexOf(tag) == -1 ? UncertainValue.ZERO : getUncertainValue(tag);
 	}
 
 	public UncertainValue getAtomicWeight(
 			final Element elm
 	) {
 		final MaterialLabel tag = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
-		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
+		return indexOf(tag) == -1 ? UncertainValue.ZERO : getUncertainValue(tag);
 	}
 
 	public UncertainValues<AtomicWeight> getAtomicWeights() {
@@ -955,7 +955,7 @@ public class Composition //
 			final Element elm
 	) {
 		final MaterialLabel tag = MaterialLabel.buildMassFractionTag(mMaterial, elm);
-		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
+		return indexOf(tag) == -1 ? UncertainValue.ZERO : getUncertainValue(tag);
 	}
 
 	public Material getMaterial() {
@@ -963,11 +963,11 @@ public class Composition //
 	}
 
 	public UncertainValue getMeanAtomicNumber() {
-		return getValue(MaterialLabel.buildMeanAtomicNumberTag(getMaterial()));
+		return getUncertainValue(MaterialLabel.buildMeanAtomicNumberTag(getMaterial()));
 	}
 
 	public UncertainValue getMeanAtomicWeight() {
-		return getValue(MaterialLabel.buildMeanAtomicWeighTag(getMaterial()));
+		return getUncertainValue(MaterialLabel.buildMeanAtomicWeighTag(getMaterial()));
 	}
 
 	public Representation getNativeRepresentation() {
@@ -978,14 +978,14 @@ public class Composition //
 			final Element elm
 	) {
 		final MaterialLabel tag = MaterialLabel.buildNormalizedMassFractionTag(mMaterial, elm);
-		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
+		return indexOf(tag) == -1 ? UncertainValue.ZERO : getUncertainValue(tag);
 	}
 
 	public UncertainValue getStoichiometry(
 			final Element elm
 	) {
 		final MaterialLabel tag = new MaterialLabel.Stoichiometry(mMaterial, elm);
-		return indexOf(tag) == -1 ? UncertainValue.ZERO : getValue(tag);
+		return indexOf(tag) == -1 ? UncertainValue.ZERO : getUncertainValue(tag);
 	}
 
 	@Override
@@ -1221,7 +1221,7 @@ public class Composition //
 			final Table t = new Table();
 			t.addRow(Table.th("Material"), Table.th("Mass Fraction"), Table.th("Uncertainty"));
 			for (final MaterialMassFraction mmft : materialFractionTags()) {
-				final UncertainValue uv = getValue(mmft);
+				final UncertainValue uv = getUncertainValue(mmft);
 				t.addRow( //
 						Table.td(mmft.toHTML(Mode.TERSE)), //
 						Table.td(MASS_FRACTION_FORMAT.format(uv.doubleValue())), //
@@ -1256,7 +1256,7 @@ public class Composition //
 			for (final Object tag : MaterialLabel.stoichiometryTags(this.getMaterial())) {
 				final MaterialLabel elementTag = (MaterialLabel) tag;
 				final Element elm = elementTag.getElement();
-				final UncertainValue uv = getValue(elementTag);
+				final UncertainValue uv = getUncertainValue(elementTag);
 				t.addRow(Table.td(elm.getAbbrev()), //
 						Table.tdc(Integer.toString(elm.getAtomicNumber())), //
 						Table.tdc(uv.doubleValue()), //

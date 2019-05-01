@@ -534,10 +534,10 @@ public class KRatioCorrectionModel3 //
 		}
 
 		@Override
-		public RealMatrix computeCx(
+		public RealMatrix computeJx(
 				final RealVector point
 				) {
-			final RealMatrix jac = buildEmptyCx();
+			final RealMatrix jac = buildEmptyJx();
 			for (int oHTag = 0; oHTag < mKRatios.size(); ++oHTag) {
 				final KRatioLabel kMeasTag = mKRatios.get(oHTag);
 				final Element elm = kMeasTag.getElement();
@@ -551,9 +551,9 @@ public class KRatioCorrectionModel3 //
 				final double cStd = getArg(mfStdTag, point);
 				final double kMeas = getArg(kMeasTag, point);
 				// h(x,y) = k_meas*cStd - cUnk*zaf
-				setCx(oHTag, kMeasTag, jac, cStd);
-				setCx(oHTag, mfStdTag, jac, kMeas);
-				setCx(oHTag, zafTag, jac, -cUnk);
+				setJx(oHTag, kMeasTag, jac, cStd);
+				setJx(oHTag, mfStdTag, jac, kMeas);
+				setJx(oHTag, zafTag, jac, -cUnk);
 			}
 			return jac;
 		}
@@ -583,10 +583,10 @@ public class KRatioCorrectionModel3 //
 		}
 
 		@Override
-		public RealMatrix computeCy(
+		public RealMatrix computeJy(
 				final RealVector point
 				) {
-			final RealMatrix jac = buildEmptyCy();
+			final RealMatrix jac = buildEmptyJy();
 			for (int oHTag = 0; oHTag < mKRatios.size(); ++oHTag) {
 				final KRatioLabel kMeasTag = mKRatios.get(oHTag);
 				final Element elm = kMeasTag.getElement();
@@ -599,7 +599,7 @@ public class KRatioCorrectionModel3 //
 				// final double cStd = getArg(mfStdTag, point);
 				final double zaf = getArg(zafTag, point);
 				// h(x,y) = k_meas*C_std - Cunk*zaf
-				setCy(oHTag, mfUnkTag, jac, -zaf);
+				setJy(oHTag, mfUnkTag, jac, -zaf);
 			}
 			return jac;
 		}
@@ -944,7 +944,7 @@ public class KRatioCorrectionModel3 //
 	) {
 		final List<EPMALabel> labels = getOutputLabels();
 		final Map<EPMALabel, Double> res = new HashMap<>();
-		final RealVector output = optimized(point);
+		final RealVector output = computeValue(point.toArray());
 		for (int i = 0; i < output.getDimension(); ++i)
 			res.put(labels.get(i), output.getEntry(i));
 		return res;

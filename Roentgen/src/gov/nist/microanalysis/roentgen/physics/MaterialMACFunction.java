@@ -13,7 +13,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.juncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.juncertainty.UncertainValues;
 import gov.nist.juncertainty.UncertainValuesBase;
@@ -36,8 +35,7 @@ import gov.nist.microanalysis.roentgen.utility.FastIndex;
  *
  */
 public class MaterialMACFunction //
-		extends ExplicitMeasurementModel<EPMALabel, MaterialMAC> //
-		implements ILabeledMultivariateFunction<EPMALabel, MaterialMAC> {
+		extends ExplicitMeasurementModel<EPMALabel, MaterialMAC> {
 
 	public static class DefaultDecorrelationFunction implements DecorrelationFunction {
 
@@ -315,8 +313,8 @@ public class MaterialMACFunction //
 	}
 
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
 		final RealVector vals = buildResult();
 		for(MaterialMAC matMacTag : getOutputLabels()) {

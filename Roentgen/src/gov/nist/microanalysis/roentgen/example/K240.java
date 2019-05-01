@@ -171,7 +171,7 @@ public class K240 {
 				mcm.addConstraints(mcm.buildConstraints(input));
 				mcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 				// Calculate the optimal k-ratios
-				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				final RealVector calculated = mcm.computeValue(input.extractValues(mcm.getInputLabels()).toArray());
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
 						Method.Measured);
 				for (final KRatioLabel label : krs.getLabels()) {
@@ -336,10 +336,11 @@ public class K240 {
 
 		MatrixCorrectionDatum.roughness(10.0, 3.6);
 
-		Report report = new Report("K240 roughness");
+		final Report report = new Report("K240 roughness");
 		report.addHeader("K240 roughness");
 		try {
-			for (double roughNm : Arrays.asList(1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0, 1024.0)) {
+			for (final double roughNm : Arrays.asList(1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0,
+					1024.0)) {
 				final double roughness = MatrixCorrectionDatum.roughness(roughNm, 3.6);
 				final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, mTOA, 0.0);
 				final StandardMatrixCorrectionDatum znMcd = new StandardMatrixCorrectionDatum(zn, e0, mTOA, 0.0);
@@ -357,7 +358,7 @@ public class K240 {
 				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
-				Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
+				final Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
 
 				report.addSubHeader("Roughness = " + roughNm + " nm");
 				report.add(res, Mode.NORMAL);
@@ -389,14 +390,15 @@ public class K240 {
 
 		MatrixCorrectionDatum.roughness(10.0, 3.6);
 
-		Report report = new Report("K240 coating");
+		final Report report = new Report("K240 coating");
 		report.addHeader("K240 coating");
 		try {
-			for (boolean same : Arrays.asList(true, false)) {
-				for (double coatingDelta : Arrays.asList(0.0, 1.0, 2.0, 4.0, 8.0)) {
+			for (final boolean same : Arrays.asList(true, false)) {
+				for (final double coatingDelta : Arrays.asList(0.0, 1.0, 2.0, 4.0, 8.0)) {
 
 					final Layer coating = Layer.carbonCoating(UncertainValue.valueOf(10.0, coatingDelta));
-					final Layer unkCoating = same ? coating : Layer.carbonCoating(UncertainValue.valueOf(10.0, coatingDelta));
+					final Layer unkCoating = same ? coating
+							: Layer.carbonCoating(UncertainValue.valueOf(10.0, coatingDelta));
 					final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, mTOA, 0.0,
 							coating);
 					final StandardMatrixCorrectionDatum znMcd = //
@@ -416,9 +418,9 @@ public class K240 {
 					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
-					Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
-					
-					report.addSubHeader("Coating: same="+Boolean.valueOf(same)+"  delta= "+coatingDelta+" nm");
+					final Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
+
+					report.addSubHeader("Coating: same=" + Boolean.valueOf(same) + "  delta= " + coatingDelta + " nm");
 					report.add(res, Mode.NORMAL);
 				}
 			}
@@ -512,7 +514,7 @@ public class K240 {
 				mcm.addConstraints(mcm.buildConstraints(input));
 				mcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
 				// Calculate the optimal k-ratios
-				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				final RealVector calculated = mcm.computeValue(input.extractValues(mcm.getInputLabels()).toArray());
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
 						Method.Measured);
 				for (final KRatioLabel label : krs.getLabels()) {
@@ -777,7 +779,7 @@ public class K240 {
 				mcm.addConstraints(mcm.buildConstraints(input));
 
 				// Calculate the optimal k-ratios
-				final RealVector calculated = mcm.optimized(input.extractValues(mcm.getInputLabels()));
+				final RealVector calculated = mcm.computeValue(input.extractValues(mcm.getInputLabels()).toArray());
 				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
 						Method.Measured);
 				for (final KRatioLabel label : krs.getLabels()) {
@@ -1022,7 +1024,7 @@ public class K240 {
 
 				// Calculate the optimal k-ratios
 				final RealVector inputs = input.extractValues(mcm.getInputLabels());
-				final RealVector calculated = mcm.optimized(inputs);
+				final RealVector calculated = mcm.computeValue(inputs.toArray());
 				final UncertainValues<KRatioLabel> krs = UncertainValues.asUncertainValues(//
 						KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(), Method.Calculated));
 				final Map<KRatioLabel, UncertainValue> measKrs = new HashMap<>();

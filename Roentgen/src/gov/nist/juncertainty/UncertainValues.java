@@ -25,12 +25,11 @@ import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 /**
  * <p>
  * The UncertainValues class serves to store a collection of related variable
- * values along with the associated covariance/uncertainty matrix.
- * </p>
- * <p>
- * UncertainValues instances can be the input into calculations class or can be
- * the results of calculations performed with the {@link UncertaintyPropagator}
- * class.
+ * values along with the associated covariance/uncertainty matrix. The
+ * UncertainValues class is the most straightforward extension of the
+ * {@link UncertainValuesBase} class. The values are stored directly in an
+ * {@link ArrayRealVector} and the covariance / uncertainty matrix is stored in
+ * a {@link RealMatrix}.
  * </p>
  * <p>
  * To facilitate bookkeeping, the variables within the object are labeled with
@@ -76,20 +75,21 @@ public class UncertainValues<H> //
 	 * Builds an {@link UncertainValues} object representing the specified labeled
 	 * quantities as extracted from the list of {@link UncertainValues} objects.
 	 *
-	 * @param labels
-	 * @param uvs
+	 * @param        <J> A label class
+	 * @param labels A {@link List} of labels
+	 * @param uvs One or more {@link UncertainValuesBase} objects
 	 * @return {@link UncertainValues}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValues<J> build(
-			//
 			final List<J> labels, //
-			@SuppressWarnings("unchecked") final UncertainValues<J>... uvs //
+			@SuppressWarnings("unchecked") final UncertainValuesBase<J>... uvs //
 	) throws ArgumentException {
 		// Test that each requested label is defined once and only once.
 		for (final J label : labels) {
 			int count = 0;
-			for (final UncertainValues<J> uv : uvs)
+			for (final UncertainValuesBase<J> uv : uvs)
 				if (uv.hasLabel(label))
 					count++;
 			if (count < 1)
@@ -100,7 +100,7 @@ public class UncertainValues<H> //
 						"The label " + label + " is muliply defined in one of the input UncertainValues.");
 		}
 		final UncertainValues<J> res = new UncertainValues<J>(labels);
-		for (final UncertainValues<J> uv : uvs)
+		for (final UncertainValuesBase<J> uv : uvs)
 			for (final J label1 : labels)
 				if (uv.hasLabel(label1)) {
 					res.set(label1, uv.getEntry(label1), uv.getVariance(label1));
@@ -124,11 +124,13 @@ public class UncertainValues<H> //
 	 * Will overwrite values in <i>to</i>
 	 * </p>
 	 *
-	 * @param from
-	 * @param to
+	 * @param      <H> A label class
+	 * @param from Source
+	 * @param to   Destination
 	 */
 	public static <H> void copy(
-			final UncertainValuesBase<H> from, final UncertainValues<H> to
+			final UncertainValuesBase<H> from, //
+			final UncertainValues<H> to
 	) {
 		final List<H> fromLabels = from.getLabels();
 		final Map<H, Integer> toMap = new HashMap<>();
@@ -157,14 +159,17 @@ public class UncertainValues<H> //
 	 * Extracts a subset of the {@link UncertainValues} uvs associated with the
 	 * specified labels into a new {@link UncertainValues} object. All labels must
 	 * exists in uvs.
-	 *
-	 * @param labels
-	 * @param luvs
+	 * 
+	 * @param        <J> A label class
+	 * @param labels A {@link List} of labels
+	 * @param luvs A {@link List} of source {@link UncertainValuesBase} objects
 	 * @return UncertainValues
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValues<J> extract(
-			final List<J> labels, final List<UncertainValuesBase<?>> luvs
+			final List<J> labels, //
+			final List<UncertainValuesBase<?>> luvs
 	) throws ArgumentException {
 		final Set<J> remaining = new HashSet<J>(labels);
 		final RealVector vals = new ArrayRealVector(labels.size());
@@ -198,10 +203,12 @@ public class UncertainValues<H> //
 	 * specified labels into a new {@link UncertainValues} object. All labels must
 	 * exists in uvs.
 	 *
-	 * @param labels
-	 * @param luvs
+	 * @param        <J> A label class
+	 * @param labels A {@link List} of labels
+	 * @param uvs The source {@link UncertainValuesBase}
 	 * @return UncertainValues
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValues<J> extract(
 			final List<J> labels, //
@@ -210,9 +217,17 @@ public class UncertainValues<H> //
 		return extract(labels, Collections.singletonList(uvs));
 	}
 
+	/**
+	 * Forces the conversion of classes derived from {@link UncertainValuesBase} to
+	 * the {@link UncertainValues} form. This can involve an extensive calculation.
+	 * 
+	 * @param      <J> The label class
+	 * @param base The {@link UncertainValuesBase} object to convert
+	 * @return {@link UncertainValues}
+	 */
 	@SuppressWarnings("unchecked")
 	public static <J> UncertainValues<J> asUncertainValues(
-			final UncertainValuesBase<? extends J> base//
+			final UncertainValuesBase<? extends J> base
 	) {
 		if (base instanceof UncertainValues)
 			return (UncertainValues<J>) base;
@@ -225,26 +240,25 @@ public class UncertainValues<H> //
 		}
 	}
 
-	public static <J> UncertainValues<J> forceMinCovariance(
-			final UncertainValues<J> vals, final RealVector minCov
-			) {
-		assert vals.getDimension() == minCov.getDimension();
-		final RealMatrix cov = vals.getCovariances().copy();
-		for (int rc = 0; rc < vals.getDimension(); ++rc)
-			if (cov.getEntry(rc, rc) < minCov.getEntry(rc))
-				cov.setEntry(rc, rc, minCov.getEntry(rc));
-		return new UncertainValues<J>(vals.getLabels(), vals.getValues(), cov);
-	}
-
+	/**
+	 * Checks where uvs1 equals uvs2 by checking values and covariances label by
+	 * label. This may force a calculation in some cases.
+	 * 
+	 * @param      <H> The label class
+	 * @param uvs1 The first {@link UncertainValuesBase} derived object
+	 * @param uvs2 The second {@link UncertainValuesBase} derived object
+	 * @return true if values and covariances are all equal
+	 */
 	public static <H> boolean testEquality(
-			final UncertainValues<H> uvs1, final UncertainValues<H> uvs2
+			final UncertainValuesBase<H> uvs1, //
+			final UncertainValuesBase<H> uvs2
 			) {
 		if (uvs1.getDimension() != uvs2.getDimension())
 			return false;
 		for (final H label1 : uvs1.getLabels()) {
 			if (uvs1.getEntry(label1) != uvs2.getEntry(label1))
 				return false;
-			for (final H label2 : uvs1.getLabels())
+			for (final H label2 : uvs2.getLabels())
 				if (uvs1.getCovariance(label1, label2) != uvs2.getCovariance(label1, label2))
 					return false;
 		}
@@ -253,37 +267,17 @@ public class UncertainValues<H> //
 
 	/**
 	 * Return an {@link UncertainValues} object with the same dimension and values
-	 * as input except all the covariances except those associated with the labels
-	 * are zeroed.
-	 *
-	 * @param labels
-	 * @param input
-	 * @return {@link UncertainValues}
-	 */
-	public static <J> UncertainValues<J> zeroBut(
-			final Collection<? extends J> labels, final UncertainValues<J> input
-			) {
-		final UncertainValues<J> res = new UncertainValues<J>(input.getLabels(), input.getValues(), 0.0);
-		final List<Integer> idxs = new ArrayList<>();
-		for (final J label : labels)
-			idxs.add(input.indexOf(label));
-		for (final int ridx : idxs)
-			for (final int cidx : idxs)
-				res.mCovariance.setEntry(ridx, cidx, input.getCovariance(ridx, cidx));
-		return res;
-	}
-
-	/**
-	 * Return an {@link UncertainValues} object with the same dimension and values
 	 * as input except all the covariances except those associated with label are
 	 * zeroed.
 	 *
-	 * @param label
-	 * @param input
+	 * @param       <J> A label class
+	 * @param label Variable that should not be zeroed
+	 * @param input Input uncertainties
 	 * @return {@link UncertainValues}
 	 */
 	public static <J> UncertainValues<J> zeroBut(
-			final J label, final UncertainValues<J> input
+			final J label, //
+			final UncertainValues<J> input
 			) {
 		final UncertainValues<J> res = new UncertainValues<J>(input.getLabels(), input.getValues(), 0.0);
 		final int idx = input.indexOf(label);
@@ -313,15 +307,6 @@ public class UncertainValues<H> //
 		return res;
 	}
 
-	private static final <J> List<Pair<J, ? extends Number>> convert(
-			final Map<J, ? extends Number> vals
-			) {
-		final List<Pair<J, ? extends Number>> res = new ArrayList<>();
-		for (final Map.Entry<J, ? extends Number> me : vals.entrySet())
-			res.add(Pair.create(me.getKey(), me.getValue()));
-		return res;
-	}
-
 	private static final <J> ArrayList<J> extractLabels(
 			final List<Pair<J, ? extends Number>> vals
 			) {
@@ -332,7 +317,8 @@ public class UncertainValues<H> //
 	}
 
 	private static final <J> RealVector extractVals(
-			final List<Pair<J, ? extends Number>> vals, final boolean val
+			final List<Pair<J, ? extends Number>> vals, //
+			final boolean val
 			) {
 		final RealVector res = new ArrayRealVector(vals.size());
 		for (int i = 0; i < vals.size(); ++i) {
@@ -511,10 +497,10 @@ public class UncertainValues<H> //
 	 * @param labels    List&lt;H&gt; A list of objects implementing hashCode() and
 	 *                  equals().
 	 * @param vals      {@link RealVector}
-	 * @param variances {@link RealVector} covariances are zero.
+	 * @param variances {@link RealVector} 
+	 * @param corrCoeffs A RealMatrix with correlation coefficients
 	 */
 	public UncertainValues(
-			//
 			final List<H> labels, //
 			final RealVector vals, //
 			final RealVector variances, //
@@ -523,24 +509,66 @@ public class UncertainValues<H> //
 		this(labels, vals, buildCovariances(variances, corrCoeffs));
 	}
 
+	/**
+	 * Constructs an UncertainValues object from a Map of labels to Number objects.
+	 * The Number objects may be {@link UncertainValue} instances.
+	 * 
+	 * @param vals A Map of labels to Number instances
+	 */
 	public UncertainValues(
-			//
 			final Map<H, ? extends Number> vals //
 			) {
-		this(convert(vals), true);
+		this(extractLabels(vals), extractValues(vals), extractCovariances(vals));
 	}
 
-	private UncertainValues(
-			final List<Pair<H, ? extends Number>> vals, final boolean extra
+	private static <H> double[] extractCovariances(
+			Map<H, ? extends Number> vals
 			) {
-		this(extractLabels(vals), extractVals(vals, true), extractVals(vals, false));
+		double[] res = new double[vals.size()];
+		int i = 0;
+		for (H h : vals.keySet()) {
+			res[i] = UncertainValue.variance(vals.get(h));
+			++i;
+		}
+		return res;
+	}
+
+	private static <H> double[] extractValues(
+			Map<H, ? extends Number> vals
+			) {
+		double[] res = new double[vals.size()];
+		int i = 0;
+		for (H h : vals.keySet()) {
+			res[i] = vals.get(h).doubleValue();
+			++i;
+		}
+		return res;
+	}
+
+	private static <H> H[] extractLabels(
+			Map<H, ? extends Number> vals
+			) {
+		Object[] res = new Object[vals.size()];
+		int i = 0;
+		for (H h : vals.keySet()) {
+			res[i] = h;
+			++i;
+		}
+		return (H[]) res;
+	}
+
+	public static <J> UncertainValues<J> fromList(
+			//
+			final List<Pair<J, ? extends Number>> vals, final boolean extra
+			) {
+		return new UncertainValues<>(extractLabels(vals), extractVals(vals, true), extractVals(vals, false));
 	}
 
 	/**
 	 * Check that the indices are valid and not repeated. Uses assert rather than an
 	 * Exception.
 	 *
-	 * @param indices
+	 * @param indices Array of int indices
 	 * @return true
 	 */
 	@Override
@@ -609,11 +637,12 @@ public class UncertainValues<H> //
 	 * Initializes the value associated with the specified label, the variance is
 	 * left unmodified.
 	 *
-	 * @param label
-	 * @param val
+	 * @param label An existing label
+	 * @param val   The value (variance is assumed to equal zero)
 	 */
 	final public void set(
-			final H label, final double val
+			final H label, //
+			final double val
 			) {
 		final int p = indexOf(label);
 		mValues.setEntry(p, val);
@@ -622,12 +651,14 @@ public class UncertainValues<H> //
 	/**
 	 * Initializes the value and variance associated with the specified label.
 	 *
-	 * @param label
-	 * @param val
-	 * @param var
+	 * @param label An existing label
+	 * @param val   The value
+	 * @param var   The variance
 	 */
 	final public void set(
-			final H label, final double val, final double var
+			final H label, //
+			final double val, //
+			final double var
 			) {
 		final int p = indexOf(label);
 		mValues.setEntry(p, val);
@@ -637,24 +668,26 @@ public class UncertainValues<H> //
 	/**
 	 * Initializes the specified value and variance for the specified label.
 	 *
-	 * @param label
-	 * @param uv    (uses the doubleValue() and variance())
+	 * @param label The variable label
+	 * @param n     A Number (if the Number is an UncertainValue then the variance
+	 *              is used to initialize the covariance matrix.)
 	 */
 	final public void set(
-			final H label, final UncertainValue uv
+			final H label, //
+			final Number n
 			) {
 		final int p = indexOf(label);
-		mValues.setEntry(p, uv.doubleValue());
-		mCovariance.setEntry(p, p, uv.variance());
+		mValues.setEntry(p, n.doubleValue());
+		mCovariance.setEntry(p, p, UncertainValue.variance(n));
 	}
 
 	/**
 	 * Sets the covariance value associated with the specified values (both i,j and
 	 * j,i)
 	 *
-	 * @param label1
-	 * @param label2
-	 * @param cov
+	 * @param label1 row label
+	 * @param label2 column label
+	 * @param cov    The covariance
 	 */
 	final public void setCovariance(
 			final H label1, final H label2, final double cov
@@ -667,12 +700,14 @@ public class UncertainValues<H> //
 	 * Sets the covariance value associated with the specified values (both i,j and
 	 * j,i)
 	 *
-	 * @param p1
-	 * @param p2
-	 * @param cov
+	 * @param p1  row index
+	 * @param p2  column index
+	 * @param cov The covariance
 	 */
 	final public void setCovariance(
-			final int p1, final int p2, final double cov
+			final int p1, //
+			final int p2, //
+			final double cov
 			) {
 		mCovariance.setEntry(p1, p2, cov);
 		mCovariance.setEntry(p2, p1, cov);

@@ -336,21 +336,21 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel tag : xppI.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf2), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf2),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf2),
-									MathUtilities.td(fdResults.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(fdResults.getUncertainValue(tag).doubleValue(), bnf2),
 									MathUtilities.td(fdResults.getUncertainty(tag), bnf2));
 						}
 					for (final EPMALabel tag : xppI.getOutputLabels())
 						if (tag instanceof KRatioLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf2), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf2),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf2),
-									MathUtilities.td(fdResults.getValue(tag).doubleValue(), bnf2),
+									MathUtilities.td(fdResults.getUncertainValue(tag).doubleValue(), bnf2),
 									MathUtilities.td(fdResults.getUncertainty(tag), bnf2));
 						}
 					r.add(t);
@@ -553,11 +553,11 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel tag : xpp.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf),
-									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
 						}
 					r.add(t);
@@ -768,11 +768,11 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel tag : xpp.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf),
-									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
 						}
 					r.add(t);
@@ -1019,11 +1019,11 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel tag : xpp.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf),
-									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
 						}
 					r.add(t);
@@ -1292,11 +1292,11 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel tag : xpp.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf),
-									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
 						}
 					r.add(t);
@@ -1567,11 +1567,11 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel tag : xpp.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf),
-									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
 						}
 					r.add(t);
@@ -1813,9 +1813,9 @@ public class XPPMatrixCorrection2Test {
 				for (final EPMALabel tag : xpp.getOutputLabels())
 					if (tag instanceof KRatioLabel) {
 						tk.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-								MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf2),
+								MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf2),
 								MathUtilities.td(aResults.getUncertainty(tag), bnf2),
-								MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+								MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf2),
 								MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 					}
 				r.addHeader("K-ratio");
@@ -2127,11 +2127,11 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel tag : xpp.getOutputLabels())
 						if (tag instanceof ZAFMultiLineLabel) {
 							t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-									MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf), //
+									MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf), //
 									MathUtilities.td(resultsMc.getUncertainty(tag), bnf), //
-									MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(aResults.getUncertainty(tag), bnf),
-									MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf),
+									MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf),
 									MathUtilities.td(resultsD.getUncertainty(tag), bnf));
 						}
 					r.add(t);
@@ -2578,21 +2578,21 @@ public class XPPMatrixCorrection2Test {
 						for (final EPMALabel tag : xpp.getOutputLabels())
 							if (tag instanceof ZAFMultiLineLabel) {
 								t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-										MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+										MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf2), //
 										MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
-										MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf2),
+										MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf2),
 										MathUtilities.td(aResults.getUncertainty(tag), bnf2),
-										MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+										MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf2),
 										MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 							}
 						for (final EPMALabel tag : xpp.getOutputLabels())
 							if (tag instanceof KRatioLabel) {
 								t.addRow(Table.td(HTML.toHTML(tag, Mode.TERSE)), //
-										MathUtilities.td(resultsMc.getValue(tag).doubleValue(), bnf2), //
+										MathUtilities.td(resultsMc.getUncertainValue(tag).doubleValue(), bnf2), //
 										MathUtilities.td(resultsMc.getUncertainty(tag), bnf2), //
-										MathUtilities.td(aResults.getValue(tag).doubleValue(), bnf2),
+										MathUtilities.td(aResults.getUncertainValue(tag).doubleValue(), bnf2),
 										MathUtilities.td(aResults.getUncertainty(tag), bnf2),
-										MathUtilities.td(resultsD.getValue(tag).doubleValue(), bnf2),
+										MathUtilities.td(resultsD.getUncertainValue(tag).doubleValue(), bnf2),
 										MathUtilities.td(resultsD.getUncertainty(tag), bnf2));
 							}
 						r.add(t);

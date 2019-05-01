@@ -19,12 +19,10 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
  * @author Nicholas
  *
  */
-public class TrimmedNamedMultivariateJacobianFunction<G,H>
-		extends ExplicitMeasurementModel<G,H> implements ILabeledMultivariateFunction<G,H> {
+public class TrimmedNamedMultivariateJacobianFunction<G, H> extends ExplicitMeasurementModel<G, H> {
 
-	private final ExplicitMeasurementModel<? extends G,? extends H> mBase;
+	private final ExplicitMeasurementModel<? extends G, ? extends H> mBase;
 	private RealVector mBaseInputs;
-	
 
 	/**
 	 * @param base         The base {@link ExplicitMeasurementModel}
@@ -32,10 +30,11 @@ public class TrimmedNamedMultivariateJacobianFunction<G,H>
 	 *                     {@link TrimmedNamedMultivariateJacobianFunction}
 	 * @param outputLabels The output labels for the
 	 *                     {@link TrimmedNamedMultivariateJacobianFunction}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
-	public TrimmedNamedMultivariateJacobianFunction(//
-			final ExplicitMeasurementModel<? extends G,? extends H> base, //
+	public TrimmedNamedMultivariateJacobianFunction(
+			final ExplicitMeasurementModel<? extends G, ? extends H> base, //
 			final List<? extends G> inputLabels, //
 			final List<? extends H> outputLabels //
 	) throws ArgumentException {
@@ -48,41 +47,47 @@ public class TrimmedNamedMultivariateJacobianFunction<G,H>
 			throw new ArgumentException("Some of the requested output labels are not in the base function's outputs.");
 		mBase = base;
 	}
-	
+
 	/**
-	 * The set of inputs from which the full set of inputs required
-	 * by the base {@link ExplicitMeasurementModel} is
-	 * constructed.  
+	 * The set of inputs from which the full set of inputs required by the base
+	 * {@link ExplicitMeasurementModel} is constructed.
 	 * 
-	 * @param point
+	 * @param point A RealVector
 	 */
-	public void setBaseInputs(RealVector point) {
-		assert point.getDimension()==mBase.getInputDimension();
+	public void setBaseInputs(
+			RealVector point
+	) {
+		assert point.getDimension() == mBase.getInputDimension();
 		mBaseInputs = point.copy();
 	}
-	
-	public void setBaseInputs(UncertainValuesBase<G> uvb) {
+
+	public void setBaseInputs(
+			UncertainValuesBase<G> uvb
+	) {
 		RealVector basePt = new ArrayRealVector(mBase.getInputDimension());
-		for(int i=0;i<mBase.getInputDimension();++i) {
+		for (int i = 0; i < mBase.getInputDimension(); ++i) {
 			G lbk = mBase.getInputLabel(i);
 			basePt.setEntry(i, uvb.getEntry(lbk));
 		}
 		setBaseInputs(basePt);
 	}
-	
-	private final RealVector buildBaseInput(final RealVector point) {
+
+	private final RealVector buildBaseInput(
+			final RealVector point
+	) {
 		RealVector basePt = mBaseInputs.copy();
-		assert point.getDimension()==getInputDimension();
-		for(int i=0;i<getInputDimension();++i) {
+		assert point.getDimension() == getInputDimension();
+		for (int i = 0; i < getInputDimension(); ++i) {
 			Object lbl = getInputLabel(i);
 			basePt.setEntry(mBase.inputIndex(lbl), point.getEntry(i));
 		}
-		return basePt;	
+		return basePt;
 	}
-	
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(final RealVector point) {
+	public Pair<RealVector, RealMatrix> value(
+			final RealVector point
+	) {
 		final RealVector basePoint = buildBaseInput(point);
 		final Pair<RealVector, RealMatrix> tmp = mBase.evaluate(basePoint);
 		final RealVector rv1 = tmp.getFirst();
@@ -106,8 +111,10 @@ public class TrimmedNamedMultivariateJacobianFunction<G,H>
 	}
 
 	@Override
-	public RealVector optimized(RealVector point) {
-		final RealVector basePoint = buildBaseInput(point);
+	public RealVector computeValue(
+			double[] point
+	) {
+		final RealVector basePoint = buildBaseInput(new ArrayRealVector(point));
 		final RealVector rv1 = mBase.compute(basePoint);
 		final RealVector rv = new ArrayRealVector(getOutputDimension());
 		for (int r = 0; r < rv.getDimension(); ++r)

@@ -73,7 +73,7 @@ public class UncertainValuesCalculator<H> //
 		 * differentiator. The ordering dinp should be the same as
 		 * {@link UncertainValuesCalculator}.getInputValues().
 		 *
-		 * @param dinp
+		 * @param dinp The RealVector with differences
 		 */
 		public FiniteDifference(
 				final RealVector dinp
@@ -86,7 +86,7 @@ public class UncertainValuesCalculator<H> //
 		 * getInputValues().mapMultiply(frac). Be careful as an zeros in
 		 * getInputValues() may lead to mischief.
 		 *
-		 * @param dinp
+		 * @param frac The fractional difference size
 		 */
 		public FiniteDifference(
 				final double frac
@@ -158,6 +158,11 @@ public class UncertainValuesCalculator<H> //
 
 		private final EstimateUncertainValues<H> mOutputs;
 
+		/**
+		 * Constructs a MonteCarlo ICalculator object.
+		 * 
+		 * @param nEvals The number of evaluations to perform
+		 */
 		public MonteCarlo(
 				final int nEvals //
 		) {
@@ -184,7 +189,7 @@ public class UncertainValuesCalculator<H> //
 		 * @param dist     A {@link MultivariateRealDistribution} in the order of
 		 *                 {@link UncertainValuesCalculator}.getInputs().
 		 * @param nEvals   Number of evaluations to execute
-		 * @param parallel Perform in parallel or in series.
+		 * @param parallel Perform in parallel or sequentially.
 		 */
 		public MonteCarlo(
 				final MultivariateRealDistribution dist, //
@@ -242,10 +247,21 @@ public class UncertainValuesCalculator<H> //
 			return "Monte Carlo[evals = " + mNEvals + "]";
 		}
 
+		/**
+		 * Are the evaluations performed in a parallel multi-threaded style or in
+		 * sequence
+		 * 
+		 * @return true in parallel, false otherwise
+		 */
 		public boolean isParallel() {
 			return mParallel;
 		}
 
+		/**
+		 * Set to true to use multi-threaded evaluation.
+		 * 
+		 * @param parallel true to multi-thread
+		 */
 		public void setParallel(
 				final boolean parallel
 		) {
@@ -292,19 +308,19 @@ public class UncertainValuesCalculator<H> //
 	}
 
 	/***
-	 * Builds the outputs in the order of func.getOutputLabels() + func.getInputLabels().
-	 * Makes sure there are no duplicates.
+	 * Builds the outputs in the order of func.getOutputLabels() +
+	 * func.getInputLabels(). Makes sure there are no duplicates.
 	 * 
-	 * @param func
+	 * @param emm The measurement model
 	 * @return List&lt;H&gt;
 	 */
-	
+
 	private final static <H> List<H> buildOutputs1(
-			final ExplicitMeasurementModel<? extends H, ? extends H> func
+			final ExplicitMeasurementModel<? extends H, ? extends H> emm
 	) {
 		final FastIndex<H> res = new FastIndex<>();
-		res.addAll(func.getOutputLabels());
-		res.addAll(func.getInputLabels());
+		res.addAll(emm.getOutputLabels());
+		res.addAll(emm.getInputLabels());
 		return res;
 	}
 
@@ -316,9 +332,9 @@ public class UncertainValuesCalculator<H> //
 		protected UncertainValues<? extends H> initialize() {
 			final List<? extends H> inputLabels = mFunction.getInputLabels();
 			final UncertainValuesBase<? extends H> reorder = mRawInputs.reorder(inputLabels);
-			if(reorder instanceof UncertainValues<?>)
-				return ((UncertainValues<? extends H>)reorder).copy();
-			else 
+			if (reorder instanceof UncertainValues<?>)
+				return ((UncertainValues<? extends H>) reorder).copy();
+			else
 				return UncertainValues.asUncertainValues(reorder);
 		}
 
@@ -340,8 +356,7 @@ public class UncertainValuesCalculator<H> //
 
 		@Override
 		protected UncertainValuesBase<H> initialize() {
-			final UncertainValuesBase<H> res = mCalculator.evaluate(mFunction, getOutputLabels());
-			return res;
+			return mCalculator.evaluate(mFunction, getOutputLabels());
 		}
 	};
 
@@ -362,12 +377,22 @@ public class UncertainValuesCalculator<H> //
 		}
 	};
 
+	/**
+	 * Constructs a {@link UncertainValuesCalculator} to propagate the measurement
+	 * model over the specified set of input values to estimate the output
+	 * uncertainties.
+	 * 
+	 * @param emm    The measurement model
+	 * @param inputs The input values
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
+	 */
 	public UncertainValuesCalculator(
-			final ExplicitMeasurementModel<? extends H, ? extends H> func, //
+			final ExplicitMeasurementModel<? extends H, ? extends H> emm, //
 			final UncertainValuesBase<H> inputs //
 	) throws ArgumentException {
-		super(buildOutputs1(func));
-		mFunction = func;
+		super(buildOutputs1(emm));
+		mFunction = emm;
 		if (inputs != null) {
 			mRawInputs = inputs;
 			setInputs(inputs);
@@ -398,14 +423,29 @@ public class UncertainValuesCalculator<H> //
 		return mFullOutputs.get().getCovariances();
 	}
 
+	/**
+	 * Returns the model as presented to the constructor.
+	 * 
+	 * @return The model
+	 */
 	public ExplicitMeasurementModel<? extends H, ? extends H> getFunction() {
 		return mFunction;
 	}
 
+	/**
+	 * The number of input variables.
+	 * 
+	 * @return int
+	 */
 	public int getInputDimension() {
 		return mFunction.getInputDimension();
 	}
 
+	/**
+	 * An ordered list of input variable labels.
+	 * 
+	 * @return List&lt;? extends H&gt;
+	 */
 	public List<? extends H> getInputLabels() {
 		return mFunction.getInputLabels();
 	}
@@ -433,6 +473,12 @@ public class UncertainValuesCalculator<H> //
 		return mInputs.get().getValues();
 	}
 
+	/**
+	 * Returns the Jacobian when the {@link ICalculator} associated with this {@link UncertainValuesCalculator}
+	 * support calculating the Jacobian (the {@link MonteCarlo} doesn't).
+	 * 
+	 * @return Optional&lt;Jacobian&lt;H,H&gt;&gt;
+	 */
 	public Optional<Jacobian<H, H>> getJacobian() {
 		final RealMatrix jac = mEvaluation.get().getSecond();
 		if (jac != null)
@@ -441,10 +487,18 @@ public class UncertainValuesCalculator<H> //
 			return Optional.empty();
 	}
 
+	/**
+	 * @return The number of output variables
+	 */
 	public int getOutputDimension() {
 		return getDimension();
 	}
 
+	/**
+	 * An ordered list of the labels associated with the output variables.
+	 * 
+	 * @return List&lt;H&gt;
+	 */
 	public List<H> getOutputLabels() {
 		return getLabels();
 	}
@@ -452,11 +506,11 @@ public class UncertainValuesCalculator<H> //
 	/**
 	 * Returns a Map of the labels associated with output values expressed as
 	 * {@link UncertainValue} objects. Equivalent to
-	 * <code>getOutputValues(uvs, 1.0e-6)</code>
+	 * <code>getOutputValues(1.0e-6)</code>
 	 *
-	 * @param uvs Input {@link UncertainValues}
 	 * @return HashMap&lt;H, UncertainValue&gt;
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public HashMap<H, UncertainValueEx<H>> getOutputValues() //
 			throws ArgumentException {
@@ -467,13 +521,12 @@ public class UncertainValuesCalculator<H> //
 	 * Returns a Map of the labels associated with output values expressed as
 	 * {@link UncertainValue} objects.
 	 *
-	 * @param uvs Input {@link UncertainValues}
 	 * @param tol Tolerance relative to value
-	 * @return HashMap&lt;H, UncertainValue&gt;
-	 * @throws ArgumentException
+	 * @return HashMap&lt;H, UncertainValueEx&lt;H&gt;&gt;
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public HashMap<H, UncertainValueEx<H>> getOutputValues(
-			//
 			final double tol //
 	) throws ArgumentException {
 		final UncertainValuesBase<H> pvm = mFullOutputs.get();
@@ -495,19 +548,18 @@ public class UncertainValuesCalculator<H> //
 	 * Get the resulting UncertainValue for each output quantity with sources
 	 * grouped and named according to the map of names to a collection of labels.
 	 * </p>
-	 * </p>
+	 * <p>
 	 * Returns a map from output value to an UncertainValue with discretely broken
 	 * out uncertainty components according to the labels map.
 	 * </p>
 	 *
-	 * @param uvs
 	 * @param labels Group according to this mapping
 	 * @param tol    Minimum size uncertainty to include
 	 * @return HashMap&lt;H, UncertainValue&gt;
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public HashMap<H, UncertainValueEx<String>> getOutputValues(
-			//
 			final Map<String, Collection<? extends H>> labels, //
 			final double tol //
 	) throws ArgumentException {
@@ -559,6 +611,11 @@ public class UncertainValuesCalculator<H> //
 		}
 	}
 
+	/**
+	 * Specify an {@link ICalculator} and force a recalculation.
+	 * 
+	 * @param calc An {@link ICalculator}
+	 */
 	public void setCalculator(
 			final ICalculator<H> calc
 	) {
@@ -570,6 +627,11 @@ public class UncertainValuesCalculator<H> //
 		}
 	}
 
+	/**
+	 * The calculator used to propagate the uncertainties.
+	 * 
+	 * @return An instance of {@link ICalculator}
+	 */
 	public ICalculator<H> getCalculator() {
 		return mCalculator;
 	}
@@ -580,8 +642,9 @@ public class UncertainValuesCalculator<H> //
 	 * {@link Constraint}s are applied.
 	 *
 	 *
-	 * @param inputs
-	 * @throws ArgumentException
+	 * @param inputs The input values as an {@link UncertainValuesBase}
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public void setInputs(
 			final UncertainValuesBase<H> inputs //

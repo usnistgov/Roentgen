@@ -2,6 +2,7 @@ package gov.nist.juncertainty.models;
 
 import java.util.List;
 
+import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -9,22 +10,20 @@ import org.apache.commons.math3.util.Pair;
 import com.duckandcover.lazy.SimplyLazy;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 
 /**
  * <p>
- * A extension of {@link ExplicitMeasurementModel} for the special
- * case of multiple functions whose outputs are linear combinations of the input
- * vector elements.
+ * A extension of {@link ExplicitMeasurementModel} for the special case of
+ * multiple functions whose outputs are linear combinations of the input vector
+ * elements.
  * </p>
  *
  * @author Nicholas
  * @version 1.0
  */
 public abstract class MultiLinearMeasurementModel<G, H> //
-		extends ExplicitMeasurementModel<G, H> //
-		implements ILabeledMultivariateFunction<G, H> {
+		extends ExplicitMeasurementModel<G, H> {
 
 	private final SimplyLazy<RealMatrix> mJacobian = new SimplyLazy<RealMatrix>() {
 
@@ -79,9 +78,9 @@ public abstract class MultiLinearMeasurementModel<G, H> //
 	}
 
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
-		return mJacobian.get().operate(point);
+		return mJacobian.get().operate(new ArrayRealVector(point));
 	}
 }

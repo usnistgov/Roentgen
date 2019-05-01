@@ -8,7 +8,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
-import gov.nist.juncertainty.ILabeledMultivariateFunction;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.physics.Element;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomFraction;
@@ -23,8 +22,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
  *
  */
 public class AtomFractionToMassFraction //
-		extends ExplicitMeasurementModel<MaterialLabel, MassFraction> //
-		implements ILabeledMultivariateFunction<MaterialLabel, MassFraction> {
+		extends ExplicitMeasurementModel<MaterialLabel, MassFraction> {
 
 	private static List<MaterialLabel> buildInputTags(
 			final Material mat
@@ -53,8 +51,8 @@ public class AtomFractionToMassFraction //
 	}
 
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
 		final RealVector res = buildResult();
 		double den = 0.0;

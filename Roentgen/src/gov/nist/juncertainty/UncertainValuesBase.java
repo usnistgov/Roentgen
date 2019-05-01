@@ -40,20 +40,16 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * <p>
- * The UncertainValuesBase class serves to store a collection of related
- * variable values along with the associated covariance/uncertainty matrix.
+ * The UncertainValuesBase class serves as the base class for classes which
+ * provide a array of labeled values and the associated uncertainty / covariance
+ * matrix.
  * </p>
  * <p>
- * UncertainValuesBase instances can be the input into calculations class or can
- * be the results of calculations performed with the
- * {@link UncertaintyPropagator} class.
- * </p>
- * <p>
- * To facilitate bookkeeping, the variables within the object are labeled with
- * Object derived labels. Make sure that all the classes implementing labels
- * implement hashCode() and equals() as the labels are stored in hash maps. The
- * entries in the values vector and covariance matrix can be indexed by label or
- * by integer index.
+ * To facilitate bookkeeping, the variables within the class instanced are
+ * labeled with labels derived from the generic H-class. Make sure that all the
+ * classes that are used as labels implement hashCode() and equals() as the
+ * label instances are stored in a {@link HashMap}. The entries in the values
+ * vector and covariance matrix can be indexed by label or by integer index.
  * </p>
  * <p>
  * Covariance matrices have certain properties (square, symmetric, positive
@@ -242,13 +238,15 @@ abstract public class UncertainValuesBase<H> //
 	 * labeled quantities as extracted from the list of {@link UncertainValuesBase}
 	 * objects.
 	 *
-	 * @param labels
-	 * @param uvs
+	 * @param        <J> The class implementing the labels
+	 * @param labels A list of labels
+	 * @param uvs    A list of {@link UncertainValuesBase} instances containing
+	 *               values for each of labels
 	 * @return {@link UncertainValuesBase}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValues<J> build(
-			//
 			final List<J> labels, //
 			final List<UncertainValuesBase<J>> uvs //
 	) throws ArgumentException {
@@ -284,9 +282,13 @@ abstract public class UncertainValuesBase<H> //
 	 * Combines a disjoint set of {@link UncertainValues} into a single one.
 	 * (Disjoint meaning not sharing a common label.)
 	 *
-	 * @param uvs List&lt;UncertainValues&gt;
+	 * @param           <J> The class implementing the labels
+	 * @param uvs       List&lt;UncertainValues&gt;
+	 * @param takeFirst if false fails if there are duplicate definitions for any
+	 *                  label
 	 * @return {@link UncertainValues}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValuesBase<J> combine(
 			final List<? extends UncertainValuesBase<? extends J>> uvs, //
@@ -304,12 +306,14 @@ abstract public class UncertainValuesBase<H> //
 	 * associated with these two sets of UncertainValuesBase. The difference between
 	 * the covariances is plotted.
 	 *
-	 * @param uvs1
-	 * @param uvs2
-	 * @param corr
-	 * @param pixDim
-	 * @return BufferedImage
-	 * @throws ArgumentException
+	 * @param        <J> The class implementing the labels
+	 * @param uvs1   First {@link UncertainValuesBase} object to compare
+	 * @param uvs2   Second {@link UncertainValuesBase} object to compare
+	 * @param corr   Map from value to color
+	 * @param pixDim Size on edge of each block representing a single value
+	 * @return BufferedImage The resulting image
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> BufferedImage compareAsBitmap(
 			final UncertainValuesBase<J> uvs1, //
@@ -381,16 +385,18 @@ abstract public class UncertainValuesBase<H> //
 	 * in <code>nmjf</code> to the input values/variances in <code>input</code>.
 	 *
 	 *
-	 * @param nmjf
-	 * @param input
-	 * @return UncertainValues
-	 * @throws ArgumentException
+	 * @param       <J> The class implementing the labels
+	 * @param emm   The model
+	 * @param input Input value
+	 * @return {@link UncertainValuesCalculator} A calculator for the result
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValuesCalculator<J> propagateAnalytical(
-			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
+			final ExplicitMeasurementModel<? extends J, ? extends J> emm, //
 			final UncertainValuesBase<J> input //
 	) throws ArgumentException {
-		return new UncertainValuesCalculator<J>(nmjf, input);
+		return new UncertainValuesCalculator<J>(emm, input);
 	}
 
 	/**
@@ -398,20 +404,23 @@ abstract public class UncertainValuesBase<H> //
 	 * using the analyical Jacobian algorithm.
 	 *
 	 *
-	 * @param nmjf
-	 * @param input
+	 * @param       <J> The class implementing the labels
+	 * @param emm   The model
+	 * @param input The input data
+	 * @param dinp  The delta to apply to the input values
 	 * @return {@link UncertainValuesCalculator}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValuesCalculator<J> propagateFiniteDifference(
-			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
+			final ExplicitMeasurementModel<? extends J, ? extends J> emm, //
 			final UncertainValuesBase<J> input, //
 			final RealVector dinp //
 	) throws ArgumentException {
-		final UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(nmjf, input);
+		final UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(emm, input);
 		final RealVector reordered = new ArrayRealVector(res.getInputDimension());
 		for (int i = 0; i < res.getInputDimension(); ++i) {
-			final int nidx = nmjf.inputIndex(res.getLabel(i));
+			final int nidx = emm.inputIndex(res.getLabel(i));
 			if (nidx != -1)
 				reordered.setEntry(i, dinp.getEntry(nidx));
 		}
@@ -424,19 +433,21 @@ abstract public class UncertainValuesBase<H> //
 	 * using the finite difference algorithm and a step size based of the input
 	 * values times a constant multiplier.
 	 *
-	 * @param nmjf
-	 * @param input
+	 * @param       <J> The class implementing the labels
+	 * @param emm   The model
+	 * @param input The input data
 	 * @param frac  Computes dinp, the fractional difference size as
 	 *              getInputValues().mapMultiply(frac)
 	 * @return {@link UncertainValuesCalculator}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValuesCalculator<J> propagateFiniteDifference(
-			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
+			final ExplicitMeasurementModel<? extends J, ? extends J> emm, //
 			final UncertainValuesBase<J> input, //
 			final double frac //
 	) throws ArgumentException {
-		final UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(nmjf, input);
+		final UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(emm, input);
 		res.setCalculator(res.new FiniteDifference(frac));
 		return res;
 	}
@@ -446,23 +457,36 @@ abstract public class UncertainValuesBase<H> //
 	 * using the Monte Carlo algorithm and a default
 	 * {@link MultivariateNormalDistribution}.
 	 *
-	 * @param nmjf
-	 * @param input
+	 * @param       <J> The class implementing the labels
+	 * @param emm   The model
+	 * @param input The input data
+	 * @param nEvals The number of times to evaluate the model
 	 * @return {@link UncertainValuesCalculator}
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <J> UncertainValuesCalculator<J> propagateMonteCarlo(
-			final ExplicitMeasurementModel<? extends J, ? extends J> nmjf, //
+			final ExplicitMeasurementModel<? extends J, ? extends J> emm, //
 			final UncertainValuesBase<J> input, //
 			final int nEvals //
 	) throws ArgumentException {
-		final UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(nmjf, input);
+		final UncertainValuesCalculator<J> res = new UncertainValuesCalculator<J>(emm, input);
 		res.setCalculator(res.new MonteCarlo(nEvals));
 		return res;
 	}
 
+	/**
+	 * Tests exact equality
+	 * 
+	 * @param <J> The label class
+	 * @param uvs1 The first {@link UncertainValuesBase} object to test
+	 * @param uvs2 The second {@link UncertainValuesBase} object to test
+	 * @return boolean, true if exactly the same value-by-value and
+	 *         covariance-by-covariance
+	 */
 	public static <J> boolean testEquality(
-			final UncertainValuesBase<J> uvs1, final UncertainValuesBase<J> uvs2
+			final UncertainValuesBase<J> uvs1, //
+			final UncertainValuesBase<J> uvs2
 	) {
 		if (uvs1.getDimension() != uvs2.getDimension())
 			return false;
@@ -476,6 +500,16 @@ abstract public class UncertainValuesBase<H> //
 		return true;
 	}
 
+	/**
+	 * Tests equality to within the tolerance eps
+	 * 
+	 * @param <J> The label class
+	 * @param uvs1 The first {@link UncertainValuesBase} object to test
+	 * @param uvs2 The second {@link UncertainValuesBase} object to test
+	 * @param eps  The tolerance
+	 * @return boolean, true if exactly the same value-by-value and
+	 *         covariance-by-covariance
+	 */
 	public static <J> boolean testSimiliarity(
 			final UncertainValuesBase<J> uvs1, //
 			final UncertainValuesBase<J> uvs2, //
@@ -508,8 +542,9 @@ abstract public class UncertainValuesBase<H> //
 	 * as input except all the covariances except those associated with label are
 	 * zeroed.
 	 *
-	 * @param label
-	 * @param input
+	 * @param       <J> The class implementing the labels
+	 * @param label The label to leave unmodified
+	 * @param input The input {@link UncertainValuesBase} object
 	 * @return {@link UncertainValues}
 	 */
 	public static <J> UncertainValues<J> zeroBut(
@@ -525,11 +560,14 @@ abstract public class UncertainValuesBase<H> //
 	 * Checks that the covariance matrix is m x m, the variances are non-negative,
 	 * the covariances are bounded correlation coefficients between -1<r<1.
 	 *
-	 * @param m
-	 * @param covar
+	 * @param m      Dimension
+	 * @param covar  The covariance matrix
+	 * @param maxVal The max
 	 */
 	private static void validateCovariance(
-			final int m, final RealMatrix covar, final double maxVal
+			final int m, //
+			final RealMatrix covar, //
+			final double maxVal
 	) {
 		if (covar.getRowDimension() != m)
 			throw new DimensionMismatchException(covar.getRowDimension(), m);
@@ -574,12 +612,20 @@ abstract public class UncertainValuesBase<H> //
 	 *               and equals().
 	 */
 	protected UncertainValuesBase(
-			//
 			final List<H> labels //
 	) {
 		mLabels = new FastIndex<>(labels);
 	}
 
+	/**
+	 * Renders a bitmapped representation of this {@link UncertainValuesBase}
+	 * object.
+	 * 
+	 * @param dim   The size on edge of the square representing a value
+	 * @param sigma Maps values to colors
+	 * @param corr  Maps correlation coefficients to colors
+	 * @return BufferedImage
+	 */
 	public BufferedImage asCovarianceBitmap(
 			final int dim, //
 			final IValueToColor sigma, //
@@ -627,7 +673,7 @@ abstract public class UncertainValuesBase<H> //
 	 * Check that the indices are valid and not repeated. Uses assert rather than an
 	 * Exception.
 	 *
-	 * @param indices
+	 * @param indices An array of indices
 	 * @return true
 	 */
 	public boolean assertIndices(
@@ -649,7 +695,7 @@ abstract public class UncertainValuesBase<H> //
 	 * lower-left corners towards the diagonal.
 	 *
 	 *
-	 * @return UncertainValues
+	 * @return {@link UncertainValuesBase}
 	 */
 
 	public UncertainValuesBase<H> blockDiagnonalize() {
@@ -696,12 +742,6 @@ abstract public class UncertainValuesBase<H> //
 		return null;
 	}
 
-	final public RealMatrix delta(
-			final UncertainValuesBase<H> zeroed
-	) {
-		return getCovariances().subtract(zeroed.getCovariances());
-	}
-
 	@Override
 	public boolean equals(
 			final Object obj
@@ -720,9 +760,10 @@ abstract public class UncertainValuesBase<H> //
 	 * Tests the equality of the values, variances and correlation coefficients to
 	 * within the fractional tolerance.
 	 *
-	 * @param uv2
-	 * @param tol
-	 * @return boolean
+	 * @param uv2 The other {@link UncertainValuesBase} to compare values and
+	 *            covariances against
+	 * @param tol The tolerance
+	 * @return boolean true if meets tolerance
 	 */
 	public boolean equals(
 			final UncertainValuesBase<H> uv2, //
@@ -750,9 +791,10 @@ abstract public class UncertainValuesBase<H> //
 	 * rows/columns whose indexes are in idx. Can be used to create a sub-set of
 	 * this {@link UncertainValues} or reorder this {@link UncertainValues}.
 	 *
-	 * @param idx
+	 * @param indices An array of indices
 	 * @return {@link UncertainValues} A new object
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	final public UncertainValuesBase<H> extract(
 			final int[] indices
@@ -765,9 +807,11 @@ abstract public class UncertainValuesBase<H> //
 	 * rows/columns whose indexes are in idx. Can be used to create a sub-set of
 	 * this {@link UncertainValues} or reorder this {@link UncertainValues}.
 	 *
-	 * @param idx
+	 * @param     <K> The class implementing the labels
+	 * @param labels A {@link List} of labels
 	 * @return {@link UncertainValues} A new object
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	final public <K extends H> UncertainValuesBase<K> extract(
 			final List<K> labels
@@ -776,11 +820,11 @@ abstract public class UncertainValuesBase<H> //
 	}
 
 	/**
-	 * Extract an array of values from this UncertainValue object for the specified
-	 * list of labels in the order specified by the label list.
+	 * Extract an matrix of covariances from this UncertainValue object for the
+	 * specified list of labels in the order specified by the label list.
 	 *
 	 * @param labels List&lt;H&gt;
-	 * @return RealVector
+	 * @return RealMatrix
 	 */
 	final public RealMatrix extractCovariances(
 			final List<H> labels
@@ -819,21 +863,11 @@ abstract public class UncertainValuesBase<H> //
 		return res;
 	}
 
-	public List<H> findMissing(
-			final List<H> inputLabels
-	) {
-		final List<H> res = new ArrayList<>();
-		for (final H lbl : inputLabels)
-			if (indexOf(lbl) == -1)
-				res.add(lbl);
-		return res;
-	}
-
 	/**
 	 * Returns the covariance associated with the specific labels.
 	 *
-	 * @param p1 H
-	 * @param p2 H
+	 * @param p1 H - Label one
+	 * @param p2 H - Label 2
 	 * @return double The correlation coefficient associated with indices p1 and p2
 	 */
 	final public double getCorrelationCoefficient(
@@ -870,6 +904,11 @@ abstract public class UncertainValuesBase<H> //
 		}
 	}
 
+	/**
+	 * Returns a RealMatrix filled with the correlation coefficient values.
+	 * 
+	 * @return RealMatrix
+	 */
 	final public RealMatrix getCorrelationCoefficients() {
 		final int dim = getDimension();
 		final RealMatrix rm = MatrixUtils.createRealMatrix(dim, dim);
@@ -901,8 +940,8 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Returns the covariance associated with the specific integer indices.
 	 *
-	 * @param p1    int
-	 * @param p2int
+	 * @param p1 int
+	 * @param p2 int
 	 * @return double The covariance associated with indices p1 and p2
 	 */
 	final public double getCovariance(
@@ -913,32 +952,10 @@ abstract public class UncertainValuesBase<H> //
 	}
 
 	/**
-	 * Returns a map of the variance and covariances relative to the specified
-	 * label.
-	 *
-	 * @param label
-	 * @return Map&lt;H, Double&gt;
-	 */
-	final public Map<H, Double> getCovariances(
-			final H label
-	) {
-		final Map<H, Double> res = new HashMap<>();
-		final int p = indexOf(label);
-		if (p != -1) {
-			for (int i = 0; i < mLabels.size(); ++i) {
-				final RealMatrix cov = getCovariances();
-				if (cov.getEntry(p, i) != 0.0)
-					res.put(mLabels.get(i), cov.getEntry(p, i));
-			}
-		}
-		return res;
-	}
-
-	/**
-	 * Returns a RealMatrix of the variance and covariances relative to the
+	 * Returns a RealMatrix of the variance and covariances associated with the
 	 * specified list of labels.
 	 *
-	 * @param label
+	 * @param labels A {@link List} of labels
 	 * @return Map&lt;H, Double&gt;
 	 */
 	final public RealMatrix getCovariances(
@@ -983,7 +1000,7 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Returns the function value associated with the label specified by index.
 	 *
-	 * @param p
+	 * @param p integer index
 	 * @return double
 	 */
 	final public double getEntry(
@@ -993,27 +1010,10 @@ abstract public class UncertainValuesBase<H> //
 	}
 
 	/**
-	 * Returns the value associated with the entry associated with label if the
-	 * label is associated with a value or returns defVal otherwise. Useful for a
-	 * quantity that may or may not have an associated uncertainty.
-	 *
-	 * @param label
-	 * @param defVal
-	 * @return double
-	 */
-	final public double getEntryWithDefault(
-			final H label, //
-			final double defVal
-	) {
-		final int p = indexOf(label);
-		return p >= 0 ? getEntry(p) : defVal;
-	}
-
-	/**
 	 * Returns the label at the p-th entry in the values vector and in the p-th row
 	 * and column in the covariance matrix.
 	 *
-	 * @param p
+	 * @param p The integer index
 	 * @return Object
 	 */
 	final public H getLabel(
@@ -1023,8 +1023,8 @@ abstract public class UncertainValuesBase<H> //
 	}
 
 	/**
-	 * Returns an ordered list of the Object labels associated with the values and
-	 * covariances in this object.
+	 * Returns an unmodifiable, ordered list of the Object labels associated with
+	 * the values and covariances in this object.
 	 *
 	 * @return List&lt;Object&gt;
 	 */
@@ -1035,7 +1035,8 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Extracts all labels assignable as cls
 	 *
-	 * @param cls<T> The class type
+	 * @param <T> The class implementing the labels
+	 * @param cls&lt;T&gt; The class type
 	 * @return List&lt;T&gt;
 	 */
 	final public <T> List<T> getLabels(
@@ -1051,7 +1052,7 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Returns the uncertainty associated with the specific label
 	 *
-	 * @param label H
+	 * @param label H The label
 	 * @return double The uncertainty associated with label or 0.0 if label unknown
 	 */
 	final public double getUncertainty(
@@ -1064,7 +1065,7 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Returns the uncertainty associated with the specific index
 	 *
-	 * @param p int
+	 * @param p int The integer index
 	 * @return double The uncertainty associated with index p
 	 */
 	final public double getUncertainty(
@@ -1074,20 +1075,11 @@ abstract public class UncertainValuesBase<H> //
 	}
 
 	/**
-	 * Returns an UncertainValue for the quantity assoicated with the specified
-	 * label. The value is the same as getEntry(...) and the uncertainty is the
-	 * on-diagonal covariance matrix entry associated with that entry.
-	 *
-	 * @param label
-	 * @return UncertanValue
+	 * Returns a map from label to the associated {@link UncertainValue} as returned
+	 * by getUncertainValue(..).
+	 * 
+	 * @return Map&lt;H,UncertainValue&gt;
 	 */
-	final public UncertainValue getUncertainValue(
-			final H label
-	) {
-		final int p = indexOf(label);
-		return new UncertainValue(getEntry(p), Math.sqrt(getCovariance(p, p)));
-	}
-
 	final public Map<H, UncertainValue> getUncertainValueMap() {
 		final Map<H, UncertainValue> res = new HashMap<>();
 		for (final H label : getLabels())
@@ -1097,40 +1089,36 @@ abstract public class UncertainValuesBase<H> //
 
 	/**
 	 * Returns an UncertainValue for the quantity assoicated with the specified
-	 * label (if defined). The value is the same as getEntry(...) and the
-	 * uncertainty is the on-diagonal covariance matrix entry associated with that
-	 * entry. If the label isn't defined, then the value defVal will be returned.
+	 * label. The value is the same as getEntry(...) and the uncertainty is the
+	 * on-diagonal covariance matrix entry associated with that entry.
 	 *
-	 * @param label
-	 * @param defVal
+	 * @param label The label
 	 * @return UncertanValue
 	 */
-	final public UncertainValue getUncertainValueWithDefault(
-			final H label, //
-			final UncertainValue defVal
-	) {
-		final int p = indexOf(label);
-		return p >= 0 ? new UncertainValue(getEntry(p), getCovariance(p, p)) : defVal;
-
-	}
-
-	/**
-	 * Returns the value and the associated uncertainty as an {@link UncertainValue}
-	 * object.
-	 *
-	 * @param label
-	 * @return {@link UncertainValue}
-	 */
-	final public UncertainValue getValue(
+	final public UncertainValue getUncertainValue(
 			final H label
 	) {
 		return new UncertainValue(getEntry(label), Math.sqrt(getVariance(label)));
 	}
 
+	/**
+	 * Gets a map from label to double of all the values in this
+	 * {@link UncertainValuesBase} object.
+	 * 
+	 * @return Map&lt;H,Double&gt;
+	 */
 	final public Map<H, Double> getValueMap() {
 		return getValueMap(getLabels());
 	}
 
+	/**
+	 * Gets a map from label to double of all the values with labels of class T in
+	 * this {@link UncertainValuesBase} object.
+	 * 
+	 * @param     <T> The label class
+	 * @param cls A Class&lt;T&gt; object
+	 * @return Map&lt;H,Double&gt;
+	 */
 	final public <T> Map<T, Double> getValueMap(
 			final Class<T> cls
 	) {
@@ -1141,6 +1129,13 @@ abstract public class UncertainValuesBase<H> //
 		return res;
 	}
 
+	/**
+	 * Gets a map from label to double of all the values in this
+	 * {@link UncertainValuesBase} object in the specified list.
+	 * 
+	 * @param labels A list of labels
+	 * @return Map&lt;H,Double&gt;
+	 */
 	final public Map<H, Double> getValueMap(
 			final List<? extends H> labels
 	) {
@@ -1154,7 +1149,7 @@ abstract public class UncertainValuesBase<H> //
 	 * Returns a {@link RealVector} containing the values associated with this
 	 * object in the order specified by the List labels.
 	 *
-	 * @param labels
+	 * @param labels A {@link List} of labels to extract
 	 * @return {@link RealVector}
 	 */
 	final public RealVector getValues(
@@ -1194,7 +1189,7 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Is there a value and covariances associated with the specified label?
 	 *
-	 * @param label
+	 * @param label A label
 	 * @return boolean
 	 */
 	final public boolean hasLabel(
@@ -1207,7 +1202,7 @@ abstract public class UncertainValuesBase<H> //
 	 * Returns a list of those labels in desired that are not in the labels
 	 * associated with this.
 	 *
-	 * @param desired
+	 * @param desired A {@link List} of desired labels
 	 * @return List&lt;H&gt;
 	 */
 	public List<H> missing(
@@ -1223,7 +1218,7 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Returns the index associated with the specified label or -1 if not found.
 	 *
-	 * @param p
+	 * @param label A label
 	 * @return Object
 	 */
 	final public int indexOf(
@@ -1235,7 +1230,7 @@ abstract public class UncertainValuesBase<H> //
 	/**
 	 * Note: Returns an index of -1 if the label is missing
 	 *
-	 * @param labels
+	 * @param labels A List of labels
 	 * @return Returns an array of integer indices for the specified labels in order
 	 */
 	final public int[] indices(
@@ -1269,9 +1264,9 @@ abstract public class UncertainValuesBase<H> //
 	 * by the argument. If this is already in this order, this is returned;
 	 * otherwise a new {@link UncertainValues} object is created.
 	 *
-	 * @param list
+	 * @param      <K> The class implementing the labels
+	 * @param list A list of labels specifying the new order
 	 * @return {@link UncertainValuesBase}
-	 * @throws ArgumentException
 	 */
 	@SuppressWarnings("unchecked")
 	public <K extends H> UncertainValuesBase<K> reorder(
@@ -1313,7 +1308,7 @@ abstract public class UncertainValuesBase<H> //
 	 * Build a new UncertainValues from this one in which the labels have been
 	 * sorted into an order determined by the specified {@link Comparator}.
 	 *
-	 * @param compare
+	 * @param compare A Comparator
 	 * @return {@link UncertainValues} A new instance with the same data reordered.
 	 */
 	final public UncertainValuesBase<H> sort(
@@ -1350,9 +1345,6 @@ abstract public class UncertainValuesBase<H> //
 		return sb.toString();
 	}
 
-	/**
-	 * @see gov.nist.microanalysis.roentgen.html.IToHTML#toHTML(gov.nist.microanalysis.roentgen.Representation.IToHTML.Mode)
-	 */
 	@Override
 	public String toHTML(
 			final Mode mode
@@ -1364,8 +1356,8 @@ abstract public class UncertainValuesBase<H> //
 	 * Provides a mechanism to convert this {@link UncertainValuesBase} object to
 	 * HTML with a little more control over number formating.
 	 *
-	 * @param mode
-	 * @param nf
+	 * @param mode The HTML output mode
+	 * @param nf   A {@link BasicNumberFormat}
 	 * @return String
 	 */
 	final public String toHTML(
@@ -1433,8 +1425,8 @@ abstract public class UncertainValuesBase<H> //
 	 * are converted into "(v)^2" and covariances into the correlation coefficient
 	 * times sR sC.
 	 *
-	 * @param r
-	 * @param c
+	 * @param r Integer index
+	 * @param c Integer index
 	 * @return String
 	 */
 	final public String toHTML_Covariance(
@@ -1474,6 +1466,12 @@ abstract public class UncertainValuesBase<H> //
 		}
 	}
 
+	/**
+	 * Converts this {@link UncertainValuesBase} outputs into a simple HTML format.
+	 * 
+	 * @param bnf The {@link BasicNumberFormat}
+	 * @return String in HTML
+	 */
 	final public String toSimpleHTML(
 			final BasicNumberFormat bnf
 	) {
@@ -1542,12 +1540,13 @@ abstract public class UncertainValuesBase<H> //
 	 * class between <code>this</code> and <code>other</code>.
 	 * </p>
 	 * <p>
-	 * Example:<br/>
+	 * Example:
 	 * &nbsp;&nbsp;&nbsp;<code>differences(MassFraction.class,k412,k411)</code>
 	 * </p>
 	 * 
-	 * @param cls   Class&ltT&gt;
-	 * @param other UncertainValuesBase<H>
+	 * @param       <T> A label class extending class H
+	 * @param cls   Class&lt;T&gt;
+	 * @param other {@link UncertainValuesBase}
 	 * @return Map&lt;T, Double&gt;
 	 */
 	public <T extends H> Map<T, Double> differences(

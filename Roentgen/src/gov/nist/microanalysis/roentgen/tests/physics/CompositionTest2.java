@@ -323,7 +323,7 @@ public class CompositionTest2 {
 		af.setCalculator(af.new Analytical());
 
 		for (final MaterialLabel label : af.massFractionTags())
-			assertEquals(af.getValue(label).fractionalUncertainty(),
+			assertEquals(af.getUncertainValue(label).fractionalUncertainty(),
 					mup.getUncertainValue(label).fractionalUncertainty(), 0.01);
 
 		if (mHTML) {

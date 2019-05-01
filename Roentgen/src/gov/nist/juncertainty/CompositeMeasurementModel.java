@@ -25,10 +25,13 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * <p>
- * Turns a calculation based on a sequential set of
- * {@link ExplicitMeasurementModel} steps into a single
- * {@link CompositeMeasurementModel}.
+ * A measurement model constructed from a series of sequential
+ * {@link ExplicitMeasurementModel} steps. Each step is represented by a an
+ * {@link ExplicitMeasurementModel}-derived class and the steps are pulled
+ * together into a composite {@link ExplicitMeasurementModel} through the
+ * {@link CompositeMeasurementModel} class.
  * </p>
+ *
  * <p>
  * Starting with mStep.get(0), the {@link ExplicitMeasurementModel} is evaluated
  * against the input variables. The input variables plus the output of step 0
@@ -44,12 +47,31 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
  * input variables - ie. the Jacobian.
  * </p>
  *
- * @author Nicholas
+ * @author Nicholas W. M. Ritchie
  */
 public class CompositeMeasurementModel<G> //
 		extends ExplicitMeasurementModel<G, G> //
-		implements ILabeledMultivariateFunction<G, G>, IToHTML {
+		implements IToHTML {
 
+	/**
+	 * <p>
+	 * Returns a list containing all the labels representing outputs calculated in a
+	 * step in this composite measurement model.
+	 * </p>
+	 * <p>
+	 * Also checks to ensure that a label is not calculated in more than one step.
+	 * (Checks for duplicate calculations.)
+	 * </p>
+	 * 
+	 * @param       <J> The class implementing the input labels
+	 * @param       <K> The class implementing the input labels
+	 * @param steps A sequence of {@link ExplicitMeasurementModel} steps
+	 *              implementing the calculation
+	 * @return List&lt;K&gt; A list of all output labels computed by one of the
+	 *         steps.
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
+	 */
 	public static <J, K> List<K> allOutputs(
 			final List<? extends ExplicitMeasurementModel<? extends J, ? extends K>> steps //
 	) throws ArgumentException {
@@ -75,11 +97,13 @@ public class CompositeMeasurementModel<G> //
 	 * If outputs is not empty, it returns the intersection of the desired list of
 	 * outputs and the outputs in steps.
 	 *
+	 * @param         <H> The class implementing the output labels
 	 * @param steps   The calculation steps
 	 * @param outputs A list of desired output labels or the empty list for all
 	 *                outputs
 	 * @return List&lt;H&gt; A list of available output labels
-	 * @throws ArgumentException
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
 	 */
 	public static <H> List<H> buildOutputs(
 			final List<? extends ExplicitMeasurementModel<? extends H, ? extends H>> steps, //
@@ -102,7 +126,6 @@ public class CompositeMeasurementModel<G> //
 	 * @return Set&lt;Object&gt; The set of labels
 	 */
 	private static <G> List<G> labelsToRetain(
-			//
 			final int step, //
 			final List<? extends ExplicitMeasurementModel<? extends G, ? extends G>> steps, //
 			final List<? extends G> outputs //
@@ -144,22 +167,54 @@ public class CompositeMeasurementModel<G> //
 	 */
 	private final List<List<G>> mOutputs;
 
+	/**
+	 * Takes a {@link CompositeMeasurementModel} and returns a new
+	 * {@link CompositeMeasurementModel} that performs the same calculation but
+	 * returns a different sub-set of the outputs.
+	 *
+	 * @param func    The {@link CompositeMeasurementModel} to replicate
+	 * @param outputs List&lt;G&gt; A list of outputs to include in the final
+	 *                results.
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
+	 */
 	public CompositeMeasurementModel(
-			//
 			final CompositeMeasurementModel<G> func, //
 			final List<G> outputs //
 	) throws ArgumentException {
 		this(func.mName, func.mSteps, outputs);
 	}
 
+	/**
+	 * Constructs a {@link CompositeMeasurementModel} with the specified name based
+	 * on the series of sequential steps. Returns all the outputs calculated by any
+	 * step.
+	 *
+	 * @param name  A name for the composite measurment model
+	 * @param steps List&lt;? extends ExplicitMeasurementModel&lt;? extends G, ?
+	 *              extends G&gt;&gt; A list of simpler steps
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
+	 */
 	public CompositeMeasurementModel(
-			//
 			final String name, //
 			final List<? extends ExplicitMeasurementModel<? extends G, ? extends G>> steps //
 	) throws ArgumentException {
 		this(name, steps, Collections.emptyList());
 	}
 
+	/**
+	 * Constructs a {@link CompositeMeasurementModel} with the specified name based
+	 * on the series of sequential steps. Returns only the outputs specified in
+	 * <code>outputLabels</code>.
+	 *
+	 * @param name         A name for the composite measurment model
+	 * @param steps        List&lt;? extends ExplicitMeasurementModel&lt;? extends
+	 *                     G, ? extends G&gt;&gt; A list of simpler steps
+	 * @param outputLabels A list of the labels to include in the results.
+	 * @throws ArgumentException When there is an inconsistency in the function
+	 *                           arguments
+	 */
 	public CompositeMeasurementModel(
 			final String name, //
 			final List<? extends ExplicitMeasurementModel<? extends G, ? extends G>> steps, //
@@ -176,25 +231,7 @@ public class CompositeMeasurementModel<G> //
 	}
 
 	/**
-	 * Returns the index of the step in which the value associated with the
-	 * specified label is required as input.
-	 *
-	 * @param label A label associated with an NamedMultivariateJacobianFunction
-	 *              input
-	 * @returns int The index of the NamedMultivariateJacobianFunction in which this
-	 *          label is requested as input.
-	 */
-	final public int findAsInput(
-			final Object label
-	) {
-		for (int i = 0; i < mSteps.size(); ++i)
-			if (mSteps.get(i).getInputLabels().contains(label))
-				return i;
-		return -1;
-	}
-
-	/**
-	 * Returns the NamedMultivariateJacobianFunction associated with the specific
+	 * Returns the {@link ExplicitMeasurementModel} associated with the specific
 	 * step by index.
 	 *
 	 * @param idx On range [0, getStepCount())
@@ -216,17 +253,15 @@ public class CompositeMeasurementModel<G> //
 	}
 
 	/**
-	 * Implements the optimized version of the evaluate function. (non-Javadoc)
-	 *
-	 * @see gov.nist.juncertainty.ILabeledMultivariateFunction#optimized(org.apache.commons.math3.linear.RealVector)
+	 * Implements the optimized version of the evaluate function.
 	 */
 	@Override
-	public RealVector optimized(
-			final RealVector point
+	public RealVector computeValue(
+			final double[] point
 	) {
-		assert point.getDimension() > 0 : "Zero dimension input in " + this.toString();
+		assert point.length > 0 : "Zero dimension input in " + this.toString();
 		// The current set of input values. Starts as point and evolves.
-		RealVector currVals = point;
+		RealVector currVals = new ArrayRealVector(point);
 		List<? extends G> currInputs = getInputLabels();
 		for (int step = 0; step < mSteps.size(); ++step) {
 			// Initialize and call the 'func' associated with this step
@@ -243,12 +278,7 @@ public class CompositeMeasurementModel<G> //
 			// Initialize constants in ImplicitMeasurementModels
 			func.dumpArguments(funcPoint, this);
 			func.applyAdditionalInputs(getAdditionalInputs());
-			RealVector vres = null;
-			if (func instanceof ILabeledMultivariateFunction)
-				vres = ((ILabeledMultivariateFunction<?, ?>) func).optimized(funcPoint);
-			else
-				vres = func.evaluate(funcPoint).getFirst();
-
+			final RealVector vres = computeValue(funcPoint.toArray());
 			final List<G> nextInputs = mOutputs.get(step);
 			if ((nextInputs.size() == 0) || (currInputs.size() == 0)) {
 				System.err.println("Warning: ");
@@ -369,8 +399,6 @@ public class CompositeMeasurementModel<G> //
 	 * After each step, the outputs from that step become available as inputs to
 	 * subsequent steps.
 	 *
-	 * @see org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction#
-	 *      value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
 	public Pair<RealVector, RealMatrix> value(

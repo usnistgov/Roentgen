@@ -40,9 +40,9 @@ public class UncertainValueEx<H> extends UncertainValue {
 	}
 
 	/**
-	 * @param value
-	 * @param sigma
-	 * @param variances
+	 * @param value The value
+	 * @param sigma The uncertainty
+	 * @param variances A Map from label to Double with variances
 	 */
 	public UncertainValueEx(final double value, final double sigma, final Map<? extends H, Double> variances) {
 		super(value, sigma);
@@ -52,17 +52,15 @@ public class UncertainValueEx<H> extends UncertainValue {
 	}
 
 	/**
-	 * @param value
-	 * @param sigma
+	 * @param value The value
+	 * @param sigma The uncertainty
 	 */
 	public UncertainValueEx(final double value, final double sigma) {
 		this(value, sigma, Collections.emptyMap());
 	}
 
 	/**
-	 * @param value
-	 * @param sigma
-	 * @param variances
+	 * @param value The value
 	 */
 	public UncertainValueEx(final double value) {
 		this(value, 0.0);

@@ -14,6 +14,7 @@ import java.util.Set;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
+import org.apache.commons.math3.fitting.leastsquares.ValueAndJacobianFunction;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -31,20 +32,30 @@ import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**
  * <p>
- * The Jacobian is a matrix consisting of n partial derivatives associated with
- * m functions. This implementation of the Jacobian is designed to work with the
- * CovarianceMatrix class as these two classes are necessary to implement a
- * linear algebra-based implementation
+ * {@link ExplicitMeasurementModel} is an abstract class to represent
+ * calculational steps in an explicit measurement model. Instances of this class
+ * may represent a full measurement model or a step in a larger measurement
+ * model.
  * </p>
+ *
  * <p>
- * Copyright Nicholas W. M. Ritchie 2014-2017
+ * {@link ExplicitMeasurementModel} extends {@link MultivariateJacobianFunction}
+ * by adding support for input and output variable labels. The
+ * {@link MultivariateJacobianFunction} interface defines a single method that
+ * calculates a {@link Pair}&lt;{@link RealVector}, {@link RealMatrix}&gt;. The
+ * {@link RealVector} represents the values associated with a vector function
+ * and the {@link RealMatrix} represents the Jacobian for the vector function
+ * with respect to the input variables. The {@link ExplicitMeasurementModel}
+ * class makes it easier to keep track of the input and output variables
+ * particularly in circumstances in which the number and type of the input and
+ * output variables may change dependent on the nature of the calculation.
  * </p>
  *
  * @author Nicholas W. M. Ritchie
  * @version $Rev: $
  */
 abstract public class ExplicitMeasurementModel<G, H> //
-		implements MultivariateJacobianFunction, IToHTML //
+		implements MultivariateJacobianFunction, ValueAndJacobianFunction, IToHTML //
 {
 
 	public static PrintStream sDump = null;
@@ -59,8 +70,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	private static <G, H> void validateLabels(
 			final Collection<? extends G> inLabels, //
 			final Collection<? extends H> outLabels
-	) //
-			throws ArgumentException {
+	) throws ArgumentException {
 		final Set<? extends G> gset = new HashSet<>(inLabels);
 		for (final Object lbl : inLabels)
 			if (!gset.remove(lbl))
@@ -102,7 +112,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	 *
 	 * @param inputLabels  A List containing labels for M input variables
 	 * @param outputLabels A list containing labels for N output values
-	 * @throws ArgumentException
+	 * @throws ArgumentException For repeated labels
 	 */
 	public ExplicitMeasurementModel(
 			final List<G> inputLabels, //
@@ -117,29 +127,47 @@ abstract public class ExplicitMeasurementModel<G, H> //
 		validateLabels(inputLabels, outputLabels);
 	}
 
+	/**
+	 * Defines a set of additional input values which are may be used by the
+	 * calculation but for which the Jacobian matrix elements are not computed.
+	 *
+	 * @param inputs A {@link Map} containing labels and the associated value as a {@link Double}.
+	 */
 	public void addAdditionalInputs(
 			final Map<? extends G, Double> inputs
 	) {
-		for (Map.Entry<? extends G, Double> me : inputs.entrySet())
+		for (final Map.Entry<? extends G, Double> me : inputs.entrySet())
 			setAdditionalInput(me.getKey(), me.getValue());
 	}
 
+	/**
+	 * Declares a set of {@link Constraint}s that limits the range of values which
+	 * the associated label can take on. For example, the value associated with a
+	 * label may be constrained to be positive definite using a
+	 * {@link Constraint.Range} instance.
+	 *
+	 * @param constraints A map from an input label to a {@link Constraint}
+	 *                    instance.
+	 */
 	public void addConstraints(
 			final Map<? extends G, Constraint> constraints
 	) {
 		mConstraints.putAll(constraints);
 	}
 
-	private void applyConstraints(
+	private RealVector applyConstraints(
 			final RealVector point
 	) {
 		if (!mConstraints.isEmpty()) {
-			for (Entry<G, Constraint> con : mConstraints.entrySet()) {
-				int idx = inputIndex(con.getKey());
+			final RealVector res = point.copy();
+			for (final Entry<G, Constraint> con : mConstraints.entrySet()) {
+				final int idx = inputIndex(con.getKey());
 				if (idx >= 0)
-					point.setEntry(idx, con.getValue().limit(point.getEntry(idx)));
+					res.setEntry(idx, con.getValue().limit(point.getEntry(idx)));
 			}
+			return res;
 		}
+		return point;
 	}
 
 	public void clearAdditionalInputs() {
@@ -151,25 +179,16 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Computes the result {@link RealVector} using the most efficient available
-	 * mechanism depending upon whether the instantiated class implements
-	 * {@link ILabeledMultivariateFunction} or not. If
-	 * {@link ILabeledMultivariateFunction} is available then this is called.
-	 * Otherwise value(...) is called and only the {@link RealVector} value portion
-	 * is returned.
-	 *
+	 * Applies {@link Constraint}s to the input variables and then
+	 * calls computeValue(...).
 	 *
 	 * @param inp Evaluation point
-	 * @return {@link RealVector} The result values
+	 * @return {@link RealVector} The result of computeValue(...)
 	 */
 	final public RealVector compute(
 			final RealVector inp
 	) {
-		if (this instanceof ILabeledMultivariateFunction) {
-			applyConstraints(inp);
-			return ((ILabeledMultivariateFunction<?, ?>) this).optimized(inp);
-		} else
-			return value(inp).getFirst();
+		return computeValue(applyConstraints(inp).toArray());
 	}
 
 	@Override
@@ -198,22 +217,18 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	 * </p>
 	 * <p>
 	 * Also applies any applicable {@link Constraint}s to the input values.
+	 * </p>
 	 *
-	 * @param x
+	 * @param point A {@link RealVector} containing the values at which to evaluated the function value(...).
 	 * @return Pair&lt;{@link RealVector}, {@link RealMatrix}&gt; As from a call to
 	 *         <code>value(x)</code>.
 	 */
 	final public Pair<RealVector, RealMatrix> evaluate(
-			final RealVector x
+			final RealVector point
 	) {
-		if (x.getDimension() != getInputDimension())
-			throw new DimensionMismatchException(x.getDimension(), getInputDimension());
-		for (final Map.Entry<G, Constraint> con : mConstraints.entrySet()) {
-			final int idx = inputIndex(con.getKey());
-			if (idx >= 0)
-				x.setEntry(idx, con.getValue().limit(x.getEntry(idx)));
-		}
-		final Pair<RealVector, RealMatrix> res = value(x);
+		if (point.getDimension() != getInputDimension())
+			throw new DimensionMismatchException(point.getDimension(), getInputDimension());
+		final Pair<RealVector, RealMatrix> res = value(applyConstraints(point));
 		if (res.getFirst().getDimension() != getOutputDimension())
 			throw new DimensionMismatchException(res.getFirst().getDimension(), getOutputDimension());
 		if (res.getSecond().getRowDimension() != getOutputDimension())
@@ -232,7 +247,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Number of input random variables expected.
+	 * Number of input random variables.
 	 *
 	 * @return int
 	 */
@@ -240,6 +255,12 @@ abstract public class ExplicitMeasurementModel<G, H> //
 		return mInputLabels.size();
 	}
 
+	/**
+	 * Returns the <code>idx</code><sup>th</sup> input label.
+	 *
+	 * @param idx The integer index of the input label
+	 * @return G The input label at index idx
+	 */
 	final public G getInputLabel(
 			final int idx
 	) {
@@ -247,7 +268,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Returns an array consisting of the labels associated with the M input random
+	 * Returns a unmodifiable list of the labels associated with the M input random
 	 * variables.
 	 *
 	 * @return List&lt;Object&gt;
@@ -257,14 +278,20 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Number of output random variable produced.
+	 * Returns the number of output values.
 	 *
-	 * @return int
+	 * @return int The number of output values
 	 */
 	final public int getOutputDimension() {
 		return mOutputLabels.size();
 	}
 
+	/**
+	 * Returns the <code>idx</code><sup>th</sup> output label.
+	 *
+	 * @param idx The integer index of the output label
+	 * @return G The output label at index idx
+	 */
 	final public H getOutputLabel(
 			final int idx
 	) {
@@ -289,7 +316,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	/**
 	 * A value either with or without uncertainty has been defined for this label.
 	 *
-	 * @param label
+	 * @param label A label
 	 * @return true if a value has been defined.
 	 */
 	final public boolean hasValue(
@@ -299,11 +326,11 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Returns the index of the input variable identified by the specified instance
-	 * of H.
+	 * Returns the index of the input variable identified by the specified
+	 * {@link Object}.
 	 *
-	 * @param label
-	 * @return int Index or -1 for not found.
+	 * @param label A label
+	 * @return int An integer index or -1 if not found.
 	 */
 	final public int inputIndex(
 			final Object label
@@ -312,11 +339,11 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Returns the index of the output function identified by the specified instance
-	 * of H.
+	 * Returns the index of the output value identified by the specified
+	 * {@link Object}.
 	 *
-	 * @param label
-	 * @return int Index or -1 for not found.
+	 * @param label A label
+	 * @return int An integer index or -1 if not found.
 	 */
 	final public int outputIndex(
 			final Object label
@@ -325,13 +352,13 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * Specifies a value to associate with an input label. Works with the
-	 * getArg(...) function. If there is not a value associated with the specified
-	 * (inputIndex(lbl)==-1) then the additional inputs will be checked for a value.
-	 * Constraints are applied to the input value.
+	 * Specifies a value to associate with an input label. Works in cooperation with
+	 * the getArg(...) function. If there is not a value associated with the
+	 * specified (inputIndex(lbl)==-1) then the additional inputs will be checked
+	 * for a value. Constraints are applied to the input value.
 	 *
-	 * @param lbl
-	 * @param value
+	 * @param lbl A label
+	 * @param value The value to associate with the label
 	 */
 	public void setAdditionalInput(
 			final G lbl, //
@@ -346,8 +373,8 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	/**
 	 * Places the specified {@link Constraint} on the specified input label.
 	 *
-	 * @param lbl
-	 * @param con
+	 * @param lbl A label
+	 * @param con A {@link Constraint} derived class
 	 */
 	public void setConstraint(
 			final G lbl, //
@@ -395,8 +422,8 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * A helper to build an zeroed matrix to contain the result Jacobian in
-	 * value(...)
+	 * A helper to build an zeroed matrix of the correct dimensions to contain the
+	 * result Jacobian. Useful for implementing value(...).
 	 *
 	 * @return {@link RealMatrix}
 	 */
@@ -405,7 +432,8 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * A helper to build a zeroed vector to contain the result for value(...)
+	 * A helper to build a zeroed vector of the correct dimension to contain the
+	 * result vector. Useful for implementing value(...).
 	 *
 	 * @return {@link RealVector}
 	 */
@@ -420,13 +448,13 @@ abstract public class ExplicitMeasurementModel<G, H> //
 		if (sDump != null) {
 			final StringBuffer sb = new StringBuffer();
 			final NumberFormat nf = new HalfUpFormat("0.00E0");
-			sb.append("\"Args["+toString()+"]\"");
+			sb.append("\"Args[" + toString() + "]\"");
 			for (int i = 0; i < getInputDimension(); ++i) {
 				sb.append(",");
 				sb.append(getInputLabel(i));
 			}
 			sb.append("\n");
-			sb.append("\"Args["+toString()+"]\"");
+			sb.append("\"Args[" + toString() + "]\"");
 			for (int i = 0; i < getInputDimension(); ++i) {
 				sb.append(",");
 				sb.append(nf.format(point.getEntry(i)));
@@ -444,7 +472,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	 * throws a NullPointerException if neither place holds a value. Typically used
 	 * to implement the value(...) function.
 	 *
-	 * @param inLabel A G class label
+	 * @param inLabel A label
 	 * @param point   The argument to the value(...) function
 	 * @return double The value at point.getEntry(inputIndex(inLabel))
 	 */
@@ -464,12 +492,39 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
+	 * Checks two places to see if there is a value associated with the specified
+	 * label. First it checks the input {@link RealVector} (using inputIndex(label))
+	 * and if a value is available here it returns this value. Second it checks the
+	 * getAlternativeInputs() to see if a value is available here. The function
+	 * throws a NullPointerException if neither place holds a value. Typically used
+	 * to implement the value(...) function.
+	 *
+	 * @param inLabel A label
+	 * @param point   The argument to the value(...) function
+	 * @return double The value at point.getEntry(inputIndex(inLabel))
+	 */
+	final protected double getArg(
+			final G inLabel, //
+			final double[] point
+	) {
+		final int idx = inputIndex(inLabel);
+		if (idx >= 0)
+			return point[idx];
+		else {
+			assert mAdditionalInputs.containsKey(inLabel) : //
+			"Missing " + inLabel;
+			return mAdditionalInputs.get(inLabel).doubleValue();
+
+		}
+	}
+
+	/**
 	 * Sets the value associated with the specified row (outLabel) and column
 	 * (inLabel) in the Jacobian matrix in jacobian to value. Typically used to
 	 * implement the value(...) function.
 	 *
-	 * @param inLabel  G
-	 * @param outLabel H
+	 * @param inLabel  G An input label
+	 * @param outLabel H A output label
 	 * @param jacobian {@link RealMatrix}
 	 * @param value    double The value to be assigned to
 	 *                 jacobian[outputIndex(outLabel),inputIndex(inLabel)]
@@ -490,7 +545,7 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	 * result {@link RealVector} point which is to be returned by the value(...)
 	 * function. Typically used to implement the value(...) function.
 	 *
-	 * @param outLabel H A H-class label
+	 * @param outLabel H An output label
 	 * @param result   {@link RealVector}
 	 * @param value    double The value to be assigned to
 	 *                 result[outputIndex(outLabel)]
@@ -502,14 +557,40 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
-	 * For internal use.
-	 * 
-	 * @param inputs
+	 * For internal use. Helps to transfer additional inputs from one step in a
+	 * calculation to an embedded step.
+	 *
+	 * @param inputs A Map from label to value as a Double.
 	 */
-	void applyAdditionalInputs(
+	protected void applyAdditionalInputs(
 			final Map<Object, Double> inputs
 	) {
 		mAdditionalInputs.putAll(inputs);
+	}
+
+	/**
+	 * Avoid using this function use value(...) instead.
+	 *
+	 * @see org.apache.commons.math3.fitting.leastsquares.ValueAndJacobianFunction#computeJacobian(double[])
+	 */
+	@Override
+	public RealMatrix computeJacobian(
+			final double[] params
+	) {
+		return value(new ArrayRealVector(params)).getSecond();
+	}
+
+	/**
+	 * Implement this method in derived classes to optimize the calculation of only
+	 * the values.
+	 *
+	 * @see org.apache.commons.math3.fitting.leastsquares.ValueAndJacobianFunction#computeValue(double[])
+	 */
+	@Override
+	public RealVector computeValue(
+			final double[] params
+	) {
+		return value(new ArrayRealVector(params)).getFirst();
 	}
 
 }
