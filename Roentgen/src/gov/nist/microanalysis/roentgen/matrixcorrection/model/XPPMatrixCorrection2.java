@@ -26,6 +26,7 @@ import gov.nist.juncertainty.UncertainValue;
 import gov.nist.juncertainty.UncertainValues;
 import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.juncertainty.UncertainValuesCalculator;
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
@@ -50,7 +51,6 @@ import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import joinery.DataFrame;
 
 /**
@@ -508,7 +508,7 @@ public class XPPMatrixCorrection2 //
 				final double csc = 1.0 / Math.sin(toa);
 				final double mu = point[imu];
 				coatTrans = Math.exp(-mu * massTh * csc);
-				assert coatTrans > 0.9 : "coatTrans = " + coatTrans;
+				assert coatTrans > 0.1 : "coatTrans = " + coatTrans;
 			}
 			final int oFxRed = outputIndex(MatrixCorrectionModel2.FofChiReducedLabel(mDatum, mXRay));
 			vals.setEntry(oFxRed, coatTrans * Fx);
@@ -550,7 +550,7 @@ public class XPPMatrixCorrection2 //
 				jac.setEntry(oFxRed, iMassTh, dcoatTransdmassTh * Fx);
 				jac.setEntry(oFxRed, imu, dcoatTransdmu * Fx);
 				jac.setEntry(oFxRed, itoa, dcoatTransdtoa * Fx);
-				assert coatTrans > 0.9 : "coatTrans = " + coatTrans;
+				assert coatTrans > 0.1 : "coatTrans = " + coatTrans;
 			}
 			jac.setEntry(oFxRed, iFx, coatTrans);
 			vals.setEntry(oFxRed, coatTrans * Fx);

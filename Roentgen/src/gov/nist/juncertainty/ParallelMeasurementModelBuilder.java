@@ -23,9 +23,9 @@ import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
 import com.duckandcover.lazy.SimplyLazy;
 
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * <p>
@@ -288,7 +288,7 @@ public class ParallelMeasurementModelBuilder<H, K> implements IToHTML {
 				}
 				func.dumpArguments(funcPoint, this);
 				func.applyAdditionalInputs(getAdditionalInputs());
-				final RealVector fVals = computeValue(funcPoint.toArray());
+				final RealVector fVals = func.computeValue(funcPoint.toArray());
 				final List<? extends L> fout = func.getOutputLabels();
 				for (int r = 0; r < fout.size(); ++r)
 					vals.setEntry(outputIndex(fout.get(r)), fVals.getEntry(r));

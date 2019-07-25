@@ -18,10 +18,10 @@ import org.apache.commons.math3.util.Pair;
 
 import com.duckandcover.lazy.SimplyLazy;
 
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.Constraint;
 import gov.nist.microanalysis.roentgen.math.SafeMultivariateNormalDistribution;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * A lazy mechanism to perform uncertainty propagation. The

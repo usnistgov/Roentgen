@@ -25,9 +25,9 @@ import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.Constraint;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**

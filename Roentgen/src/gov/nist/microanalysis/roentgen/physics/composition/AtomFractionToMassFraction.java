@@ -2,7 +2,9 @@ package gov.nist.microanalysis.roentgen.physics.composition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.collections4.map.HashedMap;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -43,7 +45,6 @@ public class AtomFractionToMassFraction //
 	 * @throws ArgumentException
 	 */
 	public AtomFractionToMassFraction(
-			//
 			final Material mat //
 	) throws ArgumentException {
 		super(buildInputTags(mat), MaterialLabel.buildMassFractionTags(mat));
@@ -55,18 +56,18 @@ public class AtomFractionToMassFraction //
 			final double[] point
 	) {
 		final RealVector res = buildResult();
+		Map<Element, Double> awafs = new HashedMap<>();
 		double den = 0.0;
 		for (final Element elm : mMaterial.getElementSet()) {
-			final double aw = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
-			final double af = getArg(MaterialLabel.buildAtomFractionTag(mMaterial, elm), point);
-			den += aw * af;
+			final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
+			final AtomFraction aft = MaterialLabel.buildAtomFractionTag(mMaterial, elm);
+			final double awaf = getArg(awt, point) * getArg(aft, point);
+			den += awaf;
+			awafs.put(elm, Double.valueOf(awaf));
 		}
 		for (final MassFraction mft : getOutputLabels()) {
-			final Material mat = mft.getMaterial();
-			final Element elm = mft.getElement();
-			final double w1 = getArg(MaterialLabel.buildAtomicWeightTag(mat, elm), point);
-			final double a1 = getArg(MaterialLabel.buildAtomFractionTag(mat, elm), point);
-			setResult(mft, res, a1 * w1 / den);
+			assert mft.getMaterial() == mMaterial;
+			setResult(mft, res, awafs.get(mft.getElement()).doubleValue() / den);
 		}
 		return res;
 	}
@@ -82,34 +83,36 @@ public class AtomFractionToMassFraction //
 	) {
 		final RealVector res = buildResult();
 		final RealMatrix jac = buildJacobian();
+		Map<Element, Pair<AtomicWeight, AtomFraction>> tags = new HashedMap<>();
 		double den = 0.0;
 		for (final Element elm : mMaterial.getElementSet()) {
-			final double aw = getArg(MaterialLabel.buildAtomicWeightTag(mMaterial, elm), point);
-			final double af = getArg(MaterialLabel.buildAtomFractionTag(mMaterial, elm), point);
+			final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mMaterial, elm);
+			final AtomFraction aft = MaterialLabel.buildAtomFractionTag(mMaterial, elm);
+			tags.put(elm, Pair.create(awt, aft));
+			final double aw = getArg(awt, point);
+			final double af = getArg(aft, point);
 			den += aw * af;
 		}
 		for (final MassFraction mft1 : getOutputLabels()) {
-			final Material mat1 = mft1.getMaterial();
-			final Element elm1 = mft1.getElement();
-			final AtomicWeight awt1 = MaterialLabel.buildAtomicWeightTag(mat1, elm1);
-			final AtomFraction aft1 = MaterialLabel.buildAtomFractionTag(mat1, elm1);
-			final double w1 = getArg(awt1, point);
-			final double a1 = getArg(aft1, point);
+			assert mft1.getMaterial() == mMaterial;
+			Pair<AtomicWeight, AtomFraction> tag1 = tags.get(mft1.getElement());
+			final double w1 = getArg(tag1.getFirst(), point);
+			final double a1 = getArg(tag1.getSecond(), point);
 			final double c1 = a1 * w1 / den;
 			setResult(mft1, res, c1);
 			for (final MassFraction mft2 : getOutputLabels()) {
-				final Material mat2 = mft2.getMaterial();
-				final Element elm2 = mft2.getElement();
-				final AtomicWeight awt2 = MaterialLabel.buildAtomicWeightTag(mat2, elm2);
-				final AtomFraction aft2 = MaterialLabel.buildAtomFractionTag(mat2, elm2);
+				assert mft2.getMaterial() == mMaterial;
+				Pair<AtomicWeight, AtomFraction> tag2 = tags.get(mft2.getElement());
+				final AtomicWeight awt2 = tag2.getFirst();
+				final AtomFraction aft2 = tag2.getSecond();
 				final double w2 = getArg(awt2, point);
 				final double a2 = getArg(aft2, point);
-				if (elm1.equals(elm2)) {
-					setJacobian(aft2, mft1, jac, (w1 / den) * (1.0 - a1 * w2 / den));
-					setJacobian(awt2, mft1, jac, (a1 / den) * (1.0 - w1 * a2 / den));
+				if (mft1.getElement().equals(mft2.getElement())) {
+					setJacobian(aft2, mft1, jac, (w1 / den) * (1.0 - a1 * w1 / den)); // ok
+					setJacobian(awt2, mft1, jac, (a1 / den) * (1.0 - a1 * w1 / den)); // ok
 				} else {
-					setJacobian(aft2, mft1, jac, (w1 / den) * (-a1 * w2 / den));
-					setJacobian(awt2, mft1, jac, (a1 / den) * (-w1 * a2 / den));
+					setJacobian(aft2, mft1, jac, (w1 / den) * (-a1 * w2 / den)); // ok
+					setJacobian(awt2, mft1, jac, (a1 / den) * (-w1 * a2 / den)); // ok
 				}
 			}
 		}

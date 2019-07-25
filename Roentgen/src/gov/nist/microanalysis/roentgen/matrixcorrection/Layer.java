@@ -26,7 +26,9 @@ public class Layer //
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(
+			final Object obj
+	) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -45,7 +47,9 @@ public class Layer //
 	 * @param thickness_nm In nanometers
 	 * @param density      In g/cm<sup>3</sup>
 	 */
-	public Layer(final Composition comp, final UncertainValue thickness_nm, final UncertainValue density) {
+	public Layer(
+			final Composition comp, final UncertainValue thickness_nm, final UncertainValue density
+	) {
 		assert comp != null;
 		assert (thickness_nm != null) && (thickness_nm.doubleValue() > 0.0);
 		assert (density != null) && (density.doubleValue() > 0.0);
@@ -66,7 +70,9 @@ public class Layer //
 	 * @return Layer object
 	 * @throws ArgumentException
 	 */
-	public static Layer carbonCoating(final UncertainValue thickness_nm) throws ArgumentException {
+	public static Layer carbonCoating(
+			final UncertainValue thickness_nm
+	) throws ArgumentException {
 		return new Layer(Composition.pureElement(Element.Carbon), thickness_nm, new UncertainValue(1.5, 0.1));
 	}
 
@@ -78,7 +84,9 @@ public class Layer //
 	 * @return Layer object
 	 * @throws ArgumentException
 	 */
-	public static Layer goldCoating(final UncertainValue thickness_nm) throws ArgumentException {
+	public static Layer goldCoating(
+			final UncertainValue thickness_nm
+	) throws ArgumentException {
 		return new Layer(Composition.pureElement(Element.Gold), thickness_nm, new UncertainValue(19.3, 0.1));
 	}
 
@@ -93,7 +101,7 @@ public class Layer //
 	/**
 	 * Thickness in meters
 	 *
-	 * @return in meters
+	 * @return in centimeters
 	 */
 	public UncertainValue getThickness() {
 		return mThickness;
@@ -110,6 +118,9 @@ public class Layer //
 		return mName;
 	}
 
+	/**
+	 * @return in g/cm<sup>2</sup>
+	 */
 	public UncertainValue getMassThickness() {
 		return new UncertainValue(mThickness.doubleValue() * mDensity.doubleValue(), //
 				(mThickness.doubleValue() * mDensity.uncertainty()
@@ -117,7 +128,9 @@ public class Layer //
 	}
 
 	@Override
-	public String toHTML(final Mode mode) {
+	public String toHTML(
+			final Mode mode
+	) {
 
 		final HalfUpFormat nf = new HalfUpFormat("0.0");
 		return mComposition.toHTML(mode.demote()) + "[" + nf.format(1.0e7 * mThickness.doubleValue()) + " nm, "

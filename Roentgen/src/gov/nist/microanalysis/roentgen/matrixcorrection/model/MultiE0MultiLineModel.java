@@ -67,7 +67,7 @@ class MultiE0MultiLineModel //
 	 *
 	 */
 	private static class EmittedIntensityModel //
-			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
+			extends ExplicitMeasurementModel<EPMALabel, EmittedIntensityLabel> {
 
 		private static List<EPMALabel> buildInputTags(
 				final MatrixCorrectionDatum mcd, //
@@ -87,7 +87,7 @@ class MultiE0MultiLineModel //
 			return res;
 		}
 
-		private static List<EPMALabel> buildOutputTags(
+		private static List<EmittedIntensityLabel> buildOutputTags(
 				final MatrixCorrectionDatum mcd, //
 				final ElementXRaySet exrs
 		) {
@@ -112,7 +112,7 @@ class MultiE0MultiLineModel //
 				final double[] point
 		) {
 			final RealVector rv = buildResult();
-			final EmittedIntensityLabel intIdx = MatrixCorrectionModel2.buildEmittedIntensityLabel(mDatum, mXRaySet);
+			final EmittedIntensityLabel eintl = MatrixCorrectionModel2.buildEmittedIntensityLabel(mDatum, mXRaySet);
 			final MassFraction mfLbl = MaterialLabel.buildMassFractionTag(mDatum.getMaterial(), mXRaySet.getElement());
 			final Map<AtomicShell, Set<CharacteristicXRay>> shells = new HashMap<>();
 			// Split the characteristic x-rays by shells
@@ -138,7 +138,7 @@ class MultiE0MultiLineModel //
 				}
 				res += outer * inner;
 			}
-			setResult(intIdx, rv, res);
+			setResult(eintl, rv, res);
 			return rv;
 		}
 
@@ -154,7 +154,7 @@ class MultiE0MultiLineModel //
 			final RealVector rv = buildResult();
 			final RealMatrix rm = buildJacobian();
 
-			final EmittedIntensityLabel intIdx = MatrixCorrectionModel2.buildEmittedIntensityLabel(mDatum, mXRaySet);
+			final EmittedIntensityLabel eintl = MatrixCorrectionModel2.buildEmittedIntensityLabel(mDatum, mXRaySet);
 			final Map<AtomicShell, Set<CharacteristicXRay>> shells = new HashMap<>();
 			final MassFraction mfLbl = MaterialLabel.buildMassFractionTag(mDatum.getMaterial(), mXRaySet.getElement());
 			// Split the characteristic x-rays by shells
@@ -181,14 +181,14 @@ class MultiE0MultiLineModel //
 					final double wVal = getArg(wLbl, point);
 					final double fxVal = getArg(fxLbl, point);
 					inner += wVal * fxVal;
-					setJacobian(fxLbl, intIdx, rm, wVal * outer);
-					setJacobian(wLbl, intIdx, rm, fxVal * outer);
+					setJacobian(fxLbl, eintl, rm, wVal * outer);
+					setJacobian(wLbl, eintl, rm, fxVal * outer);
 				}
-				setJacobian(ionIdx, intIdx, rm, secVal * inner);
-				setJacobian(secIdx, intIdx, rm, ionVal * inner);
+				setJacobian(ionIdx, eintl, rm, c * secVal * inner);
+				setJacobian(secIdx, eintl, rm, c * ionVal * inner);
 				res += outer * inner;
 			}
-			setResult(intIdx, rv, res);
+			setResult(eintl, rv, res);
 			return Pair.create(rv, rm);
 		}
 	}
@@ -326,15 +326,15 @@ class MultiE0MultiLineModel //
 			final ZAFMultiLineLabel zafLabel = MatrixCorrectionModel2.zafLabel(mKRatio);
 			final KRatioLabel kRatioLabel = mKRatio.as(Method.Calculated);
 
-			final EmittedIntensityLabel intUnkLbl = MatrixCorrectionModel2.buildEmittedIntensityLabel(unk, exrs);
-			final EmittedIntensityLabel intStdLbl = MatrixCorrectionModel2.buildEmittedIntensityLabel(std, exrs);
-			final MassFraction cUnkLbl = MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement());
-			final MassFraction cStdLbl = MaterialLabel.buildMassFractionTag(std.getMaterial(), exrs.getElement());
+			final EmittedIntensityLabel intUnkL = MatrixCorrectionModel2.buildEmittedIntensityLabel(unk, exrs);
+			final EmittedIntensityLabel intStdL = MatrixCorrectionModel2.buildEmittedIntensityLabel(std, exrs);
+			final MassFraction cUnkL = MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement());
+			final MassFraction cStdL = MaterialLabel.buildMassFractionTag(std.getMaterial(), exrs.getElement());
 
-			final double intUnk = getArg(intUnkLbl, point);
-			final double intStd = getArg(intStdLbl, point);
-			final double cUnk = getArg(cUnkLbl, point);
-			final double cStd = getArg(cStdLbl, point);
+			final double intUnk = getArg(intUnkL, point);
+			final double intStd = getArg(intStdL, point);
+			final double cUnk = getArg(cUnkL, point);
+			final double cStd = getArg(cStdL, point);
 
 			setResult(zafLabel, rv, (cStd * intUnk) / (cUnk * intStd));
 			setResult(kRatioLabel, rv, intUnk / intStd);
@@ -360,27 +360,27 @@ class MultiE0MultiLineModel //
 			final ZAFMultiLineLabel zafLabel = MatrixCorrectionModel2.zafLabel(mKRatio);
 			final KRatioLabel kRatioLabel = mKRatio.as(Method.Calculated);
 
-			final EmittedIntensityLabel intUnkLbl = MatrixCorrectionModel2.buildEmittedIntensityLabel(unk, exrs);
-			final EmittedIntensityLabel intStdLbl = MatrixCorrectionModel2.buildEmittedIntensityLabel(std, exrs);
-			final MassFraction cUnkLbl = MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement());
-			final MassFraction cStdLbl = MaterialLabel.buildMassFractionTag(std.getMaterial(), exrs.getElement());
+			final EmittedIntensityLabel intUnkL = MatrixCorrectionModel2.buildEmittedIntensityLabel(unk, exrs);
+			final EmittedIntensityLabel intStdL = MatrixCorrectionModel2.buildEmittedIntensityLabel(std, exrs);
+			final MassFraction cUnkL = MaterialLabel.buildMassFractionTag(unk.getMaterial(), exrs.getElement());
+			final MassFraction cStdL = MaterialLabel.buildMassFractionTag(std.getMaterial(), exrs.getElement());
 
-			final double intUnk = getArg(intUnkLbl, point);
-			final double intStd = getArg(intStdLbl, point);
-			final double cUnk = getArg(cUnkLbl, point);
-			final double cStd = getArg(cStdLbl, point);
+			final double intUnk = getArg(intUnkL, point);
+			final double intStd = getArg(intStdL, point);
+			final double cUnk = getArg(cUnkL, point);
+			final double cStd = getArg(cStdL, point);
 
 			final double k = intUnk / intStd;
 			setResult(kRatioLabel, vals, k);
-			setJacobian(intUnkLbl, kRatioLabel, jac, 1.0 / intStd);
-			setJacobian(intStdLbl, kRatioLabel, jac, -intUnk / (intStd * intStd));
+			setJacobian(intUnkL, kRatioLabel, jac, 1.0 / intStd);
+			setJacobian(intStdL, kRatioLabel, jac, -intUnk / (intStd * intStd));
 
 			final double zaf = (cStd * intUnk) / (cUnk * intStd);
 			setResult(zafLabel, vals, zaf);
-			setJacobian(intUnkLbl, zafLabel, jac, zaf / intUnk);
-			setJacobian(intStdLbl, zafLabel, jac, -zaf / intStd);
-			setJacobian(cUnkLbl, zafLabel, jac, -zaf / cUnk);
-			setJacobian(cStdLbl, zafLabel, jac, zaf / cStd);
+			setJacobian(intUnkL, zafLabel, jac, zaf / intUnk);
+			setJacobian(intStdL, zafLabel, jac, -zaf / intStd);
+			setJacobian(cUnkL, zafLabel, jac, -zaf / cUnk);
+			setJacobian(cStdL, zafLabel, jac, zaf / cStd);
 
 			return Pair.create(vals, jac);
 		}
@@ -394,7 +394,6 @@ class MultiE0MultiLineModel //
 	}
 
 	private static List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> buildSteps(
-			//
 			final Set<KRatioLabel> kratios //
 			) throws ArgumentException {
 		final Map<MatrixCorrectionDatum, Set<AtomicShell>> allMcd = new HashMap<>();

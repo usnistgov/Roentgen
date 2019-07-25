@@ -102,13 +102,13 @@ final class MixtureToMassFractions //
 			for (int i = 0; i < mInputs.size(); ++i) {
 				final MaterialMassFraction mmft = mInputs.get(i);
 				final Material mat = mmft.getMaterial();
-				final MassFraction mfti = MaterialLabel.buildMassFractionTag(mat, elm);
+				final MassFraction mft = MaterialLabel.buildMassFractionTag(mat, elm);
 				// The material may or may not have the element...
 				final double mmf = getArg(mmft, point);
-				if (inputIndex(mfti) != -1) {
-					final AtomicWeight awti = MaterialLabel.buildAtomicWeightTag(mat, elm);
-					final double mf = getArg(mfti, point);
-					final double aw = getArg(awti, point);
+				if (inputIndex(mft) != -1) {
+					final AtomicWeight awt = MaterialLabel.buildAtomicWeightTag(mat, elm);
+					final double mf = getArg(mft, point);
+					final double aw = getArg(awt, point);
 					tmpCz += mf * mmf;
 					tmpAz += mf * mmf / aw;
 				}

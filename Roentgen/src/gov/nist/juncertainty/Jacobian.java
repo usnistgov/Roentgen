@@ -11,8 +11,8 @@ import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Table;
 import com.duckandcover.html.Table.Item;
 
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * A very light wrapper around the Jacobian to make it safer and easier to

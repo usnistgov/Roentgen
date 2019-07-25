@@ -1,4 +1,4 @@
-package gov.nist.microanalysis.roentgen.utility;
+package gov.nist.juncertainty.utility;
 
 import java.util.ArrayList;
 import java.util.Collection;

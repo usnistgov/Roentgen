@@ -82,7 +82,8 @@ public class StandardMatrixCorrectionDatum //
 			final Composition comp, //
 			final UncertainValue beamEnergy, //
 			final UncertainValue takeOffAngle, //
-			final double roughness, final Layer coating //
+			final double roughness, //
+			final Layer coating //
 	) {
 		super(beamEnergy, takeOffAngle, roughness, coating);
 		mComposition = comp;

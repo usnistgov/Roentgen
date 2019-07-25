@@ -2,8 +2,6 @@ package gov.nist.juncertainty.models;
 
 import java.util.List;
 
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
@@ -13,8 +11,7 @@ import gov.nist.microanalysis.roentgen.ArgumentException;
 
 /**
  * Normalize takes the input values and normalizes them to a sum of unity.
- * Negative values are truncated to zero. If the resulting sum of the truncated
- * values is zero, then the inputs are returned and a unity Jacobian matrix.
+ * Doesn't perform special checks for zero or negative entries.
  *
  * @author Nicholas W. M. Ritchie
  *
@@ -48,9 +45,11 @@ public class Normalize<H, K> //
 		final int dim = point.length;
 		assert getInputDimension() == dim;
 		double norm = 0.0;
-		for (int i = 0; i < dim; ++i)
-			norm += Math.max(0.0, point[i]);
-		final RealVector res = new ArrayRealVector(point);
+		final RealVector res = buildResult();
+		for (int i = 0; i < dim; ++i) {
+			res.setEntry(i, point[i]);
+			norm += point[i];
+		}
 		return res.mapDivideToSelf(norm);
 	}
 
@@ -75,25 +74,20 @@ public class Normalize<H, K> //
 		assert getInputDimension() == dim;
 		double norm = 0.0;
 		for (int i = 0; i < point.getDimension(); ++i)
-			norm += Math.max(0.0, point.getEntry(i));
-		if (norm == 0.0) {
-			return Pair.create(point.copy(), MatrixUtils.createRealIdentityMatrix(dim));
-		} else {
-			final RealMatrix j = MatrixUtils.createRealMatrix(dim, dim);
-			final RealVector resV = new ArrayRealVector(dim);
-			for (int r = 0; r < dim; ++r) {
-				final double a = point.getEntry(r);
-				final double n = a / norm;
-				if (a > 0.0) {
-					final double dnadx = -(n * n) / a;
-					final double dnada = (n * (1.0 - n)) / a;
-					for (int c = 0; c < dim; ++c)
-						j.setEntry(r, c, r == c ? dnada : dnadx);
-				}
-				resV.setEntry(r, n);
-			}
-			return Pair.create(resV, j);
+			norm += point.getEntry(i);
+		final RealMatrix j = buildJacobian();
+		final RealVector resV = buildResult();
+		for (int r = 0; r < dim; ++r) {
+			final double a = point.getEntry(r);
+			final double na = a / norm;
+			final double dnadx = -(na * na) / a;
+			final double dnada = (na * (1.0 - na)) / a;
+			for (int c = 0; c < dim; ++c)
+				j.setEntry(r, c, r == c ? dnada : dnadx);
+			resV.setEntry(r, na);
 		}
+		return Pair.create(resV, j);
+
 	}
 
 }

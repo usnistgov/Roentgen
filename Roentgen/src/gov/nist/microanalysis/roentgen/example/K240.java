@@ -317,7 +317,8 @@ public class K240 {
 	public void surfaceRoughness() throws Exception {
 		// K240 using Benitoite, Zircon, Mg, Zn as standards
 
-		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
+		final CompositionFactory compFact = CompositionFactory.instance();
+		final Composition unk = compFact.findComposition("K240").getObject();
 
 		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
 		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
@@ -329,36 +330,36 @@ public class K240 {
 
 		final Composition mg = Composition.parse("Mg");
 		final Composition zn = Composition.parse("Zn");
-		final Composition benitoite = CompositionFactory.instance().findComposition("Benitoite").getObject();
-		final Composition zircon = CompositionFactory.instance().findComposition("Zircon").getObject();
+		final Composition ti = Composition.parse("Ti");
+		final Composition sanbornite = compFact.findComposition("Sanbornite").getObject();
+		final Composition zircon = compFact.findComposition("Zircon").getObject();
 
-		final UncertainValue e0 = new UncertainValue(15.0, 0.1);
-
-		MatrixCorrectionDatum.roughness(10.0, 3.6);
+		final UncertainValue e0 = new UncertainValue(15.0, 0.01);
+		final UncertainValue toa = UncertainValue.toRadians(40.0, 0.1);
 
 		final Report report = new Report("K240 roughness");
 		report.addHeader("K240 roughness");
 		try {
-			for (final double roughNm : Arrays.asList(1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0,
-					1024.0)) {
+			for (final double roughNm : Arrays.asList(1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0)) {
 				final double roughness = MatrixCorrectionDatum.roughness(roughNm, 3.6);
-				final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, mTOA, 0.0);
-				final StandardMatrixCorrectionDatum znMcd = new StandardMatrixCorrectionDatum(zn, e0, mTOA, 0.0);
-				final StandardMatrixCorrectionDatum zrMcd = new StandardMatrixCorrectionDatum(zircon, e0, mTOA, 0.0);
-				final StandardMatrixCorrectionDatum benitoiteMcd = new StandardMatrixCorrectionDatum(//
-						benitoite, e0, mTOA, 0.0);
+				final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, toa, 0.0);
+				final StandardMatrixCorrectionDatum znMcd = new StandardMatrixCorrectionDatum(zn, e0, toa, 0.0);
+				final StandardMatrixCorrectionDatum tiMcd = new StandardMatrixCorrectionDatum(ti, e0, toa, 0.0);
+				final StandardMatrixCorrectionDatum zrMcd = new StandardMatrixCorrectionDatum(zircon, e0, toa, 0.0);
+				final StandardMatrixCorrectionDatum sanborniteMcd = //
+						new StandardMatrixCorrectionDatum(sanbornite, e0, toa, 0.0);
 				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(//
-						unk.getMaterial(), e0, mTOA, roughness);
+						unk.getMaterial(), e0, toa, roughness);
 				final Set<KRatioLabel> skr = new HashSet<>();
 				skr.add(new KRatioLabel(unkMcd, mgMcd, mgTrs, Method.Measured));
 				skr.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured));
 				skr.add(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured));
-				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, siTrs, Method.Measured));
-				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, oTrs, Method.Measured));
-				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
-				skr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, sanborniteMcd, siTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, sanborniteMcd, oTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, tiMcd, tiTrs, Method.Measured));
+				skr.add(new KRatioLabel(unkMcd, sanborniteMcd, baTrs, Method.Measured));
 
-				final Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
+				final Composition res = KRatioCorrectionModel3.computeXPP(unk, skr);
 
 				report.addSubHeader("Roughness = " + roughNm + " nm");
 				report.add(res, Mode.NORMAL);
@@ -379,6 +380,7 @@ public class K240 {
 		final ElementXRaySet siTrs = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
 		final ElementXRaySet oTrs = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
 		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
+		// znTrs.add(CharacteristicXRay.create(Element.Zinc, XRayTransition.LA1));
 		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
 
 		final Composition mg = Composition.parse("Mg");
@@ -388,19 +390,24 @@ public class K240 {
 
 		final UncertainValue e0 = new UncertainValue(15.0, 0.1);
 
-		MatrixCorrectionDatum.roughness(10.0, 3.6);
-
 		final Report report = new Report("K240 coating");
 		report.addHeader("K240 coating");
+		final double coatingThickness = 20.0;
 		try {
 			for (final boolean same : Arrays.asList(true, false)) {
-				for (final double coatingDelta : Arrays.asList(0.0, 1.0, 2.0, 4.0, 8.0)) {
-
-					final Layer coating = Layer.carbonCoating(UncertainValue.valueOf(10.0, coatingDelta));
-					final Layer unkCoating = same ? coating
-							: Layer.carbonCoating(UncertainValue.valueOf(10.0, coatingDelta));
-					final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, mTOA, 0.0,
-							coating);
+				for (final double coatingDelta : Arrays.asList(-1.0, 0.0, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0,
+						16.0)) {
+					Layer coating, unkCoating;
+					if (coatingDelta < 0.0) {
+						coating = null;
+						unkCoating = null;
+					} else {
+						coating = Layer.carbonCoating(UncertainValue.valueOf(coatingThickness, coatingDelta));
+						unkCoating = same ? coating
+								: Layer.carbonCoating(UncertainValue.valueOf(coatingThickness, coatingDelta));
+					}
+					final StandardMatrixCorrectionDatum mgMcd = //
+							new StandardMatrixCorrectionDatum(mg, e0, mTOA, 0.0, coating);
 					final StandardMatrixCorrectionDatum znMcd = //
 							new StandardMatrixCorrectionDatum(zn, e0, mTOA, 0.0, coating);
 					final StandardMatrixCorrectionDatum zrMcd = //
@@ -418,13 +425,18 @@ public class K240 {
 					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
 					skr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
 
-					final Composition res = KRatioCorrectionModel3.roundTripXPP(unk, skr);
-
-					report.addSubHeader("Coating: same=" + Boolean.valueOf(same) + "  delta= " + coatingDelta + " nm");
+					final Composition res = KRatioCorrectionModel3.computeXPP(unk, skr);
+					if (coating == null)
+						report.addSubHeader("No coating");
+					else
+						report.addSubHeader(
+								"Coating: same=" + Boolean.valueOf(same) + "  delta= " + coatingDelta + " nm");
 					report.add(res, Mode.NORMAL);
 				}
 			}
-		} finally {
+		} finally
+
+		{
 			report.inBrowser(Mode.NORMAL);
 		}
 	}

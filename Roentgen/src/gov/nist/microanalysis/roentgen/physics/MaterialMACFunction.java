@@ -17,6 +17,7 @@ import gov.nist.juncertainty.ParallelMeasurementModelBuilder;
 import gov.nist.juncertainty.UncertainValues;
 import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.juncertainty.UncertainValuesCalculator;
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.EPMALabel.MaterialMAC;
@@ -25,7 +26,6 @@ import gov.nist.microanalysis.roentgen.physics.XRaySet.CharacteristicXRaySet;
 import gov.nist.microanalysis.roentgen.physics.composition.Composition;
 import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * Compute the material mass absorption coefficient given the elemental mass

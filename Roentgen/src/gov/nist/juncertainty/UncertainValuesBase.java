@@ -31,11 +31,11 @@ import com.duckandcover.html.Table.Item;
 import com.duckandcover.html.Transforms;
 import com.duckandcover.lazy.SimplyLazy;
 
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.math.NullableRealMatrix;
 import gov.nist.microanalysis.roentgen.swing.IValueToColor;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.utility.HalfUpFormat;
 
 /**

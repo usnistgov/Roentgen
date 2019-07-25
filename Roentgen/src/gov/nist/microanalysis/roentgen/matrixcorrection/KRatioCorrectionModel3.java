@@ -33,6 +33,7 @@ import gov.nist.juncertainty.TrimmedNamedMultivariateJacobianFunction;
 import gov.nist.juncertainty.UncertainValues;
 import gov.nist.juncertainty.UncertainValuesBase;
 import gov.nist.juncertainty.UncertainValuesCalculator;
+import gov.nist.juncertainty.utility.FastIndex;
 import gov.nist.microanalysis.roentgen.ArgumentException;
 import gov.nist.microanalysis.roentgen.EPMALabel;
 import gov.nist.microanalysis.roentgen.math.MathUtilities;
@@ -47,7 +48,6 @@ import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
-import gov.nist.microanalysis.roentgen.utility.FastIndex;
 
 /**
  * <p>
@@ -938,6 +938,40 @@ public class KRatioCorrectionModel3 //
 		final UncertainValues<EPMALabel> uvs = UncertainValues.asUncertainValues(iter.iterate(measKrs));
 		return Composition.massFraction(iter.getUnknownMaterial(), uvs);
 	}
+	
+	
+	/**
+	 * Takes the <code>unknown</code> and computes the k-ratios relative to the
+	 * specified set of {@link KRatioLabel}s. Then computes the Composition with
+	 * the associated uncertainties from the k-ratios.
+	 *
+	 * @param unknown Initial composition
+	 * @param kratios The set of k-ratios
+	 * @return The iterative estimate of <code>unknown</code>
+	 * @throws ArgumentException
+	 */
+	public static Composition computeXPP(
+			final Composition unknown, //
+			final Set<KRatioLabel> kratios
+			) throws ArgumentException {
+		final UncertainValuesCalculator<EPMALabel> xpp = //
+				XPPMatrixCorrection2.buildAnalytical(kratios, unknown.toMassFraction().getValueMap(), false);
+		final List<KRatioLabel> asMeas = new ArrayList<>(kratios);
+		final List<KRatioLabel> asCalc = KRatioLabel.as(asMeas, KRatioLabel.Method.Calculated);
+		final UncertainValuesBase<KRatioLabel> calcKrs = //
+				UncertainValues.asUncertainValues(xpp).extract(asCalc);
+		final int size = asMeas.size();
+		final UncertainValues<KRatioLabel> measKrs = //
+				new UncertainValues<>(asMeas, calcKrs.getValues(), MatrixUtils.createRealMatrix(size, size));
+		final KRatioCorrectionModel3 krcm = KRatioCorrectionModel3.buildXPPModel(new HashSet<>(asMeas), null);
+		final UncertainValuesBase<EPMALabel> inps = krcm.buildInput(measKrs);
+		krcm.addAdditionalInputs(unknown.getValueMap());
+		UncertainValuesCalculator<EPMALabel> res = new UncertainValuesCalculator<EPMALabel>(krcm, inps);
+		return Composition.massFraction(unknown.getMaterial(), res);
+	}
+
+	
+	
 
 	private Map<EPMALabel, Double> computeOptimized(
 			final RealVector point

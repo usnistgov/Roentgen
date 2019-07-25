@@ -545,6 +545,7 @@ public class UncertainValues<H> //
 		return res;
 	}
 
+	@SuppressWarnings("unchecked")
 	private static <H> H[] extractLabels(
 			Map<H, ? extends Number> vals
 			) {

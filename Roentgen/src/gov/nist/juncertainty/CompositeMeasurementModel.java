@@ -278,7 +278,7 @@ public class CompositeMeasurementModel<G> //
 			// Initialize constants in ImplicitMeasurementModels
 			func.dumpArguments(funcPoint, this);
 			func.applyAdditionalInputs(getAdditionalInputs());
-			final RealVector vres = computeValue(funcPoint.toArray());
+			final RealVector vres = func.computeValue(funcPoint.toArray());
 			final List<G> nextInputs = mOutputs.get(step);
 			if ((nextInputs.size() == 0) || (currInputs.size() == 0)) {
 				System.err.println("Warning: ");
