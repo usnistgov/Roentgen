@@ -519,9 +519,14 @@ abstract public class ExplicitMeasurementModel<G, H> //
 	}
 
 	/**
+	 * <p>
 	 * Sets the value associated with the specified row (outLabel) and column
 	 * (inLabel) in the Jacobian matrix in jacobian to value. Typically used to
 	 * implement the value(...) function.
+	 * </p>
+	 * <p>
+	 * jacobian[outLabel,inLabel] = value = &delta;H/&delta;G
+	 * </p>
 	 *
 	 * @param inLabel  G An input label
 	 * @param outLabel H A output label

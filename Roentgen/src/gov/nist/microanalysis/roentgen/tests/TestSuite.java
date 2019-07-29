@@ -32,10 +32,10 @@ import gov.nist.microanalysis.roentgen.tests.wds.TwoPointContinuumModelTest;
 		CompositionTest2.class, //
 		TwoPointContinuumModelTest.class, //
 		TestMassAbsorptionCoefficient.class, //
-		TestReadSpectrum.class, //
+		// TestReadSpectrum.class, //
 		TestEDSFittingFilter.class, //
-		TestLinearSpectrumFit.class, //
-		TestLineshapeCalibration.class, //
+		// TestLinearSpectrumFit.class, //
+		// TestLineshapeCalibration.class, //
 		TestSpectrumFileReader.class, //
 		XPPMatrixCorrection2Test.class //
 })

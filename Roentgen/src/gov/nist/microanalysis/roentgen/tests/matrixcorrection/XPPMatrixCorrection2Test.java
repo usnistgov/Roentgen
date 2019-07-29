@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -222,8 +223,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -467,8 +468,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -681,8 +682,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -949,8 +950,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -1221,8 +1222,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -1496,8 +1497,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -1773,8 +1774,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -2055,8 +2056,8 @@ public class XPPMatrixCorrection2Test {
 					for (final EPMALabel input : aJac.getInputLabels())
 						if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 							if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-							0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-									Math.abs(fdJac.getEntry(input, output)))) {
+									0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+											Math.abs(fdJac.getEntry(input, output)))) {
 								checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
 										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
 												Math.abs(fdJac.getEntry(input, output))));
@@ -2224,12 +2225,10 @@ public class XPPMatrixCorrection2Test {
 		df.writeCsv("C:\\Users\\nicho\\Desktop\\prz412.csv");
 	}
 
-	public void checkEquals(
-			final EPMALabel object, final EPMALabel object2, final double v1, final double v2, final double dv
-			) {
+	public void checkEquals(final EPMALabel input, final EPMALabel output, final double v1, final double v2,
+			final double dv) {
 		if (Math.abs(v2 - v1) > Math.abs(dv)) {
-			System.err.println(object.toString() + " and " + object2.toString() + " at (" + v1 + "," + v2 + ")");
-			// assertEquals(v1, v2, dv);
+			System.err.println("d" + output.toString() + "/d" + input.toString() + " = (" + v1 + "," + v2 + ")");
 		}
 	}
 
@@ -2250,25 +2249,37 @@ public class XPPMatrixCorrection2Test {
 			final RealVector valsU = new ArrayRealVector(new double[] { 0.3330, 0.1733, 0.4937 });
 			final RealVector varsU = new ArrayRealVector(new double[] { 1.0e-6, 0.4e-6, 4.0e-6 });
 			final Composition unk = Composition.massFraction("Al<sub>2</sub>SiO<sub>5</sub>", elmsU, valsU, varsU);
-			final List<Element> elmsS = Arrays.asList(Element.Silicon, Element.Oxygen);
-			final RealVector valsS = new ArrayRealVector(new double[] { 0.4674, 0.5326 });
-			final RealVector varsS = new ArrayRealVector(new double[] { 2.0e-6, 0.9e-6 });
-			final Composition std1 = Composition.massFraction("SiO<sub>2</sub>", elmsS, valsS, varsS);
+			
+			Composition std1 = Composition.parse("SiO2");
+			
+			//final List<Element> elmsS = Arrays.asList(Element.Silicon, Element.Oxygen);
+			//final RealVector valsS = new ArrayRealVector(new double[] { 0.4674, 0.5326 });
+			//final RealVector varsS = new ArrayRealVector(new double[] { 2.0e-4, 0.9e-4 });
+			//final Composition std1 = Composition.massFraction("SiO<sub>2</sub>", elmsS, valsS, varsS);
 			final Composition std2 = Composition.pureElement(Element.Aluminum);
 
+			final Report r = new Report("XPP Report - test10");
+			
 			final StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
 					std1, //
 					new UncertainValue(15.0, 0.1), //
 					UncertainValue.toRadians(40.0, 0.9), MatrixCorrectionDatum.roughness(10.0, 2.5),
 					Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 			);
-
+			
+			r.addHeader("Silicon Standard");
+			r.add(std1, Mode.NORMAL);
+			r.add(std1, Mode.VERBOSE);
+			
 			final StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
 					std2, //
 					new UncertainValue(15.0, 0.1), //
 					UncertainValue.toRadians(40.0, 0.9), //
 					MatrixCorrectionDatum.roughness(20.0, 2.5), Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 			);
+			
+			r.add(std2, Mode.NORMAL);
+			r.add(std2, Mode.VERBOSE);
 
 			final Material unkMat = unk.getMaterial();
 			final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum( //
@@ -2363,7 +2374,6 @@ public class XPPMatrixCorrection2Test {
 			outputs.add(fxFLabels);
 
 			final XPPMatrixCorrection2 xpp = new XPPMatrixCorrection2(skrl, outputs);
-			final Report r = new Report("XPP Report - test10");
 			UncertainValuesBase<EPMALabel> resultsD = null;
 			try {
 				{
@@ -2390,14 +2400,14 @@ public class XPPMatrixCorrection2Test {
 					assertEquals(aResults.getEntry(tagbu), 12568.9576, 0.001);
 					assertEquals(aResults.getEntry(tagPhi0u), 1.252, 0.001);
 
-					assertEquals(aResults.getEntry(tagAs), 396.744, 0.001);
-					assertEquals(aResults.getEntry(tagas), 11314.8474, 0.001);
-					assertEquals(aResults.getEntry(tagBs), -529359.3293, 0.001);
-					assertEquals(aResults.getEntry(tagbs), 12719.6941, 0.001);
+					assertEquals(aResults.getEntry(tagAs), 396.744, 0.1);
+					assertEquals(aResults.getEntry(tagas), 11314.8474, 0.1);
+					assertEquals(aResults.getEntry(tagBs), -529359.3293, 20.0);
+					assertEquals(aResults.getEntry(tagbs), 12719.6941, 0.1);
 					assertEquals(aResults.getEntry(tagPhi0s), 1.254, 0.001);
 
 					assertEquals(aResults.getEntry(tagChiu), 2542.429, 0.001);
-					assertEquals(aResults.getEntry(tagChis), 1038.418, 0.001);
+					assertEquals(aResults.getEntry(tagChis), 1038.418, 0.2);
 					assertEquals(aResults.getEntry(tagFChiFu), 0.6324, 0.001);
 					assertEquals(aResults.getEntry(tagFChiFs), 0.8198, 0.001);
 					assertEquals(aResults.getEntry(zafLabel), 0.7805, 0.001);
@@ -2458,7 +2468,7 @@ public class XPPMatrixCorrection2Test {
 					final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
 							unk.getValueMap(MassFraction.class), true);
 					final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-							.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.001, true).force();
+							.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.00001, true).force();
 
 					assertTrue(aCalc.getJacobian().isPresent());
 					final Jacobian<EPMALabel, EPMALabel> aJac = aCalc.getJacobian().get();
@@ -2468,8 +2478,8 @@ public class XPPMatrixCorrection2Test {
 						for (final EPMALabel input : aJac.getInputLabels())
 							if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
 								if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-								0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-										Math.abs(fdJac.getEntry(input, output)))) {
+										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
+												Math.abs(fdJac.getEntry(input, output)))) {
 									checkEquals(input, output, aJac.getEntry(input, output),
 											fdJac.getEntry(input, output),
 											0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
@@ -2477,14 +2487,17 @@ public class XPPMatrixCorrection2Test {
 								}
 							}
 
-					if (DUMP) {
-						System.out.println("Results");
-						System.out.println(aResults.toCSV());
-
-						System.out.println("Jacobian");
-						System.out.println(aCalc.toCSV());
-						System.out.println("Jacobian(estimated)");
-						System.out.println(fdCalc.toCSV());
+					if (true) {
+						// pw.println("Results");
+						// pw.println(aResults.toCSV());
+						try (final PrintWriter pw = new PrintWriter("C:\\users\\nritchie\\Desktop\\dumpa.csv")) {
+							pw.println("Jacobian");
+							pw.println(aCalc.toCSV());
+						}
+						try (final PrintWriter pw = new PrintWriter("C:\\users\\nritchie\\Desktop\\dumpfd.csv")) {
+							pw.println("Jacobian(estimated)");
+							pw.println(fdCalc.toCSV());
+						}
 					}
 
 					// final Object unkCompTag = new MatrixCorrectionModel2.MaterialBasedLabel("J",
@@ -3033,9 +3046,7 @@ public class XPPMatrixCorrection2Test {
 
 	}
 
-	public double getComponentByName(
-			final UncertainValueEx<EPMALabel> tmp, final EPMALabel tag
-		) {
+	public double getComponentByName(final UncertainValueEx<EPMALabel> tmp, final EPMALabel tag) {
 		final String name = tag.toString();
 		for (final Map.Entry<EPMALabel, Double> me : tmp.getComponents().entrySet())
 			if (me.getKey().toString().equals(name))
@@ -3043,9 +3054,8 @@ public class XPPMatrixCorrection2Test {
 		return 0.0;
 	}
 
-	public UncertainValueEx<EPMALabel> getByXRT(
-			final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals, final ZAFMultiLineLabel mcl
-		) {
+	public UncertainValueEx<EPMALabel> getByXRT(final Map<EPMALabel, UncertainValueEx<EPMALabel>> oVals,
+			final ZAFMultiLineLabel mcl) {
 		for (final Map.Entry<EPMALabel, UncertainValueEx<EPMALabel>> me : oVals.entrySet()) {
 			if (me.getKey() instanceof ZAFMultiLineLabel) {
 				final ZAFMultiLineLabel mcl2 = (ZAFMultiLineLabel) me.getKey();

@@ -66,29 +66,6 @@ public class TestSpectrumFileReader {
 			final RealVector data = spec.getData();
 			assertEquals(data.getEntry(63), 80.58932308980361, 0.01);
 			assertEquals(data.getEntry((232 * 4) - 1), 7.854691297950559, 0.01);
-			if (false) {
-				final LineshapeCalibration lsc = new LineshapeCalibration.Gaussian(130.0,
-						LineshapeCalibration.Gaussian.SDD_EV_PER_EH);
-				final AdaptiveTophatFilter atf = new AdaptiveTophatFilter(spec.size(), spec.getEnergyCalibration(),
-						lsc);
-				final Pair<RealVector, RealMatrix> res = atf.evaluate(spec.getData());
-				final RealVector vals = res.getFirst();
-				final AdaptiveGaussianFilter agf = new AdaptiveGaussianFilter(spec.size(), spec.getEnergyCalibration(),
-						lsc);
-				final Pair<RealVector, RealMatrix> res2 = agf.evaluate(spec.getData());
-				final RealVector vals2 = res2.getFirst();
-				for (int i = 0; i < vals.getDimension(); ++i) {
-					final StringBuffer sb = new StringBuffer();
-					sb.append(i);
-					sb.append("\t");
-					sb.append(data.getEntry(i));
-					sb.append("\t");
-					sb.append(vals.getEntry(i));
-					sb.append("\t");
-					sb.append(vals2.getEntry(i));
-					System.out.println(sb.toString());
-				}
-			}
 		} finally {
 			f.delete();
 		}
