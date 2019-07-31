@@ -26,9 +26,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
 public class AtomFractionToMassFraction //
 		extends ExplicitMeasurementModel<MaterialLabel, MassFraction> {
 
-	private static List<MaterialLabel> buildInputTags(
-			final Material mat
-	) {
+	private static List<MaterialLabel> buildInputTags(final Material mat) {
 		final List<MaterialLabel> res = new ArrayList<>();
 		res.addAll(MaterialLabel.buildAtomFractionTags(mat));
 		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
@@ -40,21 +38,18 @@ public class AtomFractionToMassFraction //
 	/**
 	 * Constructs a AtomicFractionToMassFraction instance.
 	 *
-	 * @param String html
-	 * @param        Collection&lt;Element&gt; The elements present in the material.
+	 * @param String                    html
+	 * @param Collection&lt;Element&gt; The elements present in the material.
 	 * @throws ArgumentException
 	 */
-	public AtomFractionToMassFraction(
-			final Material mat //
+	public AtomFractionToMassFraction(final Material mat //
 	) throws ArgumentException {
 		super(buildInputTags(mat), MaterialLabel.buildMassFractionTags(mat));
 		mMaterial = mat;
 	}
 
 	@Override
-	public RealVector computeValue(
-			final double[] point
-	) {
+	public RealVector computeValue(final double[] point) {
 		final RealVector res = buildResult();
 		Map<Element, Double> awafs = new HashedMap<>();
 		double den = 0.0;
@@ -78,9 +73,7 @@ public class AtomFractionToMassFraction //
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(
-			final RealVector point
-	) {
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector res = buildResult();
 		final RealMatrix jac = buildJacobian();
 		Map<Element, Pair<AtomicWeight, AtomFraction>> tags = new HashedMap<>();
@@ -108,11 +101,13 @@ public class AtomFractionToMassFraction //
 				final double w2 = getArg(awt2, point);
 				final double a2 = getArg(aft2, point);
 				if (mft1.getElement().equals(mft2.getElement())) {
-					setJacobian(aft2, mft1, jac, (w1 / den) * (1.0 - a1 * w1 / den)); // ok
-					setJacobian(awt2, mft1, jac, (a1 / den) * (1.0 - a1 * w1 / den)); // ok
+					double ff = (1.0 / den) * (1.0 - a1 * w1 / den);
+					setJacobian(aft2, mft1, jac, w1 * ff); // ok
+					setJacobian(awt2, mft1, jac, a1 * ff); // ok
 				} else {
-					setJacobian(aft2, mft1, jac, (w1 / den) * (-a1 * w2 / den)); // ok
-					setJacobian(awt2, mft1, jac, (a1 / den) * (-w1 * a2 / den)); // ok
+					double ff = -a1 * w1 / (den * den);
+					setJacobian(aft2, mft1, jac, w2 * ff); // ok
+					setJacobian(awt2, mft1, jac, a2 * ff); // ok
 				}
 			}
 		}

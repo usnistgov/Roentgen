@@ -2222,13 +2222,15 @@ public class XPPMatrixCorrection2Test {
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp, inputs);
 
 		final DataFrame<Double> df = xpp.computePhiRhoZCurve(aResults.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
-		df.writeCsv("C:\\Users\\nicho\\Desktop\\prz412.csv");
+		df.writeCsv("C:\\Users\\nritchie\\Desktop\\prz412.csv");
 	}
 
-	public void checkEquals(final EPMALabel input, final EPMALabel output, final double v1, final double v2,
-			final double dv) {
-		if (Math.abs(v2 - v1) > Math.abs(dv)) {
-			System.err.println("d" + output.toString() + "/d" + input.toString() + " = (" + v1 + "," + v2 + ")");
+	public void checkEquals(final EPMALabel input, final EPMALabel output, final double ad, final double fd,
+			final double val) {
+		if (Math.max(Math.abs(ad), Math.abs(fd)) > 1.0e-6 * val) {
+			if (Math.abs(ad - fd) / Math.max(Math.abs(ad), Math.abs(fd)) > 1.0e-6)
+				System.err.println(
+						"d" + output.toString() + "/d" + input.toString() + " = (" + ad + "," + fd + ") for " + val);
 		}
 	}
 
@@ -2249,35 +2251,38 @@ public class XPPMatrixCorrection2Test {
 			final RealVector valsU = new ArrayRealVector(new double[] { 0.3330, 0.1733, 0.4937 });
 			final RealVector varsU = new ArrayRealVector(new double[] { 1.0e-6, 0.4e-6, 4.0e-6 });
 			final Composition unk = Composition.massFraction("Al<sub>2</sub>SiO<sub>5</sub>", elmsU, valsU, varsU);
-			
+
 			Composition std1 = Composition.parse("SiO2");
-			
-			//final List<Element> elmsS = Arrays.asList(Element.Silicon, Element.Oxygen);
-			//final RealVector valsS = new ArrayRealVector(new double[] { 0.4674, 0.5326 });
-			//final RealVector varsS = new ArrayRealVector(new double[] { 2.0e-4, 0.9e-4 });
-			//final Composition std1 = Composition.massFraction("SiO<sub>2</sub>", elmsS, valsS, varsS);
+
+			// final List<Element> elmsS = Arrays.asList(Element.Silicon, Element.Oxygen);
+			// final RealVector valsS = new ArrayRealVector(new double[] { 0.4674, 0.5326
+			// });
+			// final RealVector varsS = new ArrayRealVector(new double[] { 2.0e-4, 0.9e-4
+			// });
+			// final Composition std1 = Composition.massFraction("SiO<sub>2</sub>", elmsS,
+			// valsS, varsS);
 			final Composition std2 = Composition.pureElement(Element.Aluminum);
 
 			final Report r = new Report("XPP Report - test10");
-			
+
 			final StandardMatrixCorrectionDatum std1Mcd = new StandardMatrixCorrectionDatum( //
 					std1, //
 					new UncertainValue(15.0, 0.1), //
 					UncertainValue.toRadians(40.0, 0.9), MatrixCorrectionDatum.roughness(10.0, 2.5),
 					Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 			);
-			
+
 			r.addHeader("Silicon Standard");
 			r.add(std1, Mode.NORMAL);
 			r.add(std1, Mode.VERBOSE);
-			
+
 			final StandardMatrixCorrectionDatum std2Mcd = new StandardMatrixCorrectionDatum( //
 					std2, //
 					new UncertainValue(15.0, 0.1), //
 					UncertainValue.toRadians(40.0, 0.9), //
 					MatrixCorrectionDatum.roughness(20.0, 2.5), Layer.carbonCoating(new UncertainValue(10.0, 3.0))//
 			);
-			
+
 			r.add(std2, Mode.NORMAL);
 			r.add(std2, Mode.VERBOSE);
 
@@ -2468,7 +2473,7 @@ public class XPPMatrixCorrection2Test {
 					final UncertainValuesCalculator<EPMALabel> aCalc = XPPMatrixCorrection2.buildAnalytical(skrl,
 							unk.getValueMap(MassFraction.class), true);
 					final UncertainValuesCalculator<EPMALabel> fdCalc = XPPMatrixCorrection2
-							.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 0.00001, true).force();
+							.buildFiniteDifference(skrl, unk.getValueMap(MassFraction.class), 1.0e-8, true).force();
 
 					assertTrue(aCalc.getJacobian().isPresent());
 					final Jacobian<EPMALabel, EPMALabel> aJac = aCalc.getJacobian().get();
@@ -2476,25 +2481,19 @@ public class XPPMatrixCorrection2Test {
 
 					for (final EPMALabel output : aJac.getOutputLabels())
 						for (final EPMALabel input : aJac.getInputLabels())
-							if (Math.abs(aJac.getEntry(input, output)) > 1.0e-8) {
-								if (Math.abs(aJac.getEntry(input, output) - fdJac.getEntry(input, output)) > //
-										0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-												Math.abs(fdJac.getEntry(input, output)))) {
-									checkEquals(input, output, aJac.getEntry(input, output),
-											fdJac.getEntry(input, output),
-											0.01 * Math.max(Math.abs(aJac.getEntry(input, output)),
-													Math.abs(fdJac.getEntry(input, output))));
-								}
-							}
+							checkEquals(input, output, aJac.getEntry(input, output), fdJac.getEntry(input, output),
+									aCalc.getEntry(output));
 
 					if (true) {
 						// pw.println("Results");
 						// pw.println(aResults.toCSV());
-						try (final PrintWriter pw = new PrintWriter("C:\\users\\nritchie\\Desktop\\dumpa.csv")) {
+						try (final PrintWriter pw = new PrintWriter("C:\\users\\nritchie\\Desktop\\dumpa.csv",
+								"UTF-8")) {
 							pw.println("Jacobian");
 							pw.println(aCalc.toCSV());
 						}
-						try (final PrintWriter pw = new PrintWriter("C:\\users\\nritchie\\Desktop\\dumpfd.csv")) {
+						try (final PrintWriter pw = new PrintWriter("C:\\users\\nritchie\\Desktop\\dumpfd.csv",
+								"UTF-8")) {
 							pw.println("Jacobian(estimated)");
 							pw.println(fdCalc.toCSV());
 						}
@@ -2618,7 +2617,9 @@ public class XPPMatrixCorrection2Test {
 				throw e;
 			}
 			r.inBrowser(Mode.VERBOSE);
-		} finally {
+		} finally
+
+		{
 			ExplicitMeasurementModel.sDump = null;
 		}
 	}

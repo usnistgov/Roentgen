@@ -1,0 +1,107 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      3071,         97]
+NotebookOptionsPosition[      2217,         73]
+NotebookOutlinePosition[      2560,         88]
+CellTagsIndexPosition[      2517,         85]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Chi", "[", 
+   RowBox[{"mac_", ",", " ", "th_"}], "]"}], "=", 
+  RowBox[{"mac", " ", 
+   RowBox[{"Csc", "[", "th", "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.7559826300850506`*^9, 3.755982651922203*^9}},
+ CellLabel->"In[16]:=",ExpressionUUID->"25be0019-cc3b-4792-8f62-afb73677e5be"],
+
+Cell[BoxData[
+ RowBox[{"mac", " ", 
+  RowBox[{"Csc", "[", "th", "]"}]}]], "Output",
+ CellChangeTimes->{3.7559826527788734`*^9},
+ CellLabel->"Out[16]=",ExpressionUUID->"d8816dbd-6149-4786-985d-51e300a2fe70"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"D", "[", 
+  RowBox[{
+   RowBox[{"Chi", "[", 
+    RowBox[{"mac", ",", "th"}], "]"}], ",", "mac"}], "]"}]], "Input",
+ CellChangeTimes->{{3.755982655042862*^9, 3.7559826617250004`*^9}},
+ CellLabel->"In[17]:=",ExpressionUUID->"83dcd44d-f5cd-4dd5-ba18-31fd3df9da46"],
+
+Cell[BoxData[
+ RowBox[{"Csc", "[", "th", "]"}]], "Output",
+ CellChangeTimes->{3.7559826637156734`*^9},
+ CellLabel->"Out[17]=",ExpressionUUID->"1906d62c-d4ef-40b3-94ac-93afa9b67b87"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"D", "[", 
+  RowBox[{
+   RowBox[{"Chi", "[", 
+    RowBox[{"mac", ",", "th"}], "]"}], ",", "th"}], "]"}]], "Input",
+ CellChangeTimes->{{3.755982673553356*^9, 3.7559826737787957`*^9}},
+ CellLabel->"In[18]:=",ExpressionUUID->"789e5a71-bb17-42b3-a4dc-d64f033a0cc1"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"-", "mac"}], " ", 
+  RowBox[{"Cot", "[", "th", "]"}], " ", 
+  RowBox[{"Csc", "[", "th", "]"}]}]], "Output",
+ CellChangeTimes->{3.7559826747032747`*^9},
+ CellLabel->"Out[18]=",ExpressionUUID->"cc6b283e-f987-417a-8a48-7e51a7d2a142"]
+}, Open  ]]
+},
+WindowSize->{860, 750},
+WindowMargins->{{162, Automatic}, {61, Automatic}},
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 317, 7, 28, "Input",ExpressionUUID->"25be0019-cc3b-4792-8f62-afb73677e5be"],
+Cell[900, 31, 206, 4, 32, "Output",ExpressionUUID->"d8816dbd-6149-4786-985d-51e300a2fe70"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1143, 40, 285, 6, 28, "Input",ExpressionUUID->"83dcd44d-f5cd-4dd5-ba18-31fd3df9da46"],
+Cell[1431, 48, 181, 3, 32, "Output",ExpressionUUID->"1906d62c-d4ef-40b3-94ac-93afa9b67b87"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1649, 56, 284, 6, 28, "Input",ExpressionUUID->"789e5a71-bb17-42b3-a4dc-d64f033a0cc1"],
+Cell[1936, 64, 265, 6, 65, "Output",ExpressionUUID->"cc6b283e-f987-417a-8a48-7e51a7d2a142"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+

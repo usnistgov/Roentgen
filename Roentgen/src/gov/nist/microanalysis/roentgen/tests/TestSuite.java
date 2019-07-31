@@ -14,9 +14,6 @@ import gov.nist.microanalysis.roentgen.tests.matrixcorrection.XPPMatrixCorrectio
 import gov.nist.microanalysis.roentgen.tests.physics.CompositionTest2;
 import gov.nist.microanalysis.roentgen.tests.physics.TestMassAbsorptionCoefficient;
 import gov.nist.microanalysis.roentgen.tests.spectrum.TestEDSFittingFilter;
-import gov.nist.microanalysis.roentgen.tests.spectrum.TestLinearSpectrumFit;
-import gov.nist.microanalysis.roentgen.tests.spectrum.TestLineshapeCalibration;
-import gov.nist.microanalysis.roentgen.tests.spectrum.TestReadSpectrum;
 import gov.nist.microanalysis.roentgen.tests.spectrum.TestSpectrumFileReader;
 import gov.nist.microanalysis.roentgen.tests.wds.TwoPointContinuumModelTest;
 

@@ -2,8 +2,10 @@ package gov.nist.juncertainty.models;
 
 import java.util.List;
 
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.util.MathArrays;
 import org.apache.commons.math3.util.Pair;
 
 import gov.nist.juncertainty.ExplicitMeasurementModel;
@@ -23,10 +25,8 @@ public class Normalize<H, K> //
 	 * @param inputLabels
 	 * @throws ArgumentException
 	 */
-	public Normalize(
-			final List<H> inputLabels, //
-			final List<K> outputLabels
-	) throws ArgumentException {
+	public Normalize(final List<H> inputLabels, //
+			final List<K> outputLabels) throws ArgumentException {
 		super(inputLabels, outputLabels);
 	}
 
@@ -38,19 +38,14 @@ public class Normalize<H, K> //
 	 * #optimized(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public RealVector computeValue(
-			final double[] point
-	) {
+	public RealVector computeValue(final double[] point) {
 		assert getInputDimension() == getOutputDimension();
 		final int dim = point.length;
 		assert getInputDimension() == dim;
 		double norm = 0.0;
-		final RealVector res = buildResult();
-		for (int i = 0; i < dim; ++i) {
-			res.setEntry(i, point[i]);
+		for (int i = 0; i < dim; ++i)
 			norm += point[i];
-		}
-		return res.mapDivideToSelf(norm);
+		return MatrixUtils.createRealVector(MathArrays.scale(1.0 / norm, point));
 	}
 
 	@Override
@@ -66,9 +61,7 @@ public class Normalize<H, K> //
 	 * value(org.apache.commons.math3.linear.RealVector)
 	 */
 	@Override
-	public Pair<RealVector, RealMatrix> value(
-			final RealVector point
-	) {
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		assert getInputDimension() == getOutputDimension();
 		final int dim = point.getDimension();
 		assert getInputDimension() == dim;
@@ -76,15 +69,13 @@ public class Normalize<H, K> //
 		for (int i = 0; i < point.getDimension(); ++i)
 			norm += point.getEntry(i);
 		final RealMatrix j = buildJacobian();
-		final RealVector resV = buildResult();
+		final RealVector resV = point.mapDivide(norm);
 		for (int r = 0; r < dim; ++r) {
 			final double a = point.getEntry(r);
-			final double na = a / norm;
-			final double dnadx = -(na * na) / a;
-			final double dnada = (na * (1.0 - na)) / a;
+			final double dnadx = -a / (norm * norm);
+			final double dnada = (1.0 / norm) * (1.0 - a / norm);
 			for (int c = 0; c < dim; ++c)
 				j.setEntry(r, c, r == c ? dnada : dnadx);
-			resV.setEntry(r, na);
 		}
 		return Pair.create(resV, j);
 

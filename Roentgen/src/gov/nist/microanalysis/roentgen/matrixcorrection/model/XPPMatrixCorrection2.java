@@ -95,6 +95,8 @@ public class XPPMatrixCorrection2 //
 		extends MatrixCorrectionModel2 //
 		implements IToHTML {
 
+	private static final double MIN_EPS = 1.0e-6; // For steps stepa and stepAB
+
 	private static class Stepa // Checked 16-Jan-2019
 			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
 
@@ -144,8 +146,8 @@ public class XPPMatrixCorrection2 //
 			checkIndices(oa);
 
 			final double a = (P + b * (2.0 * phi0 - b * F)) / (b * F * (2.0 - b * Rbar) - phi0); // C1
-
-			vals.setEntry(oa, a); // C1
+			final double eps = (a - b) / b;
+			vals.setEntry(oa, Math.abs(eps) >= MIN_EPS ? a : (1.0 + MIN_EPS) * b);
 			return vals;
 		}
 
@@ -178,20 +180,25 @@ public class XPPMatrixCorrection2 //
 			final double b2 = Math.pow(b, 2.0);
 			final double den = Math.pow(phi0 + b2 * F * Rbar - 2.0 * b * F, 2.0);
 			final double a = (P + b * (2.0 * phi0 - b * F)) / (b * F * (2.0 - b * Rbar) - phi0); // Ok
-			final double dadphi0 = (3.0 * b2 * F + P - 2.0 * b2 * b * F * Rbar) / den; // Ok
-			final double dadP = 1.0 / (b * F * (2.0 - b * Rbar) - phi0); // Ok
-			final double dadb = -2.0 * (F * P + phi0 * phi0 - b * F * (phi0 + P * Rbar) + b2 * F * (F - phi0 * Rbar))
-					/ den; // Ok
-			final double dadF = b * (P * (-2.0 + b * Rbar) + b * phi0 * (2.0 * b * Rbar - 3.0)) / den; // Ok
-			final double dadRbar = (b2 * F * (P + 2.0 * b * phi0 - b2 * F)) / den; // Ok
+			final double eps = (a - b) / b;
+			if (Math.abs(eps) < MIN_EPS) {
+				vals.setEntry(oa, (1.0 + MIN_EPS) * b); // C1
+				jac.setEntry(oa, ib, 1.0 + MIN_EPS); // C1
+			} else {
+				final double dadphi0 = (3.0 * b2 * F + P - 2.0 * b2 * b * F * Rbar) / den; // Ok
+				final double dadP = 1.0 / (b * F * (2.0 - b * Rbar) - phi0); // Ok
+				final double dadb = -2.0
+						* (F * P + phi0 * phi0 - b * F * (phi0 + P * Rbar) + b2 * F * (F - phi0 * Rbar)) / den; // Ok
+				final double dadF = b * (P * (-2.0 + b * Rbar) + b * phi0 * (2.0 * b * Rbar - 3.0)) / den; // Ok
+				final double dadRbar = (b2 * F * (P + 2.0 * b * phi0 - b2 * F)) / den; // Ok
 
-			vals.setEntry(oa, a); // C1
-			jac.setEntry(oa, iP, dadP); // C1
-			jac.setEntry(oa, ib, dadb); // C1
-			jac.setEntry(oa, iphi0, dadphi0); // C1
-			jac.setEntry(oa, iF, dadF); // C1
-			jac.setEntry(oa, iRbar, dadRbar); // C1
-
+				vals.setEntry(oa, a); // C1
+				jac.setEntry(oa, iP, dadP); // C1
+				jac.setEntry(oa, ib, dadb); // C1
+				jac.setEntry(oa, iphi0, dadphi0); // C1
+				jac.setEntry(oa, iF, dadF); // C1
+				jac.setEntry(oa, iRbar, dadRbar); // C1
+			}
 			return Pair.create(vals, jac);
 		}
 	}
@@ -207,7 +214,6 @@ public class XPPMatrixCorrection2 //
 			res.add(new StepFRbar(datum, shell));
 			res.add(new StepPb(datum, shell));
 			res.add(new Stepa(datum, shell));
-			res.add(new StepEps(datum, shell));
 			res.add(new StepAB(datum, shell));
 			return res;
 		}
@@ -232,7 +238,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.shellLabel("F", datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel("P", datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel("b", datum, shell));
-			res.add(MatrixCorrectionModel2.shellLabel(EPS, datum, shell));
+			res.add(MatrixCorrectionModel2.shellLabel("a", datum, shell));
 			return res;
 		}
 
@@ -259,27 +265,24 @@ public class XPPMatrixCorrection2 //
 			final int iF = inputIndex(MatrixCorrectionModel2.shellLabel("F", mDatum, mShell));
 			final int iP = inputIndex(MatrixCorrectionModel2.shellLabel("P", mDatum, mShell));
 			final int ib = inputIndex(MatrixCorrectionModel2.shellLabel("b", mDatum, mShell));
-			final int ieps = inputIndex(MatrixCorrectionModel2.shellLabel(EPS, mDatum, mShell));
-			checkIndices(iphi0, iF, iP, ib, ieps);
+			final int ia = inputIndex(MatrixCorrectionModel2.shellLabel("a", mDatum, mShell));
+			checkIndices(iphi0, iF, iP, ib, ia);
 
 			final double phi0 = point[iphi0];
-			final double P = point[iP];
 			final double F = point[iF];
+			final double P = point[iP];
 			final double b = point[ib];
-			final double eps = point[ieps];
+			final double a = point[ia];
 
 			final RealVector vals = buildResult();
 
 			final int oA = outputIndex(MatrixCorrectionModel2.shellLabel("A", mDatum, mShell));
 			final int oB = outputIndex(MatrixCorrectionModel2.shellLabel("B", mDatum, mShell));
 			checkIndices(oA, oB);
-			// Page 62
-			final double B = (b * b * F * (1.0 + eps) - P - phi0 * b * (2.0 + eps)) / eps; // C2-Ok
-			vals.setEntry(oB, B);
-			final double k1 = (1.0 + eps) / (eps * eps); // C1-Ok
-			// Plugging B[b,F,eps,phi0,P] into the expression for A[B,b,F,eps,phi0,P] we get
-			// A[b,F,eps,phi0,P].
-			vals.setEntry(oA, k1 * (b * (b * F - 2.0 * phi0) - P) / b); // C1-Ok
+			// Page 62 Plugging B[b,F,(a-b)/a,phi0,P] into the expression for
+			// A[B,b,F,(a-b)/a,phi0,P] we get
+			vals.setEntry(oA, a * (b * (b * F - 2.0 * phi0) - P) / Math.pow(a - b, 2.0)); // C2
+			vals.setEntry(oB, b * (a * b * F - P - phi0 * (a + b)) / (a - b)); // C2
 			return vals;
 		}
 
@@ -294,14 +297,14 @@ public class XPPMatrixCorrection2 //
 			final int iF = inputIndex(MatrixCorrectionModel2.shellLabel("F", mDatum, mShell));
 			final int iP = inputIndex(MatrixCorrectionModel2.shellLabel("P", mDatum, mShell));
 			final int ib = inputIndex(MatrixCorrectionModel2.shellLabel("b", mDatum, mShell));
-			final int ieps = inputIndex(MatrixCorrectionModel2.shellLabel(EPS, mDatum, mShell));
-			checkIndices(iphi0, iF, iP, ib, ieps);
+			final int ia = inputIndex(MatrixCorrectionModel2.shellLabel("a", mDatum, mShell));
+			checkIndices(iphi0, iF, iP, ib, ia);
 
 			final double phi0 = point.getEntry(iphi0);
 			final double P = point.getEntry(iP);
 			final double F = point.getEntry(iF);
 			final double b = point.getEntry(ib);
-			final double eps = point.getEntry(ieps);
+			final double a = point.getEntry(ia);
 
 			final RealVector vals = buildResult();
 			final RealMatrix jac = buildJacobian();
@@ -309,35 +312,21 @@ public class XPPMatrixCorrection2 //
 			final int oA = outputIndex(MatrixCorrectionModel2.shellLabel("A", mDatum, mShell));
 			final int oB = outputIndex(MatrixCorrectionModel2.shellLabel("B", mDatum, mShell));
 			checkIndices(oA, oB);
-			// Page 62
-			final double B = (b * b * F * (1.0 + eps) - P - phi0 * b * (2.0 + eps)) / eps; // Ok
-			final double dBdphi0 = -b * (2.0 + eps) / eps; // Ok
-			final double dBdP = -1.0 / eps; // Ok
-			final double dBdF = (b * b * (1.0 + eps)) / eps; // Ok
-			final double dBdb = (2.0 * b * F * (1.0 + eps) - phi0 * (2.0 + eps)) / eps; // Ok
-			final double dBdeps = (P + 2.0 * b * phi0 - b * b * F) / (eps * eps); // Ok
+			// See Heinrich EPQ Page 62
+			vals.setEntry(oA, a * (b * b * F - P - 2.0 * b * phi0) / Math.pow(a - b, 2.0)); // C4
+			jac.setEntry(oA, iphi0, -2.0 * a * b / Math.pow(a - b, 2.0)); // C4
+			jac.setEntry(oA, iP, -a / Math.pow(a - b, 2.0)); // C4
+			jac.setEntry(oA, iF, a * b * b / Math.pow(a - b, 2.0)); // C4
+			jac.setEntry(oA, ib, (2.0 * a * (a * b * F - P - (a + b) * phi0)) / Math.pow(a - b, 3.0)); // C4
+			jac.setEntry(oA, ia, (a + b) * (P + 2 * b * phi0 - b * b * F) / Math.pow(a - b, 3.0)); // C3
 
-			final double kk = (1.0 + eps) / eps;
-			final double A = (B / b + phi0 - b * F) * kk; // Ok
-			final double dAdb = (dBdb / b - B / (b * b) - F) * kk; // Ok
-			final double dAdphi0 = ((b + dBdphi0) / b) * kk; // Ok
-			final double dAdF = ((dBdF - b * b) / b) * kk; // Ok
-			final double dAdeps = -A / (eps * (1.0 + eps)) + (dBdeps / b) * kk; // Ok
-			final double dAdP = kk * dBdP / b; // Ok
-
-			vals.setEntry(oB, B);
-			jac.setEntry(oB, iphi0, dBdphi0); // C2-Ok
-			jac.setEntry(oB, iP, dBdP); // C2-Ok
-			jac.setEntry(oB, iF, dBdF); // C2-Ok
-			jac.setEntry(oB, ib, dBdb); // C2-Ok
-			jac.setEntry(oB, ieps, dBdeps); // C2-Ok
-
-			vals.setEntry(oA, A); // C1-Ok
-			jac.setEntry(oA, iphi0, dAdphi0); // C1-Ok
-			jac.setEntry(oA, iP, dAdP); // C1-Ok
-			jac.setEntry(oA, iF, dAdF); // C1-Ok
-			jac.setEntry(oA, ib, dAdb); // C1-Ok
-			jac.setEntry(oA, ieps, dAdeps); // C1-Ok
+			vals.setEntry(oB, b * (a * b * F - P - phi0 * (a + b)) / (a - b)); // C4
+			jac.setEntry(oB, iphi0, -b * (a + b) / (a - b)); // C4
+			jac.setEntry(oB, iP, -b / (a - b)); // C4
+			jac.setEntry(oB, iF, (a * b * b) / (a - b)); // X
+			jac.setEntry(oB, ib, (a * a * (2.0 * b * F - phi0) + b * b * phi0 - a * (b * (b * F + 2.0 * phi0) + P))
+					/ Math.pow(a - b, 2.0)); // C4
+			jac.setEntry(oB, ia, b * (P + 2.0 * b * phi0 - b * b * F) / Math.pow(a - b, 2.0)); // C2
 
 			return Pair.create(vals, jac);
 		}
@@ -519,90 +508,6 @@ public class XPPMatrixCorrection2 //
 		}
 	}
 
-	static private class StepEps // Checked 16-Jan-2019
-			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
-
-		private static final double MIN_EPS = 1.0e-6;
-
-		public static List<EPMALabel> buildInputs(final MatrixCorrectionDatum datum, final AtomicShell shell) {
-			final List<EPMALabel> res = new ArrayList<>();
-			res.add(MatrixCorrectionModel2.shellLabel("a", datum, shell));
-			res.add(MatrixCorrectionModel2.shellLabel("b", datum, shell));
-			return res;
-		}
-
-		public static List<EPMALabel> buildOutputs(final MatrixCorrectionDatum datum, final AtomicShell shell) {
-			return Collections.singletonList(MatrixCorrectionModel2.shellLabel(EPS, datum, shell));
-		}
-
-		private final MatrixCorrectionDatum mDatum;
-
-		private final AtomicShell mShell;
-
-		public StepEps(final MatrixCorrectionDatum datum, //
-				final AtomicShell shell) throws ArgumentException {
-			super(buildInputs(datum, shell), buildOutputs(datum, shell));
-			mDatum = datum;
-			mShell = shell;
-		}
-
-		@Override
-		public RealVector computeValue(final double[] point) {
-			final int ia = inputIndex(MatrixCorrectionModel2.shellLabel("a", mDatum, mShell));
-			final int ib = inputIndex(MatrixCorrectionModel2.shellLabel("b", mDatum, mShell));
-			checkIndices(ia, ib);
-
-			final double a = point[ia], b = point[ib];
-
-			final int oeps = outputIndex(MatrixCorrectionModel2.shellLabel(EPS, mDatum, mShell));
-			checkIndices(oeps);
-
-			final RealVector vals = buildResult();
-
-			final double eps = (a - b) / b;
-			if (Math.abs(eps) >= MIN_EPS) {
-				vals.setEntry(oeps, eps); // C1
-			} else {
-				vals.setEntry(oeps, MIN_EPS); // C1
-			}
-			return vals;
-		}
-
-		@Override
-		public String toString() {
-			return "StepEPS[" + mDatum + "," + mShell + "]";
-		}
-
-		@Override
-		public Pair<RealVector, RealMatrix> value(final RealVector point) {
-			final int ia = inputIndex(MatrixCorrectionModel2.shellLabel("a", mDatum, mShell));
-			final int ib = inputIndex(MatrixCorrectionModel2.shellLabel("b", mDatum, mShell));
-			checkIndices(ia, ib);
-
-			final double a = point.getEntry(ia);
-			final double b = point.getEntry(ib);
-
-			final int oeps = outputIndex(MatrixCorrectionModel2.shellLabel(EPS, mDatum, mShell));
-			checkIndices(oeps);
-
-			final RealVector vals = buildResult();
-			final RealMatrix jac = buildJacobian();
-
-			final double eps = (a - b) / b;
-			if (Math.abs(eps) >= MIN_EPS) {
-				vals.setEntry(oeps, eps); // C1
-				jac.setEntry(oeps, ia, 1.0 / b); // C1
-				jac.setEntry(oeps, ib, -a / (b * b)); // C1
-			} else {
-				vals.setEntry(oeps, MIN_EPS); // C1
-				// jac.setEntry(oeps, ia, 0.0); // C1
-				// jac.setEntry(oeps, ib, 0.0); // C1
-			}
-
-			return Pair.create(vals, jac);
-		}
-	}
-
 	private static class StepFRbar // Checked 15-Jan-2019
 			extends ExplicitMeasurementModel<EPMALabel, EPMALabel> {
 
@@ -769,7 +674,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.shellLabel("B", datum, shell));
 			res.add(MatrixCorrectionModel2.shellLabel("b", datum, shell));
 			res.add(MatrixCorrectionModel2.phi0Label(datum, shell));
-			res.add(MatrixCorrectionModel2.shellLabel(EPS, datum, shell));
+			res.add(MatrixCorrectionModel2.shellLabel("a", datum, shell));
 			res.add(MatrixCorrectionModel2.chiLabel(datum, cxr));
 			res.add(MatrixCorrectionModel2.roughnessLabel(datum));
 			return res;
@@ -796,15 +701,15 @@ public class XPPMatrixCorrection2 //
 			final int ib = inputIndex(MatrixCorrectionModel2.shellLabel("b", mDatum, mXRay.getInner()));
 			final int iPhi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mXRay.getInner()));
 			final int iChi = inputIndex(MatrixCorrectionModel2.chiLabel(mDatum, mXRay));
-			final int ieps = inputIndex(MatrixCorrectionModel2.shellLabel(EPS, mDatum, mXRay.getInner()));
-			checkIndices(iA, iB, ib, iPhi0, iChi, ieps);
+			final int ia = inputIndex(MatrixCorrectionModel2.shellLabel("a", mDatum, mXRay.getInner()));
+			checkIndices(iA, iB, ib, iPhi0, iChi, ia);
 
 			final double A = point[iA];
 			final double B = point[iB];
 			final double b = point[ib];
 			final double phi0 = point[iPhi0];
 			final double chi = point[iChi];
-			final double eps = point[ieps];
+			final double a = point[ia];
 			final double dz = point[inputIndex(MatrixCorrectionModel2.roughnessLabel(mDatum))];
 
 			final int oFx = outputIndex(MatrixCorrectionModel2.FofChiLabel(mDatum, mXRay));
@@ -813,6 +718,7 @@ public class XPPMatrixCorrection2 //
 			final RealVector vals = buildResult();
 
 			final double k0 = b + chi;
+			final double eps = (a - b) / b;
 			final double k1 = chi + b * (1 + eps);
 			// Must include dz here since z = 0 +- dz != 0
 			final double Fx = Math.exp(-chi * dz) * (B / k0 - (A * b * eps) / k1 + phi0) / k0;
@@ -833,16 +739,16 @@ public class XPPMatrixCorrection2 //
 			final int ib = inputIndex(MatrixCorrectionModel2.shellLabel("b", mDatum, mXRay.getInner()));
 			final int iPhi0 = inputIndex(MatrixCorrectionModel2.phi0Label(mDatum, mXRay.getInner()));
 			final int iChi = inputIndex(MatrixCorrectionModel2.chiLabel(mDatum, mXRay));
-			final int ieps = inputIndex(MatrixCorrectionModel2.shellLabel(EPS, mDatum, mXRay.getInner()));
+			final int ia = inputIndex(MatrixCorrectionModel2.shellLabel("a", mDatum, mXRay.getInner()));
 			final int itr = inputIndex(MatrixCorrectionModel2.roughnessLabel(mDatum));
-			checkIndices(iA, iB, ib, iPhi0, iChi, ieps, itr);
+			checkIndices(iA, iB, ib, iPhi0, iChi, ia, itr);
 
 			final double A = point.getEntry(iA);
 			final double B = point.getEntry(iB);
 			final double b = point.getEntry(ib);
 			final double phi0 = point.getEntry(iPhi0);
 			final double chi = point.getEntry(iChi);
-			final double eps = point.getEntry(ieps);
+			final double a = point.getEntry(ia);
 			final double dz = point.getEntry(itr);
 
 			final int oFx = outputIndex(MatrixCorrectionModel2.FofChiLabel(mDatum, mXRay));
@@ -853,6 +759,7 @@ public class XPPMatrixCorrection2 //
 
 			final double expDzChi = Math.exp(-chi * dz);
 
+			final double eps = (a - b) / b;
 			final double bpchi = b + chi;
 			final double arg = chi + b * (1.0 + eps);
 			final double powArg = Math.pow(arg, -2.0);
@@ -861,12 +768,13 @@ public class XPPMatrixCorrection2 //
 			final double Fx = expDzChi * (B / bpchi - (A * b * eps) / arg + phi0) / bpchi;
 			final double dFxdA = -expDzChi * (b * eps) / (bpchi * arg);
 			final double dFxdB = expDzChi * powBpchi2;
-			final double dFxdb = (-expDzChi * (B * powBpchi2 + A * chi * eps * powArg) - Fx) / bpchi;
 			final double dFxdphi0 = expDzChi / bpchi;
 			final double dFxdchi = (expDzChi * ((A * b * eps) * powArg - B * powBpchi2) - (1 + bpchi * dz) * Fx)
 					/ bpchi;
 			final double dFxddz = -chi * Fx;
-			final double dFxdeps = -expDzChi * A * b * powArg;
+
+			final double dFxdb = expDzChi * ((A - phi0) * (b + chi) - 2 * B) / Math.pow(b + chi, 3.0);
+			final double dFxda = -A * expDzChi / Math.pow(a + chi, 2.0);
 
 			vals.setEntry(oFx, Fx); // C2
 			jac.setEntry(oFx, iA, dFxdA); // C2
@@ -874,7 +782,7 @@ public class XPPMatrixCorrection2 //
 			jac.setEntry(oFx, ib, dFxdb); // C2
 			jac.setEntry(oFx, iPhi0, dFxdphi0); // C2
 			jac.setEntry(oFx, iChi, dFxdchi); // C2
-			jac.setEntry(oFx, ieps, dFxdeps); // C2
+			jac.setEntry(oFx, ia, dFxda); // C2
 			jac.setEntry(oFx, itr, dFxddz);
 
 			return Pair.create(vals, jac);
@@ -1019,7 +927,7 @@ public class XPPMatrixCorrection2 //
 			vals.setEntry(oJ, J); // C2
 			for (int i = 0; i < lCi.length; ++i) {
 				final double lnJi = Math.log(Ji[i]);
-				double kk = (J / M) * (Z[i] / Ai[i]);
+				final double kk = (J / M) * (Z[i] / Ai[i]);
 				jac.setEntry(oJ, iJi[i], kk * (Ci[i] / Ji[i])); // Cx
 				setJacobian(lCi[i], lJ, jac, kk * (lnJi - lnJ)); // Cx
 				jac.setEntry(oJ, iAi[i], kk * (Ci[i] / Ai[i]) * (lnJ - lnJi)); // Cx
@@ -1677,8 +1585,6 @@ public class XPPMatrixCorrection2 //
 			return Pair.create(vals, jac);
 		}
 	}
-
-	private static final String EPS = "&epsilon;";
 
 	private static final String ONE_OVER_S = "<sup>1</sup>/<sub>S</sub>";
 

@@ -25,9 +25,7 @@ import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFra
 public class MassFractionToAtomFraction //
 		extends ExplicitMeasurementModel<MaterialLabel, AtomFraction> {
 
-	private static List<MaterialLabel> buildInputTags(
-			final Material mat
-	) {
+	private static List<MaterialLabel> buildInputTags(final Material mat) {
 		final List<MaterialLabel> res = new ArrayList<>();
 		res.addAll(MaterialLabel.buildMassFractionTags(mat));
 		res.addAll(MaterialLabel.buildAtomicWeightTags(mat));
@@ -43,9 +41,7 @@ public class MassFractionToAtomFraction //
 	 * @param atomicWeights
 	 * @throws ArgumentException
 	 */
-	public MassFractionToAtomFraction(
-			final Material mat
-	) throws ArgumentException {
+	public MassFractionToAtomFraction(final Material mat) throws ArgumentException {
 		this(mat, Collections.emptySet());
 	}
 
@@ -58,16 +54,13 @@ public class MassFractionToAtomFraction //
 	 */
 	public MassFractionToAtomFraction(
 			//
-			final Material mat, final Collection<Element> atomicWeightElms
-	) throws ArgumentException {
+			final Material mat, final Collection<Element> atomicWeightElms) throws ArgumentException {
 		super(buildInputTags(mat), MaterialLabel.buildAtomFractionTags(mat));
 		mMaterial = mat;
 	}
 
 	@Override
-	public RealVector computeValue(
-			final double[] point
-	) {
+	public RealVector computeValue(final double[] point) {
 		final RealVector vals = buildResult();
 		final List<MassFraction> mfTags = MaterialLabel.buildMassFractionTags(mMaterial);
 		double denom = 0.0;
@@ -91,9 +84,7 @@ public class MassFractionToAtomFraction //
 	}
 
 	@Override
-	public Pair<RealVector, RealMatrix> value(
-			final RealVector point
-	) {
+	public Pair<RealVector, RealMatrix> value(final RealVector point) {
 		final RealVector vals = buildResult();
 		final RealMatrix jac = buildJacobian();
 		final List<MassFraction> mfTags = MaterialLabel.buildMassFractionTags(mMaterial);
@@ -115,9 +106,17 @@ public class MassFractionToAtomFraction //
 				final AtomicWeight awl2 = MaterialLabel.buildAtomicWeightTag(mMaterial, elm2);
 				final double w2 = getArg(awl2, point);
 				final double c2 = getArg(mfl2, point);
-				double delta = elm1.equals(elm2) ? 1.0 : 0.0;
-				setJacobian(mfl2, afl1, jac, (delta - (c1 / (w2 * denom))) / (w1 * denom));
-				setJacobian(awl2, afl1, jac, (c2 / (denom * w2 * w2)) * (c1 / (w1 * denom) - delta));
+				final double n1 = 1.0 / (w1 * denom), n2 = 1.0 / (w2 * denom);
+				if (elm1 == elm2) {
+					double ff = n1 * (1.0 - c1 * n1);
+					setJacobian(mfl2, afl1, jac, ff);
+					setJacobian(awl2, afl1, jac, (-c1 / w1) * ff);
+
+				} else {
+					double ff = -c1 * n1 * n2;
+					setJacobian(mfl2, afl1, jac, ff);
+					setJacobian(awl2, afl1, jac, (-c2 / w2) * ff);
+				}
 			}
 		}
 		return Pair.create(vals, jac);
