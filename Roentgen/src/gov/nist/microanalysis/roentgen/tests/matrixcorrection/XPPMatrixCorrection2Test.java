@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
@@ -21,6 +22,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
 
+import com.d3x.morpheus.frame.DataFrame;
 import com.duckandcover.html.HTML;
 import com.duckandcover.html.IToHTML.Mode;
 import com.duckandcover.html.Report;
@@ -61,7 +63,6 @@ import gov.nist.microanalysis.roentgen.swing.LinearToColor;
 import gov.nist.microanalysis.roentgen.swing.ValueToLog3;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat;
 import gov.nist.microanalysis.roentgen.utility.BasicNumberFormat.OutputMode;
-import joinery.DataFrame;
 
 public class XPPMatrixCorrection2Test {
 
@@ -2221,8 +2222,8 @@ public class XPPMatrixCorrection2Test {
 
 		final UncertainValuesBase<EPMALabel> aResults = UncertainValuesBase.propagateAnalytical(xpp, inputs);
 
-		final DataFrame<Double> df = xpp.computePhiRhoZCurve(aResults.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
-		df.writeCsv("C:\\Users\\nritchie\\Desktop\\prz412.csv");
+		final DataFrame<Double, String> df = xpp.computePhiRhoZCurve(aResults.getValueMap(), 1.201e-3, 2.0e-5, 0.9);
+		df.write().csv(new File("C:\\Users\\nritchie\\Desktop","prz412.csv"));
 	}
 
 	public void checkEquals(final EPMALabel input, final EPMALabel output, final double ad, final double fd,

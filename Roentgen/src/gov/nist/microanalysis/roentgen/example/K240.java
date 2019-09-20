@@ -72,12 +72,12 @@ public class K240 {
 	) throws Exception {
 		final K240 k240 = new K240();
 		try {
-			// k240.simple();
-			// k240.benitoite();
+			k240.simple();
+			k240.benitoite();
 			// k240.elements();
 			// k240.k240();
-			k240.surfaceRoughness();
-			k240.surfaceCoating();
+			// k240.surfaceRoughness();
+			// k240.surfaceCoating();
 		} catch (IOException | ArgumentException | ParseException e) {
 			e.printStackTrace();
 		}

@@ -43,9 +43,7 @@ abstract public class MatrixCorrectionModel2 //
 
 	public static class ChiLabel extends MatrixCorrectionDatumTag2<CharacteristicXRay> {
 
-		ChiLabel(
-				final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr
-		) {
+		ChiLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 			super("&chi;", mcd, cxr);
 		}
 
@@ -53,27 +51,21 @@ abstract public class MatrixCorrectionModel2 //
 
 	public static class CoatingThickness extends EPMALabel.BaseLabel<UniqueString, Object, Object> {
 
-		private CoatingThickness(
-				final Layer layer
-		) {
+		private CoatingThickness(final Layer layer) {
 			super("t<sub>Coating</sub>", layer.getName());
 		}
 	}
 
 	public static class FofChiLabel extends MatrixCorrectionDatumTag2<CharacteristicXRay> {
 
-		private FofChiLabel(
-				final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr
-		) {
+		private FofChiLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 			super("F(&chi;)", mcd, cxr);
 		}
 	}
 
 	public static class FofChiReducedLabel extends MatrixCorrectionDatumTag2<CharacteristicXRay> {
 
-		private FofChiReducedLabel(
-				final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr
-		) {
+		private FofChiReducedLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 			super("F<sub>r</sub>(&chi;)", mcd, cxr);
 		}
 
@@ -81,17 +73,13 @@ abstract public class MatrixCorrectionModel2 //
 
 	public static class IonizationExponentLabel extends EPMALabel.BaseLabel<AtomicShell, Object, Object> {
 
-		public IonizationExponentLabel(
-				final AtomicShell sh
-		) {
+		public IonizationExponentLabel(final AtomicShell sh) {
 			super("m", sh);
 		}
 	}
 
 	public static class MaterialBasedLabel extends EPMALabel.BaseLabel<Material, Object, Object> {
-		public MaterialBasedLabel(
-				final String name, final Material mcd
-		) {
+		public MaterialBasedLabel(final String name, final Material mcd) {
 			super(name, mcd);
 		}
 	}
@@ -99,60 +87,47 @@ abstract public class MatrixCorrectionModel2 //
 	public static class EmittedIntensityLabel //
 			extends BaseLabel<MatrixCorrectionDatum, ElementXRaySet, Object> {
 
-		private EmittedIntensityLabel(
-				MatrixCorrectionDatum mcd, //
-				ElementXRaySet exrs
-		) {
+		private EmittedIntensityLabel(MatrixCorrectionDatum mcd, //
+				ElementXRaySet exrs) {
 			super("I<sub>emitted</sub>", mcd, exrs);
 		}
 	}
 
-	public static EmittedIntensityLabel buildEmittedIntensityLabel(
-			final MatrixCorrectionDatum mcd, final ElementXRaySet exrs
-	) {
+	public static EmittedIntensityLabel buildEmittedIntensityLabel(final MatrixCorrectionDatum mcd,
+			final ElementXRaySet exrs) {
 		return new EmittedIntensityLabel(mcd, exrs);
 	}
 
 	public static class MatrixCorrectionDatumLabel extends EPMALabel.BaseLabel<MatrixCorrectionDatum, Object, Object> {
-		public MatrixCorrectionDatumLabel(
-				final String name, final MatrixCorrectionDatum mcd
-		) {
+		public MatrixCorrectionDatumLabel(final String name, final MatrixCorrectionDatum mcd) {
 			super(name, mcd);
 		}
 	}
 
 	public static class MatrixCorrectionDatumTag2<H> extends EPMALabel.BaseLabel<MatrixCorrectionDatum, H, Object> {
 
-		MatrixCorrectionDatumTag2(
-				final String name, final MatrixCorrectionDatum mcd, final H obj2
-		) {
+		MatrixCorrectionDatumTag2(final String name, final MatrixCorrectionDatum mcd, final H obj2) {
 			super(name, mcd, obj2);
 		}
 	}
 
 	public static class Phi0Label extends MatrixCorrectionDatumTag2<AtomicShell> {
 
-		Phi0Label(
-				final MatrixCorrectionDatum mcd, final AtomicShell shell
-		) {
+		Phi0Label(final MatrixCorrectionDatum mcd, final AtomicShell shell) {
 			super("&phi;<sub>0</sub>", mcd, shell);
 		}
 
 	}
 
 	public static class RoughnessLabel extends MatrixCorrectionDatumLabel {
-		public RoughnessLabel(
-				final MatrixCorrectionDatum mcd
-		) {
+		public RoughnessLabel(final MatrixCorrectionDatum mcd) {
 			super("dz", mcd);
 		}
 	}
 
 	public static class XRayWeightLabel extends EPMALabel.BaseLabel<CharacteristicXRay, Object, Object> {
 
-		public XRayWeightLabel(
-				final CharacteristicXRay cxr
-		) {
+		public XRayWeightLabel(final CharacteristicXRay cxr) {
 			super("w", cxr);
 		}
 	}
@@ -160,10 +135,8 @@ abstract public class MatrixCorrectionModel2 //
 	public static class ZAFLabel
 			extends EPMALabel.BaseLabel<MatrixCorrectionDatum, MatrixCorrectionDatum, CharacteristicXRay> {
 
-		private ZAFLabel(
-				final String name, final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
-				final CharacteristicXRay cxr
-		) {
+		private ZAFLabel(final String name, final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
+				final CharacteristicXRay cxr) {
 			super(name, unk, std, cxr);
 		}
 	}
@@ -171,17 +144,13 @@ abstract public class MatrixCorrectionModel2 //
 	public static class ZAFMultiLineLabel
 			extends EPMALabel.BaseLabel<UnknownMatrixCorrectionDatum, StandardMatrixCorrectionDatum, ElementXRaySet> {
 
-		private ZAFMultiLineLabel(
-				final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-				final CharacteristicXRay cxr
-		) {
+		private ZAFMultiLineLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+				final CharacteristicXRay cxr) {
 			super("ZAF", unk, std, new ElementXRaySet(cxr));
 		}
 
-		private ZAFMultiLineLabel(
-				final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-				final ElementXRaySet exrs
-		) {
+		private ZAFMultiLineLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+				final ElementXRaySet exrs) {
 			super("ZAF", unk, std, exrs);
 		}
 
@@ -200,9 +169,7 @@ abstract public class MatrixCorrectionModel2 //
 
 	private static class ElementLabel extends EPMALabel.BaseLabel<Element, Object, Object> {
 
-		private ElementLabel(
-				final String name, final Element obj
-		) {
+		private ElementLabel(final String name, final Element obj) {
 			super(name, obj);
 		}
 	}
@@ -213,136 +180,110 @@ abstract public class MatrixCorrectionModel2 //
 	 * @return
 	 */
 
-	static public ZAFLabel aLabel(
-			final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std, final CharacteristicXRay cxr
-	) {
+	static public ZAFLabel aLabel(final MatrixCorrectionDatum unk, final MatrixCorrectionDatum std,
+			final CharacteristicXRay cxr) {
 		return new MatrixCorrectionModel2.ZAFLabel("A", unk, std, cxr);
 	}
 
-	static public MatrixCorrectionDatumTag2<?> atomicNumberLabel(
-			final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr
-	) {
+	static public MatrixCorrectionDatumTag2<?> atomicNumberLabel(final MatrixCorrectionDatum mcd,
+			final CharacteristicXRay cxr) {
 		return characterisiticLabel("Z", mcd, cxr);
 	}
+	
 
-	static public MatrixCorrectionDatumLabel beamEnergyLabel(
-			final MatrixCorrectionDatum datum
-	) {
+	static public MatrixCorrectionDatumLabel beamEnergyLabel(final MatrixCorrectionDatum datum) {
 		return new MatrixCorrectionModel2.MatrixCorrectionDatumLabel("E<sub>0</sub>", datum);
 	}
 
-	static public MatrixCorrectionDatumTag2<?> characterisiticLabel(
-			final String name, final MatrixCorrectionDatum mcd, final CharacteristicXRay other
-	) {
+	static public MatrixCorrectionDatumTag2<?> characterisiticLabel(final String name, final MatrixCorrectionDatum mcd,
+			final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.MatrixCorrectionDatumTag2<CharacteristicXRay>(name, mcd, other);
 	}
 
-	static public ChiLabel chiLabel(
-			final MatrixCorrectionDatum comp, final CharacteristicXRay other
-	) {
+	static public ChiLabel chiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.ChiLabel(comp, other);
 	}
 
-	static public CoatingThickness coatingMassThickness(
-			final Layer layer
-	) {
+	static public CoatingThickness coatingMassThickness(final Layer layer) {
 		return new CoatingThickness(layer);
 	}
 
-	static public FofChiLabel FofChiLabel(
-			final MatrixCorrectionDatum comp, final CharacteristicXRay other
-	) {
+	static public FofChiLabel FofChiLabel(final MatrixCorrectionDatum comp, final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.FofChiLabel(comp, other);
 	}
 
-	static public FofChiReducedLabel FofChiReducedLabel(
-			final MatrixCorrectionDatum comp, final CharacteristicXRay other
-	) {
+	static public FofChiReducedLabel FofChiReducedLabel(final MatrixCorrectionDatum comp,
+			final CharacteristicXRay other) {
 		return new MatrixCorrectionModel2.FofChiReducedLabel(comp, other);
 	}
 
-	static public MatrixCorrectionDatumTag2<?> FxFLabel(
-			final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr
-	) {
+	static public MatrixCorrectionDatumTag2<?> FxFLabel(final MatrixCorrectionDatum mcd, final CharacteristicXRay cxr) {
 		return characterisiticLabel("F(&chi;)/F", mcd, cxr);
 	}
 
-	static public MaterialMAC matMacLabel(
-			final Material mat, final CharacteristicXRay cxr
-	) {
+	static public MaterialMAC matMacLabel(final Material mat, final CharacteristicXRay cxr) {
 		return new MaterialMAC(mat, cxr);
 	}
 
-	static public ElementLabel meanIonizationLabel(
-			final Element elm
-	) {
+	static public ElementLabel meanIonizationLabel(final Element elm) {
 		return new MatrixCorrectionModel2.ElementLabel("J", elm);
 	}
 
-	static public Phi0Label phi0Label(
-			final MatrixCorrectionDatum comp, final AtomicShell other
-	) {
+	static public Phi0Label phi0Label(final MatrixCorrectionDatum comp, final AtomicShell other) {
 		return new MatrixCorrectionModel2.Phi0Label(comp, other);
 	}
 
-	public static MatrixCorrectionModel2.RoughnessLabel roughnessLabel(
-			final MatrixCorrectionDatum mcd
-	) {
+	public static MatrixCorrectionModel2.RoughnessLabel roughnessLabel(final MatrixCorrectionDatum mcd) {
 		return new MatrixCorrectionModel2.RoughnessLabel(mcd);
 	}
 
-	static public MatrixCorrectionDatumTag2<?> shellLabel(
-			final String name, final MatrixCorrectionDatum mcd, final AtomicShell other
-	) {
+	static public MatrixCorrectionDatumTag2<?> shellLabel(final String name, final MatrixCorrectionDatum mcd,
+			final AtomicShell other) {
 		return new MatrixCorrectionModel2.MatrixCorrectionDatumTag2<>(name, mcd, other);
 	}
 
-	static public MatrixCorrectionDatumLabel takeOffAngleLabel(
-			final MatrixCorrectionDatum datum
-	) {
+	static public MatrixCorrectionDatumLabel takeOffAngleLabel(final MatrixCorrectionDatum datum) {
 		return new MatrixCorrectionModel2.MatrixCorrectionDatumLabel("TOA", datum);
 	}
 
-	static public ZAFMultiLineLabel zafLabel(
-			final KRatioLabel krl
-	) {
+	static public ZAFMultiLineLabel zafLabel(final KRatioLabel krl) {
 		return new ZAFMultiLineLabel(krl.getUnknown(), krl.getStandard(), krl.getXRaySet());
 	}
 
-	static public ZAFMultiLineLabel zafLabel(
-			final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-			final CharacteristicXRay cxr
-	) {
+	static public ZAFMultiLineLabel zafLabel(final UnknownMatrixCorrectionDatum unk,
+			final StandardMatrixCorrectionDatum std, final CharacteristicXRay cxr) {
 		return new ZAFMultiLineLabel(unk, std, cxr);
 	}
 
-	static public ZAFMultiLineLabel zafLabel(
-			final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std, final ElementXRaySet exrs
-	) {
+	static public ZAFMultiLineLabel zafLabel(final UnknownMatrixCorrectionDatum unk,
+			final StandardMatrixCorrectionDatum std, final ElementXRaySet exrs) {
 		return new ZAFMultiLineLabel(unk, std, exrs);
 	}
 
-	static public ZAFLabel zLabel(
-			final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
-			final CharacteristicXRay cxr
-	) {
+	static public ZAFLabel zLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+			final CharacteristicXRay cxr) {
 		return new MatrixCorrectionModel2.ZAFLabel("Z", unk, std, cxr);
 	}
+	
+	static public ZAFLabel zaLabel(final UnknownMatrixCorrectionDatum unk, final StandardMatrixCorrectionDatum std,
+			final CharacteristicXRay cxr) {
+		return new MatrixCorrectionModel2.ZAFLabel("ZA", unk, std, cxr);
+	}
+
+	
 
 	protected final Set<KRatioLabel> mKRatios;
 	// The types of variables to compute Jacobian elements.
 
 	private final Material mUnknownMaterial;
 
-	public MatrixCorrectionModel2(
-			final String string, final Set<KRatioLabel> kratios, //
+	public MatrixCorrectionModel2(final String string, final Set<KRatioLabel> kratios, //
 			final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> buildSteps //
 	) throws ArgumentException {
 		this(string, kratios, buildSteps, CompositeMeasurementModel.allOutputs(buildSteps));
 	}
 
-	public MatrixCorrectionModel2(
-			final String name, //
+	public MatrixCorrectionModel2(final String name, //
 			final Set<KRatioLabel> kratios, //
 			final List<ExplicitMeasurementModel<? extends EPMALabel, ? extends EPMALabel>> list, //
 			final List<? extends EPMALabel> outputLabels //
@@ -369,8 +310,7 @@ abstract public class MatrixCorrectionModel2 //
 		}
 	}
 
-	abstract public UncertainValuesBase<EPMALabel> buildInput(
-			Material unknownMat //
+	abstract public UncertainValuesBase<EPMALabel> buildInput(Material unknownMat //
 	) throws ArgumentException;
 
 	public Set<Element> getElementSet() {
@@ -384,9 +324,7 @@ abstract public class MatrixCorrectionModel2 //
 		return Collections.unmodifiableSet(mKRatios);
 	}
 
-	public Set<KRatioLabel> getKRatios(
-			final Element elm
-	) {
+	public Set<KRatioLabel> getKRatios(final Element elm) {
 		final Set<KRatioLabel> res = new HashSet<>();
 		for (final KRatioLabel krl : mKRatios)
 			if (krl.getElement().equals(elm))

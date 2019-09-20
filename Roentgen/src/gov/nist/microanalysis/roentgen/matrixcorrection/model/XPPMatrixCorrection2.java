@@ -15,6 +15,8 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 
+import com.d3x.morpheus.frame.DataFrame;
+import com.d3x.morpheus.range.Range;
 import com.duckandcover.html.IToHTML;
 import com.duckandcover.html.Report;
 import com.duckandcover.html.Table;
@@ -51,7 +53,6 @@ import gov.nist.microanalysis.roentgen.physics.composition.Material;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.AtomFraction;
 import gov.nist.microanalysis.roentgen.physics.composition.MaterialLabel.MassFraction;
-import joinery.DataFrame;
 
 /**
  * <p>
@@ -1486,6 +1487,7 @@ public class XPPMatrixCorrection2 //
 			res.add(MatrixCorrectionModel2.FxFLabel(std, cxr));
 			res.add(MatrixCorrectionModel2.zLabel(unk, std, cxr));
 			res.add(MatrixCorrectionModel2.aLabel(unk, std, cxr));
+			res.add(MatrixCorrectionModel2.zaLabel(unk, std, cxr));
 			return res;
 		}
 
@@ -1523,10 +1525,12 @@ public class XPPMatrixCorrection2 //
 			final int oFxFs = outputIndex(MatrixCorrectionModel2.FxFLabel(mStandard, mXRay));
 			final int oZ = outputIndex(MatrixCorrectionModel2.zLabel(mUnknown, mStandard, mXRay));
 			final int oA = outputIndex(MatrixCorrectionModel2.aLabel(mUnknown, mStandard, mXRay));
+			final int oZA = outputIndex(MatrixCorrectionModel2.zaLabel(mUnknown, mStandard, mXRay));
 			checkIndices(oFxFu, oFxFs, oZ, oA);
 
 			vals.setEntry(oA, (Fs * Fxu) / (Fu * Fxs)); // C2
 			vals.setEntry(oZ, (Fu / Fs)); // C2
+			vals.setEntry(oZA, Fxu / Fxs);
 			vals.setEntry(oFxFu, Fxu / Fu); // C2
 			vals.setEntry(oFxFs, Fxs / Fs); // C2
 			return vals;
@@ -1558,6 +1562,7 @@ public class XPPMatrixCorrection2 //
 			final int oFxFs = outputIndex(MatrixCorrectionModel2.FxFLabel(mStandard, mXRay));
 			final int oZ = outputIndex(MatrixCorrectionModel2.zLabel(mUnknown, mStandard, mXRay));
 			final int oA = outputIndex(MatrixCorrectionModel2.aLabel(mUnknown, mStandard, mXRay));
+			final int oZA = outputIndex(MatrixCorrectionModel2.zaLabel(mUnknown, mStandard, mXRay));
 			checkIndices(oFxFu, oFxFs, oZ, oA);
 
 			final double a = (Fs * Fxu) / (Fu * Fxs);
@@ -1571,6 +1576,11 @@ public class XPPMatrixCorrection2 //
 			vals.setEntry(oZ, z); // C2
 			jac.setEntry(oZ, iFs, -z / Fs); // C2
 			jac.setEntry(oZ, iFu, 1.0 / Fs); // C2
+
+			final double za = Fxu / Fxs;
+			vals.setEntry(oZA, za);
+			jac.setEntry(oZA, iFxu, 1.0 / Fxs);
+			jac.setEntry(oZA, iFxs, -za / Fxs);
 
 			final double FxFu = Fxu / Fu;
 			vals.setEntry(oFxFu, FxFu); // C2
@@ -1640,6 +1650,7 @@ public class XPPMatrixCorrection2 //
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				res.add(MatrixCorrectionModel2.zLabel(unk, std, cxr));
 				res.add(MatrixCorrectionModel2.aLabel(unk, std, cxr));
+				res.add(MatrixCorrectionModel2.zaLabel(unk, std, cxr));
 			}
 			res.add(krl.as(Method.Calculated));
 		}
@@ -1791,8 +1802,11 @@ public class XPPMatrixCorrection2 //
 				step.add(new StepXPP(me.getKey(), me.getValue(), reqInputs));
 			res.add(ParallelMeasurementModelBuilder.join("XPP", step));
 		}
-		for (final UnknownMatrixCorrectionDatum unk : unks.keySet())
+		for (final UnknownMatrixCorrectionDatum unk : unks.keySet()) {
 			res.add(MaterialMACFunction.buildMaterialMACFunctions(unk.getMaterial(), kratios));
+			if (unk.hasCoating())
+				res.add(MaterialMACFunction.buildMaterialMACFunctions(unk.getCoating().getMaterial(), kratios));
+		}
 		final ParallelMeasurementModelBuilder<MaterialLabel, MaterialLabel> builder = //
 				new ParallelMeasurementModelBuilder<>("Compositions");
 		for (final Composition comp : allComps)
@@ -1991,69 +2005,49 @@ public class XPPMatrixCorrection2 //
 		return new UncertainValue(j, 0.03 * j);
 	}
 
-	public DataFrame<Double> computePhiRhoZCurve(
-			//
-			final Map<EPMALabel, Double> outputs, //
+	public DataFrame<Double, String> computePhiRhoZCurve(final Map<EPMALabel, Double> outputs, //
 			final double rhoZmax, //
 			final double dRhoZ, //
 			final double minWeight //
 	) {
-		final DataFrame<Double> res = new DataFrame<>();
-		{
-			final List<Double> vals = new ArrayList<>();
-			for (double rhoZ = 0.0; rhoZ <= rhoZmax; rhoZ += dRhoZ)
-				vals.add(rhoZ);
-			res.add("rhoZ", vals);
-		}
+		Range<Double> rz = Range.of(0.0, rhoZmax, Math.max(rhoZmax / 1000.0, dRhoZ));
+		DataFrame<Double, String> res = DataFrame.of(rz, String.class, columns -> {
+		});
 		for (final KRatioLabel krl : mKRatios) {
 			for (final CharacteristicXRay cxr : krl.getXRaySet().getSetOfCharacteristicXRay()) {
 				if (cxr.getWeight() > minWeight) {
-					{
-						final StandardMatrixCorrectionDatum std = krl.getStandard();
-						final double a = outputs.get(MatrixCorrectionModel2.shellLabel("a", std, cxr.getInner()))
-								.doubleValue();
-						final double b = outputs.get(MatrixCorrectionModel2.shellLabel("b", std, cxr.getInner()))
-								.doubleValue();
-						final double A = outputs.get(MatrixCorrectionModel2.shellLabel("A", std, cxr.getInner()))
-								.doubleValue();
-						final double B = outputs.get(MatrixCorrectionModel2.shellLabel("B", std, cxr.getInner()))
-								.doubleValue();
-						final double chi = outputs.get(new MatrixCorrectionModel2.ChiLabel(std, cxr)).doubleValue();
-						final double phi0 = outputs.get(new MatrixCorrectionModel2.Phi0Label(std, cxr.getInner()))
-								.doubleValue();
-						final List<Double> vals1 = new ArrayList<>();
-						final List<Double> vals2 = new ArrayList<>();
-						for (double rhoZ = 0.0; rhoZ <= rhoZmax; rhoZ += dRhoZ) {
-							final double prz = phiRhoZ(rhoZ, a, b, A, B, phi0);
-							vals1.add(prz);
-							vals2.add(prz * Math.exp(-chi * rhoZ));
-						}
-						res.add(std.toString() + "[" + cxr.toString() + ", gen]", vals1);
-						res.add(std.toString() + "[" + cxr.toString() + ", emit]", vals2);
-					}
-					{
-						final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
-						final double a = outputs.get(MatrixCorrectionModel2.shellLabel("a", unk, cxr.getInner()))
-								.doubleValue();
-						final double b = outputs.get(MatrixCorrectionModel2.shellLabel("b", unk, cxr.getInner()))
-								.doubleValue();
-						final double A = outputs.get(MatrixCorrectionModel2.shellLabel("A", unk, cxr.getInner()))
-								.doubleValue();
-						final double B = outputs.get(MatrixCorrectionModel2.shellLabel("B", unk, cxr.getInner()))
-								.doubleValue();
-						final double chi = outputs.get(new MatrixCorrectionModel2.ChiLabel(unk, cxr)).doubleValue();
-						final double phi0 = outputs.get(new MatrixCorrectionModel2.Phi0Label(unk, cxr.getInner()))
-								.doubleValue();
-						final List<Double> vals1 = new ArrayList<>();
-						final List<Double> vals2 = new ArrayList<>();
-						for (double rhoZ = 0.0; rhoZ <= rhoZmax; rhoZ += dRhoZ) {
-							final double prz = phiRhoZ(rhoZ, a, b, A, B, phi0);
-							vals1.add(prz);
-							vals2.add(prz * Math.exp(-chi * rhoZ));
-						}
-						res.add(unk.toString() + "[" + cxr.toString() + ", gen]", vals1);
-						res.add(unk.toString() + "[" + cxr.toString() + ", emit]", vals2);
-					}
+					final StandardMatrixCorrectionDatum std = krl.getStandard();
+					final double aStd = outputs.get(MatrixCorrectionModel2.shellLabel("a", std, cxr.getInner()))
+							.doubleValue();
+					final double bStd = outputs.get(MatrixCorrectionModel2.shellLabel("b", std, cxr.getInner()))
+							.doubleValue();
+					final double AStd = outputs.get(MatrixCorrectionModel2.shellLabel("A", std, cxr.getInner()))
+							.doubleValue();
+					final double BStd = outputs.get(MatrixCorrectionModel2.shellLabel("B", std, cxr.getInner()))
+							.doubleValue();
+					final double chiStd = outputs.get(new MatrixCorrectionModel2.ChiLabel(std, cxr)).doubleValue();
+					final double phi0Std = outputs.get(new MatrixCorrectionModel2.Phi0Label(std, cxr.getInner()))
+							.doubleValue();
+					final UnknownMatrixCorrectionDatum unk = krl.getUnknown();
+					final double aUnk = outputs.get(MatrixCorrectionModel2.shellLabel("a", unk, cxr.getInner()))
+							.doubleValue();
+					final double bUnk = outputs.get(MatrixCorrectionModel2.shellLabel("b", unk, cxr.getInner()))
+							.doubleValue();
+					final double AUnk = outputs.get(MatrixCorrectionModel2.shellLabel("A", unk, cxr.getInner()))
+							.doubleValue();
+					final double BUnk = outputs.get(MatrixCorrectionModel2.shellLabel("B", unk, cxr.getInner()))
+							.doubleValue();
+					final double chiUnk = outputs.get(new MatrixCorrectionModel2.ChiLabel(unk, cxr)).doubleValue();
+					final double phi0Unk = outputs.get(new MatrixCorrectionModel2.Phi0Label(unk, cxr.getInner()))
+							.doubleValue();
+					res.cols().add(std.toString() + "[" + cxr.toString() + ", gen]",
+							rz.map(rhoZ -> phiRhoZ(rhoZ, aStd, bStd, AStd, BStd, phi0Std)));
+					res.cols().add(std.toString() + "[" + cxr.toString() + ", emit]",
+							rz.map(rhoZ -> phiRhoZ(rhoZ, aStd, bStd, AStd, BStd, phi0Std) * Math.exp(-chiStd * rhoZ)));
+					res.cols().add(unk.toString() + "[" + cxr.toString() + ", gen]",
+							rz.map(rhoZ -> phiRhoZ(rhoZ, aUnk, bUnk, AUnk, BUnk, phi0Unk)));
+					res.cols().add(unk.toString() + "[" + cxr.toString() + ", emit]",
+							rz.map(rhoZ -> phiRhoZ(rhoZ, aUnk, bUnk, AUnk, BUnk, phi0Unk) * Math.exp(-chiUnk * rhoZ)));
 				}
 			}
 		}

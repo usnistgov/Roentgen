@@ -138,11 +138,6 @@
 			<version>5.3.0-M1</version>
 		</dependency>
 		<dependency>
-			<groupId>joinery</groupId>
-			<artifactId>joinery-dataframe</artifactId>
-			<version>1.9</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
 			<version>4.0.0</version>
@@ -171,6 +166,16 @@
 			<artifactId>jline</artifactId>
 			<version>3.0.0.M1</version>
 			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.d3xsystems</groupId>
+			<artifactId>d3x-morpheus-core</artifactId>
+			<version>1.0.22</version>
+		</dependency>
+		<dependency>
+			<groupId>com.d3xsystems</groupId>
+			<artifactId>d3x-morpheus-viz</artifactId>
+			<version>1.0.22</version>
 		</dependency>
 	</dependencies>
 </project>
