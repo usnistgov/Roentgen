@@ -1,6 +1,6 @@
 package gov.nist.juncertainty;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,13 +37,11 @@ public class UncertainValuesCalculator<H> //
 
 	public interface ICalculator<H> {
 
-		public Pair<RealVector, RealMatrix> compute(
-				ExplicitMeasurementModel<? extends H, ? extends H> func, //
+		public Pair<RealVector, RealMatrix> compute(ExplicitMeasurementModel<? extends H, ? extends H> func, //
 				RealVector point //
 		);
 
-		public UncertainValuesBase<H> evaluate(
-				ExplicitMeasurementModel<? extends H, ? extends H> func, //
+		public UncertainValuesBase<H> evaluate(ExplicitMeasurementModel<? extends H, ? extends H> func, //
 				List<? extends H> outputLabels //
 		);
 	}
@@ -51,8 +49,7 @@ public class UncertainValuesCalculator<H> //
 	public class Analytical extends JacobianEvaluator<H> {
 
 		@Override
-		public Pair<RealVector, RealMatrix> compute(
-				final ExplicitMeasurementModel<? extends H, ? extends H> func, //
+		public Pair<RealVector, RealMatrix> compute(final ExplicitMeasurementModel<? extends H, ? extends H> func, //
 				final RealVector point //
 		) {
 			return func.evaluate(point);
@@ -75,9 +72,7 @@ public class UncertainValuesCalculator<H> //
 		 *
 		 * @param dinp The RealVector with differences
 		 */
-		public FiniteDifference(
-				final RealVector dinp
-		) {
+		public FiniteDifference(final RealVector dinp) {
 			mDeltaInputs = dinp;
 		}
 
@@ -88,15 +83,12 @@ public class UncertainValuesCalculator<H> //
 		 *
 		 * @param frac The fractional difference size
 		 */
-		public FiniteDifference(
-				final double frac
-		) {
+		public FiniteDifference(final double frac) {
 			mDeltaInputs = getInputValues().mapMultiply(frac);
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> compute(
-				final ExplicitMeasurementModel<? extends H, ? extends H> func, //
+		public Pair<RealVector, RealMatrix> compute(final ExplicitMeasurementModel<? extends H, ? extends H> func, //
 				final RealVector point //
 		) {
 			final int inDim = func.getInputDimension(), outDim = func.getOutputDimension();
@@ -132,8 +124,7 @@ public class UncertainValuesCalculator<H> //
 
 			private final int mNEvals;
 
-			private MultiEvaluate(
-					final int nEvals //
+			private MultiEvaluate(final int nEvals //
 			) {
 				super();
 				mNEvals = nEvals;
@@ -160,11 +151,10 @@ public class UncertainValuesCalculator<H> //
 
 		/**
 		 * Constructs a MonteCarlo ICalculator object.
-		 * 
+		 *
 		 * @param nEvals The number of evaluations to perform
 		 */
-		public MonteCarlo(
-				final int nEvals //
+		public MonteCarlo(final int nEvals //
 		) {
 			this(nEvals, true);
 		}
@@ -176,8 +166,7 @@ public class UncertainValuesCalculator<H> //
 		 * @param nEvals   Number of evaluations to execute
 		 * @param parallel Perform in parallel or in series.
 		 */
-		public MonteCarlo(
-				final int nEvals, final boolean parallel //
+		public MonteCarlo(final int nEvals, final boolean parallel //
 		) {
 			this(new SafeMultivariateNormalDistribution(getInputs()), nEvals, parallel);
 		}
@@ -191,8 +180,7 @@ public class UncertainValuesCalculator<H> //
 		 * @param nEvals   Number of evaluations to execute
 		 * @param parallel Perform in parallel or sequentially.
 		 */
-		public MonteCarlo(
-				final MultivariateRealDistribution dist, //
+		public MonteCarlo(final MultivariateRealDistribution dist, //
 				final int nEvals, //
 				final boolean parallel //
 		) {
@@ -203,8 +191,7 @@ public class UncertainValuesCalculator<H> //
 		}
 
 		@Override
-		public UncertainValuesBase<H> evaluate(
-				final ExplicitMeasurementModel<? extends H, ? extends H> func, //
+		public UncertainValuesBase<H> evaluate(final ExplicitMeasurementModel<? extends H, ? extends H> func, //
 				final List<? extends H> outputLabels //
 		) {
 			assert (mDistribution != null);
@@ -234,8 +221,7 @@ public class UncertainValuesCalculator<H> //
 		}
 
 		@Override
-		public Pair<RealVector, RealMatrix> compute(
-				final ExplicitMeasurementModel<? extends H, ? extends H> func, //
+		public Pair<RealVector, RealMatrix> compute(final ExplicitMeasurementModel<? extends H, ? extends H> func, //
 				final RealVector point //
 		) {
 			// The Monte Carlo method does not compute the Jacobian
@@ -250,7 +236,7 @@ public class UncertainValuesCalculator<H> //
 		/**
 		 * Are the evaluations performed in a parallel multi-threaded style or in
 		 * sequence
-		 * 
+		 *
 		 * @return true in parallel, false otherwise
 		 */
 		public boolean isParallel() {
@@ -259,12 +245,10 @@ public class UncertainValuesCalculator<H> //
 
 		/**
 		 * Set to true to use multi-threaded evaluation.
-		 * 
+		 *
 		 * @param parallel true to multi-thread
 		 */
-		public void setParallel(
-				final boolean parallel
-		) {
+		public void setParallel(final boolean parallel) {
 			mParallel = parallel;
 		}
 
@@ -277,8 +261,7 @@ public class UncertainValuesCalculator<H> //
 		}
 
 		@Override
-		public UncertainValues<J> evaluate(
-				final ExplicitMeasurementModel<? extends J, ? extends J> func, //
+		public UncertainValues<J> evaluate(final ExplicitMeasurementModel<? extends J, ? extends J> func, //
 				final List<? extends J> outputLabels //
 		) {
 			final Pair<RealVector, RealMatrix> eval = mEvaluation.get();
@@ -310,14 +293,12 @@ public class UncertainValuesCalculator<H> //
 	/***
 	 * Builds the outputs in the order of func.getOutputLabels() +
 	 * func.getInputLabels(). Makes sure there are no duplicates.
-	 * 
+	 *
 	 * @param emm The measurement model
 	 * @return List&lt;H&gt;
 	 */
 
-	private final static <H> List<H> buildOutputs1(
-			final ExplicitMeasurementModel<? extends H, ? extends H> emm
-	) {
+	private final static <H> List<H> buildOutputs1(final ExplicitMeasurementModel<? extends H, ? extends H> emm) {
 		final FastIndex<H> res = new FastIndex<>();
 		res.addAll(emm.getOutputLabels());
 		res.addAll(emm.getInputLabels());
@@ -381,14 +362,13 @@ public class UncertainValuesCalculator<H> //
 	 * Constructs a {@link UncertainValuesCalculator} to propagate the measurement
 	 * model over the specified set of input values to estimate the output
 	 * uncertainties.
-	 * 
+	 *
 	 * @param emm    The measurement model
 	 * @param inputs The input values
 	 * @throws ArgumentException When there is an inconsistency in the function
 	 *                           arguments
 	 */
-	public UncertainValuesCalculator(
-			final ExplicitMeasurementModel<? extends H, ? extends H> emm, //
+	public UncertainValuesCalculator(final ExplicitMeasurementModel<? extends H, ? extends H> emm, //
 			final UncertainValuesBase<H> inputs //
 	) throws ArgumentException {
 		super(buildOutputs1(emm));
@@ -401,9 +381,7 @@ public class UncertainValuesCalculator<H> //
 	}
 
 	@Override
-	public boolean equals(
-			final Object obj
-	) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -425,7 +403,7 @@ public class UncertainValuesCalculator<H> //
 
 	/**
 	 * Returns the model as presented to the constructor.
-	 * 
+	 *
 	 * @return The model
 	 */
 	public ExplicitMeasurementModel<? extends H, ? extends H> getFunction() {
@@ -434,7 +412,7 @@ public class UncertainValuesCalculator<H> //
 
 	/**
 	 * The number of input variables.
-	 * 
+	 *
 	 * @return int
 	 */
 	public int getInputDimension() {
@@ -443,7 +421,7 @@ public class UncertainValuesCalculator<H> //
 
 	/**
 	 * An ordered list of input variable labels.
-	 * 
+	 *
 	 * @return List&lt;? extends H&gt;
 	 */
 	public List<? extends H> getInputLabels() {
@@ -474,9 +452,10 @@ public class UncertainValuesCalculator<H> //
 	}
 
 	/**
-	 * Returns the Jacobian when the {@link ICalculator} associated with this {@link UncertainValuesCalculator}
-	 * support calculating the Jacobian (the {@link MonteCarlo} doesn't).
-	 * 
+	 * Returns the Jacobian when the {@link ICalculator} associated with this
+	 * {@link UncertainValuesCalculator} support calculating the Jacobian (the
+	 * {@link MonteCarlo} doesn't).
+	 *
 	 * @return Optional&lt;Jacobian&lt;H,H&gt;&gt;
 	 */
 	public Optional<Jacobian<H, H>> getJacobian() {
@@ -496,7 +475,7 @@ public class UncertainValuesCalculator<H> //
 
 	/**
 	 * An ordered list of the labels associated with the output variables.
-	 * 
+	 *
 	 * @return List&lt;H&gt;
 	 */
 	public List<H> getOutputLabels() {
@@ -526,8 +505,7 @@ public class UncertainValuesCalculator<H> //
 	 * @throws ArgumentException When there is an inconsistency in the function
 	 *                           arguments
 	 */
-	public HashMap<H, UncertainValueEx<H>> getOutputValues(
-			final double tol //
+	public HashMap<H, UncertainValueEx<H>> getOutputValues(final double tol //
 	) throws ArgumentException {
 		final UncertainValuesBase<H> pvm = mFullOutputs.get();
 		final HashMap<H, UncertainValueEx<H>> res = new HashMap<>();
@@ -544,40 +522,73 @@ public class UncertainValuesCalculator<H> //
 	}
 
 	/**
-	 * <p>
-	 * Get the resulting UncertainValue for each output quantity with sources
-	 * grouped and named according to the map of names to a collection of labels.
-	 * </p>
-	 * <p>
-	 * Returns a map from output value to an UncertainValue with discretely broken
-	 * out uncertainty components according to the labels map.
-	 * </p>
-	 *
-	 * @param labels Group according to this mapping
-	 * @param tol    Minimum size uncertainty to include
-	 * @return HashMap&lt;H, UncertainValue&gt;
-	 * @throws ArgumentException When there is an inconsistency in the function
-	 *                           arguments
+	 * Trims the covariances for the input uncertainty matrix so that all entries in
+	 * it are zero unless they correspond to one of the <code>inputLabels</code>.
+	 * Returns a new matrix.
+	 * 
+	 * @param covars
+	 * @param inputLabels
+	 * @return RealMatrix
 	 */
-	public HashMap<H, UncertainValueEx<String>> getOutputValues(
-			final Map<String, Collection<? extends H>> labels, //
-			final double tol //
-	) throws ArgumentException {
-		final UncertainValuesBase<H> pvm = mFullOutputs.get();
-		final HashMap<H, UncertainValueEx<String>> res = new HashMap<>();
-		for (final H outLbl : getOutputLabels()) {
-			final Map<String, Double> vars = new HashMap<>();
-			for (final Map.Entry<String, Collection<? extends H>> me : labels.entrySet()) {
-				final String varLbl = me.getKey();
-				double covSum = 0.0;
-				for (final H inLbl : me.getValue())
-					covSum += pvm.getCovariance(inLbl, outLbl);
-				vars.put(varLbl, covSum);
+	private RealMatrix zeroAllCovariancesExcept(final List<? extends H> inputLabels) {
+		final RealMatrix res = getInputs().getCovariances().copy();
+		final List<? extends H> allInputs = getInputLabels();
+		for (int r = 0; r < allInputs.size(); ++r) {
+			if (!inputLabels.contains(allInputs.get(r))) { // clear row
+				for (int c = 0; c < allInputs.size(); ++c)
+					res.setEntry(r, c, 0.0);
+			} else {
+				for (int c = 0; c < allInputs.size(); ++c)
+					if (!inputLabels.contains(allInputs.get(c)))
+						res.setEntry(r, c, 0.0); // clear entry
 			}
-			final int outIdx = pvm.indexOf(outLbl);
-			res.put(outLbl, new UncertainValueEx<String>(pvm.getEntry(outIdx), pvm.getUncertainty(outIdx), vars));
 		}
 		return res;
+	}
+
+	/**
+	 * Compute the uncertainty in the specified output value that is a direct
+	 * result of the uncertainty in the input values.
+	 * 
+	 * 
+	 * @param inputLabels A list of input values to consider
+	 * @param outputLabel The output value to compute
+	 * @return An UncertainValue
+	 */
+	public UncertainValue computeComponent(final List<? extends H> inputLabels, H outputLabel) {
+		Optional<Jacobian<H, H>> jo = getJacobian();
+		if (jo.isPresent()) {
+			@SuppressWarnings("unchecked")
+			RealMatrix j = jo.get().getMatrix((List<H>) getInputs(), Collections.singletonList(outputLabel));
+			RealMatrix cov = zeroAllCovariancesExcept(inputLabels);
+			RealMatrix res = j.multiply(cov.multiply(j.transpose()));
+			assert (res.getColumnDimension() == 1) && (res.getRowDimension() == 1);
+			assert res.getEntry(1, 1) >= 0.0;
+			return UncertainValue.valueOf(getEntry(outputLabel), Math.sqrt(res.getEntry(1, 1)));
+		}
+		assert false : "Can't compute the component-wise uncertainty with this calculator.";
+		return UncertainValue.valueOf(getEntry(outputLabel), 0.0);
+	}
+
+	public Map<H, UncertainValue> computeComponent(final List<? extends H> inputLabels, List<H> outputLabels) {
+		Optional<Jacobian<H, H>> jo = getJacobian();
+		if (jo.isPresent()) {
+			@SuppressWarnings("unchecked")
+			RealMatrix j = jo.get().getMatrix((List<H>) getInputLabels(), outputLabels);
+			RealMatrix cov = zeroAllCovariancesExcept(inputLabels);
+			RealMatrix ans = j.multiply(cov.multiply(j.transpose()));
+			assert (ans.getColumnDimension() == outputLabels.size()) && (ans.getRowDimension() == outputLabels.size());
+			Map<H, UncertainValue> res = new HashMap<H, UncertainValue>();
+			for (int r = 0; r < outputLabels.size(); ++r) {
+				assert ans.getEntry(r, r) >= 0.0;
+				UncertainValue uv = UncertainValue.valueOf(getEntry(outputLabels.get(r)),
+						Math.sqrt(ans.getEntry(r, r)));
+				res.put(outputLabels.get(r), uv);
+			}
+			return res;
+		}
+		assert false : "Can't compute the component-wise uncertainty with this calculator.";
+		return null;
 	}
 
 	/**
@@ -613,12 +624,10 @@ public class UncertainValuesCalculator<H> //
 
 	/**
 	 * Specify an {@link ICalculator} and force a recalculation.
-	 * 
+	 *
 	 * @param calc An {@link ICalculator}
 	 */
-	public void setCalculator(
-			final ICalculator<H> calc
-	) {
+	public void setCalculator(final ICalculator<H> calc) {
 		synchronized (this) {
 			mCalculator = calc;
 			mEvaluation.reset();
@@ -629,7 +638,7 @@ public class UncertainValuesCalculator<H> //
 
 	/**
 	 * The calculator used to propagate the uncertainties.
-	 * 
+	 *
 	 * @return An instance of {@link ICalculator}
 	 */
 	public ICalculator<H> getCalculator() {
@@ -646,8 +655,7 @@ public class UncertainValuesCalculator<H> //
 	 * @throws ArgumentException When there is an inconsistency in the function
 	 *                           arguments
 	 */
-	public void setInputs(
-			final UncertainValuesBase<H> inputs //
+	public void setInputs(final UncertainValuesBase<H> inputs //
 	) throws ArgumentException {
 		final List<H> missing = inputs.missing(getInputLabels());
 		if (missing.size() > 0)

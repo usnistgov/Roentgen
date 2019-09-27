@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import com.duckandcover.html.HTML;
@@ -77,6 +78,24 @@ public class Jacobian<G, H> //
 	public List<H> getOutputLabels() {
 		return Collections.unmodifiableList(mOutputs);
 	}
+	
+	RealMatrix getMatrix(List<G> inputLabels, List<H> outputLabels) {
+		if((inputLabels.equals(getInputLabels()))&&(outputLabels.equals(getOutputLabels())))
+			return mJacobian;
+		else {
+			RealMatrix res = MatrixUtils.createRealMatrix(outputLabels.size(), inputLabels.size());
+			for(int g=0;g<inputLabels.size();++g) {
+				G input = inputLabels.get(g);
+				for(int h=0;h<outputLabels.size();++h) {
+					H output = outputLabels.get(h);
+					res.setEntry(h, g, getEntry(input, output));
+				}
+			}
+			return res;
+		}
+	}
+	
+	
 
 	public String toHTML(
 			final Mode mode, //
