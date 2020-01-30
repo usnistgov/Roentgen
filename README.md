@@ -9,7 +9,7 @@ Roentgen is a Java library for X-ray microanalysis
    * Matrix correction (including uncertainty propagation)
    *
 * Roentgen builds on Apache Math3 for linear algebra, integration, statistical, optimization and other numerical algorithms.
-** Uncertainty calculations are fundamental to Roentgen
+  * Uncertainty calculations are fundamental to Roentgen
 * Roentgen provides many basic atomic and X-ray physics classes
 * Roentgen provides the XPP algorithm for bulk matrix correction
 * Roentgen provides classes for manipulating EDS spectrum data
