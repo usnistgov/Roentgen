@@ -742,7 +742,6 @@ public class KRatioCorrectionModel3 //
 	 * @throws ArgumentException
 	 */
 	static public KRatioCorrectionModel3 buildXPPModel(
-			//
 			final Set<KRatioLabel> keySet, //
 			final ExplicitMeasurementModel<? extends MaterialLabel, MassFraction> extraElms //
 			) throws ArgumentException {
