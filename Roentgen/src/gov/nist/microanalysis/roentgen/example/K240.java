@@ -72,8 +72,9 @@ public class K240 {
 		try {
 			// k240.simple();
 			// k240.benitoite();
+			k240.benitoite2();
 			// k240.simplest();
-			k240.simplestOByStoic();
+			// k240.simplestOByStoic();
 			// k240.identical();
 			// k240.elements();
 			// k240.k240();
@@ -272,7 +273,7 @@ public class K240 {
 			initReport.inBrowser(Mode.NORMAL);
 			final Report report = new Report("K-Ratio (5)");
 			try {
-				report.addHeader("K240 using Benitoite, Mg, Zn, Zr");
+				report.addHeader("K240 using Benitoite - base");
 				report.addHeader("Grouping");
 				report.add(t2);
 				report.addHeader("Uncertainties");
@@ -282,6 +283,198 @@ public class K240 {
 			}
 		}
 	}
+	
+	public void benitoite2() throws Exception {
+		// K240 using Benitoite, Mg, Zn and Zr as standards
+
+		final double[] dkO = { 0.002175978085581, 0.002197549502352, 0.002222917439207, 0.002259155722945,
+				0.002296599040709, 0.002348395478965, 0.002387912718087, 0.002436731785879, 0.002482245465167,
+				0.002533966940594, 0.002580622126306, 0.00263742877099, 0.002689424504791, 0.002749521302058,
+				0.002802880345387, 0.002851611085874, 0.002911168928636, 0.002954109640922, 0.002999994065294 };
+		final double[] dkMg = { 0.004962906114096, 0.005001404889014, 0.004924646968079, 0.00491029272899,
+				0.004888829359764, 0.004858183896549, 0.004937708903069, 0.004937272359369, 0.00497256515775,
+				0.004936277149524, 0.005032282567414, 0.005146316851665, 0.005192328070361, 0.005230358335188,
+				0.005201109570042, 0.00534889375152, 0.005327245053272, 0.005479085928104, 0.005534800055348 };
+		final double[] dkSi = { 0.001540612407138, 0.001481555994616, 0.001425181252983, 0.001389009082235,
+				0.001361726594707, 0.001334054483399, 0.001313935477242, 0.001298536909002, 0.001284616309707,
+				0.001280450577798, 0.001268442997156, 0.00126374058475, 0.001265849189384, 0.001263734641962,
+				0.001261893758378, 0.001263952257026, 0.001269622687434, 0.001275024133209, 0.001275896158657 };
+		final double[] dkTi = { 0.01404057687607, 0.01229778662795, 0.011155590526459, 0.010357134615828,
+				0.009809937458651, 0.009039481437831, 0.008514949836098, 0.008046240928013, 0.007626096177276,
+				0.00729970338153, 0.006968410778483, 0.006682418598052, 0.006411703616743, 0.00626132149355,
+				0.006114523370149, 0.005900629072074, 0.005751532974722, 0.005623044191438, 0.005445931668182 };
+		final double[] dkZn = { 0.078306155151287, 0.054715770563326, 0.042693216334796, 0.034162025607166,
+				0.028721862336203, 0.024233475201946, 0.021164636450853, 0.018596859827944, 0.016726233023588,
+				0.015237771546719, 0.013915939819911, 0.012983363309353, 0.012256379344987, 0.01127724633209,
+				0.011014041461235, 0.010472874963737, 0.009827448291624, 0.009332191780822, 0.009008492081708 };
+		final double[] dkZr = { 0.006400090620752, 0.006149588746253, 0.005870045333023, 0.005768652979469,
+				0.005500637755102, 0.005427769698708, 0.005344231373782, 0.005287733737021, 0.005202011444425,
+				0.00519393669193, 0.005174378846592, 0.005165240966671, 0.005112859902926, 0.00507493269162,
+				0.005097188010633, 0.005160348386447, 0.005107329776744, 0.005119366124717, 0.00516414607156 };
+		final double[] dkBa = { 0.008182058447819, 0.007360938324068, 0.00668716148458, 0.006090709449536,
+				0.005639271864227, 0.005289641813193, 0.004971912248055, 0.004714049877284, 0.004507028922697,
+				0.004308293402505, 0.004128654614498, 0.0039938302209, 0.003861512410919, 0.003728404071926,
+				0.003611433547977, 0.003519063068446, 0.003433831396981, 0.003344645059098, 0.003344645059098 };
+
+		final Composition unk = CompositionFactory.instance().findComposition("K240").getObject();
+
+		final ElementXRaySet mgTrs = ElementXRaySet.singleton(Element.Magnesium, XRayTransition.KA1);
+		final ElementXRaySet baTrs = ElementXRaySet.singleton(Element.Barium, XRayTransition.LA1);
+		final ElementXRaySet tiTrs = ElementXRaySet.singleton(Element.Titanium, XRayTransition.KA1);
+		final ElementXRaySet siTrs = ElementXRaySet.singleton(Element.Silicon, XRayTransition.KA1);
+		final ElementXRaySet oTrs = ElementXRaySet.singleton(Element.Oxygen, XRayTransition.KA1);
+		final ElementXRaySet znTrs = ElementXRaySet.singleton(Element.Zinc, XRayTransition.KA1);
+		final ElementXRaySet zrTrs = ElementXRaySet.singleton(Element.Zirconium, XRayTransition.LA1);
+
+		final Composition mg = Composition.parse("Mg");
+		final Composition zn = Composition.parse("Zn");
+		final Composition zr = Composition.parse("Zr");
+		final Composition benitoite = CompositionFactory.instance().findComposition("Benitoite").getObject();
+
+		final int MIN_E = 12, MAX_E = 31;
+		{
+			final Report initReport = new Report("K-Ratio - Initialization");
+			final Table table = new Table();
+			final Table t2 = new Table();
+			boolean firstRow = true;
+			for (int ie0 = MIN_E; ie0 < MAX_E; ie0++) {
+				final UncertainValue e0 = new UncertainValue(ie0, 0.01);
+				final double rough = 0.01*mRoughness;
+				final StandardMatrixCorrectionDatum mgMcd = new StandardMatrixCorrectionDatum(mg, e0, mTOA, rough);
+				final StandardMatrixCorrectionDatum znMcd = new StandardMatrixCorrectionDatum(zn, e0, mTOA, rough);
+				final StandardMatrixCorrectionDatum zrMcd = new StandardMatrixCorrectionDatum(zr, e0, mTOA, rough);
+				final StandardMatrixCorrectionDatum benitoiteMcd = new StandardMatrixCorrectionDatum(//
+						benitoite, e0, mTOA, rough);
+				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(//
+						unk.getMaterial(), e0, mTOA, rough);
+
+				final Set<KRatioLabel> lkr = new HashSet<>();
+				lkr.add(new KRatioLabel(unkMcd, mgMcd, mgTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, znMcd, znTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, zrMcd, zrTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, siTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, oTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, tiTrs, Method.Measured));
+				lkr.add(new KRatioLabel(unkMcd, benitoiteMcd, baTrs, Method.Measured));
+
+				final KRatioCorrectionModel3 cfk = KRatioCorrectionModel3.buildXPPModel(lkr, null);
+				final XPPMatrixCorrection2 mcm = (XPPMatrixCorrection2) cfk.getModel();
+				final UncertainValues<EPMALabel> input = mcm.buildInput(unk.getMaterial());
+				mcm.addConstraints(mcm.buildConstraints(input));
+				mcm.addAdditionalInputs(unk.getValueMap(MassFraction.class));
+				cfk.addAdditionalInputs(unk.getValueMap(MassFraction.class));
+				// Calculate the optimal k-ratios
+				final RealVector calculated = mcm.computeValue(input.extractValues(mcm.getInputLabels()).toArray());
+				final UncertainValues<KRatioLabel> krs = KRatioLabel.extractKRatios(calculated, mcm.getOutputLabels(),
+						Method.Measured);
+				for (final KRatioLabel label : krs.getLabels()) {
+					final KRatioLabel krl = label;
+					final double v = krs.getEntry(krl);
+					double dk = 0.0;
+					switch (krl.getElement()) {
+					case Oxygen:
+						dk = v * dkO[ie0 - MIN_E];
+						break;
+					case Magnesium:
+						dk = v * dkMg[ie0 - MIN_E];
+						break;
+					case Silicon:
+						dk = v * dkSi[ie0 - MIN_E];
+						break;
+					case Titanium:
+						dk = v * dkTi[ie0 - MIN_E];
+						break;
+					case Zinc:
+						dk = v * dkZn[ie0 - MIN_E];
+						break;
+					case Zirconium:
+						dk = v * dkZr[ie0 - MIN_E];
+						break;
+					case Barium:
+						dk = v * dkBa[ie0 - MIN_E];
+						break;
+					default:
+						assert false;
+						break;
+
+					}
+					krs.set(krl, new UncertainValue(v, 0.01*dk));
+				}
+
+				final UncertainValuesBase<EPMALabel> msInp = cfk.buildInput(krs);
+
+				final List<EPMALabel> finalOutputs = new ArrayList<>();
+				for (final EPMALabel output : cfk.getOutputLabels())
+					if (output instanceof MaterialLabel.MassFraction)
+						finalOutputs.add(output);
+				final UncertainValuesCalculator<EPMALabel> res = UncertainValuesBase.propagateAnalytical(cfk, msInp);
+
+				final Map<String, List<? extends EPMALabel>> labelBlocks = extractLabelBlocks(msInp);
+				if (firstRow) {
+					for (final Map.Entry<String, List<? extends EPMALabel>> me : labelBlocks.entrySet()) {
+						final List<Item> row = new ArrayList<>();
+						row.add(Table.th(me.getKey()));
+						row.add(Table.th(me.getValue().toString()));
+						t2.addRow(row);
+					}
+					final List<Item> row = new ArrayList<>();
+					row.add(Table.th("All"));
+					row.add(Table.th(msInp.getLabels().toString()));
+					t2.addRow(row);
+				}
+
+				for (final Map.Entry<String, List<? extends EPMALabel>> me : labelBlocks.entrySet()) {
+					final List<Item> row = new ArrayList<>();
+					if (firstRow) {
+						final List<Item> header = new ArrayList<>();
+						header.add(Table.th("E0"));
+						header.add(Table.th("Variables"));
+						for (final EPMALabel lbl : finalOutputs) {
+							header.add(Table.th(lbl.toHTML(Mode.TERSE)));
+							header.add(Table.th("U[" + lbl.toHTML(Mode.TERSE) + "]"));
+						}
+						table.addRow(header);
+						firstRow = false;
+					}
+					final Map<EPMALabel, UncertainValue> meu = res.computeComponent(me.getValue(), finalOutputs);
+					row.add(Table.td(ie0));
+					row.add(Table.td(me.getKey()));
+					for (final EPMALabel lbl : finalOutputs) {
+						row.add(Table.td(meu.get(lbl).doubleValue()));
+						row.add(Table.td(meu.get(lbl).uncertainty()));
+					}
+					table.addRow(row);
+				}
+				final List<Item> all = new ArrayList<>();
+				all.add(Table.td(ie0));
+				all.add(Table.td("All"));
+				for (final EPMALabel lbl : finalOutputs) {
+					all.add(Table.td(res.getUncertainValue(lbl).doubleValue()));
+					all.add(Table.td(res.getUncertainValue(lbl).uncertainty()));
+				}
+				table.addRow(all);
+				if ((ie0 - MIN_E) % 5 == 0) {
+					initReport.addHeader("E<sub>0</sub> = " + ie0);
+					initReport.addSubHeader("Inputs");
+					initReport.add(msInp.sort(), Mode.VERBOSE);
+					initReport.addSubHeader("Output");
+					initReport.addHTML(res.toHTML(Mode.NORMAL, new BasicNumberFormat("0.0E0")));
+				}
+			}
+			initReport.inBrowser(Mode.NORMAL);
+			final Report report = new Report("K-Ratio (5)");
+			try {
+				report.addHeader("K240 using Benitoite - base");
+				report.addHeader("Grouping");
+				report.add(t2);
+				report.addHeader("Uncertainties");
+				report.add(table);
+			} finally {
+				report.inBrowser(Mode.NORMAL);
+			}
+		}
+	}
+	
 
 	public void identical() throws Exception {
 		// K240 using Benitoite, Mg, Zn and Zr as standards
@@ -349,7 +542,7 @@ public class K240 {
 				final StandardMatrixCorrectionDatum stdMcd = new StandardMatrixCorrectionDatum(std, e0, mTOA,
 						mRoughness);
 				final UnknownMatrixCorrectionDatum unkMcd = new UnknownMatrixCorrectionDatum(//
-						unk.getMaterial(), e0, mTOA, mRoughness);
+						unk.getMaterial(), e0, mTOA, 0.1*mRoughness);
 
 				final Set<KRatioLabel> lkr = new HashSet<>();
 				lkr.add(new KRatioLabel(unkMcd, stdMcd, mgTrs, Method.Measured));
@@ -467,7 +660,7 @@ public class K240 {
 			initReport.inBrowser(Mode.NORMAL);
 			final Report report = new Report("K-Ratio (5)");
 			try {
-				report.addHeader("K240 using Benitoite, Mg, Zn, Zr");
+				report.addHeader("K240 using K240 - dk, 0.1*roughness");
 				report.addHeader("Grouping");
 				report.add(t2);
 				report.addHeader("Uncertainties");
